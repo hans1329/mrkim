@@ -44,7 +44,7 @@ export function AppLayout({
               >
                 <h1 className="text-lg font-bold text-foreground">{title}</h1>
                 {subtitle && (
-                  <p className="text-sm text-muted-foreground">{subtitle}</p>
+                  <p className="text-xs text-muted-foreground">{subtitle}</p>
                 )}
               </div>
             </div>
