@@ -307,63 +307,108 @@ export default function PitchDeck() {
 
       {/* Slide 4: Solution */}
       <Slide className="bg-[#0d0d14]">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30">Solution</Badge>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-            김비서가<br />
-            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-orange-400 bg-clip-text text-transparent">
-              해결합니다
-            </span>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-2">
+            김비서가 <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">해결합니다</span>
           </h2>
+          <p className="text-xl text-white/50 mb-10">AI + 스테이블코인으로 소상공인 금융을 재정의</p>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 mt-12">
+          {/* Main Feature - Stablecoin Payment */}
+          <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                    <Coins className="h-6 w-6 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">스테이블코인 결제</h3>
+                    <p className="text-cyan-400 text-sm">핵심 차별점</p>
+                  </div>
+                </div>
+                <p className="text-white/70 mb-4">
+                  카드 결제 수수료 2.2%를 0.5%로 낮추고, D+3 정산을 즉시 정산으로 전환합니다.
+                </p>
+                <div className="flex gap-6">
+                  <div>
+                    <p className="text-2xl font-bold text-cyan-400">75%</p>
+                    <p className="text-white/50 text-sm">수수료 절감</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-cyan-400">D+0</p>
+                    <p className="text-white/50 text-sm">즉시 정산</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-cyan-400">4~5%</p>
+                    <p className="text-white/50 text-sm">예치 수익률</p>
+                  </div>
+                </div>
+              </div>
+              <div className="hidden md:block">
+                <div className="relative p-4 rounded-xl bg-black/30 border border-white/10">
+                  <div className="space-y-3 text-sm font-mono">
+                    <div className="flex items-center justify-between text-white/50">
+                      <span>카드 결제</span>
+                      <span className="line-through text-red-400">₩22,000 수수료</span>
+                    </div>
+                    <div className="flex items-center justify-between text-white">
+                      <span>스테이블코인</span>
+                      <span className="text-cyan-400">₩5,000 수수료</span>
+                    </div>
+                    <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                      <span className="text-white/50">월 ₩100만 결제 시</span>
+                      <span className="text-green-400 font-bold">₩17,000 절감</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Other Features */}
+          <div className="grid md:grid-cols-4 gap-4">
             {[
               {
                 icon: Bot,
                 title: "AI 비서",
-                desc: "말로 시키면 알아서 처리",
-                example: '"김비서, 이번 달 매출 정리해줘"',
+                desc: "자연어로 업무 지시",
+                stat: "월 20시간 절약",
                 color: "blue",
               },
               {
                 icon: Zap,
                 title: "자동 자금 관리",
-                desc: "규칙대로 돈이 움직임",
-                example: "매출 10% → 세금 계좌 자동 이체",
+                desc: "규칙 기반 자동 이체",
+                stat: "세금/급여/비용",
                 color: "yellow",
-              },
-              {
-                icon: Coins,
-                title: "스테이블코인 결제",
-                desc: "수수료 0.5%로 즉시 정산",
-                example: "카드 2.2% → 스테이블 0.5%",
-                color: "cyan",
               },
               {
                 icon: PiggyBank,
                 title: "수익 창출",
-                desc: "스테이블코인으로 이자 수익",
-                example: "유휴자금 예치 → 연 4~5%",
+                desc: "유휴자금 자동 예치",
+                stat: "연 4~5% 수익",
                 color: "green",
               },
               {
                 icon: Banknote,
                 title: "신용 연결",
                 desc: "매출 기반 즉시 대출",
-                example: "1분 승인 · 최대 5천만원",
+                stat: "최대 5천만원",
                 color: "purple",
               },
             ].map((item, i) => (
-              <Card key={i} className={`bg-white/5 border-white/10 hover:bg-white/10 transition group`}>
-                <CardContent className="p-6">
-                  <div className={`inline-flex p-3 rounded-xl bg-${item.color}-500/20 mb-4`}>
-                    <item.icon className={`h-6 w-6 text-${item.color}-400`} />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                  <p className="text-white/60 mb-4">{item.desc}</p>
-                  <p className="text-sm text-white/40 italic">"{item.example}"</p>
-                </CardContent>
-              </Card>
+              <div 
+                key={i} 
+                className="p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group"
+              >
+                <div className={`inline-flex p-2.5 rounded-lg bg-${item.color}-500/20 mb-3`}>
+                  <item.icon className={`h-5 w-5 text-${item.color}-400`} />
+                </div>
+                <h3 className="font-bold mb-1 group-hover:text-white transition-colors">{item.title}</h3>
+                <p className="text-white/50 text-sm mb-2">{item.desc}</p>
+                <p className={`text-${item.color}-400 text-sm font-medium`}>{item.stat}</p>
+              </div>
             ))}
           </div>
         </div>
