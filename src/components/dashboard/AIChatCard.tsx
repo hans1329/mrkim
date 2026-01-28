@@ -122,7 +122,7 @@ export function AIChatCard() {
               key={prompt}
               variant="ghost"
               size="sm"
-              className="shrink-0 text-xs bg-transparent hover:bg-white/20 text-white border-0"
+              className="shrink-0 text-xs bg-transparent hover:bg-white/20 text-white border border-white/40"
               onClick={() => handleQuickAsk(prompt)}
               disabled={isTyping}
             >
