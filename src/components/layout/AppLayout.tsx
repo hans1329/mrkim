@@ -27,7 +27,7 @@ export function AppLayout({
           <div className="flex items-center justify-between">
             <div 
               className="cursor-pointer rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors hover:bg-muted"
-              onClick={() => navigate("/settings")}
+              onClick={() => navigate("/profile")}
             >
               <h1 className="text-lg font-bold text-foreground">{title}</h1>
               {subtitle && (
