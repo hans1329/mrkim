@@ -447,83 +447,168 @@ export default function PitchDeck() {
             18개월 내 PMF 달성 및 Series A 목표
           </p>
 
-          <div className="grid md:grid-cols-4 gap-4">
-            {[
-              { 
-                phase: "Phase 1", 
-                period: "2025 상반기", 
-                title: "MVP 런칭", 
-                status: "In Progress",
-                items: ["AI 채팅 기반 조회/명령", "자금 현황 대시보드", "베타 유저 500명 확보"],
-                color: "blue"
-              },
-              { 
-                phase: "Phase 2", 
-                period: "2025 하반기", 
-                title: "금융 연동", 
-                status: "Planned",
-                items: ["오픈뱅킹 API 연동", "파킹통장 자동 이체", "유저 5,000명 달성"],
-                color: "purple"
-              },
-              { 
-                phase: "Phase 3", 
-                period: "2026 상반기", 
-                title: "대출 서비스", 
-                status: "Planned",
-                items: ["금융사 제휴 체결", "매출 기반 신용평가", "유저 20,000명 달성"],
-                color: "orange"
-              },
-              { 
-                phase: "Phase 4", 
-                period: "2026 하반기", 
-                title: "스케일업", 
-                status: "Planned",
-                items: ["결제 서비스 런칭", "B2B 파트너십 확대", "유저 50,000명 달성"],
-                color: "cyan"
-              },
-            ].map((item, i) => (
-              <Card key={i} className={`bg-white/5 border-white/10 hover:border-${item.color}-500/30 transition-all group relative overflow-hidden`}>
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-${item.color}-500 to-${item.color}-400`} />
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`text-xs font-mono text-${item.color}-400`}>{item.phase}</span>
-                    <Badge 
-                      variant="outline" 
-                      className={`text-[10px] ${item.status === "In Progress" ? "border-green-500/50 text-green-400" : "border-white/20 text-white/50"}`}
-                    >
-                      {item.status}
-                    </Badge>
+          {/* Vertical Timeline Tree */}
+          <div className="relative">
+            {/* Animated Vertical Line */}
+            <div className="absolute left-4 md:left-1/2 md:-translate-x-px top-0 bottom-0 w-0.5 bg-white/10">
+              <div 
+                className="w-full bg-gradient-to-b from-blue-500 via-purple-500 via-orange-500 to-cyan-500 animate-pulse"
+                style={{ 
+                  height: '100%',
+                  animation: 'roadmapLine 3s ease-out forwards'
+                }}
+              />
+            </div>
+
+            {/* Timeline Items */}
+            <div className="space-y-12">
+              {[
+                { 
+                  phase: "Phase 1", 
+                  period: "2025 상반기", 
+                  title: "MVP 런칭", 
+                  status: "In Progress",
+                  items: ["AI 채팅 기반 조회/명령", "자금 현황 대시보드", "베타 유저 500명 확보"],
+                  color: "blue",
+                  delay: "0s"
+                },
+                { 
+                  phase: "Phase 2", 
+                  period: "2025 하반기", 
+                  title: "금융 연동", 
+                  status: "Planned",
+                  items: ["오픈뱅킹 API 연동", "파킹통장 자동 이체", "유저 5,000명 달성"],
+                  color: "purple",
+                  delay: "0.3s"
+                },
+                { 
+                  phase: "Phase 3", 
+                  period: "2026 상반기", 
+                  title: "대출 서비스", 
+                  status: "Planned",
+                  items: ["금융사 제휴 체결", "매출 기반 신용평가", "유저 20,000명 달성"],
+                  color: "orange",
+                  delay: "0.6s"
+                },
+                { 
+                  phase: "Phase 4", 
+                  period: "2026 하반기", 
+                  title: "스케일업", 
+                  status: "Planned",
+                  items: ["결제 서비스 런칭", "B2B 파트너십 확대", "유저 50,000명 달성"],
+                  color: "cyan",
+                  delay: "0.9s"
+                },
+              ].map((item, i) => (
+                <div 
+                  key={i} 
+                  className={`relative flex items-start gap-6 md:gap-12 ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}
+                  style={{
+                    animation: `fadeSlideIn 0.6s ease-out ${item.delay} both`
+                  }}
+                >
+                  {/* Node Circle */}
+                  <div className="absolute left-4 md:left-1/2 -translate-x-1/2 z-10">
+                    <div className={`w-4 h-4 rounded-full bg-${item.color}-500 ring-4 ring-${item.color}-500/20 animate-pulse`}>
+                      <div className={`absolute inset-0 rounded-full bg-${item.color}-400 animate-ping opacity-50`} />
+                    </div>
                   </div>
-                  <p className="text-white/50 text-sm mb-1">{item.period}</p>
-                  <h3 className="text-xl font-bold mb-4">{item.title}</h3>
-                  <ul className="space-y-2">
-                    {item.items.map((li, j) => (
-                      <li key={j} className="flex items-start gap-2 text-sm text-white/60">
-                        <CheckCircle2 className={`h-4 w-4 text-${item.color}-400 shrink-0 mt-0.5`} />
-                        <span>{li}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ))}
+
+                  {/* Content Card */}
+                  <div className={`ml-12 md:ml-0 md:w-[45%] ${i % 2 === 0 ? 'md:pr-8' : 'md:pl-8'}`}>
+                    <Card className={`bg-white/5 border-white/10 hover:border-${item.color}-500/30 transition-all group relative overflow-hidden hover:scale-[1.02] hover:bg-white/10`}>
+                      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-${item.color}-500 to-${item.color}-400`} />
+                      
+                      {/* Connecting Branch Line (Desktop) */}
+                      <div className={`hidden md:block absolute top-6 ${i % 2 === 0 ? '-right-8 w-8' : '-left-8 w-8'} h-0.5 bg-gradient-to-r from-${item.color}-500/50 to-transparent ${i % 2 !== 0 ? 'rotate-180' : ''}`} />
+                      
+                      <CardContent className="p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className={`text-xs font-mono text-${item.color}-400 font-bold`}>{item.phase}</span>
+                          <Badge 
+                            variant="outline" 
+                            className={`text-[10px] ${item.status === "In Progress" ? "border-green-500/50 text-green-400 bg-green-500/10" : "border-white/20 text-white/50"}`}
+                          >
+                            {item.status}
+                          </Badge>
+                        </div>
+                        <p className="text-white/50 text-sm mb-1">{item.period}</p>
+                        <h3 className="text-xl font-bold mb-4 group-hover:text-white transition-colors">{item.title}</h3>
+                        <ul className="space-y-2">
+                          {item.items.map((li, j) => (
+                            <li 
+                              key={j} 
+                              className="flex items-start gap-2 text-sm text-white/60"
+                              style={{
+                                animation: `fadeSlideIn 0.4s ease-out ${parseFloat(item.delay) + 0.1 * (j + 1)}s both`
+                              }}
+                            >
+                              <CheckCircle2 className={`h-4 w-4 text-${item.color}-400 shrink-0 mt-0.5`} />
+                              <span>{li}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Empty Space for alternating layout */}
+                  <div className="hidden md:block md:w-[45%]" />
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="mt-12 grid md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+          {/* KPI Summary */}
+          <div className="mt-16 grid md:grid-cols-3 gap-6">
+            <div 
+              className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center hover:bg-white/10 transition-all hover:scale-105"
+              style={{ animation: 'fadeSlideIn 0.6s ease-out 1.2s both' }}
+            >
               <div className="text-3xl font-bold text-cyan-400 mb-2">500 → 50K</div>
               <p className="text-white/60">18개월 유저 성장 목표</p>
             </div>
-            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+            <div 
+              className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center hover:bg-white/10 transition-all hover:scale-105"
+              style={{ animation: 'fadeSlideIn 0.6s ease-out 1.4s both' }}
+            >
               <div className="text-3xl font-bold text-cyan-400 mb-2">₩10억+</div>
               <p className="text-white/60">ARR 목표 (2026년)</p>
             </div>
-            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+            <div 
+              className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center hover:bg-white/10 transition-all hover:scale-105"
+              style={{ animation: 'fadeSlideIn 0.6s ease-out 1.6s both' }}
+            >
               <div className="text-3xl font-bold text-cyan-400 mb-2">3개</div>
               <p className="text-white/60">금융사 제휴 목표</p>
             </div>
           </div>
         </div>
+
+        {/* Custom Keyframes */}
+        <style>{`
+          @keyframes roadmapLine {
+            from {
+              height: 0%;
+              opacity: 0;
+            }
+            to {
+              height: 100%;
+              opacity: 1;
+            }
+          }
+          
+          @keyframes fadeSlideIn {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}</style>
       </Slide>
 
       {/* Slide 8: Ask */}
