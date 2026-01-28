@@ -84,7 +84,7 @@ export function AIChatCard() {
             variant="secondary"
             size="sm"
             onClick={openChat}
-            className="gap-1.5 bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
+            className="gap-1.5 bg-white/20 hover:bg-white/30 text-white border border-white/40 backdrop-blur-sm"
           >
             <MessageCircle className="h-4 w-4" />
             대화
