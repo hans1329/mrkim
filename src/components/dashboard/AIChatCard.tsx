@@ -67,7 +67,7 @@ export function AIChatCard() {
   };
 
   return (
-    <Card className="overflow-hidden bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] border-0 shadow-lg">
+    <Card className="overflow-hidden bg-gradient-to-br from-[#E91E63] via-[#9C27B0] to-[#2196F3] border-0 shadow-lg">
       <CardContent className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
