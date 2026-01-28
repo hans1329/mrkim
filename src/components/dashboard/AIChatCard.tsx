@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bot, Send, Sparkles, MessageCircle } from "lucide-react";
+import { Bot, Send, Sparkles, MessageCircle, RotateCcw } from "lucide-react";
 import { getTodayStats, mockDeposits, mockAutoTransfers, formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
 
@@ -100,7 +100,17 @@ export function AIChatCard() {
                 <span className="text-sm text-muted-foreground">답변 중...</span>
               </div>
             ) : (
-              <p className="text-sm text-foreground">{response}</p>
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm text-foreground flex-1">{response}</p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0"
+                  onClick={() => setResponse(null)}
+                >
+                  <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              </div>
             )}
           </div>
         )}
