@@ -801,13 +801,6 @@ export default function PitchDeck() {
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-4">
-            <Button size="lg" className="bg-white text-black hover:bg-white/90 gap-2 text-lg px-8">
-              <Mail className="h-5 w-5" />
-              contact@kimsecretary.ai
-            </Button>
-            <p className="text-white/40 text-sm">IR 자료 요청 및 미팅 문의</p>
-          </div>
         </div>
       </Slide>
     </div>
