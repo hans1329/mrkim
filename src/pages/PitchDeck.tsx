@@ -440,39 +440,88 @@ export default function PitchDeck() {
       <Slide>
         <div className="max-w-5xl mx-auto">
           <Badge className="mb-4 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">Roadmap</Badge>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-12">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
             성장 로드맵
           </h2>
+          <p className="text-xl text-white/60 mb-12">
+            18개월 내 PMF 달성 및 Series A 목표
+          </p>
 
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-white/20" />
-
+          <div className="grid md:grid-cols-4 gap-4">
             {[
-              { year: "2025 Q1-Q2", title: "MVP 런칭", items: ["AI 채팅 기능", "기본 자금 관리", "베타 유저 500명"], side: "left" },
-              { year: "2025 Q3-Q4", title: "금융 연동", items: ["오픈뱅킹 연동", "파킹통장 자동화", "유저 5,000명"], side: "right" },
-              { year: "2026 상반기", title: "대출 서비스", items: ["금융사 제휴", "매출 기반 신용평가", "유저 20,000명"], side: "left" },
-              { year: "2026 하반기", title: "스케일업", items: ["결제 서비스 런칭", "B2B 확장", "유저 50,000명"], side: "right" },
+              { 
+                phase: "Phase 1", 
+                period: "2025 상반기", 
+                title: "MVP 런칭", 
+                status: "In Progress",
+                items: ["AI 채팅 기반 조회/명령", "자금 현황 대시보드", "베타 유저 500명 확보"],
+                color: "blue"
+              },
+              { 
+                phase: "Phase 2", 
+                period: "2025 하반기", 
+                title: "금융 연동", 
+                status: "Planned",
+                items: ["오픈뱅킹 API 연동", "파킹통장 자동 이체", "유저 5,000명 달성"],
+                color: "purple"
+              },
+              { 
+                phase: "Phase 3", 
+                period: "2026 상반기", 
+                title: "대출 서비스", 
+                status: "Planned",
+                items: ["금융사 제휴 체결", "매출 기반 신용평가", "유저 20,000명 달성"],
+                color: "orange"
+              },
+              { 
+                phase: "Phase 4", 
+                period: "2026 하반기", 
+                title: "스케일업", 
+                status: "Planned",
+                items: ["결제 서비스 런칭", "B2B 파트너십 확대", "유저 50,000명 달성"],
+                color: "cyan"
+              },
             ].map((item, i) => (
-              <div key={i} className={`relative flex items-center mb-12 ${item.side === "right" ? "md:flex-row-reverse" : ""}`}>
-                <div className={`flex-1 ${item.side === "right" ? "md:text-right md:pr-12" : "md:pl-12"} pl-12 md:pl-0`}>
-                  <span className="text-cyan-400 font-mono text-sm">{item.year}</span>
-                  <h3 className="text-2xl font-bold mt-1 mb-3">{item.title}</h3>
-                  <ul className="space-y-1">
+              <Card key={i} className={`bg-white/5 border-white/10 hover:border-${item.color}-500/30 transition-all group relative overflow-hidden`}>
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-${item.color}-500 to-${item.color}-400`} />
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-xs font-mono text-${item.color}-400`}>{item.phase}</span>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-[10px] ${item.status === "In Progress" ? "border-green-500/50 text-green-400" : "border-white/20 text-white/50"}`}
+                    >
+                      {item.status}
+                    </Badge>
+                  </div>
+                  <p className="text-white/50 text-sm mb-1">{item.period}</p>
+                  <h3 className="text-xl font-bold mb-4">{item.title}</h3>
+                  <ul className="space-y-2">
                     {item.items.map((li, j) => (
-                      <li key={j} className="text-white/60 flex items-center gap-2">
-                        {item.side === "right" && <span className="md:hidden"><CheckCircle2 className="h-4 w-4 text-cyan-400" /></span>}
-                        <span className="hidden md:block md:ml-auto">{item.side === "right" && <CheckCircle2 className="h-4 w-4 text-cyan-400 inline mr-2" />}{li}</span>
-                        <span className="md:hidden">{li}</span>
-                        {item.side === "left" && <CheckCircle2 className="h-4 w-4 text-cyan-400 hidden md:block" />}
+                      <li key={j} className="flex items-start gap-2 text-sm text-white/60">
+                        <CheckCircle2 className={`h-4 w-4 text-${item.color}-400 shrink-0 mt-0.5`} />
+                        <span>{li}</span>
                       </li>
                     ))}
                   </ul>
-                </div>
-                <div className="absolute left-4 md:left-1/2 w-3 h-3 bg-cyan-400 rounded-full -translate-x-1/2" />
-                <div className="flex-1 hidden md:block" />
-              </div>
+                </CardContent>
+              </Card>
             ))}
+          </div>
+
+          <div className="mt-12 grid md:grid-cols-3 gap-6">
+            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+              <div className="text-3xl font-bold text-cyan-400 mb-2">500 → 50K</div>
+              <p className="text-white/60">18개월 유저 성장 목표</p>
+            </div>
+            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+              <div className="text-3xl font-bold text-cyan-400 mb-2">₩10억+</div>
+              <p className="text-white/60">ARR 목표 (2026년)</p>
+            </div>
+            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+              <div className="text-3xl font-bold text-cyan-400 mb-2">3개</div>
+              <p className="text-white/60">금융사 제휴 목표</p>
+            </div>
           </div>
         </div>
       </Slide>
