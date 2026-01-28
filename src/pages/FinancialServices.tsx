@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,81 +20,81 @@ import {
 const services = [
   {
     id: "subscription",
-    title: "AI ERP 구독",
-    description: "AI 에이전트 + 백오피스 자동화",
+    title: "AI 비서 구독",
+    description: "사장님 대신 일하는 AI",
     icon: Sparkles,
     price: "월 ₩30,000",
-    features: ["AI 비서 무제한 사용", "매출/매입 자동 관리", "직원 급여 자동화", "실시간 경영 브리핑"],
+    features: ["AI한테 말로 시키기", "매출/지출 자동 정리", "직원 급여 알아서 처리", "오늘 장사 어땠는지 브리핑"],
     color: "primary",
-    badge: "기본 서비스",
+    badge: "기본",
   },
   {
     id: "programmable",
-    title: "프로그래머블 머니",
-    description: "자금을 규칙대로 자동 실행",
+    title: "자동 자금 관리",
+    description: "규칙 정하면 돈이 알아서 움직여요",
     icon: Zap,
     price: "무료",
-    features: ["부가세 10% 자동 분리", "급여 자동 적립", "조건부 자동이체", "스마트 컨트랙트 기반"],
+    features: ["세금 10% 따로 모으기", "월급날 전에 미리 준비", "조건 맞으면 자동 이체", "사장님은 신경 안 써도 OK"],
     color: "warning",
-    badge: "핵심 기능",
+    badge: "핵심",
   },
   {
     id: "investment",
-    title: "예치금 운용",
-    description: "유휴 자금으로 추가 수익 창출",
+    title: "남는 돈 굴리기",
+    description: "안 쓰는 돈으로 이자 받기",
     icon: PiggyBank,
-    price: "연 3~4% 수익",
-    features: ["MMF 자동 운용", "국채/안전 자산 투자", "언제든 출금 가능", "원금 보장형 상품"],
+    price: "매달 이자 +₩5만",
+    features: ["파킹통장 자동 이체", "연 2~3% 이자", "필요할 때 바로 출금", "예금자 보호 적용"],
     color: "success",
-    badge: "수익 창출",
+    badge: "수익",
   },
   {
     id: "loan",
-    title: "단기 대출 연결",
-    description: "매출 기반 AI 신용평가",
+    title: "급할 때 빌리기",
+    description: "매출 보고 1분 만에 승인",
     icon: Banknote,
     price: "연 5.9%~",
-    features: ["최대 5천만원 한도", "1분 내 승인", "매출 데이터 기반 심사", "조기 상환 수수료 無"],
+    features: ["최대 5천만원까지", "서류 없이 1분 승인", "매출 기록으로 심사", "미리 갚아도 수수료 없음"],
     color: "primary",
-    badge: "긴급 자금",
+    badge: "긴급",
   },
   {
     id: "payment",
-    title: "스테이블코인 결제",
-    description: "저렴한 수수료로 송금/결제",
+    title: "수수료 절약 결제",
+    description: "카드 수수료 반으로 줄이기",
     icon: CreditCard,
-    price: "0.5% 수수료",
-    features: ["기존 PG 대비 50% 절감", "실시간 정산", "해외 송금 지원", "24시간 운영"],
+    price: "수수료 0.5%",
+    features: ["기존 대비 50% 절약", "정산 바로바로", "해외 송금도 저렴하게", "24시간 가능"],
     color: "secondary",
-    badge: "출시 예정",
+    badge: "준비 중",
     comingSoon: true,
   },
 ];
 
 const benefits = [
-  { icon: Shield, title: "안전한 자금 관리", description: "예금자 보호 및 안전 자산 운용" },
-  { icon: TrendingUp, title: "추가 수익 창출", description: "유휴 자금 자동 운용으로 수익" },
-  { icon: Zap, title: "업무 자동화", description: "반복 업무를 AI가 대신 처리" },
-  { icon: Wallet, title: "자금 흐름 최적화", description: "프로그래머블 머니로 효율화" },
+  { icon: Shield, title: "안전하게", description: "예금자 보호 적용" },
+  { icon: TrendingUp, title: "이자 받기", description: "남는 돈 자동 굴리기" },
+  { icon: Zap, title: "자동으로", description: "귀찮은 일 알아서" },
+  { icon: Wallet, title: "한눈에", description: "돈 흐름 깔끔 정리" },
 ];
 
 export default function FinancialServices() {
   const navigate = useNavigate();
 
   return (
-    <MainLayout title="금융 서비스" subtitle="김비서의 금융 인프라" showBackButton>
+    <MainLayout title="김비서 서비스" subtitle="사장님을 위한 금융 기능" showBackButton>
       <div className="space-y-6">
         {/* 히어로 섹션 */}
         <div className="rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-5 text-primary-foreground">
           <Badge className="mb-3 bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30">
-            AI 금융 자동화
+            사장님 전용
           </Badge>
           <h2 className="text-xl font-bold mb-2">
-            단순 ERP가 아닌,<br />금융 인프라입니다
+            사장님은 장사에만<br />집중하세요
           </h2>
           <p className="text-sm opacity-90 mb-4">
-            김비서는 프로그래머블 머니를 기반으로<br />
-            자금 관리부터 수익 창출까지 자동화합니다.
+            세금 모으기, 월급 주기, 남는 돈 굴리기...<br />
+            귀찮은 돈 관리는 김비서가 알아서 해요.
           </p>
           <Button 
             variant="secondary" 
@@ -107,21 +107,20 @@ export default function FinancialServices() {
         </div>
 
         {/* 핵심 혜택 */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           {benefits.map((benefit) => (
-            <Card key={benefit.title} className="border-0 bg-muted/50">
-              <CardContent className="p-3">
-                <benefit.icon className="h-5 w-5 text-primary mb-2" />
-                <p className="text-sm font-medium">{benefit.title}</p>
-                <p className="text-xs text-muted-foreground">{benefit.description}</p>
-              </CardContent>
-            </Card>
+            <div key={benefit.title} className="text-center">
+              <div className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                <benefit.icon className="h-5 w-5 text-primary" />
+              </div>
+              <p className="text-xs font-medium">{benefit.title}</p>
+            </div>
           ))}
         </div>
 
         {/* 서비스 목록 */}
         <div className="space-y-3">
-          <h3 className="font-semibold">서비스 구성</h3>
+          <h3 className="font-semibold">이런 것들을 해드려요</h3>
           {services.map((service) => (
             <Card 
               key={service.id} 
@@ -172,10 +171,10 @@ export default function FinancialServices() {
             <Sparkles className="mx-auto h-8 w-8 text-primary mb-2" />
             <p className="font-semibold mb-1">지금 시작하세요</p>
             <p className="text-sm text-muted-foreground mb-3">
-              월 ₩30,000으로 모든 금융 서비스를 이용하세요
+              월 3만원으로 귀찮은 돈 관리에서 해방!
             </p>
             <Button className="w-full" onClick={() => navigate("/")}>
-              무료 체험 시작
+              무료 체험하기
             </Button>
           </CardContent>
         </Card>
