@@ -20,7 +20,7 @@ export default function Profile() {
   const navigate = useNavigate();
 
   return (
-    <MainLayout title="내 프로필" subtitle="프로필 정보를 관리하세요">
+    <MainLayout title="내 프로필" subtitle="프로필 정보를 관리하세요" showBackButton>
       <div className="space-y-4">
         {/* 프로필 사진 & 기본 정보 */}
         <Card>
