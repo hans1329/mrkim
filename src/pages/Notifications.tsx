@@ -58,6 +58,7 @@ export default function Notifications() {
     <MainLayout 
       title="알림" 
       subtitle={unreadCount > 0 ? `${unreadCount}개의 새 알림` : "모두 확인함"}
+      showBackButton
     >
       <div className="space-y-4">
         {unreadCount > 0 && (

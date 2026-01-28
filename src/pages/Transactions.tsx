@@ -81,7 +81,7 @@ export default function Transactions() {
   };
 
   return (
-    <MainLayout title="매출/매입" subtitle="거래 내역을 관리하세요">
+    <MainLayout title="매출/매입" subtitle="거래 내역을 관리하세요" showBackButton>
       <div className="space-y-4">
         {/* 요약 카드 */}
         <div className="grid grid-cols-3 gap-2">

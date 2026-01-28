@@ -20,7 +20,7 @@ const menuItems = [
 
 export default function More() {
   return (
-    <MainLayout title="더보기">
+    <MainLayout title="더보기" showBackButton>
       <div className="space-y-4">
         <Card>
           <CardContent className="divide-y p-0">
