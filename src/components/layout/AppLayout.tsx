@@ -32,12 +32,9 @@ export function AppLayout({
             </div>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              <Badge 
-                className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs"
-                variant="destructive"
-              >
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
                 2
-              </Badge>
+              </span>
             </Button>
           </div>
         </header>
