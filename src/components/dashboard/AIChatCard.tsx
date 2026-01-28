@@ -67,24 +67,24 @@ export function AIChatCard() {
   };
 
   return (
-    <Card className="overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
+    <Card className="overflow-hidden bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] border-0 shadow-lg">
       <CardContent className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary shadow-lg">
-              <Bot className="h-6 w-6 text-primary-foreground" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg">
+              <Bot className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h3 className="font-bold text-foreground">김비서</h3>
-              <p className="text-xs text-muted-foreground">AI 경영 비서가 도와드릴게요</p>
+              <h3 className="font-bold text-white">김비서</h3>
+              <p className="text-xs text-white/80">AI 경영 비서가 도와드릴게요</p>
             </div>
           </div>
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={openChat}
-            className="gap-1.5"
+            className="gap-1.5 bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
           >
             <MessageCircle className="h-4 w-4" />
             대화하기
