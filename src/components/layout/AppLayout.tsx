@@ -1,9 +1,10 @@
 import { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { AIChatPanel } from "@/components/chat/AIChatPanel";
-import { Bell } from "lucide-react";
+import { Bell, Settings, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useTheme } from "next-themes";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -18,6 +19,13 @@ export function AppLayout({
   subtitle,
   showHeader = true 
 }: AppLayoutProps) {
+  const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
@@ -30,12 +38,44 @@ export function AppLayout({
                 <p className="text-sm text-muted-foreground">{subtitle}</p>
               )}
             </div>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
-                2
-              </span>
-            </Button>
+            <div className="flex items-center gap-1">
+              {/* Theme Toggle */}
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={toggleTheme}
+                className="h-9 w-9"
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </Button>
+
+              {/* Notifications */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative h-9 w-9"
+                onClick={() => navigate("/notifications")}
+              >
+                <Bell className="h-5 w-5" />
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                  2
+                </span>
+              </Button>
+
+              {/* Settings */}
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => navigate("/settings")}
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </header>
       )}
