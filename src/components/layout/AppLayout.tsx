@@ -20,7 +20,7 @@ export function AppLayout({
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="mx-auto flex min-h-screen max-w-3xl flex-col bg-background">
       {/* Header */}
       {showHeader && (
         <header className="sticky top-0 z-40 border-b bg-card px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
