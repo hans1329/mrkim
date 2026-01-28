@@ -38,21 +38,27 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <Card className={cn("overflow-hidden transition-shadow", variantStyles[variant])}>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 space-y-1">
+      <CardContent className="p-3">
+        <div className="flex items-start gap-2">
+          <div className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+            iconVariantStyles[variant]
+          )}>
+            <Icon className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0 space-y-0.5">
             <p className={cn(
-              "text-xs font-medium",
+              "text-[11px] font-medium truncate",
               variant === "default" ? "text-muted-foreground" : "opacity-80"
             )}>
               {title}
             </p>
-            <p className="text-lg font-bold leading-tight">{value}</p>
+            <p className="text-base font-bold leading-tight truncate">{value}</p>
             {(subtitle || trend) && (
               <div className="flex items-center gap-1">
                 {trend && (
                   <span className={cn(
-                    "text-xs font-medium",
+                    "text-[10px] font-medium",
                     trend.isPositive ? "text-success" : "text-destructive",
                     variant !== "default" && "opacity-90"
                   )}>
@@ -61,7 +67,7 @@ export function StatCard({
                 )}
                 {subtitle && (
                   <span className={cn(
-                    "text-xs",
+                    "text-[10px] truncate",
                     variant === "default" ? "text-muted-foreground" : "opacity-70"
                   )}>
                     {subtitle}
@@ -69,12 +75,6 @@ export function StatCard({
                 )}
               </div>
             )}
-          </div>
-          <div className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-lg",
-            iconVariantStyles[variant]
-          )}>
-            <Icon className="h-4 w-4" />
           </div>
         </div>
       </CardContent>
