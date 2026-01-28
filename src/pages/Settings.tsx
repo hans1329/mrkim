@@ -1,5 +1,5 @@
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,10 +18,12 @@ import {
   Shield,
   Palette,
   Globe,
-  ChevronRight,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 
 export default function Settings() {
+  const { theme, setTheme } = useTheme();
+
   return (
     <MainLayout title="설정" subtitle="앱 설정을 관리하세요">
       <div className="space-y-4">
@@ -137,7 +139,10 @@ export default function Settings() {
                 <p className="text-sm font-medium">다크 모드</p>
                 <p className="text-xs text-muted-foreground">어두운 테마</p>
               </div>
-              <Switch />
+              <Switch 
+                checked={theme === "dark"}
+                onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+              />
             </div>
             <Separator />
             <div className="space-y-2">
