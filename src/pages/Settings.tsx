@@ -178,7 +178,10 @@ export default function Settings() {
         <Button 
           variant="outline" 
           className="w-full gap-2"
-          onClick={() => navigate("/")}
+          onClick={() => {
+            window.scrollTo(0, 0);
+            navigate("/");
+          }}
         >
           <Home className="h-4 w-4" />
           홈으로 가기
