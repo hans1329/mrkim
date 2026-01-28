@@ -207,61 +207,98 @@ export default function PitchDeck() {
 
       {/* Slide 3: Market Opportunity */}
       <Slide>
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <Badge className="mb-4 bg-blue-500/20 text-blue-400 border-blue-500/30">Market</Badge>
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
             시장 기회
           </h2>
-          <p className="text-xl text-white/60 mb-12">
-            한국 소상공인 시장은 거대하지만, 디지털화는 이제 시작
+          <p className="text-xl text-white/60 mb-10">
+            스테이블코인 제도화가 여는 ₩45조 시장
           </p>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-2xl font-semibold mb-6 text-white/90">TAM → SAM → SOM</h3>
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/60">TAM (전체 시장)</span>
-                    <span className="text-2xl font-bold">₩45조</span>
-                  </div>
-                  <p className="text-sm text-white/40 mt-1">소상공인 금융/경영 서비스</p>
-                </div>
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/60">SAM (접근 가능)</span>
-                    <span className="text-2xl font-bold">₩8조</span>
-                  </div>
-                  <p className="text-sm text-white/40 mt-1">클라우드 ERP + 핀테크</p>
-                </div>
-                <div className="p-4 rounded-xl bg-blue-500/20 border border-blue-500/30">
-                  <div className="flex items-center justify-between">
-                    <span className="text-blue-400">SOM (초기 목표)</span>
-                    <span className="text-2xl font-bold text-blue-400">₩2,000억</span>
-                  </div>
-                  <p className="text-sm text-white/40 mt-1">음식점/소매업 AI ERP</p>
-                </div>
+          {/* Market Size - Horizontal Funnel */}
+          <div className="mb-12">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-2">
+              <div className="w-full md:w-auto flex-1 p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+                <p className="text-white/50 text-sm mb-1">TAM</p>
+                <p className="text-3xl md:text-4xl font-bold">₩45조</p>
+                <p className="text-white/40 text-xs mt-1">소상공인 금융 서비스</p>
+              </div>
+              <ArrowRight className="h-6 w-6 text-white/30 hidden md:block" />
+              <div className="w-full md:w-auto flex-1 p-6 rounded-2xl bg-white/5 border border-white/10 text-center">
+                <p className="text-white/50 text-sm mb-1">SAM</p>
+                <p className="text-3xl md:text-4xl font-bold">₩8조</p>
+                <p className="text-white/40 text-xs mt-1">디지털 결제 + 핀테크</p>
+              </div>
+              <ArrowRight className="h-6 w-6 text-white/30 hidden md:block" />
+              <div className="w-full md:w-auto flex-1 p-6 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-center">
+                <p className="text-blue-400 text-sm mb-1">SOM</p>
+                <p className="text-3xl md:text-4xl font-bold text-blue-400">₩2,000억</p>
+                <p className="text-white/40 text-xs mt-1">AI ERP + 스테이블결제</p>
               </div>
             </div>
+          </div>
 
-            <div>
-              <h3 className="text-2xl font-semibold mb-6 text-white/90">성장 동력</h3>
-              <div className="space-y-4">
-                {[
-                  { icon: Coins, title: "스테이블코인 제도화", desc: "2025년 하반기 법제화 예정 (금융위)" },
-                  { icon: TrendingUp, title: "디지털 전환 가속", desc: "코로나 이후 SaaS 도입률 3배 증가" },
-                  { icon: Users, title: "MZ 사장님 증가", desc: "30대 자영업자 비율 28% (역대 최고)" },
-                  { icon: Building2, title: "오픈뱅킹 확대", desc: "API 기반 금융 서비스 규제 완화" },
-                  { icon: Sparkles, title: "생성AI 대중화", desc: "자연어 명령 인터페이스 수용도 급증" },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                    <item.icon className="h-6 w-6 text-blue-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-white">{item.title}</p>
-                      <p className="text-sm text-white/50">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
+          {/* Key Drivers - Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { 
+                icon: Coins, 
+                title: "스테이블코인 제도화", 
+                desc: "2025년 하반기",
+                highlight: true 
+              },
+              { 
+                icon: Users, 
+                title: "760만 소상공인", 
+                desc: "디지털 전환 수요",
+                highlight: false 
+              },
+              { 
+                icon: TrendingUp, 
+                title: "결제 수수료 ₩12조", 
+                desc: "연간 시장 규모",
+                highlight: false 
+              },
+              { 
+                icon: Sparkles, 
+                title: "AI 도입률 급증", 
+                desc: "MZ 사장님 28%",
+                highlight: false 
+              },
+            ].map((item, i) => (
+              <div 
+                key={i} 
+                className={`p-5 rounded-xl border text-center ${
+                  item.highlight 
+                    ? 'bg-cyan-500/10 border-cyan-500/30' 
+                    : 'bg-white/5 border-white/10'
+                }`}
+              >
+                <item.icon className={`h-8 w-8 mx-auto mb-3 ${item.highlight ? 'text-cyan-400' : 'text-blue-400'}`} />
+                <p className={`font-bold mb-1 ${item.highlight ? 'text-cyan-400' : 'text-white'}`}>{item.title}</p>
+                <p className="text-white/50 text-sm">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Stablecoin Highlight */}
+          <div className="mt-10 p-6 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 border border-cyan-500/20">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                  <Coins className="h-8 w-8 text-cyan-400" />
+                </div>
+              </div>
+              <div className="text-center md:text-left">
+                <h3 className="text-xl font-bold mb-2">
+                  <span className="text-cyan-400">2025년 스테이블코인 제도화</span> = 새로운 결제 인프라
+                </h3>
+                <p className="text-white/60">
+                  카드 수수료 2.2% → 스테이블코인 0.5% 전환 시, 
+                  <span className="text-white font-semibold"> 소상공인 연간 ₩2조+ 절감 </span>
+                  가능. 김비서는 이 전환의 First Mover.
+                </p>
               </div>
             </div>
           </div>
