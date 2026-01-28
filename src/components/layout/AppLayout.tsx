@@ -2,9 +2,8 @@ import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { AIChatPanel } from "@/components/chat/AIChatPanel";
-import { Bell, Settings, Sun, Moon } from "lucide-react";
+import { Bell, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useTheme } from "next-themes";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -20,11 +19,6 @@ export function AppLayout({
   showHeader = true 
 }: AppLayoutProps) {
   const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
-
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -39,20 +33,6 @@ export function AppLayout({
               )}
             </div>
             <div className="flex items-center gap-1">
-              {/* Theme Toggle */}
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={toggleTheme}
-                className="h-9 w-9"
-              >
-                {theme === "dark" ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
-              </Button>
-
               {/* Notifications */}
               <Button 
                 variant="ghost" 
