@@ -21,6 +21,9 @@ import {
   DollarSign,
   Sparkles,
   Mail,
+  Coins,
+  CircleDollarSign,
+  Wallet,
 } from "lucide-react";
 
 // Slide Component
@@ -138,8 +141,8 @@ export default function PitchDeck() {
               <span>자동 자금 관리</span>
             </div>
             <div className="flex items-center gap-2 text-white/60">
-              <PiggyBank className="h-5 w-5" />
-              <span>수익 창출</span>
+              <Coins className="h-5 w-5" />
+              <span>스테이블코인 결제</span>
             </div>
           </div>
         </div>
@@ -161,7 +164,7 @@ export default function PitchDeck() {
             <span className="text-white/40">보이지 않는 비용</span>
           </h2>
 
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
+          <div className="grid md:grid-cols-4 gap-4 mt-12">
             <Card className="bg-white/5 border-white/10">
               <CardContent className="p-6">
                 <div className="text-4xl font-bold text-red-400 mb-2">68%</div>
@@ -171,9 +174,16 @@ export default function PitchDeck() {
             </Card>
             <Card className="bg-white/5 border-white/10">
               <CardContent className="p-6">
-                <div className="text-4xl font-bold text-red-400 mb-2">₩2.4M</div>
-                <p className="text-white/80 font-medium">연간 카드수수료</p>
-                <p className="text-white/50 text-sm mt-2">소상공인 평균 기준</p>
+                <div className="text-4xl font-bold text-red-400 mb-2">2.2%</div>
+                <p className="text-white/80 font-medium">평균 카드수수료율</p>
+                <p className="text-white/50 text-sm mt-2">연간 ₩240만 손실</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-white/5 border-white/10">
+              <CardContent className="p-6">
+                <div className="text-4xl font-bold text-red-400 mb-2">D+3</div>
+                <p className="text-white/80 font-medium">카드 정산 지연</p>
+                <p className="text-white/50 text-sm mt-2">자금 흐름 비효율</p>
               </CardContent>
             </Card>
             <Card className="bg-white/5 border-white/10">
@@ -238,6 +248,7 @@ export default function PitchDeck() {
               <h3 className="text-2xl font-semibold mb-6 text-white/90">성장 동력</h3>
               <div className="space-y-4">
                 {[
+                  { icon: Coins, title: "스테이블코인 제도화", desc: "2025년 하반기 법제화 예정 (금융위)" },
                   { icon: TrendingUp, title: "디지털 전환 가속", desc: "코로나 이후 SaaS 도입률 3배 증가" },
                   { icon: Users, title: "MZ 사장님 증가", desc: "30대 자영업자 비율 28% (역대 최고)" },
                   { icon: Building2, title: "오픈뱅킹 확대", desc: "API 기반 금융 서비스 규제 완화" },
@@ -268,7 +279,7 @@ export default function PitchDeck() {
             </span>
           </h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mt-12">
+          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 mt-12">
             {[
               {
                 icon: Bot,
@@ -285,10 +296,17 @@ export default function PitchDeck() {
                 color: "yellow",
               },
               {
+                icon: Coins,
+                title: "스테이블코인 결제",
+                desc: "수수료 0.5%로 즉시 정산",
+                example: "카드 2.2% → 스테이블 0.5%",
+                color: "cyan",
+              },
+              {
                 icon: PiggyBank,
                 title: "수익 창출",
-                desc: "남는 돈으로 이자 받기",
-                example: "파킹통장 자동 이체 → 연 3%",
+                desc: "스테이블코인으로 이자 수익",
+                example: "유휴자금 예치 → 연 4~5%",
                 color: "green",
               },
               {
@@ -338,11 +356,12 @@ export default function PitchDeck() {
               <tbody className="text-sm md:text-base">
                 {[
                   ["AI 자연어 명령", "❌", "❌", "✅"],
+                  ["스테이블코인 결제", "❌", "❌", "✅"],
+                  ["즉시 정산 (D+0)", "❌", "❌", "✅"],
                   ["자동 자금 관리", "❌", "❌", "✅"],
-                  ["예치금 수익화", "❌", "❌", "✅"],
+                  ["스테이블코인 수익화", "❌", "❌", "✅"],
                   ["매출 기반 대출", "❌", "❌", "✅"],
-                  ["모바일 최적화", "△", "✅", "✅"],
-                  ["월 비용", "₩10만+", "무료", "₩3만"],
+                  ["결제 수수료", "2.2%+", "2.2%+", "0.5%"],
                 ].map((row, i) => (
                   <tr key={i} className="border-b border-white/5">
                     <td className="py-4 px-4 text-white/80">{row[0]}</td>
@@ -355,15 +374,16 @@ export default function PitchDeck() {
             </table>
           </div>
 
-          <div className="mt-12 grid md:grid-cols-3 gap-6">
+          <div className="mt-12 grid md:grid-cols-4 gap-4">
             {[
+              { icon: Coins, title: "First Mover", desc: "스테이블코인 제도화 직후 시장 선점" },
               { icon: Target, title: "조회가 아닌 실행", desc: "데이터를 보여주는 게 아니라, 업무를 완결" },
-              { icon: Shield, title: "안전한 자금 운용", desc: "예금자 보호 적용, 원금 보장형 상품만" },
-              { icon: Clock, title: "시간 절약", desc: "월 20시간 이상 행정 업무 자동화" },
+              { icon: CircleDollarSign, title: "수수료 파괴", desc: "결제 수수료 2.2% → 0.5% (75% 절감)" },
+              { icon: Clock, title: "즉시 정산", desc: "D+3 → D+0, 자금 흐름 최적화" },
             ].map((item, i) => (
-              <div key={i} className="p-6 rounded-2xl bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/20">
-                <item.icon className="h-8 w-8 text-orange-400 mb-4" />
-                <h3 className="text-lg font-bold mb-2">{item.title}</h3>
+              <div key={i} className="p-5 rounded-2xl bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/20">
+                <item.icon className="h-7 w-7 text-orange-400 mb-3" />
+                <h3 className="text-base font-bold mb-2">{item.title}</h3>
                 <p className="text-white/60 text-sm">{item.desc}</p>
               </div>
             ))}
@@ -390,13 +410,23 @@ export default function PitchDeck() {
                 desc: "AI 에이전트 + ERP 기능",
                 metrics: "LTV ₩1.08M · CAC ₩150K",
                 color: "blue",
+                badge: null,
               },
               {
-                title: "예치금 운용 수익",
-                price: "연 0.3~0.5%",
-                desc: "고객 유휴자금 운용 마진",
-                metrics: "고객당 평균 ₩18M 예치",
+                title: "스테이블코인 결제 수수료",
+                price: "0.5%",
+                desc: "기존 PG 대비 75% 절감, 즉시 정산",
+                metrics: "월 매출 ₩50M 기준 → ₩85만 절감",
+                color: "cyan",
+                badge: "핵심 수익원",
+              },
+              {
+                title: "스테이블코인 예치 수익",
+                price: "연 1~2%",
+                desc: "고객 유휴자금 DeFi 운용 마진",
+                metrics: "고객당 평균 ₩18M 예치 · 수익률 4~5%",
                 color: "green",
+                badge: "신규",
               },
               {
                 title: "대출 연결 수수료",
@@ -404,16 +434,17 @@ export default function PitchDeck() {
                 desc: "대출 실행금액 기준",
                 metrics: "평균 대출 ₩15M",
                 color: "purple",
-              },
-              {
-                title: "결제 수수료 (예정)",
-                price: "0.5%",
-                desc: "스테이블코인 기반 결제",
-                metrics: "기존 PG 대비 50% 절감",
-                color: "orange",
+                badge: null,
               },
             ].map((item, i) => (
-              <Card key={i} className="bg-white/5 border-white/10">
+              <Card key={i} className="bg-white/5 border-white/10 relative overflow-hidden">
+                {item.badge && (
+                  <div className="absolute top-3 right-3">
+                    <Badge className={`bg-${item.color}-500/20 text-${item.color}-400 border-${item.color}-500/30 text-[10px]`}>
+                      {item.badge}
+                    </Badge>
+                  </div>
+                )}
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <h3 className="text-xl font-bold">{item.title}</h3>
@@ -475,28 +506,28 @@ export default function PitchDeck() {
                 { 
                   phase: "Phase 2", 
                   period: "2025 하반기", 
-                  title: "금융 연동", 
+                  title: "스테이블코인 결제", 
                   status: "Planned",
-                  items: ["오픈뱅킹 API 연동", "파킹통장 자동 이체", "유저 5,000명 달성"],
-                  color: "purple",
+                  items: ["스테이블코인 제도화 대응", "결제 인프라 구축", "파일럿 가맹점 100개"],
+                  color: "cyan",
                   delay: "0.3s"
                 },
                 { 
                   phase: "Phase 3", 
                   period: "2026 상반기", 
-                  title: "대출 서비스", 
+                  title: "금융 서비스 확대", 
                   status: "Planned",
-                  items: ["금융사 제휴 체결", "매출 기반 신용평가", "유저 20,000명 달성"],
-                  color: "orange",
+                  items: ["스테이블코인 예치 상품", "매출 기반 대출 연계", "유저 20,000명 달성"],
+                  color: "purple",
                   delay: "0.6s"
                 },
                 { 
                   phase: "Phase 4", 
                   period: "2026 하반기", 
-                  title: "스케일업", 
+                  title: "결제 네트워크", 
                   status: "Planned",
-                  items: ["결제 서비스 런칭", "B2B 파트너십 확대", "유저 50,000명 달성"],
-                  color: "cyan",
+                  items: ["B2B 결제 네트워크 구축", "해외 결제/송금 연동", "유저 50,000명 달성"],
+                  color: "orange",
                   delay: "0.9s"
                 },
               ].map((item, i) => (
