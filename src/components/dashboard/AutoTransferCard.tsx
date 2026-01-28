@@ -41,27 +41,29 @@ export function AutoTransferCard({ transfers }: AutoTransferCardProps) {
             <div
               key={transfer.id}
               className={cn(
-                "flex items-center justify-between rounded-lg border p-3 transition-colors",
+                "flex flex-col gap-2 rounded-lg border p-3 transition-colors",
                 transfer.status === "completed" && "bg-muted/50 opacity-70"
               )}
             >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
+              {/* 상단: 아이콘, 이름, 상태 뱃지 */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <p className="font-medium text-sm">{transfer.name}</p>
                 </div>
-                <div>
-                  <p className="font-medium">{transfer.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {transfer.recipient} · {transfer.condition}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <p className="font-semibold">{formatCurrency(transfer.amount)}</p>
-                <Badge variant={config.variant} className="gap-1">
+                <Badge variant={config.variant} className="gap-1 text-xs">
                   <StatusIcon className="h-3 w-3" />
                   {config.label}
                 </Badge>
+              </div>
+              {/* 하단: 수신자, 조건, 금액 */}
+              <div className="flex items-center justify-between pl-10">
+                <p className="text-xs text-muted-foreground">
+                  {transfer.recipient} · {transfer.condition}
+                </p>
+                <p className="font-semibold text-sm">{formatCurrency(transfer.amount)}</p>
               </div>
             </div>
           );
