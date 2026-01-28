@@ -25,7 +25,7 @@ export function AppLayout({
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col bg-background">
       {/* Header */}
       {showHeader && (
-        <header className="sticky top-0 z-40 border-b bg-card px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
+        <header className="sticky top-0 z-40 border-b bg-card/70 backdrop-blur-md px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
               {showBackButton && (
