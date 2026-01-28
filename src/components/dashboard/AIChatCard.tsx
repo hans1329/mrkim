@@ -120,9 +120,9 @@ export function AIChatCard() {
           {quickPrompts.map((prompt) => (
             <Button
               key={prompt}
-              variant="secondary"
+              variant="ghost"
               size="sm"
-              className="shrink-0 text-xs"
+              className="shrink-0 text-xs bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
               onClick={() => handleQuickAsk(prompt)}
               disabled={isTyping}
             >
@@ -137,10 +137,15 @@ export function AIChatCard() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="김비서에게 물어보세요..."
-            className="flex-1 bg-card"
+            className="flex-1 bg-white/20 border-0 backdrop-blur-sm text-white placeholder:text-white/60 focus-visible:ring-white/30"
             disabled={isTyping}
           />
-          <Button type="submit" size="icon" disabled={!input.trim() || isTyping}>
+          <Button 
+            type="submit" 
+            size="icon" 
+            disabled={!input.trim() || isTyping}
+            className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
+          >
             <Send className="h-4 w-4" />
           </Button>
         </form>
