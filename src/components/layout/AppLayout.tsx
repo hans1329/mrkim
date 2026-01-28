@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
-import { Bell, Settings } from "lucide-react";
+import { Bell, Settings, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface AppLayoutProps {
@@ -9,13 +9,15 @@ interface AppLayoutProps {
   title?: string;
   subtitle?: string;
   showHeader?: boolean;
+  showBackButton?: boolean;
 }
 
 export function AppLayout({ 
   children, 
   title = "김비서", 
   subtitle,
-  showHeader = true 
+  showHeader = true,
+  showBackButton = false
 }: AppLayoutProps) {
   const navigate = useNavigate();
 
@@ -25,14 +27,26 @@ export function AppLayout({
       {showHeader && (
         <header className="sticky top-0 z-40 border-b bg-card px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
           <div className="flex items-center justify-between">
-            <div 
-              className="cursor-pointer rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors hover:bg-muted"
-              onClick={() => navigate("/profile")}
-            >
-              <h1 className="text-lg font-bold text-foreground">{title}</h1>
-              {subtitle && (
-                <p className="text-sm text-muted-foreground">{subtitle}</p>
+            <div className="flex items-center gap-1">
+              {showBackButton && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 -ml-2"
+                  onClick={() => navigate(-1)}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
               )}
+              <div 
+                className={`rounded-lg px-2 py-1 -my-1 transition-colors ${!showBackButton ? "cursor-pointer hover:bg-muted -mx-2" : ""}`}
+                onClick={() => !showBackButton && navigate("/profile")}
+              >
+                <h1 className="text-lg font-bold text-foreground">{title}</h1>
+                {subtitle && (
+                  <p className="text-sm text-muted-foreground">{subtitle}</p>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-1">
               {/* Notifications */}
