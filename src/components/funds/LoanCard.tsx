@@ -11,7 +11,6 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { 
@@ -21,7 +20,7 @@ import {
   CheckCircle2, 
   AlertCircle,
   ChevronRight,
-  Sparkles
+  Zap
 } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
 
@@ -29,7 +28,6 @@ interface LoanInfo {
   availableLimit: number;
   usedAmount: number;
   interestRate: number;
-  basedOn: string;
   monthlyRevenue: number;
   creditScore: string;
 }
@@ -38,7 +36,6 @@ const mockLoanInfo: LoanInfo = {
   availableLimit: 50000000,
   usedAmount: 0,
   interestRate: 5.9,
-  basedOn: "최근 3개월 매출",
   monthlyRevenue: 67000000,
   creditScore: "우수",
 };
@@ -59,11 +56,11 @@ export function LoanCard() {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <Banknote className="h-4 w-4 text-primary" />
-            단기 대출
+            급할 때 빌리기
           </CardTitle>
           <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
-            <Sparkles className="mr-1 h-3 w-3" />
-            AI 신용평가
+            <Zap className="mr-1 h-3 w-3" />
+            1분 승인
           </Badge>
         </div>
       </CardHeader>
@@ -71,13 +68,13 @@ export function LoanCard() {
         {/* 대출 한도 현황 */}
         <div className="rounded-lg border p-3 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">이용 가능 한도</span>
+            <span className="text-sm text-muted-foreground">빌릴 수 있는 금액</span>
             <span className="text-lg font-bold text-primary">{formatCurrency(remainingLimit)}</span>
           </div>
           <Progress value={usagePercent} className="h-2" />
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>사용 {formatCurrency(mockLoanInfo.usedAmount)}</span>
-            <span>한도 {formatCurrency(mockLoanInfo.availableLimit)}</span>
+            <span>사용 중 {formatCurrency(mockLoanInfo.usedAmount)}</span>
+            <span>최대 {formatCurrency(mockLoanInfo.availableLimit)}</span>
           </div>
         </div>
 
@@ -90,12 +87,12 @@ export function LoanCard() {
           </div>
           <div className="rounded-lg bg-muted/50 p-2.5 text-center">
             <CheckCircle2 className="mx-auto h-4 w-4 text-primary mb-1" />
-            <p className="text-xs text-muted-foreground">신용등급</p>
+            <p className="text-xs text-muted-foreground">내 등급</p>
             <p className="text-sm font-semibold">{mockLoanInfo.creditScore}</p>
           </div>
           <div className="rounded-lg bg-muted/50 p-2.5 text-center">
             <Clock className="mx-auto h-4 w-4 text-warning mb-1" />
-            <p className="text-xs text-muted-foreground">금리</p>
+            <p className="text-xs text-muted-foreground">이자율</p>
             <p className="text-sm font-semibold">연 {mockLoanInfo.interestRate}%</p>
           </div>
         </div>
@@ -110,13 +107,13 @@ export function LoanCard() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>단기 대출 신청</DialogTitle>
+              <DialogTitle>급할 때 빌리기</DialogTitle>
             </DialogHeader>
             <div className="space-y-6 py-4">
               {/* 대출 금액 */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label>대출 금액</Label>
+                  <Label>얼마나 빌릴까요?</Label>
                   <span className="text-lg font-bold">{formatCurrency(loanAmount[0])}</span>
                 </div>
                 <Slider
@@ -135,7 +132,7 @@ export function LoanCard() {
               {/* 대출 기간 */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label>상환 기간</Label>
+                  <Label>언제까지 갚을까요?</Label>
                   <span className="text-lg font-bold">{loanPeriod[0]}개월</span>
                 </div>
                 <Slider
@@ -154,15 +151,15 @@ export function LoanCard() {
               {/* 예상 상환 정보 */}
               <div className="rounded-lg bg-muted p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">월 상환금</span>
+                  <span className="text-sm text-muted-foreground">매달 갚을 금액</span>
                   <span className="font-semibold">{formatCurrency(Math.round(monthlyPayment))}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">적용 금리</span>
+                  <span className="text-sm text-muted-foreground">이자율</span>
                   <span className="font-semibold">연 {mockLoanInfo.interestRate}%</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">예상 이자</span>
+                  <span className="text-sm text-muted-foreground">총 이자</span>
                   <span className="font-semibold text-warning">
                     {formatCurrency(Math.round(monthlyPayment * loanPeriod[0] - loanAmount[0]))}
                   </span>
@@ -173,8 +170,8 @@ export function LoanCard() {
               <div className="flex items-start gap-2 text-xs text-muted-foreground">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <p>
-                  대출 신청 시 AI가 실시간 매출 데이터를 기반으로 신용평가를 진행합니다. 
-                  승인까지 약 1분 소요됩니다.
+                  사장님 매출 데이터를 보고 한도를 정해드려요. 
+                  신청하면 1분 안에 결과를 알려드립니다.
                 </p>
               </div>
             </div>
@@ -191,7 +188,7 @@ export function LoanCard() {
 
         {/* 안내 문구 */}
         <p className="text-xs text-muted-foreground text-center">
-          * 매출 기반 AI 신용평가로 빠른 승인
+          * 매출 기록 보고 1분 안에 승인 여부 알려드려요
         </p>
       </CardContent>
     </Card>
