@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Transactions from "./pages/Transactions";
 import Employees from "./pages/Employees";
 import Funds from "./pages/Funds";
+import More from "./pages/More";
 import Reports from "./pages/Reports";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/employees" element={<Employees />} />
           <Route path="/funds" element={<Funds />} />
+          <Route path="/more" element={<More />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/settings" element={<Settings />} />

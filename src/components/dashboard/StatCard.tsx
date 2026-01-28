@@ -37,26 +37,26 @@ export function StatCard({
   variant = "default",
 }: StatCardProps) {
   return (
-    <Card className={cn("overflow-hidden transition-shadow hover:shadow-md", variantStyles[variant])}>
-      <CardContent className="p-6">
+    <Card className={cn("overflow-hidden transition-shadow", variantStyles[variant])}>
+      <CardContent className="p-4">
         <div className="flex items-start justify-between">
-          <div className="space-y-2">
+          <div className="flex-1 space-y-1">
             <p className={cn(
-              "text-sm font-medium",
+              "text-xs font-medium",
               variant === "default" ? "text-muted-foreground" : "opacity-80"
             )}>
               {title}
             </p>
-            <p className="text-2xl font-bold">{value}</p>
+            <p className="text-lg font-bold leading-tight">{value}</p>
             {(subtitle || trend) && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {trend && (
                   <span className={cn(
                     "text-xs font-medium",
                     trend.isPositive ? "text-success" : "text-destructive",
                     variant !== "default" && "opacity-90"
                   )}>
-                    {trend.isPositive ? "+" : ""}{trend.value}%
+                    {trend.isPositive ? "↑" : "↓"}{trend.value}%
                   </span>
                 )}
                 {subtitle && (
@@ -71,10 +71,10 @@ export function StatCard({
             )}
           </div>
           <div className={cn(
-            "flex h-12 w-12 items-center justify-center rounded-xl",
+            "flex h-9 w-9 items-center justify-center rounded-lg",
             iconVariantStyles[variant]
           )}>
-            <Icon className="h-6 w-6" />
+            <Icon className="h-4 w-4" />
           </div>
         </div>
       </CardContent>

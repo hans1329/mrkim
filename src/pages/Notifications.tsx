@@ -12,19 +12,16 @@ const alertConfig = {
     icon: AlertTriangle,
     bgColor: "bg-warning/10",
     iconColor: "text-warning",
-    borderColor: "border-warning/30",
   },
   info: {
     icon: Info,
     bgColor: "bg-primary/10",
     iconColor: "text-primary",
-    borderColor: "border-primary/30",
   },
   success: {
     icon: CheckCircle,
     bgColor: "bg-success/10",
     iconColor: "text-success",
-    borderColor: "border-success/30",
   },
 };
 
@@ -58,49 +55,39 @@ export default function Notifications() {
   };
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        {/* 헤더 */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">알림</h1>
-            <p className="text-muted-foreground">
-              {unreadCount > 0 ? `${unreadCount}개의 읽지 않은 알림이 있습니다` : "모든 알림을 확인했습니다"}
-            </p>
-          </div>
-          {unreadCount > 0 && (
-            <Button variant="outline" onClick={markAllAsRead}>
-              <Check className="mr-2 h-4 w-4" />
-              모두 읽음 처리
-            </Button>
-          )}
-        </div>
+    <MainLayout 
+      title="알림" 
+      subtitle={unreadCount > 0 ? `${unreadCount}개의 새 알림` : "모두 확인함"}
+    >
+      <div className="space-y-4">
+        {unreadCount > 0 && (
+          <Button variant="outline" className="w-full" onClick={markAllAsRead}>
+            <Check className="mr-2 h-4 w-4" />
+            모두 읽음 처리
+          </Button>
+        )}
 
-        {/* 알림 목록 */}
-        <div className="space-y-3">
-          {alerts.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <CheckCircle className="mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-lg font-medium">알림이 없습니다</p>
-                <p className="text-muted-foreground">새로운 알림이 오면 여기에 표시됩니다</p>
-              </CardContent>
-            </Card>
-          ) : (
-            alerts.map((alert) => {
+        {alerts.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <CheckCircle className="mb-4 h-12 w-12 text-muted-foreground" />
+              <p className="text-lg font-medium">알림이 없습니다</p>
+              <p className="text-sm text-muted-foreground">새 알림이 오면 여기에 표시됩니다</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {alerts.map((alert) => {
               const config = alertConfig[alert.type];
               const Icon = config.icon;
 
               return (
                 <Card
                   key={alert.id}
-                  className={cn(
-                    "transition-all",
-                    !alert.read && "ring-1 ring-primary/20"
-                  )}
+                  className={cn(!alert.read && "ring-1 ring-primary/20")}
                 >
                   <CardContent className="p-4">
-                    <div className="flex gap-4">
+                    <div className="flex gap-3">
                       <div
                         className={cn(
                           "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
@@ -109,33 +96,34 @@ export default function Notifications() {
                       >
                         <Icon className={cn("h-5 w-5", config.iconColor)} />
                       </div>
-                      <div className="flex-1">
-                        <div className="mb-1 flex items-start justify-between">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{alert.title}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium text-sm">{alert.title}</p>
                             {!alert.read && (
-                              <Badge className="h-5 px-1.5 text-xs">새 알림</Badge>
+                              <Badge className="h-5 px-1.5 text-xs">NEW</Badge>
                             )}
                           </div>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground shrink-0">
                             {formatTime(alert.timestamp)}
                           </span>
                         </div>
-                        <p className="text-sm text-muted-foreground">{alert.message}</p>
-                        <div className="mt-3 flex gap-2">
+                        <p className="mt-1 text-sm text-muted-foreground">{alert.message}</p>
+                        <div className="mt-2 flex gap-2">
                           {!alert.read && (
                             <Button
                               variant="outline"
                               size="sm"
+                              className="h-7 text-xs"
                               onClick={() => markAsRead(alert.id)}
                             >
-                              <Check className="mr-1 h-3 w-3" />
                               읽음
                             </Button>
                           )}
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-7 text-xs"
                             onClick={() => deleteAlert(alert.id)}
                           >
                             <Trash2 className="mr-1 h-3 w-3" />
@@ -147,9 +135,9 @@ export default function Notifications() {
                   </CardContent>
                 </Card>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
     </MainLayout>
   );
