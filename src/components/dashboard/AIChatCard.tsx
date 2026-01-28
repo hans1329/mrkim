@@ -87,7 +87,7 @@ export function AIChatCard() {
             className="gap-1.5 bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
           >
             <MessageCircle className="h-4 w-4" />
-            대화하기
+            대화
           </Button>
         </div>
 
