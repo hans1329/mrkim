@@ -25,7 +25,10 @@ export function AppLayout({
       {showHeader && (
         <header className="sticky top-0 z-40 border-b bg-card px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
           <div className="flex items-center justify-between">
-            <div>
+            <div 
+              className="cursor-pointer rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors hover:bg-muted"
+              onClick={() => navigate("/settings")}
+            >
               <h1 className="text-lg font-bold text-foreground">{title}</h1>
               {subtitle && (
                 <p className="text-sm text-muted-foreground">{subtitle}</p>
