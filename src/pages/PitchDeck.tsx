@@ -478,68 +478,124 @@ export default function PitchDeck() {
         <div className="max-w-5xl mx-auto">
           <Badge className="mb-4 bg-green-500/20 text-green-400 border-green-500/30">Business Model</Badge>
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-            다층 수익 구조
+            수익 모델
           </h2>
-          <p className="text-xl text-white/60 mb-12">
-            SaaS를 넘어 금융 인프라로
+          <p className="text-xl text-white/60 mb-8">
+            SaaS + 금융 수익의 복합 모델
           </p>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {[
-              {
-                title: "SaaS 구독료",
-                price: "₩30,000/월",
-                desc: "AI 에이전트 + ERP 기능",
-                metrics: "LTV ₩1.08M · CAC ₩150K",
-                color: "blue",
-                badge: null,
-              },
-              {
-                title: "스테이블코인 결제 수수료",
-                price: "0.5%",
-                desc: "기존 PG 대비 75% 절감, 즉시 정산",
-                metrics: "월 매출 ₩50M 기준 → ₩85만 절감",
-                color: "cyan",
-                badge: "핵심 수익원",
-              },
-              {
-                title: "스테이블코인 예치 수익",
-                price: "연 1~2%",
-                desc: "고객 유휴자금 DeFi 운용 마진",
-                metrics: "고객당 평균 ₩18M 예치 · 수익률 4~5%",
-                color: "green",
-                badge: "신규",
-              },
-              {
-                title: "대출 연결 수수료",
-                price: "1~2%",
-                desc: "대출 실행금액 기준",
-                metrics: "평균 대출 ₩15M",
-                color: "purple",
-                badge: null,
-              },
-            ].map((item, i) => (
-              <Card key={i} className="bg-white/5 border-white/10 relative overflow-hidden">
-                {item.badge && (
-                  <div className="absolute top-3 right-3">
-                    <Badge className={`bg-${item.color}-500/20 text-${item.color}-400 border-${item.color}-500/30 text-[10px]`}>
-                      {item.badge}
-                    </Badge>
+          {/* Revenue Streams - 2 Column */}
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {/* Left: SaaS + Payment */}
+            <div className="space-y-4">
+              <Card className="bg-white/5 border-white/10">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold">SaaS 구독료</h3>
+                    <span className="text-blue-400 font-bold text-lg">₩3만/월</span>
                   </div>
-                )}
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-xl font-bold">{item.title}</h3>
-                    <span className={`text-${item.color}-400 font-bold`}>{item.price}</span>
-                  </div>
-                  <p className="text-white/60 mb-4">{item.desc}</p>
-                  <p className="text-sm text-white/40">{item.metrics}</p>
+                  <p className="text-white/50 text-sm">AI 비서 + 자동화 기능 무제한</p>
                 </CardContent>
               </Card>
-            ))}
+              
+              <Card className="bg-cyan-500/10 border-cyan-500/30">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-[10px]">핵심 수익원</Badge>
+                  </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold">스테이블코인 결제 수수료</h3>
+                    <span className="text-cyan-400 font-bold text-lg">0.5%</span>
+                  </div>
+                  <p className="text-white/60 text-sm mb-3">기존 PG 대비 75% 절감, 즉시 정산</p>
+                  <div className="p-3 rounded-lg bg-black/30 text-sm">
+                    <p className="text-white/50">월 매출 ₩50M 기준</p>
+                    <p className="text-cyan-400 font-semibold">→ 월 ₩25만 수익</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right: Deposit Yield (Highlighted) */}
+            <Card className="bg-gradient-to-br from-green-500/15 via-emerald-500/10 to-teal-500/15 border-green-500/30 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 to-emerald-400" />
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">수익성 핵심</Badge>
+                </div>
+                
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+                    <PiggyBank className="h-6 w-6 text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">예치금 운용 수익</h3>
+                    <p className="text-green-400 text-sm">스테이블코인 DeFi 운용</p>
+                  </div>
+                </div>
+
+                {/* Yield Flow Visualization */}
+                <div className="p-4 rounded-xl bg-black/30 mb-4">
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/60">고객 유휴자금 예치</span>
+                      <span className="text-white font-mono">평균 ₩18M</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-0.5 bg-gradient-to-r from-green-500/50 to-emerald-400/50" />
+                      <ArrowRight className="h-3 w-3 text-green-400" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/60">DeFi 운용 수익률</span>
+                      <span className="text-emerald-400 font-mono font-bold">연 4~5%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-0.5 bg-gradient-to-r from-emerald-400/50 to-green-500/50" />
+                      <ArrowRight className="h-3 w-3 text-green-400" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/60">고객 지급 이자</span>
+                      <span className="text-white/80 font-mono">연 2~3%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg bg-green-500/10 text-center">
+                    <p className="text-2xl font-bold text-green-400">1~2%</p>
+                    <p className="text-white/50 text-xs">마진 (스프레드)</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-green-500/10 text-center">
+                    <p className="text-2xl font-bold text-green-400">₩18만</p>
+                    <p className="text-white/50 text-xs">고객당 연간 수익</p>
+                  </div>
+                </div>
+
+                <p className="text-white/40 text-xs mt-4 text-center">
+                  * 1만 고객 기준 연간 예치금 수익: ₩18억
+                </p>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="mt-12 p-6 rounded-2xl bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20">
+          {/* Additional Revenue */}
+          <Card className="bg-white/5 border-white/10 mb-8">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold mb-1">대출 연결 수수료</h3>
+                  <p className="text-white/50 text-sm">매출 기반 신용 대출 연계</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-purple-400 font-bold text-lg">1~2%</span>
+                  <p className="text-white/40 text-xs">실행금액 기준</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Unit Economics */}
+          <div className="p-6 rounded-2xl bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20">
             <div className="grid md:grid-cols-3 gap-6 text-center">
               <StatCard value="₩420K" label="ARPU (연간)" sublabel="SaaS + 금융 수익" />
               <StatCard value="7.2x" label="LTV/CAC" sublabel="업계 평균 3x 대비" />
