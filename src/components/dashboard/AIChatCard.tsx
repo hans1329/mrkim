@@ -115,24 +115,8 @@ export function AIChatCard() {
           </div>
         )}
 
-        {/* Quick Prompts */}
-        <div className="flex gap-2 mb-3 overflow-x-auto scrollbar-thin pb-1">
-          {quickPrompts.map((prompt) => (
-            <Button
-              key={prompt}
-              variant="ghost"
-              size="sm"
-              className="shrink-0 text-xs bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
-              onClick={() => handleQuickAsk(prompt)}
-              disabled={isTyping}
-            >
-              {prompt}
-            </Button>
-          ))}
-        </div>
-
         {/* Input */}
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex gap-2 mb-3">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -149,6 +133,21 @@ export function AIChatCard() {
             <Send className="h-4 w-4" />
           </Button>
         </form>
+
+        {/* Quick Prompts */}
+        <div className="flex flex-wrap gap-1.5">
+          {quickPrompts.map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              className="text-[11px] px-2 py-0.5 rounded-full bg-white/15 text-white/80 hover:bg-white/25 hover:text-white transition-colors disabled:opacity-50"
+              onClick={() => handleQuickAsk(prompt)}
+              disabled={isTyping}
+            >
+              #{prompt}
+            </button>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
