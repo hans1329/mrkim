@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,10 +19,12 @@ import {
   Shield,
   Palette,
   Globe,
+  Home,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
 export default function Settings() {
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
   return (
@@ -170,6 +173,16 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 홈으로 가기 */}
+        <Button 
+          variant="outline" 
+          className="w-full gap-2"
+          onClick={() => navigate("/")}
+        >
+          <Home className="h-4 w-4" />
+          홈으로 가기
+        </Button>
       </div>
     </MainLayout>
   );
