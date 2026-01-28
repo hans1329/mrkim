@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
-import { AIChatPanel } from "@/components/chat/AIChatPanel";
 import { Bell, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -67,9 +66,6 @@ export function AppLayout({
 
       {/* Bottom Navigation */}
       <BottomNav />
-
-      {/* AI Chat Panel */}
-      <AIChatPanel />
     </div>
   );
 }

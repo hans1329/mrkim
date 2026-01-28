@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,6 +11,11 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+}
+
+export interface AIChatPanelRef {
+  open: () => void;
+  close: () => void;
 }
 
 const quickCommands = [
@@ -59,7 +64,7 @@ const generateResponse = (input: string): string => {
   return `네, 말씀하세요! 😊\n\n도움 가능한 업무:\n• 매출/지출 조회\n• 직원 관리\n• 예치금 확인\n• 자동이체 설정`;
 };
 
-export function AIChatPanel() {
+export const AIChatPanel = forwardRef<AIChatPanelRef>((_, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -72,6 +77,11 @@ export function AIChatPanel() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    open: () => setIsOpen(true),
+    close: () => setIsOpen(false),
+  }));
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -226,4 +236,6 @@ export function AIChatPanel() {
       </div>
     </>
   );
-}
+});
+
+AIChatPanel.displayName = "AIChatPanel";

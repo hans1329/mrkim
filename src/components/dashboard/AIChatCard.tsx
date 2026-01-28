@@ -1,0 +1,140 @@
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Bot, Send, Sparkles, MessageCircle } from "lucide-react";
+import { getTodayStats, mockDeposits, mockAutoTransfers, formatCurrency } from "@/data/mockData";
+import { useChat } from "@/contexts/ChatContext";
+
+const quickPrompts = [
+  "오늘 매출 얼마야?",
+  "급여 현황",
+  "부가세 확인",
+];
+
+// 간단한 응답 생성
+const generateQuickResponse = (input: string): string => {
+  const lowerInput = input.toLowerCase();
+  const stats = getTodayStats();
+
+  if (lowerInput.includes("매출") && (lowerInput.includes("오늘") || lowerInput.includes("얼마"))) {
+    return `오늘 총 매출은 ${formatCurrency(stats.income)}이며, 순이익은 ${formatCurrency(stats.profit)}입니다.`;
+  }
+
+  if (lowerInput.includes("부가세") || lowerInput.includes("vat")) {
+    const vatDeposit = mockDeposits.find((d) => d.type === "vat");
+    if (vatDeposit) {
+      return `부가세 예치금 ${formatCurrency(vatDeposit.amount)} (납부일: ${vatDeposit.dueDate})`;
+    }
+  }
+
+  if (lowerInput.includes("급여") || lowerInput.includes("월급")) {
+    const salaryDeposit = mockDeposits.find((d) => d.type === "salary");
+    if (salaryDeposit) {
+      return `급여 적립금 ${formatCurrency(salaryDeposit.amount)} (지급일: ${salaryDeposit.dueDate})`;
+    }
+  }
+
+  if (lowerInput.includes("자동이체") || lowerInput.includes("예정")) {
+    const scheduled = mockAutoTransfers.filter((t) => t.status !== "completed");
+    return `예정된 자동이체 ${scheduled.length}건`;
+  }
+
+  return "자세한 내용은 김비서와 대화해보세요!";
+};
+
+export function AIChatCard() {
+  const { openChat } = useChat();
+  const [input, setInput] = useState("");
+  const [response, setResponse] = useState<string | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+
+  const handleQuickAsk = async (question: string) => {
+    setInput("");
+    setIsTyping(true);
+    
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    
+    const answer = generateQuickResponse(question);
+    setResponse(answer);
+    setIsTyping(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    handleQuickAsk(input);
+  };
+
+  return (
+    <Card className="overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
+      <CardContent className="p-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary shadow-lg">
+              <Bot className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h3 className="font-bold text-foreground">김비서</h3>
+              <p className="text-xs text-muted-foreground">AI 경영 비서가 도와드릴게요</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openChat}
+            className="gap-1.5"
+          >
+            <MessageCircle className="h-4 w-4" />
+            대화하기
+          </Button>
+        </div>
+
+        {/* Response Area */}
+        {(response || isTyping) && (
+          <div className="mb-4 rounded-xl bg-card p-3 border">
+            {isTyping ? (
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 animate-pulse text-primary" />
+                <span className="text-sm text-muted-foreground">답변 중...</span>
+              </div>
+            ) : (
+              <p className="text-sm text-foreground">{response}</p>
+            )}
+          </div>
+        )}
+
+        {/* Quick Prompts */}
+        <div className="flex gap-2 mb-3 overflow-x-auto scrollbar-thin pb-1">
+          {quickPrompts.map((prompt) => (
+            <Button
+              key={prompt}
+              variant="secondary"
+              size="sm"
+              className="shrink-0 text-xs"
+              onClick={() => handleQuickAsk(prompt)}
+              disabled={isTyping}
+            >
+              {prompt}
+            </Button>
+          ))}
+        </div>
+
+        {/* Input */}
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="김비서에게 물어보세요..."
+            className="flex-1 bg-card"
+            disabled={isTyping}
+          />
+          <Button type="submit" size="icon" disabled={!input.trim() || isTyping}>
+            <Send className="h-4 w-4" />
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}

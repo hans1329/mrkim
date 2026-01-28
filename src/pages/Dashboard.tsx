@@ -2,6 +2,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { DepositCard } from "@/components/dashboard/DepositCard";
 import { AutoTransferCard } from "@/components/dashboard/AutoTransferCard";
 import { AlertCard } from "@/components/dashboard/AlertCard";
+import { AIChatCard } from "@/components/dashboard/AIChatCard";
 import {
   getTodayStats,
   mockDeposits,
@@ -18,6 +19,11 @@ export default function Dashboard() {
   return (
     <MainLayout title="안녕하세요, 사장님 👋" subtitle="오늘도 김비서가 도와드릴게요">
       <div className="space-y-6">
+        {/* AI 김비서 채팅 카드 */}
+        <section>
+          <AIChatCard />
+        </section>
+
         {/* 오늘의 요약 */}
         <section>
           <h2 className="mb-3 text-base font-semibold text-foreground">오늘의 요약</h2>
