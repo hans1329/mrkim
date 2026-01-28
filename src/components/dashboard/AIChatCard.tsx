@@ -140,7 +140,7 @@ export function AIChatCard() {
             <button
               key={prompt}
               type="button"
-              className="text-[11px] px-2 py-0.5 rounded-full bg-white/15 text-white/80 hover:bg-white/25 hover:text-white transition-colors disabled:opacity-50"
+              className="text-[11px] px-1 py-0.5 text-white/70 hover:text-white transition-colors disabled:opacity-50"
               onClick={() => handleQuickAsk(prompt)}
               disabled={isTyping}
             >
