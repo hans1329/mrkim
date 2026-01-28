@@ -58,9 +58,10 @@ export function StatCard({
               <div className="flex items-center gap-1">
                 {trend && (
                   <span className={cn(
-                    "text-[10px] font-medium",
-                    trend.isPositive ? "text-success" : "text-destructive",
-                    variant !== "default" && "opacity-90"
+                    "text-[10px] font-semibold",
+                    variant === "default" 
+                      ? (trend.isPositive ? "text-success" : "text-destructive")
+                      : "text-current opacity-90"
                   )}>
                     {trend.isPositive ? "↑" : "↓"}{trend.value}%
                   </span>
