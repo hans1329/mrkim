@@ -112,7 +112,7 @@ export default function Funds() {
   };
 
   return (
-    <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요">
+    <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요" showBackButton>
       <div className="space-y-4">
         {/* 총 예치금 */}
         <Card className="bg-primary text-primary-foreground">

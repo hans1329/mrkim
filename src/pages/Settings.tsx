@@ -28,7 +28,7 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <MainLayout title="설정" subtitle="앱 설정을 관리하세요">
+    <MainLayout title="설정" subtitle="앱 설정을 관리하세요" showBackButton>
       <div className="space-y-4">
         {/* 사업장 정보 */}
         <Card>

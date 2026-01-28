@@ -46,7 +46,7 @@ export default function Reports() {
   const profitMargin = Math.round(((totalRevenue - totalExpense) / totalRevenue) * 100);
 
   return (
-    <MainLayout title="리포트" subtitle="경영 현황 분석">
+    <MainLayout title="리포트" subtitle="경영 현황 분석" showBackButton>
       <div className="space-y-4">
         {/* 기간 선택 */}
         <Select defaultValue="6months">

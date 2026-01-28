@@ -70,7 +70,7 @@ export default function Employees() {
   };
 
   return (
-    <MainLayout title="직원 관리" subtitle="직원 정보를 관리하세요">
+    <MainLayout title="직원 관리" subtitle="직원 정보를 관리하세요" showBackButton>
       <div className="space-y-4">
         {/* 요약 카드 */}
         <div className="grid grid-cols-3 gap-2">
