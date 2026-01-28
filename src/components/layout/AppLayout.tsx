@@ -29,9 +29,9 @@ export function AppLayout({
               className="cursor-pointer rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors hover:bg-muted"
               onClick={() => navigate("/profile")}
             >
-              <h1 className="text-base font-bold text-foreground">{title}</h1>
+              <h1 className="text-lg font-bold text-foreground">{title}</h1>
               {subtitle && (
-                <p className="text-xs text-muted-foreground">{subtitle}</p>
+                <p className="text-sm text-muted-foreground">{subtitle}</p>
               )}
             </div>
             <div className="flex items-center gap-1">
