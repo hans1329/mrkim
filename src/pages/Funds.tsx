@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,10 @@ import {
   AlertCircle,
   Settings,
   Trash2,
+  Sparkles,
 } from "lucide-react";
+import { InvestmentCard } from "@/components/funds/InvestmentCard";
+import { LoanCard } from "@/components/funds/LoanCard";
 
 const depositIcons = {
   vat: Receipt,
@@ -48,6 +52,7 @@ const depositIcons = {
 };
 
 export default function Funds() {
+  const navigate = useNavigate();
   const [deposits, setDeposits] = useState<Deposit[]>(mockDeposits);
   const [autoTransfers, setAutoTransfers] = useState<AutoTransfer[]>(mockAutoTransfers);
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
@@ -359,6 +364,22 @@ export default function Funds() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 예치금 운용 현황 */}
+        <InvestmentCard />
+
+        {/* 단기 대출 */}
+        <LoanCard />
+
+        {/* 금융 서비스 더보기 */}
+        <Button 
+          variant="outline" 
+          className="w-full gap-2"
+          onClick={() => navigate("/financial-services")}
+        >
+          <Sparkles className="h-4 w-4" />
+          김비서 금융 서비스 더보기
+        </Button>
       </div>
     </MainLayout>
   );
