@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getWeeklyData, formatCurrency, formatNumber } from "@/data/mockData";
+import { formatCurrency, formatNumber } from "@/data/mockData";
 import {
   BarChart,
   Bar,
@@ -40,123 +40,93 @@ const categoryData = [
   { name: "기타", value: 10, color: "hsl(var(--chart-4))" },
 ];
 
-const paymentMethodData = [
-  { name: "카드", value: 75, color: "hsl(var(--chart-1))" },
-  { name: "현금", value: 15, color: "hsl(var(--chart-2))" },
-  { name: "이체", value: 10, color: "hsl(var(--chart-3))" },
-];
-
 export default function Reports() {
-  const weeklyData = getWeeklyData();
-
   const totalRevenue = monthlyData.reduce((sum, d) => sum + d.매출, 0);
   const totalExpense = monthlyData.reduce((sum, d) => sum + d.지출, 0);
   const profitMargin = Math.round(((totalRevenue - totalExpense) / totalRevenue) * 100);
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        {/* 헤더 */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">리포트</h1>
-            <p className="text-muted-foreground">경영 현황을 한눈에 파악하세요</p>
-          </div>
-          <Select defaultValue="6months">
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="기간 선택" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1month">최근 1개월</SelectItem>
-              <SelectItem value="3months">최근 3개월</SelectItem>
-              <SelectItem value="6months">최근 6개월</SelectItem>
-              <SelectItem value="1year">최근 1년</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    <MainLayout title="리포트" subtitle="경영 현황 분석">
+      <div className="space-y-4">
+        {/* 기간 선택 */}
+        <Select defaultValue="6months">
+          <SelectTrigger>
+            <SelectValue placeholder="기간 선택" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1month">최근 1개월</SelectItem>
+            <SelectItem value="3months">최근 3개월</SelectItem>
+            <SelectItem value="6months">최근 6개월</SelectItem>
+            <SelectItem value="1year">최근 1년</SelectItem>
+          </SelectContent>
+        </Select>
 
         {/* 요약 카드 */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3">
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10">
-                  <TrendingUp className="h-5 w-5 text-success" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">총 매출</p>
-                  <p className="text-xl font-bold">{formatCurrency(totalRevenue)}</p>
-                </div>
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-success" />
+                <span className="text-xs text-muted-foreground">총 매출</span>
               </div>
+              <p className="mt-1 text-lg font-bold">{formatCurrency(totalRevenue)}</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10">
-                  <TrendingDown className="h-5 w-5 text-destructive" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">총 지출</p>
-                  <p className="text-xl font-bold">{formatCurrency(totalExpense)}</p>
-                </div>
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <TrendingDown className="h-4 w-4 text-destructive" />
+                <span className="text-xs text-muted-foreground">총 지출</span>
               </div>
+              <p className="mt-1 text-lg font-bold">{formatCurrency(totalExpense)}</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">순이익</p>
-                  <p className="text-xl font-bold">{formatCurrency(totalRevenue - totalExpense)}</p>
-                </div>
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-primary" />
+                <span className="text-xs text-muted-foreground">순이익</span>
               </div>
+              <p className="mt-1 text-lg font-bold">{formatCurrency(totalRevenue - totalExpense)}</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10">
-                  <Percent className="h-5 w-5 text-warning" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">이익률</p>
-                  <p className="text-xl font-bold">{profitMargin}%</p>
-                </div>
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <Percent className="h-4 w-4 text-warning" />
+                <span className="text-xs text-muted-foreground">이익률</span>
               </div>
+              <p className="mt-1 text-lg font-bold">{profitMargin}%</p>
             </CardContent>
           </Card>
         </div>
 
         {/* 월별 추이 차트 */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">월별 매출/지출 추이</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">월별 추이</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis
                     dataKey="name"
-                    tick={{ fill: "hsl(var(--muted-foreground))" }}
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
                   />
                   <YAxis
-                    tick={{ fill: "hsl(var(--muted-foreground))" }}
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
                     tickFormatter={(value) => `${Math.round(value / 1000000)}M`}
                   />
                   <Tooltip
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
                         return (
-                          <div className="rounded-lg border bg-card p-3 shadow-md">
-                            <p className="mb-2 font-medium">{label}</p>
+                          <div className="rounded-lg border bg-card p-2 shadow-md text-xs">
+                            <p className="mb-1 font-medium">{label}</p>
                             {payload.map((entry, index) => (
-                              <p key={index} className="text-sm" style={{ color: entry.color }}>
+                              <p key={index} style={{ color: entry.color }}>
                                 {entry.name}: {formatCurrency(entry.value as number)}
                               </p>
                             ))}
@@ -171,14 +141,14 @@ export default function Reports() {
                     dataKey="매출"
                     stroke="hsl(var(--chart-1))"
                     strokeWidth={2}
-                    dot={{ fill: "hsl(var(--chart-1))" }}
+                    dot={{ r: 3 }}
                   />
                   <Line
                     type="monotone"
                     dataKey="지출"
                     stroke="hsl(var(--chart-3))"
                     strokeWidth={2}
-                    dot={{ fill: "hsl(var(--chart-3))" }}
+                    dot={{ r: 3 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -186,116 +156,56 @@ export default function Reports() {
           </CardContent>
         </Card>
 
-        {/* 지출 및 결제 분석 */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">지출 카테고리 분석</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="rounded-lg border bg-card p-2 shadow-md">
-                              <p className="text-sm">
-                                {payload[0].name}: {payload[0].value}%
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-4 flex flex-wrap justify-center gap-4">
-                {categoryData.map((item) => (
-                  <div key={item.name} className="flex items-center gap-2">
-                    <div
-                      className="h-3 w-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm">
-                      {item.name} ({item.value}%)
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">결제 수단 분석</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={paymentMethodData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {paymentMethodData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="rounded-lg border bg-card p-2 shadow-md">
-                              <p className="text-sm">
-                                {payload[0].name}: {payload[0].value}%
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-4 flex flex-wrap justify-center gap-4">
-                {paymentMethodData.map((item) => (
-                  <div key={item.name} className="flex items-center gap-2">
-                    <div
-                      className="h-3 w-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm">
-                      {item.name} ({item.value}%)
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* 지출 카테고리 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">지출 카테고리</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[180px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="rounded-lg border bg-card p-2 shadow-md text-xs">
+                            <p>{payload[0].name}: {payload[0].value}%</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-2 flex flex-wrap justify-center gap-3">
+              {categoryData.map((item) => (
+                <div key={item.name} className="flex items-center gap-1">
+                  <div
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-xs">{item.name} {item.value}%</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );

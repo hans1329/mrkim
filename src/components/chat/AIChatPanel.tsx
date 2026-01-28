@@ -15,8 +15,8 @@ interface Message {
 
 const quickCommands = [
   "오늘 매출 얼마야?",
-  "이번달 부가세 현황",
-  "예정된 자동이체 알려줘",
+  "부가세 현황",
+  "자동이체 알려줘",
 ];
 
 // 시뮬레이션 응답 생성
@@ -25,13 +25,13 @@ const generateResponse = (input: string): string => {
   const stats = getTodayStats();
 
   if (lowerInput.includes("매출") && (lowerInput.includes("오늘") || lowerInput.includes("얼마"))) {
-    return `오늘 총 매출은 ${formatCurrency(stats.income)}입니다.\n\n💳 카드: ${stats.cardRatio}% (${formatCurrency(stats.cardIncome)})\n💵 현금: ${stats.cashRatio}% (${formatCurrency(stats.cashIncome)})\n\n지출은 ${formatCurrency(stats.expense)}이며, 순이익은 ${formatCurrency(stats.profit)}입니다.`;
+    return `오늘 총 매출은 ${formatCurrency(stats.income)}입니다.\n\n💳 카드: ${stats.cardRatio}%\n💵 현금: ${stats.cashRatio}%\n\n순이익은 ${formatCurrency(stats.profit)}입니다.`;
   }
 
   if (lowerInput.includes("부가세") || lowerInput.includes("vat")) {
     const vatDeposit = mockDeposits.find((d) => d.type === "vat");
     if (vatDeposit) {
-      return `이번 달 부가세 예치금은 ${formatCurrency(vatDeposit.amount)}입니다.\n\n📅 납부 예정일: ${vatDeposit.dueDate}\n🎯 목표 금액: ${formatCurrency(vatDeposit.targetAmount || 0)}\n📊 달성률: ${Math.round(((vatDeposit.amount / (vatDeposit.targetAmount || 1)) * 100))}%`;
+      return `이번 달 부가세 예치금은 ${formatCurrency(vatDeposit.amount)}입니다.\n\n📅 납부일: ${vatDeposit.dueDate}\n📊 달성률: ${Math.round(((vatDeposit.amount / (vatDeposit.targetAmount || 1)) * 100))}%`;
     }
   }
 
@@ -39,28 +39,24 @@ const generateResponse = (input: string): string => {
     const scheduled = mockAutoTransfers.filter((t) => t.status !== "completed");
     if (scheduled.length > 0) {
       const list = scheduled
-        .map((t) => `• ${t.name}: ${formatCurrency(t.amount)} (${t.condition})`)
+        .map((t) => `• ${t.name}: ${formatCurrency(t.amount)}`)
         .join("\n");
-      return `예정된 자동이체 내역입니다:\n\n${list}`;
+      return `예정된 자동이체:\n\n${list}`;
     }
   }
 
   if (lowerInput.includes("퇴사") && lowerInput.includes("처리")) {
-    return `퇴사 처리를 도와드릴게요. 🤝\n\n다음 정보를 알려주세요:\n1. 퇴사 직원명\n2. 퇴사일\n\n퇴사 처리 시 다음 절차를 자동으로 진행합니다:\n✅ 4대보험 상실신고\n✅ 퇴직금 계산\n✅ 마지막 급여 정산`;
+    return `퇴사 처리를 도와드릴게요. 🤝\n\n직원명과 퇴사일을 알려주세요.\n\n자동 처리 항목:\n✅ 4대보험 상실신고\n✅ 퇴직금 계산\n✅ 급여 정산`;
   }
 
   if (lowerInput.includes("급여") || lowerInput.includes("월급")) {
     const salaryDeposit = mockDeposits.find((d) => d.type === "salary");
     if (salaryDeposit) {
-      return `급여 관련 현황입니다:\n\n💰 급여 적립금: ${formatCurrency(salaryDeposit.amount)}\n📅 지급 예정일: ${salaryDeposit.dueDate}\n👥 대상 인원: 3명`;
+      return `급여 현황:\n\n💰 적립금: ${formatCurrency(salaryDeposit.amount)}\n📅 지급일: ${salaryDeposit.dueDate}\n👥 대상: 3명`;
     }
   }
 
-  if (lowerInput.includes("이상") && lowerInput.includes("결제")) {
-    return `최근 이상 결제 감지 내역입니다:\n\n⚠️ 오늘 14:23 - ₩850,000 카드 결제\n   평소 평균 대비 2.5배 높은 금액\n\n이 결제가 정상이라면 "확인"이라고 말씀해주세요.`;
-  }
-
-  return `네, 말씀하세요! 😊\n\n다음과 같은 업무를 도와드릴 수 있어요:\n• 매출/지출 현황 조회\n• 직원 관리 (입퇴사 처리)\n• 부가세/급여 예치금 확인\n• 자동이체 설정 및 조회\n• 이상 결제 확인\n\n무엇을 도와드릴까요?`;
+  return `네, 말씀하세요! 😊\n\n도움 가능한 업무:\n• 매출/지출 조회\n• 직원 관리\n• 예치금 확인\n• 자동이체 설정`;
 };
 
 export function AIChatPanel() {
@@ -69,7 +65,7 @@ export function AIChatPanel() {
     {
       id: "welcome",
       role: "assistant",
-      content: "안녕하세요, 김비서입니다! 👋\n\n무엇을 도와드릴까요? 매출 현황, 직원 관리, 자금 설정 등 다양한 업무를 말씀만 하시면 처리해드려요.",
+      content: "안녕하세요, 김비서입니다! 👋\n\n무엇을 도와드릴까요?",
       timestamp: new Date(),
     },
   ]);
@@ -97,8 +93,7 @@ export function AIChatPanel() {
     setInput("");
     setIsTyping(true);
 
-    // 시뮬레이션 딜레이
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 800));
 
     const response = generateResponse(input);
     const assistantMessage: Message = {
@@ -118,26 +113,26 @@ export function AIChatPanel() {
 
   return (
     <>
-      {/* Floating Button */}
+      {/* Floating Button - 하단 네비 위에 위치 */}
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform z-50"
+          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform z-50"
           size="icon"
         >
           <MessageCircle className="h-6 w-6" />
         </Button>
       )}
 
-      {/* Chat Panel */}
+      {/* Chat Panel - 전체 화면 */}
       <div
         className={cn(
-          "fixed bottom-0 right-0 z-50 flex h-[600px] w-full flex-col bg-card shadow-2xl transition-all duration-300 sm:bottom-6 sm:right-6 sm:w-[400px] sm:rounded-2xl",
+          "fixed inset-0 z-50 flex flex-col bg-card transition-all duration-300",
           isOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b bg-primary px-4 py-3 sm:rounded-t-2xl">
+        <div className="flex items-center justify-between border-b bg-primary px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20">
               <Bot className="h-5 w-5 text-primary-foreground" />
@@ -184,7 +179,7 @@ export function AIChatPanel() {
               <div className="flex justify-start">
                 <div className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3">
                   <Sparkles className="h-4 w-4 animate-pulse-soft text-primary" />
-                  <span className="text-sm text-muted-foreground">김비서가 답변 중...</span>
+                  <span className="text-sm text-muted-foreground">답변 중...</span>
                 </div>
               </div>
             )}
@@ -209,7 +204,7 @@ export function AIChatPanel() {
         </div>
 
         {/* Input */}
-        <div className="border-t p-4">
+        <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+16px)]">
           <form
             onSubmit={(e) => {
               e.preventDefault();

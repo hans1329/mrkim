@@ -1,17 +1,9 @@
 import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -29,13 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { mockEmployees, Employee, formatCurrency } from "@/data/mockData";
-import { Plus, Users, Wallet, Shield, UserMinus, MoreHorizontal } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Plus, Users, Wallet, Shield, UserMinus, User } from "lucide-react";
 
 export default function Employees() {
   const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
@@ -84,181 +70,133 @@ export default function Employees() {
   };
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        {/* 헤더 */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">직원 관리</h1>
-            <p className="text-muted-foreground">직원 정보와 급여를 관리하세요</p>
-          </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                직원 추가
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>새 직원 등록</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>이름</Label>
-                  <Input
-                    placeholder="홍길동"
-                    value={newEmployee.name}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>직책</Label>
-                  <Input
-                    placeholder="매니저"
-                    value={newEmployee.position}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>부서</Label>
-                  <Select
-                    value={newEmployee.department}
-                    onValueChange={(value) => setNewEmployee({ ...newEmployee, department: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="부서 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="운영">운영</SelectItem>
-                      <SelectItem value="주방">주방</SelectItem>
-                      <SelectItem value="홀">홀</SelectItem>
-                      <SelectItem value="관리">관리</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>급여 (월)</Label>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    value={newEmployee.salary}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, salary: e.target.value })}
-                  />
-                </div>
-                <Button onClick={handleAddEmployee} className="w-full">
-                  등록하기
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+    <MainLayout title="직원 관리" subtitle="직원 정보를 관리하세요">
+      <div className="space-y-4">
+        {/* 요약 카드 */}
+        <div className="grid grid-cols-3 gap-2">
+          <Card>
+            <CardContent className="p-3 text-center">
+              <Users className="mx-auto h-5 w-5 text-primary" />
+              <p className="mt-1 text-xs text-muted-foreground">재직</p>
+              <p className="text-sm font-bold">{activeEmployees.length}명</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 text-center">
+              <Wallet className="mx-auto h-5 w-5 text-success" />
+              <p className="mt-1 text-xs text-muted-foreground">총 급여</p>
+              <p className="text-sm font-bold">₩{Math.round(totalSalary / 10000)}만</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 text-center">
+              <Shield className="mx-auto h-5 w-5 text-warning" />
+              <p className="mt-1 text-xs text-muted-foreground">4대보험</p>
+              <p className="text-sm font-bold">
+                {activeEmployees.filter((e) => e.insuranceStatus === "가입").length}명
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* 요약 카드 */}
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Card>
-            <CardContent className="flex items-center gap-4 p-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                <Users className="h-6 w-6 text-primary" />
+        {/* 직원 추가 버튼 */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="w-full">
+              <Plus className="mr-2 h-4 w-4" />
+              직원 추가
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>새 직원 등록</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>이름</Label>
+                <Input
+                  placeholder="홍길동"
+                  value={newEmployee.name}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">재직 인원</p>
-                <p className="text-xl font-bold">{activeEmployees.length}명</p>
+              <div className="space-y-2">
+                <Label>직책</Label>
+                <Input
+                  placeholder="매니저"
+                  value={newEmployee.position}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
+                />
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-4 p-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10">
-                <Wallet className="h-6 w-6 text-success" />
+              <div className="space-y-2">
+                <Label>부서</Label>
+                <Select
+                  value={newEmployee.department}
+                  onValueChange={(value) => setNewEmployee({ ...newEmployee, department: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="부서 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="운영">운영</SelectItem>
+                    <SelectItem value="주방">주방</SelectItem>
+                    <SelectItem value="홀">홀</SelectItem>
+                    <SelectItem value="관리">관리</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">총 급여</p>
-                <p className="text-xl font-bold">{formatCurrency(totalSalary)}</p>
+              <div className="space-y-2">
+                <Label>급여 (월)</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={newEmployee.salary}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, salary: e.target.value })}
+                />
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-4 p-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-warning/10">
-                <Shield className="h-6 w-6 text-warning" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">4대보험 가입</p>
-                <p className="text-xl font-bold">
-                  {activeEmployees.filter((e) => e.insuranceStatus === "가입").length}명
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              <Button onClick={handleAddEmployee} className="w-full">
+                등록하기
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* 직원 목록 */}
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">직원 목록</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>이름</TableHead>
-                  <TableHead>직책</TableHead>
-                  <TableHead>부서</TableHead>
-                  <TableHead>입사일</TableHead>
-                  <TableHead>4대보험</TableHead>
-                  <TableHead>상태</TableHead>
-                  <TableHead className="text-right">급여</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {employees.map((employee) => (
-                  <TableRow key={employee.id} className={employee.status === "퇴사" ? "opacity-50" : ""}>
-                    <TableCell className="font-medium">{employee.name}</TableCell>
-                    <TableCell>{employee.position}</TableCell>
-                    <TableCell>{employee.department}</TableCell>
-                    <TableCell>{employee.joinDate}</TableCell>
-                    <TableCell>
-                      <Badge variant={employee.insuranceStatus === "가입" ? "default" : "secondary"}>
-                        {employee.insuranceStatus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={employee.status === "재직" ? "default" : "outline"}>
+          <CardContent className="divide-y p-0">
+            {employees.map((employee) => (
+              <div
+                key={employee.id}
+                className={`flex items-center justify-between p-4 ${employee.status === "퇴사" ? "opacity-50" : ""}`}
+                onClick={() => {
+                  if (employee.status === "재직") {
+                    setSelectedEmployee(employee);
+                    setIsResignDialogOpen(true);
+                  }
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                    <User className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{employee.name}</p>
+                      <Badge variant={employee.status === "재직" ? "default" : "outline"} className="text-xs">
                         {employee.status}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatCurrency(employee.salary)}
-                    </TableCell>
-                    <TableCell>
-                      {employee.status === "재직" && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedEmployee(employee);
-                                setIsResignDialogOpen(true);
-                              }}
-                              className="text-destructive"
-                            >
-                              <UserMinus className="mr-2 h-4 w-4" />
-                              퇴사 처리
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {employee.position} · {employee.department}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold">{formatCurrency(employee.salary)}</p>
+                  <p className="text-xs text-muted-foreground">{employee.joinDate} 입사</p>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
 
