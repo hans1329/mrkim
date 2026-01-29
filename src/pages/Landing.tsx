@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Bot, TrendingDown, Wallet, Building2, Users, Lightbulb, ArrowRight, Sparkles, RotateCcw } from "lucide-react";
+import { Bot, TrendingDown, Wallet, Building2, Users, Lightbulb, ArrowRight, RotateCcw } from "lucide-react";
 import survivalImage from "@/assets/survival-quiz.webp";
 import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
@@ -156,11 +156,11 @@ const Landing = () => {
 
               {/* Main Title */}
               <div className="text-center mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-                <h2 className="text-3xl font-black text-foreground mb-2">
+                <h2 className="text-3xl font-black text-foreground mb-2 flex items-center justify-center gap-2">
+                  <Bot className="h-8 w-8 text-primary" />
                   <span className="bg-gradient-to-r from-primary via-blue-500 to-primary bg-clip-text text-transparent">
                     사장님 생존 계산기
                   </span>
-                  <Sparkles className="inline-block h-6 w-6 text-amber-400 ml-2 -mt-1" />
                 </h2>
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   사업의 가장 무서운 순간은 <span className="font-semibold text-destructive">"돈이 마르는 날"</span><br />
