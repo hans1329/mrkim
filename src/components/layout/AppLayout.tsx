@@ -63,7 +63,7 @@ export function AppLayout({
             <div className="relative flex items-center gap-5">
               {/* QR 코드 */}
               <div className="flex-shrink-0">
-                <div className="p-2.5 bg-background rounded-2xl shadow-md border border-border/30">
+                <div className="p-2.5 rounded-2xl">
                   <img src={qrCode} alt="QR Code" className="w-20 h-20" />
                 </div>
                 <p className="text-[10px] text-muted-foreground text-center mt-2">QR 스캔</p>
