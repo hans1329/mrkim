@@ -1,7 +1,7 @@
-import { createContext, useContext, useRef, ReactNode } from "react";
-import { AIChatPanel, AIChatPanelRef } from "@/components/chat/AIChatPanel";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 interface ChatContextType {
+  isOpen: boolean;
   openChat: () => void;
   closeChat: () => void;
 }
@@ -9,20 +9,14 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | null>(null);
 
 export function ChatProvider({ children }: { children: ReactNode }) {
-  const chatRef = useRef<AIChatPanelRef>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const openChat = () => {
-    chatRef.current?.open();
-  };
-
-  const closeChat = () => {
-    chatRef.current?.close();
-  };
+  const openChat = () => setIsOpen(true);
+  const closeChat = () => setIsOpen(false);
 
   return (
-    <ChatContext.Provider value={{ openChat, closeChat }}>
+    <ChatContext.Provider value={{ isOpen, openChat, closeChat }}>
       {children}
-      <AIChatPanel ref={chatRef} />
     </ChatContext.Provider>
   );
 }

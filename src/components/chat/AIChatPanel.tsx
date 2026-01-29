@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -6,6 +6,7 @@ import { Bot, Send, X, MessageCircle, Sparkles, CheckCircle, XCircle } from "luc
 import { cn } from "@/lib/utils";
 import { generateAgentResponse, ExecutionResult } from "@/lib/aiAgent";
 import ReactMarkdown from "react-markdown";
+import { useChat } from "@/contexts/ChatContext";
 
 interface Message {
   id: string;
@@ -16,11 +17,6 @@ interface Message {
   awaitingConfirmation?: boolean;
 }
 
-export interface AIChatPanelRef {
-  open: () => void;
-  close: () => void;
-}
-
 const quickCommands = [
   "오늘 매출 얼마야?",
   "부가세 현황 확인",
@@ -29,8 +25,8 @@ const quickCommands = [
   "남는 돈 파킹통장으로 옮겨",
 ];
 
-export const AIChatPanel = forwardRef<AIChatPanelRef>((_, ref) => {
-  const [isOpen, setIsOpen] = useState(false);
+export function AIChatPanel() {
+  const { isOpen, closeChat } = useChat();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -43,11 +39,6 @@ export const AIChatPanel = forwardRef<AIChatPanelRef>((_, ref) => {
   const [isTyping, setIsTyping] = useState(false);
   const [pendingConfirmation, setPendingConfirmation] = useState<ExecutionResult | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  useImperativeHandle(ref, () => ({
-    open: () => setIsOpen(true),
-    close: () => setIsOpen(false),
-  }));
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -105,7 +96,6 @@ export const AIChatPanel = forwardRef<AIChatPanelRef>((_, ref) => {
     };
 
     setMessages((prev) => {
-      // 마지막 확인 대기 메시지의 상태 업데이트
       const updated = prev.map((msg) => 
         msg.awaitingConfirmation ? { ...msg, awaitingConfirmation: false } : msg
       );
@@ -121,154 +111,154 @@ export const AIChatPanel = forwardRef<AIChatPanelRef>((_, ref) => {
   };
 
   return (
-    <>
-      {/* Floating Button */}
-      {!isOpen && (
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform z-50"
-          size="icon"
-        >
-          <MessageCircle className="h-6 w-6" />
-        </Button>
+    <div
+      className={cn(
+        "absolute inset-0 z-50 flex flex-col bg-card transition-all duration-300",
+        isOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
       )}
-
-      {/* Chat Panel */}
-      <div
-        className={cn(
-          "fixed inset-0 z-50 flex flex-col bg-card transition-all duration-300",
-          isOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b bg-primary px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20">
-              <Bot className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-primary-foreground">김비서</h3>
-              <p className="text-xs text-primary-foreground/70">AI 경영 비서</p>
-            </div>
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between border-b bg-primary px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20">
+            <Bot className="h-5 w-5 text-primary-foreground" />
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsOpen(false)}
-            className="text-primary-foreground hover:bg-primary-foreground/20"
-          >
-            <X className="h-5 w-5" />
-          </Button>
+          <div>
+            <h3 className="font-semibold text-primary-foreground">김비서</h3>
+            <p className="text-xs text-primary-foreground/70">AI 경영 비서</p>
+          </div>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={closeChat}
+          className="text-primary-foreground hover:bg-primary-foreground/20"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
 
-        {/* Messages */}
-        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-          <div className="space-y-4">
-            {messages.map((message) => (
+      {/* Messages */}
+      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+        <div className="space-y-4">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={cn(
+                "flex animate-fade-in",
+                message.role === "user" ? "justify-end" : "justify-start"
+              )}
+            >
               <div
-                key={message.id}
                 className={cn(
-                  "flex animate-fade-in",
-                  message.role === "user" ? "justify-end" : "justify-start"
+                  "max-w-[85%] rounded-2xl px-4 py-3",
+                  message.role === "user"
+                    ? "bg-primary text-primary-foreground rounded-br-md"
+                    : "bg-muted text-foreground rounded-bl-md"
                 )}
               >
-                <div
-                  className={cn(
-                    "max-w-[85%] rounded-2xl px-4 py-3",
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-muted text-foreground rounded-bl-md"
-                  )}
-                >
-                  {message.role === "assistant" ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
-                      <ReactMarkdown>{message.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap text-sm">{message.content}</p>
-                  )}
-                  
-                  {/* 확인 버튼 */}
-                  {message.awaitingConfirmation && pendingConfirmation && (
-                    <div className="flex gap-2 mt-3 pt-3 border-t border-border/50">
-                      <Button
-                        size="sm"
-                        onClick={() => handleConfirmAction(true)}
-                        className="flex-1 gap-1"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                        확인
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleConfirmAction(false)}
-                        className="flex-1 gap-1"
-                      >
-                        <XCircle className="h-4 w-4" />
-                        취소
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                {message.role === "assistant" ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                )}
+                
+                {/* 확인 버튼 */}
+                {message.awaitingConfirmation && pendingConfirmation && (
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-border/50">
+                    <Button
+                      size="sm"
+                      onClick={() => handleConfirmAction(true)}
+                      className="flex-1 gap-1"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      확인
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleConfirmAction(false)}
+                      className="flex-1 gap-1"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      취소
+                    </Button>
+                  </div>
+                )}
               </div>
-            ))}
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3">
-                  <Sparkles className="h-4 w-4 animate-pulse-soft text-primary" />
-                  <span className="text-sm text-muted-foreground">처리 중...</span>
-                </div>
+            </div>
+          ))}
+          {isTyping && (
+            <div className="flex justify-start">
+              <div className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3">
+                <Sparkles className="h-4 w-4 animate-pulse-soft text-primary" />
+                <span className="text-sm text-muted-foreground">처리 중...</span>
               </div>
-            )}
-          </div>
-        </ScrollArea>
-
-        {/* Quick Commands */}
-        <div className="border-t px-4 py-2">
-          <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
-            {quickCommands.map((cmd) => (
-              <Button
-                key={cmd}
-                variant="outline"
-                size="sm"
-                className="shrink-0 text-xs"
-                onClick={() => handleQuickCommand(cmd)}
-              >
-                {cmd}
-              </Button>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
+      </ScrollArea>
 
-        {/* Input */}
-        <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+16px)]">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSend();
-            }}
-            className="flex gap-2"
-          >
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="김비서에게 명령하세요..."
-              className="flex-1"
-              disabled={isTyping || !!pendingConfirmation}
-            />
-            <Button 
-              type="submit" 
-              size="icon" 
-              disabled={!input.trim() || isTyping || !!pendingConfirmation}
+      {/* Quick Commands */}
+      <div className="border-t px-4 py-2">
+        <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
+          {quickCommands.map((cmd) => (
+            <Button
+              key={cmd}
+              variant="outline"
+              size="sm"
+              className="shrink-0 text-xs"
+              onClick={() => handleQuickCommand(cmd)}
             >
-              <Send className="h-4 w-4" />
+              {cmd}
             </Button>
-          </form>
+          ))}
         </div>
       </div>
-    </>
-  );
-});
 
-AIChatPanel.displayName = "AIChatPanel";
+      {/* Input */}
+      <div className="border-t p-4 pb-[calc(env(safe-area-inset-bottom)+16px)]">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSend();
+          }}
+          className="flex gap-2"
+        >
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="김비서에게 명령하세요..."
+            className="flex-1"
+            disabled={isTyping || !!pendingConfirmation}
+          />
+          <Button 
+            type="submit" 
+            size="icon" 
+            disabled={!input.trim() || isTyping || !!pendingConfirmation}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export function FloatingChatButton() {
+  const { isOpen, openChat } = useChat();
+  
+  if (isOpen) return null;
+  
+  return (
+    <Button
+      onClick={openChat}
+      className="absolute bottom-20 right-4 h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform z-40"
+      size="icon"
+    >
+      <MessageCircle className="h-6 w-6" />
+    </Button>
+  );
+}
