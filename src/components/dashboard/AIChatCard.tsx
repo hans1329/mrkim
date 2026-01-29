@@ -101,7 +101,7 @@ export function AIChatCard() {
               </div>
             ) : (
               <div className="flex items-start justify-between gap-2">
-                <p className="text-sm text-gray-600 flex-1">{response}</p>
+                <p className="text-sm text-white flex-1">{response}</p>
                 <Button
                   variant="ghost"
                   size="icon"
