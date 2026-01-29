@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { Bell, Settings, ChevronLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import marketingBg from "@/assets/marketing-bg.png";
+import mainIllust from "@/assets/main-illust.webp";
 import qrCode from "@/assets/qr-code.png";
 
 interface AppLayoutProps {
@@ -27,16 +27,6 @@ export function AppLayout({
     <div className="flex h-screen overflow-hidden justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-8 lg:px-8">
       {/* PC 좌측 마케팅 영역 */}
       <div className="hidden lg:flex lg:w-96 lg:flex-col lg:justify-center lg:relative">
-        {/* 배경 일러스트 */}
-        <div className="absolute inset-0 -z-10 overflow-hidden rounded-3xl">
-          <img 
-            src={marketingBg} 
-            alt="" 
-            className="w-full h-full object-cover opacity-60"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
-        </div>
-
         <div className="relative z-10 p-8 space-y-6">
           {/* 헤드라인 */}
           <div className="space-y-4">
@@ -51,6 +41,15 @@ export function AppLayout({
             <p className="text-lg text-muted-foreground">
               실행은 김비서가 합니다 ✨
             </p>
+          </div>
+
+          {/* 메인 일러스트 */}
+          <div className="flex justify-center">
+            <img 
+              src={mainIllust} 
+              alt="김비서 일러스트" 
+              className="w-full max-w-xs rounded-2xl"
+            />
           </div>
 
           {/* 기능 태그 */}
