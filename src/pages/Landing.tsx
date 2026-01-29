@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Bot, TrendingDown, Wallet, Building2, Users, AlertTriangle, Lightbulb, ArrowRight } from "lucide-react";
+import { Bot, TrendingDown, Wallet, Building2, Users, Lightbulb, ArrowRight, Sparkles } from "lucide-react";
 import survivalImage from "@/assets/survival-quiz.webp";
 
 const Landing = () => {
@@ -23,7 +23,6 @@ const Landing = () => {
     const netBurn = costNum - revenueNum;
     
     if (netBurn <= 0) {
-      // 수익이 비용보다 크면 무한 생존
       setResult(-1);
     } else {
       const days = Math.floor((balanceNum / netBurn) * 30);
@@ -44,115 +43,126 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-destructive/5 via-background to-primary/10">
-      {/* Hero Image */}
-      <div className="max-w-lg mx-auto px-4 pt-6">
-        <img 
-          src={survivalImage} 
-          alt="생존 vs 탈락" 
-          className="w-full rounded-2xl"
-        />
-      </div>
-
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-destructive/10 to-transparent" />
-        <div className="relative max-w-lg mx-auto px-4 pt-8 pb-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-destructive/10 rounded-full mb-4">
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-            <span className="text-sm font-medium text-destructive">경고: 현실 직시 필요</span>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-background to-red-50/30">
+      <div className="max-w-lg mx-auto px-4 py-6">
+        {/* Hero Image with Title Overlay */}
+        <div className="relative mb-6 animate-fade-in">
+          <img 
+            src={survivalImage} 
+            alt="생존 vs 탈락" 
+            className="w-full rounded-3xl shadow-xl"
+          />
+          <div className="absolute inset-0 flex items-end justify-center pb-4">
+            <div className="bg-background/90 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-lg">
+              <h1 className="text-xl font-bold text-center">
+                <span className="text-primary">생존</span>
+                <span className="text-muted-foreground mx-2">인가?</span>
+                <span className="text-destructive">탈락</span>
+                <span className="text-muted-foreground">인가!</span>
+              </h1>
+            </div>
           </div>
-          
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+        </div>
+
+        {/* Tagline */}
+        <div className="text-center mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-3">
+            <Sparkles className="h-4 w-4" />
             사장님 생존 계산기
-          </h1>
-          <p className="text-xl font-semibold text-destructive mb-3">
-            생존인가? 탈락인가!
-          </p>
-          <p className="text-muted-foreground text-sm">
-            스타트업과 소상공인 모두에게<br />
-            가장 공포스러운 것은 <span className="text-destructive font-semibold">"돈 마르는 날"</span>
+          </div>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            사업의 가장 무서운 순간은 <span className="font-semibold text-destructive">"돈이 마르는 날"</span><br />
+            지금 내 사업은 얼마나 버틸 수 있을까?
           </p>
         </div>
-      </div>
 
-      {/* Calculator Section */}
-      <div className="max-w-lg mx-auto px-4 pb-8">
-        <Card className="border-2 border-border/50 shadow-xl">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-primary" />
-              내 사업 현황 입력
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="balance">현재 잔고 (원)</Label>
-              <Input
-                id="balance"
-                placeholder="50,000,000"
-                value={balance}
-                onChange={(e) => setBalance(formatNumber(e.target.value))}
-                className="text-lg font-medium"
-              />
+        {/* Calculator Card */}
+        <Card className="border-0 shadow-xl bg-card/80 backdrop-blur rounded-3xl overflow-hidden animate-fade-in" style={{ animationDelay: "0.2s" }}>
+          <CardContent className="p-6 space-y-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 bg-primary/10 rounded-xl">
+                <Wallet className="h-5 w-5 text-primary" />
+              </div>
+              <span className="font-semibold text-foreground">내 사업 현황</span>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="revenue">월평균 매출 (원)</Label>
-              <Input
-                id="revenue"
-                placeholder="10,000,000"
-                value={monthlyRevenue}
-                onChange={(e) => setMonthlyRevenue(formatNumber(e.target.value))}
-                className="text-lg font-medium"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="cost">월 고정비 (임대료, 인건비 등) (원)</Label>
-              <Input
-                id="cost"
-                placeholder="15,000,000"
-                value={monthlyCost}
-                onChange={(e) => setMonthlyCost(formatNumber(e.target.value))}
-                className="text-lg font-medium"
-              />
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="balance" className="text-sm text-muted-foreground">💰 현재 잔고</Label>
+                <Input
+                  id="balance"
+                  placeholder="50,000,000원"
+                  value={balance}
+                  onChange={(e) => setBalance(formatNumber(e.target.value))}
+                  className="h-12 text-lg font-medium rounded-xl border-2 focus:border-primary"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="revenue" className="text-sm text-muted-foreground">📈 월평균 매출</Label>
+                <Input
+                  id="revenue"
+                  placeholder="10,000,000원"
+                  value={monthlyRevenue}
+                  onChange={(e) => setMonthlyRevenue(formatNumber(e.target.value))}
+                  className="h-12 text-lg font-medium rounded-xl border-2 focus:border-primary"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="cost" className="text-sm text-muted-foreground">💸 월 고정비 (임대료, 인건비 등)</Label>
+                <Input
+                  id="cost"
+                  placeholder="15,000,000원"
+                  value={monthlyCost}
+                  onChange={(e) => setMonthlyCost(formatNumber(e.target.value))}
+                  className="h-12 text-lg font-medium rounded-xl border-2 focus:border-primary"
+                />
+              </div>
             </div>
 
             <Button 
               onClick={calculateRunway} 
-              className="w-full h-12 text-lg font-semibold"
+              className="w-full h-14 text-lg font-bold rounded-xl hover-scale"
               disabled={!balance || !monthlyRevenue || !monthlyCost}
             >
-              생존 기간 계산하기
+              🔮 내 생존 기간 확인하기
             </Button>
           </CardContent>
         </Card>
 
         {/* Result Section */}
         {showResult && (
-          <div className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="mt-6 space-y-5 animate-fade-in">
             {/* Survival Days */}
-            <Card className={`border-2 ${result === -1 ? 'border-green-500/50 bg-green-500/5' : result && result < 90 ? 'border-destructive/50 bg-destructive/5' : 'border-yellow-500/50 bg-yellow-500/5'}`}>
-              <CardContent className="pt-6 text-center">
+            <Card className={`border-0 rounded-3xl shadow-xl overflow-hidden ${
+              result === -1 
+                ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
+                : result && result < 90 
+                  ? 'bg-gradient-to-br from-red-500 to-rose-600' 
+                  : 'bg-gradient-to-br from-amber-500 to-orange-500'
+            }`}>
+              <CardContent className="pt-8 pb-8 text-center text-white">
                 {result === -1 ? (
                   <>
-                    <p className="text-lg text-muted-foreground mb-2">축하합니다!</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      수익이 비용을 초과합니다 🎉
+                    <div className="text-5xl mb-3">🎉</div>
+                    <p className="text-lg opacity-90 mb-1">축하합니다!</p>
+                    <p className="text-2xl font-bold">
+                      수익이 비용을 초과해요!
                     </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      하지만 더 큰 성장을 위한 최적화 포인트가 있습니다
+                    <p className="text-sm opacity-80 mt-2">
+                      하지만 더 큰 성장을 위한 기회가 있어요
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-lg text-muted-foreground mb-2">사장님의 생존 가능 기간은</p>
-                    <p className="text-5xl font-bold text-destructive mb-2">
-                      {result}일
+                    <div className="text-5xl mb-3">{result && result < 90 ? "😱" : "🤔"}</div>
+                    <p className="text-lg opacity-90 mb-1">사장님의 생존 가능 기간</p>
+                    <p className="text-6xl font-black mb-1">
+                      {result}<span className="text-3xl font-bold">일</span>
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {result < 90 ? "⚠️ 긴급한 대응이 필요합니다" : "조금 더 여유가 있지만 방심은 금물!"}
+                    <p className="text-sm opacity-90">
+                      {result && result < 90 ? "긴급한 대응이 필요해요!" : "조금 여유가 있지만 방심은 금물!"}
                     </p>
                   </>
                 )}
@@ -160,63 +170,70 @@ const Landing = () => {
             </Card>
 
             {/* Cost Saving Tips Preview */}
-            <Card className="border-2 border-primary/30 bg-primary/5">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-primary" />
-                  김비서가 제안하는 비용 절감 포인트
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {costSavingTips.map((tip, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-card rounded-lg border border-border/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <tip.icon className="h-4 w-4 text-primary" />
-                      </div>
-                      <span className="text-sm font-medium">{tip.text}</span>
-                    </div>
-                    <span className="text-sm font-bold text-green-600">-{tip.saving}</span>
+            <Card className="border-0 rounded-3xl shadow-lg bg-card/80 backdrop-blur overflow-hidden">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Bot className="h-5 w-5 text-primary" />
                   </div>
-                ))}
+                  <span className="font-semibold">김비서의 비용 절감 포인트</span>
+                </div>
                 
-                <div className="flex items-center justify-center gap-2 pt-2 text-muted-foreground">
+                <div className="space-y-3">
+                  {costSavingTips.map((tip, index) => (
+                    <div 
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-xl"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-background rounded-lg shadow-sm">
+                          <tip.icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="text-sm font-medium">{tip.text}</span>
+                      </div>
+                      <span className="text-sm font-bold text-green-600">-{tip.saving}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="flex items-center justify-center gap-2 pt-4 text-muted-foreground">
                   <Lightbulb className="h-4 w-4" />
-                  <span className="text-sm">더 많은 절감 포인트가 있습니다...</span>
+                  <span className="text-sm">더 많은 절감 포인트가 있어요...</span>
                 </div>
               </CardContent>
             </Card>
 
             {/* CTA Section */}
-            <Card className="border-2 border-primary bg-gradient-to-br from-primary/10 to-primary/5">
-              <CardContent className="pt-6 text-center space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  내 생존일을 확인한 사장님들 중
+            <Card className="border-0 rounded-3xl shadow-xl bg-gradient-to-br from-primary to-blue-600 overflow-hidden">
+              <CardContent className="p-6 text-center text-white">
+                <p className="text-sm opacity-90 mb-2">
+                  생존 기간을 확인한 사장님 중
                 </p>
-                <p className="text-2xl font-bold text-primary">
-                  80%가 비용 최적화 리포트를 신청했습니다
+                <p className="text-2xl font-bold mb-4">
+                  80%가 비용 최적화 리포트를<br />신청했어요!
                 </p>
                 
                 <Button 
                   onClick={() => navigate("/")}
                   size="lg"
-                  className="w-full h-14 text-lg font-bold gap-2 bg-primary hover:bg-primary/90"
+                  variant="secondary"
+                  className="w-full h-14 text-lg font-bold gap-2 rounded-xl hover-scale bg-white text-primary hover:bg-white/90"
                 >
                   <Bot className="h-5 w-5" />
-                  AI 비서의 제안 무료로 받기
+                  AI 비서 무료로 시작하기
                   <ArrowRight className="h-5 w-5" />
                 </Button>
                 
-                <p className="text-xs text-muted-foreground">
-                  가입 후 3분 내에 맞춤형 비용 절감 리포트를 받아보세요
+                <p className="text-xs opacity-80 mt-3">
+                  ✨ 3분 내에 맞춤형 비용 절감 리포트를 받아보세요
                 </p>
               </CardContent>
             </Card>
           </div>
         )}
+
+        {/* Footer spacing */}
+        <div className="h-8" />
       </div>
     </div>
   );
