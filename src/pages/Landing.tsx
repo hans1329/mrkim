@@ -46,11 +46,11 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-destructive/5 via-background to-primary/10">
       {/* Hero Image */}
-      <div className="w-full flex justify-center bg-gradient-to-r from-primary/20 to-destructive/20">
+      <div className="max-w-lg mx-auto px-4 pt-6">
         <img 
           src={survivalImage} 
           alt="생존 vs 탈락" 
-          className="h-40 md:h-48 object-contain"
+          className="w-full rounded-2xl"
         />
       </div>
 
