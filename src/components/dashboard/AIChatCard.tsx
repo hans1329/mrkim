@@ -10,6 +10,7 @@ const quickPrompts = [
   "오늘 매출 얼마야?",
   "급여 현황",
   "부가세 확인",
+  "이번 달 요약",
 ];
 
 // 간단한 응답 생성
@@ -38,6 +39,11 @@ const generateQuickResponse = (input: string): string => {
   if (lowerInput.includes("자동이체") || lowerInput.includes("예정")) {
     const scheduled = mockAutoTransfers.filter((t) => t.status !== "completed");
     return `예정된 자동이체 ${scheduled.length}건`;
+  }
+
+  if (lowerInput.includes("이번 달") || lowerInput.includes("요약")) {
+    const stats = getTodayStats();
+    return `이번 달 총 매출 ${formatCurrency(stats.income * 22)}, 예상 순이익 ${formatCurrency(stats.profit * 22)}입니다. 부가세와 급여 지급 일정을 확인해보세요.`;
   }
 
   return "자세한 내용은 김비서와 대화해보세요!";
