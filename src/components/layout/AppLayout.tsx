@@ -22,71 +22,68 @@ export function AppLayout({
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/10">
+    <div className="flex min-h-screen justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-12 lg:px-8">
       {/* PC 좌측 마케팅 영역 */}
-      <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:items-end lg:pr-12 lg:py-8">
-        <div className="max-w-md text-right space-y-6">
-          {/* 일러스트 영역 */}
-          <div className="relative">
-            <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-3xl blur-2xl" />
-            <div className="relative bg-card/50 backdrop-blur-sm rounded-2xl p-8 border border-border/50">
-              <div className="flex justify-end mb-4">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg">
-                  <Smartphone className="w-10 h-10 text-primary-foreground" />
-                </div>
-              </div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">김비서</h1>
-              <p className="text-muted-foreground text-lg">
-                AI 기반 스마트 비즈니스 어시스턴트
-              </p>
+      <div className="hidden lg:flex lg:w-80 lg:flex-col lg:justify-center lg:py-8">
+        <div className="space-y-8">
+          {/* 로고 및 타이틀 */}
+          <div className="space-y-3">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg">
+              <Smartphone className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">김비서</h1>
+              <p className="text-muted-foreground">AI 비즈니스 어시스턴트</p>
             </div>
           </div>
 
           {/* 앱 설명 */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold text-foreground">
               언제 어디서나 업무를 스마트하게
             </h2>
-            <p className="text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               직원 관리, 급여 계산, 세무 처리까지<br />
               김비서가 모든 비즈니스 업무를 도와드립니다.
             </p>
           </div>
 
-          {/* 다운로드 버튼 */}
+          {/* 다운로드 링크 */}
           <div className="space-y-3">
-            <Button 
-              size="lg" 
-              className="w-full max-w-xs ml-auto gap-2 bg-foreground text-background hover:bg-foreground/90"
-            >
-              <Download className="w-5 h-5" />
-              App Store에서 다운로드
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              className="w-full max-w-xs ml-auto gap-2"
-            >
-              <Download className="w-5 h-5" />
-              Google Play에서 다운로드
-            </Button>
+            <p className="text-sm font-medium text-foreground">앱 다운로드</p>
+            <div className="flex flex-col gap-2">
+              <a 
+                href="#" 
+                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+              >
+                <Download className="w-4 h-4" />
+                App Store
+              </a>
+              <a 
+                href="#" 
+                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+              >
+                <Download className="w-4 h-4" />
+                Google Play
+              </a>
+            </div>
           </div>
 
-          {/* QR 코드 영역 */}
-          <div className="flex justify-end">
-            <div className="bg-card rounded-xl p-4 border border-border/50 text-center">
-              <div className="w-24 h-24 bg-muted rounded-lg mb-2 flex items-center justify-center">
-                <span className="text-xs text-muted-foreground">QR Code</span>
+          {/* QR 코드 */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">QR로 다운로드</p>
+            <div className="bg-card rounded-xl p-3 border border-border/50 inline-block">
+              <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center">
+                <span className="text-[10px] text-muted-foreground">QR Code</span>
               </div>
-              <p className="text-xs text-muted-foreground">스캔하여 앱 다운로드</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 앱 영역 (우측) */}
-      <div className="w-full lg:w-auto lg:flex-shrink-0">
-        <div className="relative mx-auto flex min-h-screen max-w-xl flex-col bg-background shadow-2xl lg:mx-0 lg:ml-0">
+      {/* 앱 영역 */}
+      <div className="w-full lg:w-[480px] lg:flex-shrink-0">
+        <div className="relative mx-auto flex min-h-screen max-w-xl flex-col bg-background shadow-2xl lg:max-w-none">
           {/* Header */}
           {showHeader && (
             <header className="sticky top-0 z-40 border-b bg-card/70 backdrop-blur-md px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
