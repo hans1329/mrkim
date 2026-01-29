@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { Bell, Settings, ChevronLeft, Sparkles, Bot } from "lucide-react";
@@ -21,32 +21,6 @@ export function AppLayout({
   showBackButton = false
 }: AppLayoutProps) {
   const navigate = useNavigate();
-  const [vw, setVw] = useState<number>(() => (typeof window !== "undefined" ? window.innerWidth : 0));
-  const [displayMode, setDisplayMode] = useState<"browser" | "standalone">(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return "browser";
-    return window.matchMedia("(display-mode: standalone)").matches ? "standalone" : "browser";
-  });
-
-  useEffect(() => {
-    const onResize = () => setVw(window.innerWidth);
-    window.addEventListener("resize", onResize);
-
-    const mql = window.matchMedia?.("(display-mode: standalone)");
-    const onModeChange = () => setDisplayMode(mql?.matches ? "standalone" : "browser");
-    mql?.addEventListener?.("change", onModeChange);
-
-    // One-time debug snapshot (helps if user is seeing a different layout than expected)
-    console.log("[layout-debug]", {
-      innerWidth: window.innerWidth,
-      devicePixelRatio: window.devicePixelRatio,
-      displayMode: mql?.matches ? "standalone" : "browser",
-    });
-
-    return () => {
-      window.removeEventListener("resize", onResize);
-      mql?.removeEventListener?.("change", onModeChange);
-    };
-  }, []);
 
   return <div className="flex h-screen overflow-hidden justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-8 lg:px-8">
       {/* PC 좌측 마케팅 영역 */}
@@ -178,11 +152,5 @@ export function AppLayout({
         </div>
       </div>
 
-      {/* Layout debug badge (dev only) */}
-      {import.meta.env.DEV && (
-        <div className="fixed bottom-3 right-3 z-[60] rounded-full border border-border bg-card/80 px-3 py-1 text-xs text-foreground backdrop-blur">
-          vw {vw}px · {vw >= 1024 ? "lg:on" : "lg:off"} · {displayMode}
-        </div>
-      )}
     </div>;
 }
