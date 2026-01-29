@@ -109,7 +109,7 @@ export function AppLayout({
       <div className="w-full h-full lg:w-[480px] lg:flex-shrink-0">
         <div className="relative flex h-full max-w-xl flex-col bg-background shadow-2xl lg:max-w-none mx-auto">
           {/* Header */}
-          {showHeader && <header className="flex-shrink-0 border-b bg-card/70 backdrop-blur-md px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
+          {showHeader && <header className="sticky top-0 z-10 flex-shrink-0 border-b bg-card/70 backdrop-blur-md px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   {showBackButton && <Button variant="ghost" size="icon" className="h-9 w-9 -ml-2" onClick={() => navigate(-1)}>
