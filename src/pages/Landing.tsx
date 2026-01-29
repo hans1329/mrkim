@@ -180,7 +180,7 @@ const Landing = () => {
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="balance" className="text-sm text-muted-foreground">💰 현재 잔고</Label>
+                      <Label htmlFor="balance" className="text-sm text-muted-foreground">현재 잔고</Label>
                       <Input
                         id="balance"
                         placeholder="50,000,000원"
@@ -191,7 +191,7 @@ const Landing = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="revenue" className="text-sm text-muted-foreground">📈 월평균 매출</Label>
+                      <Label htmlFor="revenue" className="text-sm text-muted-foreground">월평균 매출</Label>
                       <Input
                         id="revenue"
                         placeholder="10,000,000원"
@@ -202,7 +202,7 @@ const Landing = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="cost" className="text-sm text-muted-foreground">💸 월 고정비 (임대료, 인건비 등)</Label>
+                      <Label htmlFor="cost" className="text-sm text-muted-foreground">월 고정비 (임대료, 인건비 등)</Label>
                       <Input
                         id="cost"
                         placeholder="15,000,000원"
