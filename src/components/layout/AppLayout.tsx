@@ -32,9 +32,9 @@ export function AppLayout({
               사장님은<br />
               <span className="text-primary">명령만</span> 하세요
             </h1>
-            <p className="text-lg text-muted-foreground flex items-center gap-2">
-              실행은 김비서가 합니다 
-              <Bot className="h-6 w-6 text-primary" />
+            <p className="text-lg text-muted-foreground flex items-center gap-1">
+              실행은 김비서가 합니다
+              <Bot className="h-5 w-5 text-primary" />
             </p>
           </div>
 
