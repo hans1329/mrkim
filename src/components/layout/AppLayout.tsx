@@ -1,8 +1,10 @@
 import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
-import { Bell, Settings, ChevronLeft, Smartphone, Download } from "lucide-react";
+import { Bell, Settings, ChevronLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import marketingBg from "@/assets/marketing-bg.png";
+import qrCode from "@/assets/qr-code.png";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -22,59 +24,92 @@ export function AppLayout({
   const navigate = useNavigate();
 
   return (
-    <div className="flex h-screen overflow-hidden justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-12 lg:px-8">
+    <div className="flex h-screen overflow-hidden justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-8 lg:px-8">
       {/* PC 좌측 마케팅 영역 */}
-      <div className="hidden lg:flex lg:w-80 lg:flex-col lg:justify-center">
-        <div className="space-y-8">
-          {/* 로고 및 타이틀 */}
-          <div className="space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg">
-              <Smartphone className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">김비서</h1>
-              <p className="text-muted-foreground">AI 비즈니스 어시스턴트</p>
-            </div>
-          </div>
+      <div className="hidden lg:flex lg:w-96 lg:flex-col lg:justify-center lg:relative">
+        {/* 배경 일러스트 */}
+        <div className="absolute inset-0 -z-10 overflow-hidden rounded-3xl">
+          <img 
+            src={marketingBg} 
+            alt="" 
+            className="w-full h-full object-cover opacity-60"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
+        </div>
 
-          {/* 앱 설명 */}
-          <div className="space-y-2">
-            <h2 className="text-lg font-semibold text-foreground">
-              언제 어디서나 업무를 스마트하게
-            </h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              직원 관리, 급여 계산, 세무 처리까지<br />
-              김비서가 모든 비즈니스 업무를 도와드립니다.
+        <div className="relative z-10 p-8 space-y-6">
+          {/* 헤드라인 */}
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-primary">AI 비즈니스 어시스턴트</span>
+            </div>
+            <h1 className="text-4xl font-bold text-foreground leading-tight">
+              사장님은<br />
+              <span className="text-primary">명령만</span> 하세요
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              실행은 김비서가 합니다 ✨
             </p>
           </div>
 
-          {/* 다운로드 링크 */}
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-foreground">앱 다운로드</p>
-            <div className="flex flex-col gap-2">
+          {/* 기능 태그 */}
+          <div className="flex flex-wrap gap-2">
+            {["직원관리", "급여계산", "세무처리", "매출분석"].map((tag) => (
+              <span 
+                key={tag}
+                className="px-3 py-1 bg-card/80 backdrop-blur-sm rounded-full text-sm text-foreground border border-border/50"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+
+          {/* 스토어 배지 */}
+          <div className="space-y-3 pt-4">
+            <p className="text-sm text-muted-foreground">앱 다운로드</p>
+            <div className="flex flex-col gap-3">
+              {/* App Store 버튼 */}
               <a 
                 href="#" 
-                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                className="inline-flex items-center gap-3 px-4 py-2.5 bg-foreground text-background rounded-xl hover:bg-foreground/90 transition-colors w-fit"
               >
-                <Download className="w-4 h-4" />
-                App Store
+                <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+                </svg>
+                <div className="text-left">
+                  <div className="text-[10px] opacity-80">Download on the</div>
+                  <div className="text-sm font-semibold -mt-0.5">App Store</div>
+                </div>
               </a>
+
+              {/* Google Play 버튼 */}
               <a 
                 href="#" 
-                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                className="inline-flex items-center gap-3 px-4 py-2.5 bg-foreground text-background rounded-xl hover:bg-foreground/90 transition-colors w-fit"
               >
-                <Download className="w-4 h-4" />
-                Google Play
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 9.99l-2.302 2.302-8.634-8.634z"/>
+                </svg>
+                <div className="text-left">
+                  <div className="text-[10px] opacity-80">GET IT ON</div>
+                  <div className="text-sm font-semibold -mt-0.5">Google Play</div>
+                </div>
               </a>
             </div>
           </div>
 
           {/* QR 코드 */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">QR로 다운로드</p>
-            <div className="bg-card rounded-xl p-3 border border-border/50 inline-block">
-              <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center">
-                <span className="text-[10px] text-muted-foreground">QR Code</span>
+          <div className="pt-4">
+            <div className="inline-flex items-center gap-4 p-4 bg-card/90 backdrop-blur-sm rounded-2xl border border-border/50">
+              <img 
+                src={qrCode} 
+                alt="QR Code" 
+                className="w-20 h-20 rounded-lg"
+              />
+              <div>
+                <p className="text-sm font-medium text-foreground">QR 스캔</p>
+                <p className="text-xs text-muted-foreground">카메라로 스캔하여<br />바로 다운로드</p>
               </div>
             </div>
           </div>
