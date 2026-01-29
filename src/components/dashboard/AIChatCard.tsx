@@ -124,8 +124,7 @@ export function AIChatCard() {
           </div>
         )}
 
-        {/* Input - 응답이 없을 때만 표시 */}
-        {!response && !isTyping && (
+        {/* Input */}
         <form onSubmit={handleSubmit} className="flex gap-2 mb-3 mt-6">
           <Input
             value={input}
@@ -143,10 +142,8 @@ export function AIChatCard() {
             <Send className="h-4 w-4" />
           </Button>
         </form>
-        )}
 
-        {/* Quick Prompts - 응답이 없을 때만 표시 */}
-        {!response && !isTyping && (
+        {/* Quick Prompts */}
         <div className="flex flex-wrap gap-1.5">
           {quickPrompts.map((prompt) => (
             <button
@@ -160,7 +157,6 @@ export function AIChatCard() {
             </button>
           ))}
         </div>
-        )}
       </CardContent>
     </Card>
   );
