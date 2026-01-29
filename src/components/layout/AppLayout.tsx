@@ -22,9 +22,9 @@ export function AppLayout({
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-12 lg:px-8">
+    <div className="flex h-screen overflow-hidden justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-12 lg:px-8">
       {/* PC 좌측 마케팅 영역 */}
-      <div className="hidden lg:flex lg:w-80 lg:flex-col lg:justify-center lg:py-8">
+      <div className="hidden lg:flex lg:w-80 lg:flex-col lg:justify-center">
         <div className="space-y-8">
           {/* 로고 및 타이틀 */}
           <div className="space-y-3">
@@ -82,11 +82,11 @@ export function AppLayout({
       </div>
 
       {/* 앱 영역 */}
-      <div className="w-full lg:w-[480px] lg:flex-shrink-0">
-        <div className="relative mx-auto flex min-h-screen max-w-xl flex-col bg-background shadow-2xl lg:max-w-none">
+      <div className="w-full h-full lg:w-[480px] lg:flex-shrink-0">
+        <div className="relative flex h-full max-w-xl flex-col bg-background shadow-2xl lg:max-w-none mx-auto">
           {/* Header */}
           {showHeader && (
-            <header className="sticky top-0 z-40 border-b bg-card/70 backdrop-blur-md px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
+            <header className="flex-shrink-0 border-b bg-card/70 backdrop-blur-md px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   {showBackButton && (
@@ -138,7 +138,7 @@ export function AppLayout({
           )}
 
           {/* Main Content */}
-          <main className="flex-1 overflow-auto p-4 pb-24">
+          <main className="flex-1 overflow-auto p-4 pb-20">
             {children}
           </main>
 
