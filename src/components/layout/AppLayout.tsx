@@ -43,8 +43,8 @@ export function AppLayout({
           </div>
 
           {/* 서브 일러스트 */}
-          <div className="flex justify-center -my-2">
-            <img src={mainIllust2} alt="김비서 일러스트" className="w-48" />
+          <div className="flex justify-center">
+            <img src={mainIllust2} alt="김비서 일러스트" className="w-72" />
           </div>
 
           {/* 기능 태그 */}
@@ -54,47 +54,37 @@ export function AppLayout({
               </span>)}
           </div>
 
-          {/* 스토어 배지 */}
-          <div className="space-y-3 pt-4">
-            <p className="text-sm text-muted-foreground">앱 다운로드</p>
-            <div className="flex gap-3">
-              {/* App Store 버튼 */}
-              <a href="#" className="inline-flex items-center gap-2 px-3 py-2 bg-foreground text-background rounded-xl hover:bg-foreground/90 transition-colors">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z" />
-                </svg>
-                <div className="text-left">
-                  <div className="text-[9px] opacity-80">Download on the</div>
-                  <div className="text-xs font-semibold -mt-0.5">App Store</div>
-                </div>
-              </a>
-
-              {/* Google Play 버튼 */}
-              <a href="#" className="inline-flex items-center gap-2 px-3 py-2 bg-foreground text-background rounded-xl hover:bg-foreground/90 transition-colors">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 9.99l-2.302 2.302-8.634-8.634z" />
-                </svg>
-                <div className="text-left">
-                  <div className="text-[9px] opacity-80">GET IT ON</div>
-                  <div className="text-xs font-semibold -mt-0.5">Google Play</div>
-                </div>
-              </a>
-            </div>
-          </div>
-
-          {/* QR 코드 - 캐쥬얼 디자인 */}
-          <div className="pt-2">
-            <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl border border-primary/20">
-              <div className="p-2 bg-background rounded-xl shadow-sm">
-                <img src={qrCode} alt="QR Code" className="w-14 h-14" />
+          {/* 앱 다운로드 통합 박스 */}
+          <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl border border-primary/20 space-y-4">
+            <p className="text-sm font-medium text-foreground">📲 앱 다운로드</p>
+            
+            <div className="flex items-center gap-4">
+              {/* QR 코드 */}
+              <div className="p-2 bg-background rounded-xl shadow-sm flex-shrink-0">
+                <img src={qrCode} alt="QR Code" className="w-16 h-16" />
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground flex items-center gap-1">
-                  📱 QR로 바로 설치
-                </p>
-                <p className="text-xs text-muted-foreground">카메라로 찍으면 끝!</p>
+              
+              {/* 스토어 버튼 */}
+              <div className="flex flex-col gap-2">
+                {/* App Store 버튼 */}
+                <a href="#" className="inline-flex items-center gap-2 px-3 py-1.5 bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z" />
+                  </svg>
+                  <span className="text-xs font-medium">App Store</span>
+                </a>
+
+                {/* Google Play 버튼 */}
+                <a href="#" className="inline-flex items-center gap-2 px-3 py-1.5 bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 9.99l-2.302 2.302-8.634-8.634z" />
+                  </svg>
+                  <span className="text-xs font-medium">Google Play</span>
+                </a>
               </div>
             </div>
+            
+            <p className="text-xs text-muted-foreground">QR 스캔 또는 버튼 클릭으로 설치하세요</p>
           </div>
         </div>
       </div>
