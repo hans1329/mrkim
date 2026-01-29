@@ -42,16 +42,16 @@ export function AppLayout({
             <img src={mainIllust} alt="김비서 일러스트" className="w-full max-w-xs rounded-2xl" />
           </div>
 
+          {/* 서브 일러스트 */}
+          <div className="flex justify-center -my-2">
+            <img src={mainIllust2} alt="김비서 일러스트" className="w-48" />
+          </div>
+
           {/* 기능 태그 */}
           <div className="flex flex-wrap gap-2">
             {["직원관리", "급여계산", "세무처리", "매출분석"].map(tag => <span key={tag} className="px-3 py-1 bg-card/80 backdrop-blur-sm rounded-full text-sm text-foreground border border-border/50">
                 {tag}
               </span>)}
-          </div>
-
-          {/* 서브 일러스트 */}
-          <div className="flex justify-center">
-            <img src={mainIllust2} alt="김비서 일러스트" className="w-full max-w-sm" />
           </div>
 
           {/* 스토어 배지 */}
@@ -82,13 +82,17 @@ export function AppLayout({
             </div>
           </div>
 
-          {/* QR 코드 */}
-          <div className="pt-4">
-            <div className="inline-flex items-center gap-4 p-4 bg-card/90 backdrop-blur-sm rounded-2xl border border-border/50">
-              <img src={qrCode} alt="QR Code" className="w-20 h-20 rounded-lg" />
-              <div>
-                <p className="text-sm font-medium text-foreground">QR 스캔</p>
-                <p className="text-xs text-muted-foreground">카메라로 스캔하여<br />바로 다운로드</p>
+          {/* QR 코드 - 캐쥬얼 디자인 */}
+          <div className="pt-2">
+            <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl border border-primary/20">
+              <div className="p-2 bg-background rounded-xl shadow-sm">
+                <img src={qrCode} alt="QR Code" className="w-14 h-14" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground flex items-center gap-1">
+                  📱 QR로 바로 설치
+                </p>
+                <p className="text-xs text-muted-foreground">카메라로 찍으면 끝!</p>
               </div>
             </div>
           </div>
