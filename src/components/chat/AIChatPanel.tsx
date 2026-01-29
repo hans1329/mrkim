@@ -154,7 +154,7 @@ export function AIChatPanel() {
                   "max-w-[85%] rounded-2xl px-4 py-3",
                   message.role === "user"
                     ? "bg-primary text-primary-foreground rounded-br-md"
-                    : "bg-muted text-foreground rounded-bl-md"
+                    : "bg-muted/60 text-foreground rounded-bl-md"
                 )}
               >
                 {message.role === "assistant" ? (
