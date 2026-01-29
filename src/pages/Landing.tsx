@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Bot, TrendingDown, Wallet, Building2, Users, Lightbulb, ArrowRight, Sparkles } from "lucide-react";
+import { Bot, TrendingDown, Wallet, Building2, Users, Lightbulb, ArrowRight, Sparkles, RotateCcw } from "lucide-react";
 import survivalImage from "@/assets/survival-quiz.webp";
 import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
@@ -319,6 +319,24 @@ const Landing = () => {
                       </p>
                     </CardContent>
                   </Card>
+
+                  {/* 다시하기 버튼 */}
+                  <div className="text-center">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setBalance("");
+                        setMonthlyRevenue("");
+                        setMonthlyCost("");
+                        setResult(null);
+                        setShowResult(false);
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      다시 계산하기
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
