@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Bot, TrendingDown, Wallet, Building2, Users, AlertTriangle, Lightbulb, ArrowRight } from "lucide-react";
+import survivalImage from "@/assets/survival-quiz.webp";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -44,11 +45,20 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-destructive/5 via-background to-primary/10">
+      {/* Hero Image */}
+      <div className="w-full">
+        <img 
+          src={survivalImage} 
+          alt="생존 vs 탈락" 
+          className="w-full h-48 object-cover"
+        />
+      </div>
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-destructive/10 to-transparent" />
-        <div className="relative max-w-lg mx-auto px-4 pt-12 pb-8 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-destructive/10 rounded-full mb-6">
+        <div className="relative max-w-lg mx-auto px-4 pt-8 pb-6 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-destructive/10 rounded-full mb-4">
             <AlertTriangle className="h-4 w-4 text-destructive" />
             <span className="text-sm font-medium text-destructive">경고: 현실 직시 필요</span>
           </div>
@@ -56,10 +66,10 @@ const Landing = () => {
           <h1 className="text-3xl font-bold text-foreground mb-2">
             사장님 생존 계산기
           </h1>
-          <p className="text-xl font-semibold text-destructive mb-4">
+          <p className="text-xl font-semibold text-destructive mb-3">
             생존인가? 탈락인가!
           </p>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             스타트업과 소상공인 모두에게<br />
             가장 공포스러운 것은 <span className="text-destructive font-semibold">"돈 마르는 날"</span>
           </p>
