@@ -86,7 +86,7 @@ export function AppLayout({
 
       {/* 앱 영역 (우측) */}
       <div className="w-full lg:w-auto lg:flex-shrink-0">
-        <div className="mx-auto flex min-h-screen max-w-xl flex-col bg-background shadow-2xl lg:mx-0 lg:ml-0">
+        <div className="relative mx-auto flex min-h-screen max-w-xl flex-col bg-background shadow-2xl lg:mx-0 lg:ml-0">
           {/* Header */}
           {showHeader && (
             <header className="sticky top-0 z-40 border-b bg-card/70 backdrop-blur-md px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
