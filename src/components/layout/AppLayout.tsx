@@ -129,16 +129,16 @@ export function AppLayout({
                   </div>
                   <div className="flex items-center gap-1">
                     {/* Notifications */}
-                    <Button variant="ghost" size="icon" className="relative h-9 w-9" onClick={() => navigate("/notifications")}>
-                      <Bell className="h-6 w-6" />
+                    <Button variant="ghost" size="icon" className="relative h-9 w-9 [&_svg]:!size-5" onClick={() => navigate("/notifications")}>
+                      <Bell />
                       <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
                         2
                       </span>
                     </Button>
 
                     {/* Settings */}
-                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate("/settings")}>
-                      <Settings className="h-6 w-6" />
+                    <Button variant="ghost" size="icon" className="h-9 w-9 [&_svg]:!size-5" onClick={() => navigate("/settings")}>
+                      <Settings />
                     </Button>
                   </div>
                 </div>
