@@ -119,7 +119,13 @@ export function AppLayout({
             {showHeader && <header className="sticky top-0 z-10 border-b bg-card/70 backdrop-blur-md px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
-                    {showBackButton && <Button variant="ghost" size="icon" className="h-9 w-9 -ml-2" onClick={() => navigate(-1)}>
+                    {showBackButton && <Button variant="ghost" size="icon" className="h-9 w-9 -ml-2" onClick={() => {
+                        if (window.history.length > 1) {
+                          navigate(-1);
+                        } else {
+                          navigate("/");
+                        }
+                      }}>
                         <ChevronLeft className="h-5 w-5" />
                       </Button>}
                     <div className={`rounded-lg px-2 py-1 -my-1 transition-colors ${!showBackButton ? "cursor-pointer hover:bg-muted -mx-2" : ""}`} onClick={() => !showBackButton && navigate("/profile")}>
