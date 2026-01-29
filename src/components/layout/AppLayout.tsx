@@ -1,8 +1,9 @@
 import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
-import { Bell, Settings, ChevronLeft, Sparkles, Bot } from "lucide-react";
+import { Bell, Settings, ChevronLeft, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AIChatPanel, FloatingChatButton } from "@/components/chat/AIChatPanel";
 import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
@@ -112,7 +113,7 @@ export function AppLayout({
 
       {/* 앱 영역 */}
       <div className="w-full h-full lg:w-[480px] lg:flex-shrink-0">
-        <div className="relative flex h-full max-w-xl flex-col bg-background shadow-2xl lg:max-w-none mx-auto">
+        <div className="relative flex h-full max-w-xl flex-col bg-background shadow-2xl lg:max-w-none mx-auto overflow-hidden">
           <div className="flex-1 overflow-auto">
             {/* Header */}
             {showHeader && <header className="sticky top-0 z-10 border-b bg-card/70 backdrop-blur-md px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
@@ -149,6 +150,12 @@ export function AppLayout({
 
           {/* Bottom Navigation */}
           <BottomNav />
+
+          {/* Floating Chat Button - 앱 영역 내부 */}
+          <FloatingChatButton />
+
+          {/* AI Chat Panel - 앱 영역 내부 */}
+          <AIChatPanel />
         </div>
       </div>
 
