@@ -107,7 +107,7 @@ const Landing = () => {
               
               {/* 스토어 버튼 영역 */}
               <div className="flex-1 space-y-3">
-                <p className="text-sm font-semibold text-foreground">📲 지금 바로 시작하세요</p>
+                <p className="text-sm font-semibold text-foreground">📲 앱으로 편리하게 관리하세요!</p>
                 
                 <div className="flex flex-col gap-2">
                   <a href="#" className="group inline-flex items-center gap-2.5 px-4 py-2 bg-foreground text-background rounded-xl hover:scale-[1.02] hover:shadow-md transition-all duration-200">
