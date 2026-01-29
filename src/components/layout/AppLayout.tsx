@@ -80,7 +80,7 @@ export function AppLayout({
               
               {/* 스토어 버튼 영역 */}
               <div className="flex-1 space-y-3">
-                <p className="text-sm font-semibold text-foreground">📲 지금 바로 시작하세요</p>
+                <p className="text-sm font-semibold text-foreground">📲 앱으로 편리하게 관리하세요!</p>
                 
                 <div className="flex flex-col gap-2">
                   {/* App Store 버튼 */}
