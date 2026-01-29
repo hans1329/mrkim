@@ -137,7 +137,7 @@ const Landing = () => {
       </div>
 
       {/* 앱 영역 */}
-      <div className="w-full h-full lg:w-[480px] lg:flex-shrink-0">
+      <div className="w-full h-full lg:w-[540px] xl:w-[580px] lg:flex-shrink-0">
         <div className="relative flex h-full max-w-xl flex-col bg-background shadow-2xl lg:max-w-none mx-auto overflow-hidden">
           <div className="flex-1 overflow-auto">
             {/* Landing Content */}
