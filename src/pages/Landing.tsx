@@ -154,12 +154,14 @@ const Landing = () => {
                 </div>
               </div>
 
-              {/* Tagline */}
+              {/* Main Title */}
               <div className="text-center mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-                <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-3">
-                  <Sparkles className="h-4 w-4" />
-                  사장님 생존 계산기
-                </div>
+                <h2 className="text-3xl font-black text-foreground mb-2">
+                  <span className="bg-gradient-to-r from-primary via-blue-500 to-primary bg-clip-text text-transparent">
+                    사장님 생존 계산기
+                  </span>
+                  <Sparkles className="inline-block h-6 w-6 text-amber-400 ml-2 -mt-1" />
+                </h2>
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   사업의 가장 무서운 순간은 <span className="font-semibold text-destructive">"돈이 마르는 날"</span><br />
                   지금 내 사업은 얼마나 버틸 수 있을까?
