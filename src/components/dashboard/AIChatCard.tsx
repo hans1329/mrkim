@@ -100,7 +100,7 @@ export function AIChatCard() {
                 <span className="text-sm text-muted-foreground">답변 중...</span>
               </div>
             ) : (
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center justify-between gap-2">
                 <p className="text-sm text-white flex-1">{response}</p>
                 <Button
                   variant="ghost"
