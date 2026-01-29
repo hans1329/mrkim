@@ -93,7 +93,7 @@ export function AIChatCard() {
 
         {/* Response Area */}
         {(response || isTyping) && (
-          <div className="mb-4 rounded-xl bg-card p-3 border">
+          <div className="mb-4 rounded-xl bg-white/20 backdrop-blur-sm p-3 border border-white/30">
             {isTyping ? (
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 animate-pulse text-primary" />
