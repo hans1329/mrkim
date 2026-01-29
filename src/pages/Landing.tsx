@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ const Landing = () => {
   const [monthlyCost, setMonthlyCost] = useState<string>("");
   const [result, setResult] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const calculateRunway = () => {
     const balanceNum = parseFloat(balance.replace(/,/g, "")) || 0;
@@ -32,6 +33,10 @@ const Landing = () => {
       setResult(days);
     }
     setShowResult(true);
+    
+    setTimeout(() => {
+      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const formatNumber = (value: string) => {
@@ -227,6 +232,7 @@ const Landing = () => {
 
               {/* Result Section */}
               {showResult && (
+                <div ref={resultRef}>
                 <div className="mt-6 space-y-5 animate-fade-in">
                   {/* Survival Days */}
                   <Card className={`border-0 rounded-3xl shadow-xl overflow-hidden ${
@@ -341,6 +347,7 @@ const Landing = () => {
                       다시 계산하기
                     </Button>
                   </div>
+                </div>
                 </div>
               )}
             </div>
