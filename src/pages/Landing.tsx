@@ -153,7 +153,8 @@ const Landing = () => {
                   <div className="bg-background/90 backdrop-blur-sm rounded-2xl px-6 py-3 shadow-lg">
                     <h1 className="text-xl font-bold text-center">
                       <span className="text-primary">생존</span>
-                      <span className="text-muted-foreground mx-2">인가?</span>
+                      <span className="text-muted-foreground">인가?</span>
+                      <span className="text-muted-foreground mx-2"></span>
                       <span className="text-destructive">탈락</span>
                       <span className="text-muted-foreground">인가!</span>
                     </h1>
