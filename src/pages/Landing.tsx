@@ -46,10 +46,12 @@ const Landing = () => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-8 lg:px-8">
+    <div className={`flex h-screen overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-8 lg:px-8 transition-all duration-700 ${
+      showResult ? 'justify-center' : 'justify-center lg:justify-center'
+    }`}>
       {/* PC 좌측 마케팅 영역 */}
-      <div className={`hidden lg:flex lg:w-[480px] xl:w-[560px] lg:flex-col lg:justify-center lg:relative transition-all duration-700 ${
-        showResult ? 'opacity-100 blur-0' : 'opacity-10 blur-sm'
+      <div className={`hidden lg:flex lg:flex-col lg:justify-center lg:relative transition-all duration-700 ${
+        showResult ? 'lg:w-[480px] xl:w-[560px] opacity-100 blur-0' : 'lg:w-0 opacity-0 blur-sm overflow-hidden'
       }`}>
         <div className="relative z-10 p-8 space-y-6">
           {/* 헤드라인 */}
