@@ -30,7 +30,7 @@ export function AutoTransferCard({ transfers }: AutoTransferCardProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">자동이체 현황</CardTitle>
+        <CardTitle className="text-base">자동이체 현황</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {transfers.map((transfer) => {

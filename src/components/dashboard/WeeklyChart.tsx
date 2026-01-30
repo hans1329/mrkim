@@ -17,7 +17,7 @@ export function WeeklyChart() {
   return (
     <Card className="col-span-full">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">주간 매출/지출 현황</CardTitle>
+        <CardTitle className="text-base">주간 매출/지출 현황</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">

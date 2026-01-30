@@ -35,7 +35,7 @@ export function AlertCard({ alerts }: AlertCardProps) {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">최근 알림</CardTitle>
+          <CardTitle className="text-base">최근 알림</CardTitle>
           {unreadCount > 0 && (
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-xs font-medium text-destructive-foreground">
               {unreadCount}
