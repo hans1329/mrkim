@@ -146,30 +146,28 @@ export default function SecretarySettings() {
             </div>
             
             {/* 레벨 표시 */}
-            <div className="p-3 rounded-lg bg-muted/50 space-y-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-medium">Level</span>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
-                        <HelpCircle className="h-4 w-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-[240px] p-3">
-                      <p className="text-xs font-medium mb-2">경험치 획득 방법</p>
-                      <ul className="text-xs space-y-1 text-muted-foreground">
-                        <li>• 매일 브리핑 확인 +10 XP</li>
-                        <li>• 김비서와 대화 +5 XP</li>
-                        <li>• 제안 승인 +50 XP</li>
-                        <li>• 계좌/카드 연동 +100 XP</li>
-                        <li>• 정확도 피드백 +30 XP</li>
-                      </ul>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="flex items-center justify-between mb-1">
+            <div className="relative p-3 rounded-lg bg-muted/50 space-y-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors">
+                      <HelpCircle className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[240px] p-3">
+                    <p className="text-xs font-medium mb-2">경험치 획득 방법</p>
+                    <ul className="text-xs space-y-1 text-muted-foreground">
+                      <li>• 매일 브리핑 확인 +10 XP</li>
+                      <li>• 김비서와 대화 +5 XP</li>
+                      <li>• 제안 승인 +50 XP</li>
+                      <li>• 계좌/카드 연동 +100 XP</li>
+                      <li>• 정확도 피드백 +30 XP</li>
+                    </ul>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <span className="text-sm font-medium">Level</span>
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Lv. 3 경영 분석가</span>
                 <span className="text-xs text-muted-foreground">1,240 / 2,000 XP</span>
               </div>
