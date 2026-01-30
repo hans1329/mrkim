@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bot, Send, Sparkles, MessageCircle, RotateCcw } from "lucide-react";
+import { Bot, Send, Sparkles, MessageCircle, RotateCcw, Settings } from "lucide-react";
 import { getTodayStats, mockDeposits, mockAutoTransfers, formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
 
@@ -50,6 +51,7 @@ const generateQuickResponse = (input: string): string => {
 };
 
 export function AIChatCard() {
+  const navigate = useNavigate();
   const { openChat } = useChat();
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<string | null>(null);
@@ -78,9 +80,12 @@ export function AIChatCard() {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg">
+            <button
+              onClick={() => navigate("/secretary-settings")}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors"
+            >
               <Bot className="h-6 w-6 text-white" />
-            </div>
+            </button>
             <div>
               <h3 className="font-bold text-white">김비서</h3>
               <p className="text-xs text-white/80">AI 경영 비서가 도와드릴게요</p>
