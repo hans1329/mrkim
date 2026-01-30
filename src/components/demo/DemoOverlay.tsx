@@ -25,15 +25,16 @@ const demoFeatures = [
 export function DemoOverlay() {
   const { isDemo, login } = useAuth();
   const [showOverlay, setShowOverlay] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [interactionCount, setInteractionCount] = useState(0);
   const [currentFeature, setCurrentFeature] = useState(0);
 
-  // 일정 인터랙션 후 오버레이 표시
+  // 일정 인터랙션 후 오버레이 표시 (dismissed가 아닐 때만)
   useEffect(() => {
-    if (isDemo && interactionCount >= 3 && !showOverlay) {
+    if (isDemo && interactionCount >= 5 && !showOverlay && !dismissed) {
       setShowOverlay(true);
     }
-  }, [interactionCount, isDemo, showOverlay]);
+  }, [interactionCount, isDemo, showOverlay, dismissed]);
 
   // 자동으로 feature 순환
   useEffect(() => {
@@ -45,9 +46,15 @@ export function DemoOverlay() {
     }
   }, [showOverlay]);
 
-  // 전역 클릭 감지
+  // 오버레이 닫기
+  const handleDismiss = () => {
+    setShowOverlay(false);
+    setDismissed(true);
+  };
+
+  // 전역 클릭 감지 (오버레이가 열려있지 않을 때만)
   useEffect(() => {
-    if (!isDemo) return;
+    if (!isDemo || showOverlay || dismissed) return;
     
     const handleClick = () => {
       setInteractionCount((prev) => prev + 1);
@@ -55,7 +62,7 @@ export function DemoOverlay() {
 
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
-  }, [isDemo]);
+  }, [isDemo, showOverlay, dismissed]);
 
   if (!isDemo || !showOverlay) return null;
 
@@ -66,7 +73,7 @@ export function DemoOverlay() {
       {/* 배경 블러 */}
       <div 
         className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-        onClick={() => setShowOverlay(false)}
+        onClick={handleDismiss}
       />
       
       {/* 오버레이 카드 */}
@@ -78,7 +85,7 @@ export function DemoOverlay() {
               variant="ghost"
               size="icon"
               className="absolute right-4 top-4 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
-              onClick={() => setShowOverlay(false)}
+              onClick={handleDismiss}
             >
               <X className="h-5 w-5" />
             </Button>
@@ -136,7 +143,7 @@ export function DemoOverlay() {
             <Button 
               variant="ghost" 
               className="w-full text-muted-foreground"
-              onClick={() => setShowOverlay(false)}
+              onClick={handleDismiss}
             >
               계속 둘러보기
             </Button>
