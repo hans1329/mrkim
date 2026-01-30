@@ -25,6 +25,11 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const genderOptions = [
+  { id: "female", label: "여성", icon: "👩" },
+  { id: "male", label: "남성", icon: "👨" },
+];
+
 const speakingStyles = [
   { id: "formal", label: "격식체", example: "오늘 매출은 234만원입니다." },
   { id: "friendly", label: "친근체", example: "오늘 매출 234만원이에요!" },
@@ -54,6 +59,7 @@ export default function SecretarySettings() {
   const [briefingFrequency, setBriefingFrequency] = useState([1]); // 1 = 매일
   const [selectedMetrics, setSelectedMetrics] = useState(["revenue", "expense", "tax"]);
   const [secretaryName, setSecretaryName] = useState("김비서");
+  const [secretaryGender, setSecretaryGender] = useState("female");
 
   const toggleMetric = (metricId: string) => {
     setSelectedMetrics(prev => 
@@ -116,6 +122,27 @@ export default function SecretarySettings() {
                   placeholder="비서 이름을 입력하세요"
                 />
               </div>
+            </div>
+            
+            {/* 성별 선택 */}
+            <div className="space-y-2">
+              <Label>비서 성별</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {genderOptions.map((option) => (
+                  <Button
+                    key={option.id}
+                    variant={secretaryGender === option.id ? "default" : "outline"}
+                    className="justify-center gap-2"
+                    onClick={() => setSecretaryGender(option.id)}
+                  >
+                    <span>{option.icon}</span>
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                💡 음성 브리핑과 전화 알림 시 해당 성별의 목소리가 사용됩니다
+              </p>
             </div>
             
             {/* 레벨 표시 */}
