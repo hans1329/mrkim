@@ -186,13 +186,19 @@ export function classifyIntent(input: string): ClassifiedIntent {
   }
 
   // 직원 목록
-  if (/직원|인원|스태프/.test(lowerInput) && /목록|명단|누구|몇명/.test(lowerInput)) {
+  if (/직원|인원|스태프/.test(lowerInput) && /목록|명단|누구|몇명|보여|알려/.test(lowerInput)) {
     functionMatches.push({ func: "list_employees", score: 0.9 });
   }
 
-  // 급여 정산
-  if (/급여|월급|임금/.test(lowerInput) && /정산|계산|지급|준비/.test(lowerInput)) {
-    functionMatches.push({ func: "process_payroll", score: 0.9 });
+  // 급여 정산/현황
+  if (/급여|월급|임금/.test(lowerInput)) {
+    if (/정산|계산|지급|준비/.test(lowerInput)) {
+      functionMatches.push({ func: "process_payroll", score: 0.9 });
+    } else if (/현황|얼마|총|전체/.test(lowerInput)) {
+      functionMatches.push({ func: "get_salary_status", score: 0.9 });
+    } else {
+      functionMatches.push({ func: "get_salary_status", score: 0.7 });
+    }
   }
 
   // 퇴사 처리
@@ -203,9 +209,19 @@ export function classifyIntent(input: string): ClassifiedIntent {
     functionMatches.push({ func: "process_resignation", score: 0.9, params });
   }
 
-  // 매출 조회
-  if (/매출|수익|판매/.test(lowerInput) && /오늘|이번|얼마|조회|알려/.test(lowerInput)) {
-    functionMatches.push({ func: "get_sales_report", score: 0.9 });
+  // 매출 조회 - 더 유연한 매칭
+  if (/매출/.test(lowerInput)) {
+    const params: Record<string, unknown> = {};
+    if (/오늘/.test(lowerInput)) params.period = "오늘";
+    else if (/이번\s*주|금주/.test(lowerInput)) params.period = "이번주";
+    else if (/이번\s*달|금월/.test(lowerInput)) params.period = "이번달";
+    else if (/어제/.test(lowerInput)) params.period = "어제";
+    functionMatches.push({ func: "get_sales_report", score: 0.95, params });
+  }
+
+  // 지출 조회
+  if (/지출|비용|쓴\s*돈/.test(lowerInput)) {
+    functionMatches.push({ func: "get_expense_report", score: 0.9 });
   }
 
   // 부가세
@@ -221,6 +237,16 @@ export function classifyIntent(input: string): ClassifiedIntent {
   // 세금 계산
   if (/세금.*계산|세금.*얼마|종소세|소득세/.test(lowerInput)) {
     functionMatches.push({ func: "calculate_tax", score: 0.85 });
+  }
+
+  // 이번 달 요약
+  if (/이번\s*달|금월/.test(lowerInput) && /요약|현황|정리/.test(lowerInput)) {
+    functionMatches.push({ func: "get_monthly_summary", score: 0.9 });
+  }
+
+  // 자동이체 현황
+  if (/자동이체|예정.*이체/.test(lowerInput) && /현황|목록|뭐|확인/.test(lowerInput)) {
+    functionMatches.push({ func: "get_auto_transfer_status", score: 0.9 });
   }
 
   // 가장 높은 매칭 반환
@@ -321,6 +347,23 @@ export function executeFunction(
       };
     }
 
+    case "get_salary_status": {
+      const activeEmployees = mockEmployees.filter(e => e.status === "재직");
+      const totalSalary = activeEmployees.reduce((sum, e) => sum + e.salary, 0);
+      const salaryDeposit = mockDeposits.find(d => d.type === "salary");
+      return {
+        success: true,
+        message: `💵 **급여 현황**\n\n` +
+          `• 재직 직원: ${activeEmployees.length}명\n` +
+          `• 총 급여: ${formatCurrency(totalSalary)}/월\n` +
+          `• 급여 적립금: ${formatCurrency(salaryDeposit?.amount || 0)}\n` +
+          `• 지급 예정일: ${salaryDeposit?.dueDate || "미정"}\n\n` +
+          `**직원별 급여**:\n` +
+          activeEmployees.map(e => `• ${e.name}: ${formatCurrency(e.salary)}`).join("\n"),
+        data: { employees: activeEmployees, totalSalary },
+      };
+    }
+
     case "process_payroll": {
       const totalSalary = mockEmployees
         .filter(e => e.status === "재직")
@@ -369,16 +412,38 @@ export function executeFunction(
     }
 
     case "get_sales_report": {
+      const period = params?.period as string || "오늘";
+      let multiplier = 1;
+      if (period === "이번주") multiplier = 7;
+      else if (period === "이번달") multiplier = 30;
+      else if (period === "어제") multiplier = 1;
+      
       return {
         success: true,
-        message: `📊 **오늘 매출 리포트**\n\n` +
-          `• 총 매출: ${formatCurrency(stats.income)}\n` +
-          `• 총 지출: ${formatCurrency(stats.expense)}\n` +
-          `• 순이익: ${formatCurrency(stats.profit)}\n\n` +
-          `**결제 수단별**:\n` +
+        message: `📊 **${period} 매출 리포트**\n\n` +
+          `• 총 매출: ${formatCurrency(stats.income * multiplier)}\n` +
+          `• 총 지출: ${formatCurrency(stats.expense * multiplier)}\n` +
+          `• 순이익: ${formatCurrency(stats.profit * multiplier)}\n\n` +
+          `**결제 수단별** (오늘 기준):\n` +
           `• 카드: ${formatCurrency(stats.cardIncome)} (${stats.cardRatio}%)\n` +
           `• 현금: ${formatCurrency(stats.cashIncome)} (${stats.cashRatio}%)`,
-        data: stats,
+        data: { ...stats, period },
+      };
+    }
+
+    case "get_expense_report": {
+      const expenses = mockTransactions.filter(t => t.type === "expense");
+      const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
+      return {
+        success: true,
+        message: `💸 **지출 현황**\n\n` +
+          `• 총 지출: ${formatCurrency(totalExpense)}\n` +
+          `• 거래 건수: ${expenses.length}건\n\n` +
+          `**최근 지출 내역**:\n` +
+          expenses.slice(0, 5).map(e => 
+            `• ${e.description}: ${formatCurrency(e.amount)}`
+          ).join("\n"),
+        data: { expenses, totalExpense },
       };
     }
 
@@ -394,8 +459,54 @@ export function executeFunction(
           `• 적립금: ${formatCurrency(vatDeposit.amount)}\n` +
           `• 목표액: ${formatCurrency(vatDeposit.targetAmount || 0)}\n` +
           `• 달성률: ${progress}%\n` +
-          `• 납부일: ${vatDeposit.dueDate}`,
+          `• 납부일: ${vatDeposit.dueDate}\n\n` +
+          `💡 매출 발생 시 자동으로 10% 적립됩니다.`,
         data: vatDeposit,
+      };
+    }
+
+    case "get_monthly_summary": {
+      const monthlyIncome = stats.income * 30;
+      const monthlyExpense = stats.expense * 30;
+      const vatDeposit = mockDeposits.find(d => d.type === "vat");
+      const salaryDeposit = mockDeposits.find(d => d.type === "salary");
+      return {
+        success: true,
+        message: `📅 **이번 달 요약**\n\n` +
+          `**매출/지출**:\n` +
+          `• 예상 매출: ${formatCurrency(monthlyIncome)}\n` +
+          `• 예상 지출: ${formatCurrency(monthlyExpense)}\n` +
+          `• 예상 순이익: ${formatCurrency(monthlyIncome - monthlyExpense)}\n\n` +
+          `**예치금 현황**:\n` +
+          `• 부가세: ${formatCurrency(vatDeposit?.amount || 0)} (납부일: ${vatDeposit?.dueDate})\n` +
+          `• 급여: ${formatCurrency(salaryDeposit?.amount || 0)} (지급일: ${salaryDeposit?.dueDate})\n\n` +
+          `**예정된 이체**:\n` +
+          mockAutoTransfers.filter(t => t.status !== "completed").slice(0, 3)
+            .map(t => `• ${t.name}: ${formatCurrency(t.amount)}`).join("\n"),
+        data: { monthlyIncome, monthlyExpense },
+      };
+    }
+
+    case "get_auto_transfer_status": {
+      const pending = mockAutoTransfers.filter(t => t.status === "pending");
+      const scheduled = mockAutoTransfers.filter(t => t.status === "scheduled");
+      const completed = mockAutoTransfers.filter(t => t.status === "completed");
+      return {
+        success: true,
+        message: `⚙️ **자동이체 현황**\n\n` +
+          `**대기 중** (${pending.length}건):\n` +
+          (pending.length > 0 
+            ? pending.map(t => `• ${t.name}: ${formatCurrency(t.amount)} (${t.condition})`).join("\n")
+            : "• 없음") +
+          `\n\n**예정됨** (${scheduled.length}건):\n` +
+          (scheduled.length > 0
+            ? scheduled.map(t => `• ${t.name}: ${formatCurrency(t.amount)} (${t.scheduledDate})`).join("\n")
+            : "• 없음") +
+          `\n\n**완료** (${completed.length}건):\n` +
+          (completed.length > 0
+            ? completed.map(t => `• ${t.name}: ${formatCurrency(t.amount)}`).join("\n")
+            : "• 없음"),
+        data: { pending, scheduled, completed },
       };
     }
 

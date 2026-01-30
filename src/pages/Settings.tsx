@@ -20,12 +20,19 @@ import {
   Palette,
   Globe,
   Home,
+  Link,
+  CreditCard,
+  Landmark,
+  CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 export default function Settings() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { connections, resetOnboarding } = useOnboarding();
 
   return (
     <MainLayout title="설정" subtitle="앱 설정을 관리하세요" showBackButton>
@@ -61,6 +68,93 @@ export default function Settings() {
               </Select>
             </div>
             <Button className="w-full">저장</Button>
+          </CardContent>
+        </Card>
+
+        {/* 데이터 연결 */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Link className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base">데이터 연결</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Building2 className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">국세청 (홈택스)</p>
+                  <p className="text-xs text-muted-foreground">세금계산서, 매출 데이터</p>
+                </div>
+              </div>
+              {connections.hometax ? (
+                <span className="flex items-center gap-1 text-green-500 text-xs">
+                  <CheckCircle2 className="h-3 w-3" />
+                  연결됨
+                </span>
+              ) : (
+                <Button variant="outline" size="sm" onClick={resetOnboarding}>
+                  연결
+                </Button>
+              )}
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">카드</p>
+                  <p className="text-xs text-muted-foreground">지출 내역 자동 분류</p>
+                </div>
+              </div>
+              {connections.card ? (
+                <span className="flex items-center gap-1 text-green-500 text-xs">
+                  <CheckCircle2 className="h-3 w-3" />
+                  연결됨
+                </span>
+              ) : (
+                <Button variant="outline" size="sm" onClick={resetOnboarding}>
+                  연결
+                </Button>
+              )}
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Landmark className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">계좌</p>
+                  <p className="text-xs text-muted-foreground">입출금 내역 실시간 확인</p>
+                </div>
+              </div>
+              {connections.account ? (
+                <span className="flex items-center gap-1 text-green-500 text-xs">
+                  <CheckCircle2 className="h-3 w-3" />
+                  연결됨
+                </span>
+              ) : (
+                <Button variant="outline" size="sm" onClick={resetOnboarding}>
+                  연결
+                </Button>
+              )}
+            </div>
+            <Separator />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full gap-2 text-muted-foreground"
+              onClick={resetOnboarding}
+            >
+              <RefreshCw className="h-3 w-3" />
+              온보딩 다시 시작
+            </Button>
           </CardContent>
         </Card>
 
