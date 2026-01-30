@@ -22,7 +22,7 @@ import {
   Save,
   HelpCircle
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 
 const genderOptions = [
@@ -147,25 +147,23 @@ export default function SecretarySettings() {
             
             {/* 레벨 표시 */}
             <div className="relative p-3 rounded-lg bg-muted/50 space-y-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors">
-                      <HelpCircle className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[240px] p-3">
-                    <p className="text-xs font-medium mb-2">경험치 획득 방법</p>
-                    <ul className="text-xs space-y-1 text-muted-foreground">
-                      <li>• 매일 브리핑 확인 +10 XP</li>
-                      <li>• 김비서와 대화 +5 XP</li>
-                      <li>• 제안 승인 +50 XP</li>
-                      <li>• 계좌/카드 연동 +100 XP</li>
-                      <li>• 정확도 피드백 +30 XP</li>
-                    </ul>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors">
+                    <HelpCircle className="h-4 w-4" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="left" align="start" className="w-[220px] p-3">
+                  <p className="text-xs font-medium mb-2">경험치 획득 방법</p>
+                  <ul className="text-xs space-y-1 text-muted-foreground">
+                    <li>• 매일 브리핑 확인 +10 XP</li>
+                    <li>• 김비서와 대화 +5 XP</li>
+                    <li>• 제안 승인 +50 XP</li>
+                    <li>• 계좌/카드 연동 +100 XP</li>
+                    <li>• 정확도 피드백 +30 XP</li>
+                  </ul>
+                </PopoverContent>
+              </Popover>
               <span className="text-sm font-medium">Level</span>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Lv. 3 경영 분석가</span>
