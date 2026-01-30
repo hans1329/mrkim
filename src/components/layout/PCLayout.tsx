@@ -29,25 +29,25 @@ interface PCLayoutProps {
   subtitle?: string;
 }
 
-export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutProps) {
+export function PCLayout({ children, title, subtitle }: PCLayoutProps) {
   const navigate = useNavigate();
 
   return (
     <div className="flex h-screen w-full bg-gradient-to-br from-primary/5 via-background to-secondary/10">
       {/* 좌측 네비게이션 사이드바 - 컴팩트 */}
       <aside className="w-52 flex-shrink-0 border-r bg-card/50 backdrop-blur-sm flex flex-col">
-        {/* 로고 영역 */}
+        {/* 브랜드 로고 영역 */}
         <div className="p-4 border-b">
           <div 
             className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => navigate("/profile")}
+            onClick={() => navigate("/")}
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70">
               <Bot className="h-4 w-4 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-foreground">{title}</h1>
-              {subtitle && <p className="text-[10px] text-muted-foreground">{subtitle}</p>}
+              <h1 className="text-base font-bold text-foreground">김비서</h1>
+              <p className="text-[10px] text-muted-foreground">AI 경영 비서</p>
             </div>
           </div>
         </div>
@@ -101,6 +101,16 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
       {/* 중앙 메인 콘텐츠 */}
       <main className="flex-1 overflow-auto">
         <div className="max-w-3xl mx-auto p-6">
+          {/* 페이지 타이틀 */}
+          {title && (
+            <div 
+              className="mb-6 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => navigate("/profile")}
+            >
+              <h2 className="text-xl font-bold text-foreground">{title}</h2>
+              {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+            </div>
+          )}
           {children}
         </div>
       </main>
