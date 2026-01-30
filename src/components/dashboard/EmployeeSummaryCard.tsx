@@ -16,17 +16,17 @@ export function EmployeeSummaryCard() {
         <div className="grid grid-cols-3 gap-3">
           <div className="flex flex-col items-center p-3 rounded-xl bg-muted/50">
             <Users className="h-5 w-5 text-primary mb-1" />
-            <p className="text-lg font-bold">{activeEmployees.length}명</p>
+            <p className="text-base font-bold">{activeEmployees.length}명</p>
             <p className="text-xs text-muted-foreground">재직 인원</p>
           </div>
           <div className="flex flex-col items-center p-3 rounded-xl bg-muted/50">
             <Wallet className="h-5 w-5 text-primary mb-1" />
-            <p className="text-lg font-bold">{(totalSalary / 10000).toFixed(0)}만</p>
+            <p className="text-base font-bold">{(totalSalary / 10000).toFixed(0)}만</p>
             <p className="text-xs text-muted-foreground">이번달 급여</p>
           </div>
           <div className="flex flex-col items-center p-3 rounded-xl bg-muted/50">
             <Calendar className="h-5 w-5 text-primary mb-1" />
-            <p className="text-lg font-bold">{insuredCount}명</p>
+            <p className="text-base font-bold">{insuredCount}명</p>
             <p className="text-xs text-muted-foreground">4대보험</p>
           </div>
         </div>
