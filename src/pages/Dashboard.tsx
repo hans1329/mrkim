@@ -3,6 +3,9 @@ import { DepositCard } from "@/components/dashboard/DepositCard";
 import { AutoTransferCard } from "@/components/dashboard/AutoTransferCard";
 import { AlertCard } from "@/components/dashboard/AlertCard";
 import { AIChatCard } from "@/components/dashboard/AIChatCard";
+import { WeeklyChart } from "@/components/dashboard/WeeklyChart";
+import { RecentTransactionsCard } from "@/components/dashboard/RecentTransactionsCard";
+import { EmployeeSummaryCard } from "@/components/dashboard/EmployeeSummaryCard";
 import {
   getTodayStats,
   mockDeposits,
@@ -55,6 +58,21 @@ export default function Dashboard() {
               icon={PiggyBank}
             />
           </div>
+        </section>
+
+        {/* 주간 매출/지출 차트 */}
+        <section>
+          <WeeklyChart />
+        </section>
+
+        {/* 최근 거래 내역 */}
+        <section>
+          <RecentTransactionsCard />
+        </section>
+
+        {/* 직원 현황 */}
+        <section>
+          <EmployeeSummaryCard />
         </section>
 
         {/* 예치금 현황 */}
