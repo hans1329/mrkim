@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { Bell, Settings, ChevronLeft, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AIChatPanel, FloatingChatButton } from "@/components/chat/AIChatPanel";
+import { AIChatPanel } from "@/components/chat/AIChatPanel";
+import { FloatingVoiceButton } from "@/components/voice/FloatingVoiceButton";
+import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
 import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
@@ -157,10 +159,13 @@ export function AppLayout({
           {/* Bottom Navigation */}
           <BottomNav />
 
-          {/* Floating Chat Button - 앱 영역 내부 */}
-          <FloatingChatButton />
+          {/* Floating Voice Button - 음성 전용 */}
+          <FloatingVoiceButton />
 
-          {/* AI Chat Panel - 앱 영역 내부 */}
+          {/* Voice Overlay - 전체화면 음성 UI */}
+          <VoiceOverlay />
+
+          {/* AI Chat Panel - 텍스트 채팅 */}
           <AIChatPanel />
         </div>
       </div>
