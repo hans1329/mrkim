@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OnboardingStep } from "@/hooks/useOnboarding";
+import { CardConnectionFlow } from "./CardConnectionFlow";
 
 interface OnboardingWizardProps {
   currentStep: OnboardingStep;
@@ -46,6 +47,7 @@ export function OnboardingWizard({
   onComplete,
 }: OnboardingWizardProps) {
   const [isConnecting, setIsConnecting] = useState(false);
+  const [showCardFlow, setShowCardFlow] = useState(false);
   const currentIdx = stepIndex(currentStep);
   const progress = ((currentIdx + 1) / steps.length) * 100;
 
@@ -66,6 +68,20 @@ export function OnboardingWizard({
 
   const handleSkip = () => {
     handleNext();
+  };
+
+  const handleCardConnect = () => {
+    setShowCardFlow(true);
+  };
+
+  const handleCardFlowComplete = () => {
+    onConnect("card");
+    setShowCardFlow(false);
+    handleNext();
+  };
+
+  const handleCardFlowBack = () => {
+    setShowCardFlow(false);
   };
 
   return (
@@ -114,17 +130,25 @@ export function OnboardingWizard({
               onSkip={handleSkip}
             />
           )}
-          {currentStep === "card" && (
+          {currentStep === "card" && !showCardFlow && (
             <ConnectionStep
               title="카드 연결"
               description="법인/사업자 카드를 연동하면 지출 내역이 자동 분류되고 비용 관리가 쉬워집니다."
               icon={CreditCard}
               isConnected={connections.card}
               isConnecting={isConnecting}
-              onConnect={() => handleConnect("card")}
+              onConnect={handleCardConnect}
               onNext={handleNext}
               onSkip={handleSkip}
             />
+          )}
+          {currentStep === "card" && showCardFlow && (
+            <div className="bg-card rounded-3xl p-6 shadow-xl">
+              <CardConnectionFlow 
+                onComplete={handleCardFlowComplete}
+                onBack={handleCardFlowBack}
+              />
+            </div>
           )}
           {currentStep === "account" && (
             <ConnectionStep
