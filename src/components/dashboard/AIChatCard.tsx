@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bot, Send, Sparkles, MessageCircle, RotateCcw, Settings } from "lucide-react";
-import { getTodayStats, mockDeposits, mockAutoTransfers, formatCurrency } from "@/data/mockData";
+import { Bot, Send, Sparkles, MessageCircle, RotateCcw, Clock } from "lucide-react";
+import { getTodayStats, mockDeposits, mockAutoTransfers, mockEmployees, formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
 
 const quickPrompts = [
@@ -13,6 +13,48 @@ const quickPrompts = [
   "부가세 확인",
   "이번 달 요약",
 ];
+
+// 브리핑 메시지 생성
+const generateBriefingMessage = (): string => {
+  const stats = getTodayStats();
+  const vatDeposit = mockDeposits.find((d) => d.type === "vat");
+  const salaryDeposit = mockDeposits.find((d) => d.type === "salary");
+  const activeEmployees = mockEmployees.filter((e) => e.status === "재직");
+  
+  const parts = [
+    `오늘 매출 ${formatCurrency(stats.income)}, 순이익 ${formatCurrency(stats.profit)}입니다.`,
+  ];
+  
+  if (vatDeposit) {
+    parts.push(`부가세 ${formatCurrency(vatDeposit.amount)} 적립 중.`);
+  }
+  
+  if (salaryDeposit && salaryDeposit.dueDate) {
+    const dueDate = new Date(salaryDeposit.dueDate);
+    const today = new Date();
+    const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays > 0 && diffDays <= 7) {
+      parts.push(`급여일 D-${diffDays}.`);
+    }
+  }
+  
+  return parts.join(" ");
+};
+
+// 브리핑 시간인지 확인 (9시, 12시, 18시, 22시 기준 ±30분)
+const isBriefingTime = (): boolean => {
+  const now = new Date();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  
+  const briefingHours = [9, 12, 18, 22];
+  
+  return briefingHours.some(bh => {
+    if (hour === bh && minute <= 30) return true;
+    if (hour === bh - 1 && minute >= 30) return true;
+    return false;
+  });
+};
 
 // 간단한 응답 생성
 const generateQuickResponse = (input: string): string => {
@@ -56,10 +98,29 @@ export function AIChatCard() {
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [showBriefing, setShowBriefing] = useState(false);
+  
+  // 브리핑 메시지
+  const briefingMessage = useMemo(() => generateBriefingMessage(), []);
+  
+  // 브리핑 시간 체크
+  useEffect(() => {
+    const checkBriefing = () => {
+      if (isBriefingTime() && !response) {
+        setShowBriefing(true);
+      }
+    };
+    
+    checkBriefing();
+    const interval = setInterval(checkBriefing, 60000); // 1분마다 체크
+    
+    return () => clearInterval(interval);
+  }, [response]);
 
   const handleQuickAsk = async (question: string) => {
     setInput("");
     setIsTyping(true);
+    setShowBriefing(false);
     
     await new Promise((resolve) => setTimeout(resolve, 500));
     
@@ -73,6 +134,9 @@ export function AIChatCard() {
     if (!input.trim()) return;
     handleQuickAsk(input);
   };
+  
+  const displayMessage = response || (showBriefing ? briefingMessage : null);
+  const isBriefingDisplay = !response && showBriefing;
 
   return (
     <Card className="overflow-hidden bg-gradient-to-br from-[#2196F3] via-[#9C27B0] to-[#FF9800] border-0 shadow-lg min-h-[200px]">
@@ -102,9 +166,13 @@ export function AIChatCard() {
           </Button>
         </div>
 
-        {/* Response Area */}
-        {(response || isTyping) && (
-          <div className="mb-4 rounded-xl bg-white/40 backdrop-blur-sm p-3 border border-white/30">
+        {/* Response/Briefing Area */}
+        {(displayMessage || isTyping) && (
+          <div className={`mb-4 rounded-xl backdrop-blur-sm p-3 border ${
+            isBriefingDisplay 
+              ? "bg-amber-500/30 border-amber-300/50" 
+              : "bg-white/40 border-white/30"
+          }`}>
             {isTyping ? (
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 animate-pulse text-primary" />
@@ -115,7 +183,12 @@ export function AIChatCard() {
                 className="flex items-center justify-between gap-2 cursor-pointer"
                 onClick={openChat}
               >
-                <p className="text-sm text-white flex-1 line-clamp-2">{response}</p>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {isBriefingDisplay && (
+                    <Clock className="h-4 w-4 text-amber-200 shrink-0" />
+                  )}
+                  <p className="text-sm text-white flex-1 line-clamp-2">{displayMessage}</p>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -123,6 +196,7 @@ export function AIChatCard() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setResponse(null);
+                    setShowBriefing(false);
                   }}
                 >
                   <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
