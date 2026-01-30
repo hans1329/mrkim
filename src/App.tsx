@@ -18,6 +18,7 @@ import Profile from "./pages/Profile";
 import FinancialServices from "./pages/FinancialServices";
 import PitchDeck from "./pages/PitchDeck";
 import Landing from "./pages/Landing";
+import SecretarySettings from "./pages/SecretarySettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
                 <Route path="/financial-services" element={<FinancialServices />} />
                 <Route path="/pitchdeck" element={<PitchDeck />} />
                 <Route path="/landing" element={<Landing />} />
+                <Route path="/secretary-settings" element={<SecretarySettings />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
