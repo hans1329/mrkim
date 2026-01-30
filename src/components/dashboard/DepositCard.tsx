@@ -23,7 +23,7 @@ export function DepositCard({ deposits }: DepositCardProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">예치금 현황</CardTitle>
+        <CardTitle className="text-base">예치금 현황</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {deposits.map((deposit) => {
