@@ -55,7 +55,7 @@ export function WeeklyChart() {
                   return null;
                 }}
               />
-              <Legend iconType="circle" align="right" iconSize={8} />
+              <Legend iconType="circle" align="right" iconSize={8} wrapperStyle={{ fontSize: '12px' }} />
               <Bar
                 dataKey="매출"
                 fill="hsl(var(--chart-1))"
