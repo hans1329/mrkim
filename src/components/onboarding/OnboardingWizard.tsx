@@ -71,19 +71,19 @@ export function OnboardingWizard({
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex flex-col items-center justify-center p-4">
       {/* Progress */}
-      <div className="w-full max-w-md mb-8">
-        <Progress value={progress} className="h-2" />
-        <div className="flex justify-between mt-2">
+      <div className="w-full max-w-xs mb-6">
+        <Progress value={progress} className="h-1.5" />
+        <div className="flex justify-between mt-2 px-1">
           {steps.map((step, idx) => (
             <div
               key={step.key}
               className={cn(
-                "flex flex-col items-center gap-1",
+                "flex flex-col items-center gap-0.5",
                 idx <= currentIdx ? "text-primary" : "text-muted-foreground"
               )}
             >
-              <step.icon className="h-4 w-4" />
-              <span className="text-[10px]">{step.title}</span>
+              <step.icon className="h-3.5 w-3.5" />
+              <span className="text-[9px]">{step.title}</span>
             </div>
           ))}
         </div>
