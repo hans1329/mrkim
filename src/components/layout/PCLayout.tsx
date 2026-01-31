@@ -49,7 +49,14 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
               <Bot className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">{title}</h1>
+              <h1 className="text-lg font-bold text-foreground leading-tight">
+                {title?.includes("안녕하세요,") ? (
+                  <>
+                    안녕하세요,<br />
+                    {title.replace("안녕하세요, ", "")}
+                  </>
+                ) : title}
+              </h1>
               {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
             </div>
           </div>
