@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, X, ChevronRight, Link2, CheckCircle2, Clock, Sparkles } from "lucide-react";
+import { AlertTriangle, X, ChevronRight, CheckCircle2, Clock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 interface ConnectionStatus {
   hometax: boolean;
@@ -39,6 +40,7 @@ const mockUrgentAlerts: UrgentAlert[] = [
 
 export function ConnectionStatusBanner() {
   const navigate = useNavigate();
+  const { resetOnboarding } = useOnboarding();
   const [connectionStatus] = useState<ConnectionStatus>(mockConnectionStatus);
   const [alerts] = useState<UrgentAlert[]>(mockUrgentAlerts);
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
@@ -109,7 +111,7 @@ export function ConnectionStatusBanner() {
         <Button
           size="sm"
           className="h-8 text-xs gap-1"
-          onClick={() => navigate("/settings")}
+          onClick={resetOnboarding}
         >
           <Sparkles className="h-3.5 w-3.5" />
           연동 시작하기
