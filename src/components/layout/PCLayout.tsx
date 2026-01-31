@@ -115,7 +115,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
             size="lg"
             className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-white hover:bg-white/90 p-1 animate-bounce-subtle"
           >
-            <img src={chatbotIcon} alt="김비서" className="h-12 w-12 object-contain" />
+            <img src={chatbotIcon} alt="김비서" className="h-12 w-12 object-contain" style={{ filter: 'invert(37%) sepia(93%) saturate(1352%) hue-rotate(200deg) brightness(97%) contrast(101%)' }} />
           </Button>
         )}
       </main>
