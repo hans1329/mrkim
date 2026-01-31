@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Sparkles, MessageCircle, RotateCcw, Clock } from "lucide-react";
+import { Bot, Send, Sparkles, MessageCircle, RotateCcw, Clock } from "lucide-react";
 import { getTodayStats, mockDeposits, mockAutoTransfers, mockEmployees, formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
-import kimBotIcon from "@/assets/kim-bot-icon.webp";
+
 const quickPrompts = [
   "오늘 매출 얼마야?",
   "급여 현황",
@@ -139,20 +139,20 @@ export function AIChatCard() {
   const isBriefingDisplay = !response && showBriefing;
 
   return (
-    <Card className="overflow-hidden bg-gradient-to-br from-[#2196F3] via-[#9C27B0] to-[#FF9800] border-0 shadow-lg min-h-[240px]">
-      <CardContent className="p-6">
+    <Card className="overflow-hidden bg-gradient-to-br from-[#2196F3] via-[#9C27B0] to-[#FF9800] border-0 shadow-lg min-h-[200px]">
+      <CardContent className="p-5">
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/secretary-settings")}
-              className="flex h-16 w-16 items-center justify-center rounded-full hover:opacity-80 transition-opacity"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors"
             >
-              <img src={kimBotIcon} alt="김비서" className="h-14 w-14 object-contain" />
+              <Bot className="h-6 w-6 text-white" />
             </button>
             <div>
-              <h3 className="font-bold text-white text-lg">김비서</h3>
-              <p className="text-sm text-white/80">AI 경영 비서가 도와드릴게요</p>
+              <h3 className="font-bold text-white">김비서</h3>
+              <p className="text-xs text-white/80">AI 경영 비서가 도와드릴게요</p>
             </div>
           </div>
           <Button
