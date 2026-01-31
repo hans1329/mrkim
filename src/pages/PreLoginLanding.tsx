@@ -237,7 +237,7 @@ const PreLoginLanding = () => {
           <p className="text-muted-foreground text-sm mb-5">
             연결만 하면 김비서가 알아서 합니다
           </p>
-          <Button size="lg" className="h-12 px-8 text-base font-bold gap-2 rounded-xl" onClick={() => navigate("/login")}>
+          <Button size="lg" className="h-14 px-10 text-lg font-bold gap-2 rounded-xl" onClick={() => navigate("/login")}>
             <img src={logoWhite} alt="김비서" className="h-7 w-auto" />
             무료로 시작하기
             <ArrowRight className="h-5 w-5" />
