@@ -154,7 +154,7 @@ export function ServiceVoiceOverlay() {
 
         {/* FAQ 해시태그 버튼 */}
         {status === "idle" && (
-          <div className="flex flex-col items-center gap-2 max-w-sm mb-4">
+          <div className="flex flex-wrap justify-center gap-2 max-w-sm mb-4">
             {["#김비서가 뭐야?", "#어떤 기능이 있어?", "#요금은?", "#무료체험"].map((tag) => (
               <button
                 key={tag}
@@ -178,7 +178,7 @@ export function ServiceVoiceOverlay() {
                     setTimeout(() => setStatus("idle"), 3000);
                   }, 800);
                 }}
-                className="px-4 py-2 rounded-full bg-white/20 text-white/90 text-sm hover:bg-white/30 transition-colors"
+                className="px-3 py-1.5 rounded-full bg-white/20 text-white/90 text-sm hover:bg-white/30 transition-colors"
               >
                 {tag}
               </button>
