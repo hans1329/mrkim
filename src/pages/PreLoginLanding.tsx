@@ -234,8 +234,8 @@ const PreLoginLanding = () => {
       {/* Final CTA */}
       <section className="py-12">
         <div className="max-w-md mx-auto px-4 text-center">
-          <div className="mb-4">
-            <img src={mainIllust2} alt="김비서" className="w-36 mx-auto" />
+          <div className="mb-6">
+            <img src={mainIllust2} alt="김비서" className="w-56 mx-auto" />
           </div>
           <h2 className="text-xl lg:text-2xl font-bold mb-2">
             지금 바로 시작하세요
