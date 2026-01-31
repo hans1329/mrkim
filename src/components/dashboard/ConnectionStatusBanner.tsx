@@ -109,7 +109,7 @@ export function ConnectionStatusBanner() {
         <Button
           size="sm"
           className="h-8 text-xs gap-1"
-          onClick={() => navigate("/settings")}
+          onClick={() => navigate("/onboarding")}
         >
           <Sparkles className="h-3.5 w-3.5" />
           연동 시작하기

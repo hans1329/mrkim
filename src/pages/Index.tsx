@@ -1,30 +1,8 @@
-import { useOnboarding } from "@/hooks/useOnboarding";
-import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import Dashboard from "@/pages/Dashboard";
 
 const Index = () => {
-  const {
-    isFirstVisit,
-    currentStep,
-    connections,
-    goToStep,
-    connectService,
-    completeOnboarding,
-  } = useOnboarding();
-
-  // 첫 방문 시 온보딩 위저드 표시
-  if (isFirstVisit) {
-    return (
-      <OnboardingWizard
-        currentStep={currentStep}
-        connections={connections}
-        onGoToStep={goToStep}
-        onConnect={connectService}
-        onComplete={completeOnboarding}
-      />
-    );
-  }
-
+  // 대시보드를 항상 먼저 표시
+  // 온보딩은 /onboarding 경로에서 별도로 관리
   return <Dashboard />;
 };
 
