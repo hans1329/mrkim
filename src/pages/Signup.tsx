@@ -6,28 +6,31 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Mail } from "lucide-react";
 import iccLogo from "@/assets/icc-2.webp";
-export default function Login() {
+
+export default function Signup() {
   const navigate = useNavigate();
   const [isEmailMode, setIsEmailMode] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleGoogleLogin = () => {
+  const handleGoogleSignup = () => {
     // TODO: Supabase Google OAuth 연결
-    console.log("Google login clicked");
+    console.log("Google signup clicked");
     navigate("/");
   };
 
-  const handleKakaoLogin = () => {
+  const handleKakaoSignup = () => {
     // TODO: Kakao OAuth 연결
-    console.log("Kakao login clicked");
+    console.log("Kakao signup clicked");
     navigate("/");
   };
 
-  const handleEmailLogin = (e: React.FormEvent) => {
+  const handleEmailSignup = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Supabase Email/Password 연결
-    console.log("Email login:", email, password);
+    console.log("Email signup:", name, email, password);
     navigate("/");
   };
 
@@ -39,7 +42,7 @@ export default function Login() {
           variant="ghost"
           size="icon"
           className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
-          onClick={() => navigate("/intro")}
+          onClick={() => navigate("/login")}
         >
           <ArrowLeft className="h-6 w-6" />
         </Button>
@@ -69,7 +72,7 @@ export default function Login() {
               </p>
             </div>
             <p className="text-primary-foreground/70 text-sm font-bold">
-              명령만 하면 관리되는 사업장
+              회원가입
             </p>
           </div>
 
@@ -79,7 +82,7 @@ export default function Login() {
               <Button
                 variant="outline"
                 className="w-full h-12 gap-3 text-base bg-white hover:bg-white/90 text-foreground border-0"
-                onClick={handleGoogleLogin}
+                onClick={handleGoogleSignup}
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path
@@ -108,7 +111,7 @@ export default function Login() {
                   backgroundColor: "#FEE500",
                   color: "#000000",
                 }}
-                onClick={handleKakaoLogin}
+                onClick={handleKakaoSignup}
               >
                 <svg
                   className="h-5 w-5"
@@ -137,7 +140,7 @@ export default function Login() {
                 onClick={() => setIsEmailMode(true)}
               >
                 <Mail className="h-5 w-5" />
-                이메일로 계속하기
+                이메일로 가입하기
               </Button>
             </div>
           ) : (
@@ -152,7 +155,21 @@ export default function Login() {
                 뒤로
               </Button>
 
-              <form onSubmit={handleEmailLogin} className="space-y-4">
+              <form onSubmit={handleEmailSignup} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-primary-foreground">
+                    이름
+                  </Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="홍길동"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="bg-white/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-primary-foreground">
                     이메일
@@ -181,36 +198,44 @@ export default function Login() {
                     className="bg-white/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="confirmPassword"
+                    className="text-primary-foreground"
+                  >
+                    비밀번호 확인
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="bg-white/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
+                  />
+                </div>
                 <Button
                   type="submit"
                   className="w-full h-12 bg-white text-primary hover:bg-white/90"
                 >
-                  로그인
+                  가입하기
                 </Button>
               </form>
-
-              <div className="text-center">
-                <Button
-                  variant="link"
-                  className="text-sm text-primary-foreground/70 p-0 h-auto hover:text-primary-foreground"
-                >
-                  비밀번호를 잊으셨나요?
-                </Button>
-              </div>
             </div>
           )}
 
           {/* 하단 링크들 */}
           <div className="text-center text-sm pt-4">
             <span className="text-primary-foreground/70">
-              계정이 없으신가요?{" "}
+              이미 계정이 있으신가요?{" "}
             </span>
             <Button
               variant="link"
               className="p-0 h-auto font-semibold text-primary-foreground hover:text-primary-foreground/80"
-              onClick={() => navigate("/signup")}
+              onClick={() => navigate("/login")}
             >
-              회원가입
+              로그인
             </Button>
           </div>
         </div>
