@@ -141,14 +141,14 @@ export function AIChatCard() {
 
   return (
     <div className="relative pt-16">
-      {/* 김비서 캐릭터 이미지 - 카드 위에 겹침 */}
+      {/* 김비서 캐릭터 이미지 - 카드 뒤 레이어, 중앙 배치 */}
       <img 
         src={kimSecretaryImg} 
         alt="김비서" 
-        className="absolute -top-2 right-4 w-28 h-28 object-contain z-10 drop-shadow-lg"
+        className="absolute -top-2 left-1/2 -translate-x-1/2 w-28 h-28 object-contain z-0 drop-shadow-lg"
       />
       
-      <Card className="overflow-hidden bg-gradient-to-br from-[#2196F3] via-[#9C27B0] to-[#FF9800] border-0 shadow-lg min-h-[200px]">
+      <Card className="relative z-10 overflow-hidden bg-gradient-to-br from-[#2196F3] via-[#9C27B0] to-[#FF9800] border-0 shadow-lg min-h-[200px]">
         <CardContent className="p-5">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
