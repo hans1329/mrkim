@@ -145,7 +145,7 @@ export function AIChatCard() {
       <img 
         src={kimSecretaryImg} 
         alt="김비서" 
-        className="absolute -top-2 left-1/2 -translate-x-1/2 w-28 h-28 object-contain z-0 drop-shadow-lg"
+        className="absolute -top-2 left-1/2 -translate-x-1/2 w-28 h-28 object-contain z-0 drop-shadow-lg opacity-70"
       />
       
       <Card className="relative z-10 overflow-hidden bg-gradient-to-br from-[#2196F3] via-[#9C27B0] to-[#FF9800] border-0 shadow-lg min-h-[200px]">
