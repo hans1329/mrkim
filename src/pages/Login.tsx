@@ -15,26 +15,24 @@ function SpeechBubbleButton() {
   const { openVoice } = useServiceChat();
   
   return (
-    <button
-      onClick={() => openVoice()}
-      className="absolute -top-12 left-1/2 -translate-x-1/2 animate-bounce-subtle w-screen flex justify-center pointer-events-none"
-      style={{ marginLeft: "calc(-50vw + 50%)" }}
-    >
-      <div className="relative bg-white rounded-2xl px-4 py-2 shadow-lg pointer-events-auto">
-        <span className="text-xs font-medium text-primary whitespace-nowrap">
-          궁금한게 있으시면 눌러주세요!
-        </span>
-        {/* 말풍선 꼬리 - 더 뾰족하게 */}
-        <div 
-          className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0"
-          style={{
-            borderLeft: "6px solid transparent",
-            borderRight: "6px solid transparent",
-            borderTop: "10px solid white",
-          }}
-        />
-      </div>
-    </button>
+    <div className="fixed top-24 left-0 right-0 flex justify-center z-50 animate-bounce-subtle">
+      <button onClick={() => openVoice()}>
+        <div className="relative bg-white rounded-2xl px-4 py-2 shadow-lg">
+          <span className="text-xs font-medium text-primary whitespace-nowrap">
+            궁금한게 있으시면 눌러주세요!
+          </span>
+          {/* 말풍선 꼬리 */}
+          <div 
+            className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0"
+            style={{
+              borderLeft: "6px solid transparent",
+              borderRight: "6px solid transparent",
+              borderTop: "10px solid white",
+            }}
+          />
+        </div>
+      </button>
+    </div>
   );
 }
 
@@ -60,6 +58,8 @@ function LoginContent() {
     navigate("/");
   };
   return <div className="min-h-screen bg-primary flex flex-col">
+      {/* 말풍선 버튼 - 화면 중앙 상단 고정 */}
+      <SpeechBubbleButton />
       {/* 상단 뒤로가기 버튼 */}
       <div className="p-4">
         <Button variant="ghost" size="icon" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={() => navigate("/intro")}>
@@ -72,9 +72,7 @@ function LoginContent() {
         <div className="w-full max-w-sm space-y-8">
           {/* 로고 & 타이틀 */}
           <div className="text-center space-y-4">
-            <div className="relative flex flex-col items-center justify-center">
-              {/* 말풍선 버튼 */}
-              <SpeechBubbleButton />
+            <div className="flex flex-col items-center justify-center">
               <img src={iccLogo} alt="김비서" className="h-20 w-auto opacity-95" style={{
                 filter: "drop-shadow(4px 8px 6px rgba(0, 0, 0, 0.3))"
               }} />
