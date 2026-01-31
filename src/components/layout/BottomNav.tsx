@@ -12,7 +12,7 @@ const navItems = [
 
 export function BottomNav() {
   return (
-    <nav className="absolute bottom-0 left-0 right-0 z-50 border-t border-border bg-card shadow-[0_-2px_10px_rgba(0,0,0,0.1)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <nav className="absolute bottom-0 left-0 right-0 z-50 bg-primary shadow-[0_-4px_20px_rgba(0,0,0,0.15)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="flex h-16 items-center justify-around px-2">
         {navItems.map((item) => (
           <NavLink
@@ -20,9 +20,9 @@ export function BottomNav() {
             to={item.url}
             end={item.url === "/"}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-muted-foreground transition-colors active:bg-muted"
+              "flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-primary-foreground/70 transition-colors active:bg-white/10"
             )}
-            activeClassName="text-primary"
+            activeClassName="text-white"
           >
             <item.icon className="h-5 w-5" />
             <span className="text-xs font-medium">{item.title}</span>
