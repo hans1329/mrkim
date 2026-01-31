@@ -66,64 +66,55 @@ export function ConnectionStatusBanner() {
   if (!isFullyConnected) {
     return (
       <div className="rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 mb-4">
-        <div className="flex items-start gap-3">
-          <div className="shrink-0 mt-0.5">
-            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-              <Link2 className="h-5 w-5 text-primary" />
-            </div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h4 className="font-semibold text-sm">
-                데이터 연동을 완료해주세요
-              </h4>
-              <span className="text-xs text-muted-foreground">
-                {connectedCount}/{totalConnections}
-              </span>
-            </div>
-            
-            <p className="text-xs text-muted-foreground mb-3">
-              연동하면 김비서가 실시간으로 사업 현황을 분석해드려요
-            </p>
-
-            {/* 연동 상태 표시 */}
-            <div className="flex items-center gap-2 mb-3">
-              {connections.map((conn) => (
-                <div
-                  key={conn.key}
-                  className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded-full text-xs",
-                    conn.connected 
-                      ? "bg-success/20 text-success" 
-                      : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {conn.connected ? (
-                    <CheckCircle2 className="h-3 w-3" />
-                  ) : (
-                    <Clock className="h-3 w-3" />
-                  )}
-                  {conn.label}
-                </div>
-              ))}
-            </div>
-
-            {/* 진행률 바 */}
-            <div className="mb-3">
-              <Progress value={progressPercent} className="h-1.5" />
-            </div>
-
-            <Button
-              size="sm"
-              className="h-8 text-xs gap-1"
-              onClick={() => navigate("/settings")}
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              연동 시작하기
-              <ChevronRight className="h-3 w-3" />
-            </Button>
-          </div>
+        <div className="flex items-center gap-2 mb-1">
+          <h4 className="font-semibold text-sm">
+            데이터 연동을 완료해주세요
+          </h4>
+          <span className="text-xs text-muted-foreground">
+            {connectedCount}/{totalConnections}
+          </span>
         </div>
+          
+        <p className="text-xs text-muted-foreground mb-3">
+          연동하면 김비서가 실시간으로 사업 현황을 분석해드려요
+        </p>
+
+        {/* 연동 상태 표시 */}
+        <div className="flex items-center gap-2 mb-3">
+          {connections.map((conn) => (
+            <div
+              key={conn.key}
+              className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-full text-xs",
+                conn.connected 
+                  ? "bg-success/20 text-success" 
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {conn.connected ? (
+                <CheckCircle2 className="h-3 w-3" />
+              ) : (
+                <Clock className="h-3 w-3" />
+              )}
+              {conn.label}
+            </div>
+          ))}
+        </div>
+
+        {/* 진행률 바 */}
+        <div className="mb-3">
+          <Progress value={progressPercent} className="h-1.5" />
+        </div>
+
+        <Button
+          size="sm"
+          className="h-8 text-xs gap-1"
+          onClick={() => navigate("/settings")}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          연동 시작하기
+          <ChevronRight className="h-3 w-3" />
+        </Button>
       </div>
     );
   }
