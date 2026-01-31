@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Mail } from "lucide-react";
-import iccLogo from "@/assets/icc.webp";
+import iccLogo from "@/assets/icc-2.webp";
 
 export default function Login() {
   const navigate = useNavigate();
