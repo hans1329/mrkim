@@ -9,6 +9,9 @@ import survivalImage from "@/assets/survival-quiz.webp";
 import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
+import { ServiceChatProvider } from "@/contexts/ServiceChatContext";
+import { ServiceChatPanel } from "@/components/chat/ServiceChatPanel";
+import { FloatingServiceChatButton } from "@/components/chat/FloatingServiceChatButton";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -51,6 +54,7 @@ const Landing = () => {
   ];
 
   return (
+    <ServiceChatProvider>
     <div className={`flex h-screen overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-8 lg:px-8 transition-all duration-700 ${
       showResult ? 'justify-center' : 'justify-center lg:justify-center'
     }`}>
@@ -355,7 +359,12 @@ const Landing = () => {
           </div>
         </div>
       </div>
+
+      {/* 서비스 안내 챗봇 */}
+      <FloatingServiceChatButton />
+      <ServiceChatPanel />
     </div>
+    </ServiceChatProvider>
   );
 };
 
