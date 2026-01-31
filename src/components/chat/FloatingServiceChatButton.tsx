@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useServiceChat } from "@/contexts/ServiceChatContext";
-import chatbotIcon from "@/assets/icc-4.webp";
+import chatbotIcon from "@/assets/icc-blue.webp";
 
 export function FloatingServiceChatButton() {
   const { isVoiceOpen, isChatOpen, openVoice } = useServiceChat();
