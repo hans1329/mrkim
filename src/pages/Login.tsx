@@ -33,7 +33,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-primary flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-8">
         {/* 로고 & 타이틀 */}
         <div className="text-center space-y-4">
@@ -41,10 +41,10 @@ export default function Login() {
             <img src={mrKimAvatar} alt="Mr. Kim" className="h-20 w-auto" />
           </div>
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold">김비서</h1>
-            <p className="text-sm text-muted-foreground tracking-wide">Mr. Kim</p>
+            <h1 className="text-2xl font-bold text-primary-foreground">김비서</h1>
+            <p className="text-sm text-primary-foreground/80 tracking-wide">Mr. Kim</p>
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-primary-foreground/70 text-sm">
             사업을 더 스마트하게 관리하세요
           </p>
         </div>
@@ -54,7 +54,7 @@ export default function Login() {
             {/* 소셜 로그인 버튼들 */}
             <Button
               variant="outline"
-              className="w-full h-12 gap-3 text-base"
+              className="w-full h-12 gap-3 text-base bg-white hover:bg-white/90 text-foreground border-0"
               onClick={handleGoogleLogin}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -79,7 +79,7 @@ export default function Login() {
             </Button>
 
             <Button
-              className="w-full h-12 gap-3 text-base"
+              className="w-full h-12 gap-3 text-base border-0"
               style={{ backgroundColor: "#FEE500", color: "#000000" }}
               onClick={handleKakaoLogin}
             >
@@ -91,16 +91,16 @@ export default function Login() {
 
             <div className="relative py-2">
               <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
+                <Separator className="w-full bg-primary-foreground/20" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">또는</span>
+                <span className="bg-primary px-2 text-primary-foreground/70">또는</span>
               </div>
             </div>
 
             <Button
               variant="ghost"
-              className="w-full h-12 gap-3 text-muted-foreground"
+              className="w-full h-12 gap-3 text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
               onClick={() => setIsEmailMode(true)}
             >
               <Mail className="h-5 w-5" />
@@ -112,7 +112,7 @@ export default function Login() {
             <Button
               variant="ghost"
               size="sm"
-              className="gap-2 -ml-2 text-muted-foreground"
+              className="gap-2 -ml-2 text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
               onClick={() => setIsEmailMode(false)}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -121,7 +121,7 @@ export default function Login() {
 
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">이메일</Label>
+                <Label htmlFor="email" className="text-primary-foreground">이메일</Label>
                 <Input
                   id="email"
                   type="email"
@@ -129,10 +129,11 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  className="bg-white/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">비밀번호</Label>
+                <Label htmlFor="password" className="text-primary-foreground">비밀번호</Label>
                 <Input
                   id="password"
                   type="password"
@@ -140,15 +141,16 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="bg-white/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
                 />
               </div>
-              <Button type="submit" className="w-full h-12">
+              <Button type="submit" className="w-full h-12 bg-white text-primary hover:bg-white/90">
                 로그인
               </Button>
             </form>
 
             <div className="text-center">
-              <Button variant="link" className="text-sm text-muted-foreground p-0 h-auto">
+              <Button variant="link" className="text-sm text-primary-foreground/70 p-0 h-auto hover:text-primary-foreground">
                 비밀번호를 잊으셨나요?
               </Button>
             </div>
@@ -157,8 +159,8 @@ export default function Login() {
 
         {/* 하단 링크들 */}
         <div className="text-center text-sm pt-4">
-          <span className="text-muted-foreground">계정이 없으신가요? </span>
-          <Button variant="link" className="p-0 h-auto font-semibold">
+          <span className="text-primary-foreground/70">계정이 없으신가요? </span>
+          <Button variant="link" className="p-0 h-auto font-semibold text-primary-foreground hover:text-primary-foreground/80">
             회원가입
           </Button>
         </div>
@@ -166,7 +168,7 @@ export default function Login() {
         <Button
           variant="ghost"
           size="sm"
-          className="w-full text-muted-foreground"
+          className="w-full text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
           onClick={() => navigate("/intro")}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
