@@ -23,7 +23,7 @@ const PreLoginLanding = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/10">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/10 flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -43,11 +43,11 @@ const PreLoginLanding = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="max-w-6xl mx-auto px-4 py-12 lg:py-20">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+      <section className="relative overflow-hidden flex-1 flex items-center">
+        <div className="max-w-4xl mx-auto px-4 py-12 lg:py-16">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-center">
             {/* Left: Text Content */}
-            <div className="space-y-6 text-center lg:text-left">
+            <div className="space-y-5 text-center lg:text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full text-sm font-medium text-primary">
                 <Zap className="h-4 w-4" />
                 사업자를 위한 AI 비서
@@ -131,10 +131,10 @@ const PreLoginLanding = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-muted/30">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl lg:text-3xl font-bold mb-3">
+      <section className="py-12 bg-muted/30">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="text-xl lg:text-2xl font-bold mb-2">
               사업 운영, 이제 <span className="text-primary">AI가</span> 대신합니다
             </h2>
             <p className="text-muted-foreground">
@@ -142,18 +142,18 @@ const PreLoginLanding = () => {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {features.map((feature, i) => (
               <Card 
                 key={i} 
                 className="border-0 shadow-md hover:shadow-lg transition-shadow bg-card/80 backdrop-blur"
               >
-                <CardContent className="p-5">
-                  <div className="p-3 bg-primary/10 rounded-xl w-fit mb-4">
-                    <feature.icon className="h-6 w-6 text-primary" />
+                <CardContent className="p-4">
+                  <div className="p-2.5 bg-primary/10 rounded-lg w-fit mb-3">
+                    <feature.icon className="h-5 w-5 text-primary" />
                   </div>
-                  <h3 className="font-bold text-lg mb-1">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  <h3 className="font-semibold text-base mb-1">{feature.title}</h3>
+                  <p className="text-xs text-muted-foreground">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -162,29 +162,29 @@ const PreLoginLanding = () => {
       </section>
 
       {/* Social Proof */}
-      <section className="py-16">
-        <div className="max-w-6xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-6 flex-wrap justify-center">
+      <section className="py-10">
+        <div className="max-w-2xl mx-auto px-4 text-center">
+          <div className="inline-flex items-center gap-8 flex-wrap justify-center">
             <div>
-              <p className="text-4xl font-black text-primary">10,000+</p>
-              <p className="text-sm text-muted-foreground">사용 중인 사장님</p>
+              <p className="text-3xl font-black text-primary">10,000+</p>
+              <p className="text-xs text-muted-foreground">사용 중인 사장님</p>
             </div>
-            <div className="w-px h-12 bg-border hidden sm:block" />
+            <div className="w-px h-10 bg-border hidden sm:block" />
             <div>
-              <p className="text-4xl font-black text-primary">4.9</p>
-              <p className="text-sm text-muted-foreground">앱스토어 평점</p>
+              <p className="text-3xl font-black text-primary">4.9</p>
+              <p className="text-xs text-muted-foreground">앱스토어 평점</p>
             </div>
-            <div className="w-px h-12 bg-border hidden sm:block" />
+            <div className="w-px h-10 bg-border hidden sm:block" />
             <div>
-              <p className="text-4xl font-black text-primary">월 50시간</p>
-              <p className="text-sm text-muted-foreground">평균 절약 시간</p>
+              <p className="text-3xl font-black text-primary">월 50시간</p>
+              <p className="text-xs text-muted-foreground">평균 절약 시간</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* App Download Section */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-10 bg-muted/30">
         <div className="max-w-xl mx-auto px-4">
           <Card className="border-0 shadow-xl overflow-hidden bg-card/95 backdrop-blur">
             <CardContent className="p-6">
@@ -232,20 +232,20 @@ const PreLoginLanding = () => {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20">
-        <div className="max-w-2xl mx-auto px-4 text-center">
-          <div className="mb-6">
-            <img src={mainIllust2} alt="김비서" className="w-48 mx-auto" />
+      <section className="py-12">
+        <div className="max-w-md mx-auto px-4 text-center">
+          <div className="mb-4">
+            <img src={mainIllust2} alt="김비서" className="w-36 mx-auto" />
           </div>
-          <h2 className="text-2xl lg:text-3xl font-bold mb-4">
+          <h2 className="text-xl lg:text-2xl font-bold mb-2">
             지금 바로 시작하세요
           </h2>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-muted-foreground text-sm mb-5">
             연결만 하면 김비서가 알아서 합니다
           </p>
           <Button 
             size="lg" 
-            className="h-14 px-10 text-lg font-bold gap-2 rounded-xl"
+            className="h-12 px-8 text-base font-bold gap-2 rounded-xl"
             onClick={() => navigate("/login")}
           >
             <Bot className="h-5 w-5" />
