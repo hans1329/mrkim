@@ -248,24 +248,30 @@ const PreLoginLanding = () => {
       {/* Footer */}
       <footer className="border-t py-10 bg-muted/30">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
             {/* Logo & Brand */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              
-              <div className="flex items-center gap-6 text-sm">
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">이용약관</a>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">개인정보처리방침</a>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">고객센터</a>
-              </div>
+            <div className="flex items-center gap-2">
+              <img src={logo} alt="김비서 로고" className="h-6 w-auto" />
+              <span className="font-bold">김 · 비 · 서</span>
+              <span className="text-xs text-muted-foreground">Mr. Kim</span>
             </div>
+            
+            <p className="text-sm text-muted-foreground">
+              AI 기반 소상공인 경영 비서 서비스
+            </p>
             
             {/* Divider */}
             <div className="border-t" />
             
-            {/* Copyright & Info */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+            {/* Copyright & Links */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-muted-foreground">
               <p>© 2025 김비서. All rights reserved.</p>
               
+              <div className="flex items-center gap-4">
+                <a href="#" className="hover:text-foreground transition-colors">이용약관</a>
+                <a href="#" className="hover:text-foreground transition-colors">개인정보처리방침</a>
+                <a href="#" className="hover:text-foreground transition-colors">고객센터</a>
+              </div>
             </div>
           </div>
         </div>
