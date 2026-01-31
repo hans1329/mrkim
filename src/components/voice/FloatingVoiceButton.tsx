@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { AudioLines } from "lucide-react";
 import { useVoice } from "@/contexts/VoiceContext";
+import chatbotIcon from "@/assets/icc-4.webp";
 
 export function FloatingVoiceButton() {
   const { isOpen, openVoice } = useVoice();
@@ -10,10 +10,10 @@ export function FloatingVoiceButton() {
   return (
     <Button
       onClick={openVoice}
-      className="absolute bottom-20 right-4 h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform z-40 bg-gradient-to-br from-primary to-primary/80"
+      className="absolute bottom-20 right-4 h-16 w-16 rounded-full shadow-lg hover:scale-105 transition-transform z-40 bg-white hover:bg-white/90 p-1"
       size="icon"
     >
-      <AudioLines className="h-8 w-8" />
+      <img src={chatbotIcon} alt="김비서" className="h-12 w-12 object-contain" />
     </Button>
   );
 }
