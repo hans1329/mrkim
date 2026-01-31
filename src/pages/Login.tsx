@@ -38,8 +38,8 @@ export default function Login() {
         {/* 로고 & 타이틀 */}
         <div className="text-center space-y-4">
           <div className="flex flex-col items-center justify-center">
+            <span className="text-black font-bold text-2xl mb-2">Mr.Kim</span>
             <img src={iccLogo} alt="김비서" className="h-20 w-auto" style={{ filter: 'drop-shadow(4px 8px 6px rgba(0, 0, 0, 0.3))' }} />
-            <span className="text-black font-bold text-xl mt-2">Mr.Kim</span>
           </div>
           <div className="space-y-1">
             <h1 className="text-2xl font-bold text-primary-foreground">김 · 비 · 서</h1>
