@@ -56,7 +56,7 @@ const PreLoginLanding = () => {
     step: 3,
     icon: CheckCircle2,
     title: "명령만 하세요",
-    description: "세금 신고, 급여 계산 등 필요한 건 말만 하면 됩니다"
+    description: "세금 신고, 급여 계산 등 필요한 건 말만 하세요!"
   }];
 
   const testimonials = [{
