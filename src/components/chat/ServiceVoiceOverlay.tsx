@@ -152,6 +152,40 @@ export function ServiceVoiceOverlay() {
         {/* 상태 텍스트 */}
         <p className="text-white/80 text-sm mb-4">{getStatusText()}</p>
 
+        {/* FAQ 해시태그 버튼 */}
+        {status === "idle" && (
+          <div className="flex flex-wrap justify-center gap-2 max-w-sm mb-4">
+            {["#김비서가 뭐야?", "#어떤 기능이 있어?", "#요금은?", "#무료체험"].map((tag) => (
+              <button
+                key={tag}
+                onClick={() => {
+                  setTranscript(tag.replace("#", ""));
+                  setStatus("processing");
+                  setTimeout(() => {
+                    const question = tag.replace("#", "");
+                    let answer = "김비서에 대해 더 궁금한 점이 있으시면 말씀해주세요!";
+                    if (question.includes("뭐야")) {
+                      answer = "김비서는 소상공인을 위한 AI 경영 비서입니다! 매출 관리, 직원 급여, 세금 신고까지 음성 명령 한 마디로 해결해드려요.";
+                    } else if (question.includes("기능")) {
+                      answer = "매출/지출 관리, 직원 급여 계산, 세무 지원, 자동이체 관리 등 사업장 운영에 필요한 모든 기능을 제공합니다.";
+                    } else if (question.includes("요금")) {
+                      answer = "14일 무료 체험 후, 월 29,000원부터 시작합니다. 지금 가입하시면 첫 달 50% 할인 혜택이 있어요!";
+                    } else if (question.includes("무료")) {
+                      answer = "네! 14일간 모든 기능을 무료로 체험하실 수 있어요. 카드 등록 없이 바로 시작하세요!";
+                    }
+                    setResponse(answer);
+                    setStatus("speaking");
+                    setTimeout(() => setStatus("idle"), 3000);
+                  }, 800);
+                }}
+                className="px-3 py-1.5 rounded-full bg-white/20 text-white/90 text-sm hover:bg-white/30 transition-colors"
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* 음파 애니메이션 (듣는 중) */}
         {status === "listening" && (
           <div className="flex items-center gap-1 h-8">
