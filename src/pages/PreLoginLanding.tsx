@@ -246,17 +246,32 @@ const PreLoginLanding = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-8 bg-white dark:bg-card">
+      <footer className="border-t py-10 bg-muted/30">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-primary" />
-              <span className="font-semibold">김비서</span>
+          <div className="flex flex-col gap-6">
+            {/* Logo & Brand */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <img src={logo} alt="김비서 로고" className="h-8 w-auto" />
+                <div>
+                  <span className="font-bold text-lg">김 · 비 · 서</span>
+                  <span className="text-xs text-muted-foreground ml-2">Mr. Kim</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-6 text-sm">
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">이용약관</a>
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">개인정보처리방침</a>
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">고객센터</a>
+              </div>
             </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <a href="#" className="hover:text-foreground transition-colors">이용약관</a>
-              <a href="#" className="hover:text-foreground transition-colors">개인정보처리방침</a>
-              <a href="#" className="hover:text-foreground transition-colors">고객센터</a>
+            
+            {/* Divider */}
+            <div className="border-t" />
+            
+            {/* Copyright & Info */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+              <p>© 2025 김비서. All rights reserved.</p>
+              <p>AI 기반 소상공인 경영 비서 서비스</p>
             </div>
           </div>
         </div>
