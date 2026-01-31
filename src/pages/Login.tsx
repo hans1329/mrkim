@@ -8,6 +8,7 @@ import { ArrowLeft, Mail } from "lucide-react";
 import iccLogo from "@/assets/icc-2.webp";
 import { ServiceChatProvider } from "@/contexts/ServiceChatContext";
 import { ServiceChatPanel } from "@/components/chat/ServiceChatPanel";
+import { ServiceVoiceOverlay } from "@/components/chat/ServiceVoiceOverlay";
 import { FloatingServiceChatButton } from "@/components/chat/FloatingServiceChatButton";
 
 function LoginContent() {
@@ -229,6 +230,7 @@ function LoginContent() {
 
       {/* 서비스 안내 챗봇 */}
       <FloatingServiceChatButton />
+      <ServiceVoiceOverlay />
       <ServiceChatPanel />
     </div>
   );

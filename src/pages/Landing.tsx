@@ -11,6 +11,7 @@ import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
 import { ServiceChatProvider } from "@/contexts/ServiceChatContext";
 import { ServiceChatPanel } from "@/components/chat/ServiceChatPanel";
+import { ServiceVoiceOverlay } from "@/components/chat/ServiceVoiceOverlay";
 import { FloatingServiceChatButton } from "@/components/chat/FloatingServiceChatButton";
 
 const Landing = () => {
@@ -362,6 +363,7 @@ const Landing = () => {
 
       {/* 서비스 안내 챗봇 */}
       <FloatingServiceChatButton />
+      <ServiceVoiceOverlay />
       <ServiceChatPanel />
     </div>
     </ServiceChatProvider>

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, X, Sparkles } from "lucide-react";
+import { Bot, Send, X, Sparkles, AudioLines } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { useServiceChat } from "@/contexts/ServiceChatContext";
@@ -45,7 +45,7 @@ const getServiceResponse = (input: string): string => {
 };
 
 export function ServiceChatPanel() {
-  const { isOpen, closeChat } = useServiceChat();
+  const { isChatOpen, closeChat, switchToVoice } = useServiceChat();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -100,7 +100,7 @@ export function ServiceChatPanel() {
     <div
       className={cn(
         "fixed inset-0 z-50 flex flex-col bg-card transition-all duration-300",
-        isOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
+        isChatOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
       )}
     >
       {/* Header */}
@@ -114,14 +114,24 @@ export function ServiceChatPanel() {
             <p className="text-xs text-primary-foreground/70">서비스 문의</p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={closeChat}
-          className="text-primary-foreground hover:bg-primary-foreground/20"
-        >
-          <X className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={switchToVoice}
+            className="text-primary-foreground hover:bg-primary-foreground/20"
+          >
+            <AudioLines className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={closeChat}
+            className="text-primary-foreground hover:bg-primary-foreground/20"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}

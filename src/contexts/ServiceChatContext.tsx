@@ -1,21 +1,57 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
 interface ServiceChatContextType {
-  isOpen: boolean;
+  isVoiceOpen: boolean;
+  isChatOpen: boolean;
+  openVoice: () => void;
+  closeVoice: () => void;
   openChat: () => void;
   closeChat: () => void;
+  switchToChat: () => void;
+  switchToVoice: () => void;
 }
 
 const ServiceChatContext = createContext<ServiceChatContextType | null>(null);
 
 export function ServiceChatProvider({ children }: { children: ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
-  const openChat = () => setIsOpen(true);
-  const closeChat = () => setIsOpen(false);
+  const openVoice = () => {
+    setIsChatOpen(false);
+    setIsVoiceOpen(true);
+  };
+  
+  const closeVoice = () => setIsVoiceOpen(false);
+  
+  const openChat = () => {
+    setIsVoiceOpen(false);
+    setIsChatOpen(true);
+  };
+  
+  const closeChat = () => setIsChatOpen(false);
+
+  const switchToChat = () => {
+    setIsVoiceOpen(false);
+    setIsChatOpen(true);
+  };
+
+  const switchToVoice = () => {
+    setIsChatOpen(false);
+    setIsVoiceOpen(true);
+  };
 
   return (
-    <ServiceChatContext.Provider value={{ isOpen, openChat, closeChat }}>
+    <ServiceChatContext.Provider value={{ 
+      isVoiceOpen, 
+      isChatOpen, 
+      openVoice, 
+      closeVoice, 
+      openChat, 
+      closeChat,
+      switchToChat,
+      switchToVoice
+    }}>
       {children}
     </ServiceChatContext.Provider>
   );
