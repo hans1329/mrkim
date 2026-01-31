@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { ReactNode, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
   Receipt, 
@@ -8,12 +8,15 @@ import {
   MoreHorizontal,
   Bell,
   Settings,
-  Bot
+  Bot,
+  MessageCircle,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
 import { PCSideChat } from "@/components/chat/PCSideChat";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const navItems = [
   { title: "홈", url: "/", icon: LayoutDashboard },
@@ -31,6 +34,7 @@ interface PCLayoutProps {
 
 export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutProps) {
   const navigate = useNavigate();
+  const [chatOpen, setChatOpen] = useState(false);
 
   return (
     <div className="flex h-screen w-full bg-gradient-to-br from-primary/5 via-background to-secondary/10">
@@ -96,17 +100,35 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
         </div>
       </aside>
 
-      {/* 중앙 메인 콘텐츠 */}
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto p-6">
+      {/* 메인 콘텐츠 - 풀스크린 */}
+      <main className="flex-1 overflow-auto relative">
+        <div className="max-w-6xl mx-auto p-6">
           {children}
         </div>
-      </main>
 
-      {/* 우측 AI 채팅 패널 */}
-      <aside className="w-96 flex-shrink-0 border-l bg-card/30 backdrop-blur-sm">
-        <PCSideChat />
-      </aside>
+        {/* 플로팅 AI 채팅 버튼 */}
+        <Sheet open={chatOpen} onOpenChange={setChatOpen}>
+          <SheetTrigger asChild>
+            <Button
+              size="lg"
+              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50"
+            >
+              <MessageCircle className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[400px] sm:w-[480px] p-0 flex flex-col">
+            <SheetHeader className="p-4 border-b">
+              <SheetTitle className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" />
+                김비서와 대화
+              </SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-hidden">
+              <PCSideChat />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </main>
     </div>
   );
 }
