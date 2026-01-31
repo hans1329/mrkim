@@ -38,7 +38,7 @@ export default function Login() {
         {/* 로고 & 타이틀 */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center">
-            <img src={iccLogo} alt="김비서" className="h-20 w-auto drop-shadow-lg" />
+            <img src={iccLogo} alt="김비서" className="h-20 w-auto" style={{ filter: 'drop-shadow(4px 8px 6px rgba(0, 0, 0, 0.3))' }} />
           </div>
           <div className="space-y-1">
             <h1 className="text-2xl font-bold text-primary-foreground">김 · 비 · 서</h1>
