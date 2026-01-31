@@ -7,6 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bell, Settings, TrendingUp, AlertTriangle, CheckCircle2, Bot, ChevronRight } from "lucide-react";
 import chaltteokImage from "@/assets/icc-4.webp";
+import chaltteokBlue from "@/assets/icc-blue.webp";
+import chaltteokWhite from "@/assets/icc-white.webp";
 const colorTokens = [{
   name: "background",
   desc: "앱 배경색",
@@ -142,6 +144,55 @@ export default function DesignGuide() {
                     <Badge variant="outline">마케팅 자료</Badge>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* 캐릭터 베리에이션 */}
+        <section>
+          <h2 className="text-lg font-semibold mb-4">캐릭터 베리에이션</h2>
+          <Card>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-3 gap-6">
+                {/* 기본 (검정) */}
+                <div className="text-center">
+                  <div className="flex h-32 w-full items-center justify-center rounded-2xl bg-white border-2 border-border p-4 mb-3">
+                    <img src={chaltteokImage} alt="찰떡이 기본" className="h-full w-auto object-contain" />
+                  </div>
+                  <h4 className="font-medium text-sm">기본</h4>
+                  <p className="text-xs text-muted-foreground">icc-4.webp</p>
+                  <Badge variant="outline" className="mt-2 text-xs">밝은 배경용</Badge>
+                </div>
+
+                {/* 블루 버전 */}
+                <div className="text-center">
+                  <div className="flex h-32 w-full items-center justify-center rounded-2xl bg-white border-2 border-border p-4 mb-3">
+                    <img src={chaltteokBlue} alt="찰떡이 블루" className="h-full w-auto object-contain" />
+                  </div>
+                  <h4 className="font-medium text-sm">블루</h4>
+                  <p className="text-xs text-muted-foreground">icc-blue.webp</p>
+                  <Badge variant="outline" className="mt-2 text-xs">브랜드 강조용</Badge>
+                </div>
+
+                {/* 화이트 버전 */}
+                <div className="text-center">
+                  <div className="flex h-32 w-full items-center justify-center rounded-2xl bg-primary p-4 mb-3">
+                    <img src={chaltteokWhite} alt="찰떡이 화이트" className="h-full w-auto object-contain" />
+                  </div>
+                  <h4 className="font-medium text-sm">화이트</h4>
+                  <p className="text-xs text-muted-foreground">icc-white.webp</p>
+                  <Badge variant="outline" className="mt-2 text-xs">어두운 배경용</Badge>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                <h4 className="text-sm font-semibold mb-2">사용 가이드</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• <strong className="text-foreground">기본</strong>: 일반 UI, 카드, 밝은 배경에서 사용</li>
+                  <li>• <strong className="text-foreground">블루</strong>: 브랜드 컬러 강조가 필요한 마케팅 자료</li>
+                  <li>• <strong className="text-foreground">화이트</strong>: 어두운 배경, 로그인 페이지, 음성 오버레이</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
