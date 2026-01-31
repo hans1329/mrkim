@@ -9,6 +9,7 @@ import { VoiceProvider } from "@/contexts/VoiceContext";
 import Index from "./pages/Index";
 import PreLoginLanding from "./pages/PreLoginLanding";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import Transactions from "./pages/Transactions";
 import Employees from "./pages/Employees";
 import Funds from "./pages/Funds";
@@ -39,6 +40,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/intro" element={<PreLoginLanding />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/employees" element={<Employees />} />
                 <Route path="/funds" element={<Funds />} />
