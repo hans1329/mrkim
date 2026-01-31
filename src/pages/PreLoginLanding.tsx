@@ -108,7 +108,7 @@ const PreLoginLanding = () => {
                 <img 
                   src={mainIllust} 
                   alt="김비서 AI" 
-                  className="w-72 lg:w-96 rounded-3xl shadow-2xl"
+                  className="w-72 lg:w-96"
                 />
                 {/* Floating Chat Bubble */}
                 <div className="absolute -left-4 top-1/4 bg-card p-3 rounded-2xl shadow-lg border animate-fade-in">
