@@ -43,7 +43,7 @@ const PreLoginLanding = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden flex-1 flex items-center bg-gradient-to-br from-primary/5 via-background to-secondary/10">
+      <section className="relative overflow-hidden flex-1 flex items-center bg-background">
         <div className="max-w-4xl mx-auto px-4 py-12 lg:py-16">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-center">
             {/* Left: Text Content */}
@@ -141,17 +141,17 @@ const PreLoginLanding = () => {
         >
           <path 
             d="M0 120L48 110C96 100 192 80 288 70C384 60 480 60 576 65C672 70 768 80 864 85C960 90 1056 90 1152 80C1248 70 1344 50 1392 40L1440 30V120H1392C1344 120 1248 120 1152 120C1056 120 960 120 864 120C768 120 672 120 576 120C480 120 384 120 288 120C192 120 96 120 48 120H0Z" 
-          className="fill-muted/40"
+          className="fill-muted"
           />
           <path 
             d="M0 120L48 105C96 90 192 60 288 50C384 40 480 50 576 60C672 70 768 80 864 75C960 70 1056 50 1152 45C1248 40 1344 50 1392 55L1440 60V120H1392C1344 120 1248 120 1152 120C1056 120 960 120 864 120C768 120 672 120 576 120C480 120 384 120 288 120C192 120 96 120 48 120H0Z" 
-            className="fill-muted/60"
+            className="fill-muted"
           />
         </svg>
       </div>
 
       {/* Features Section */}
-      <section className="py-14 bg-muted/40">
+      <section className="py-14 bg-muted">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-10">
             <h2 className="text-2xl lg:text-3xl font-bold mb-3">
@@ -182,7 +182,7 @@ const PreLoginLanding = () => {
       </section>
 
       {/* Social Proof */}
-      <section className="py-10 bg-muted/40">
+      <section className="py-10 bg-muted">
         <div className="max-w-2xl mx-auto px-4 text-center">
           <div className="inline-flex items-center gap-8 flex-wrap justify-center">
             <div>
@@ -204,7 +204,7 @@ const PreLoginLanding = () => {
       </section>
 
       {/* App Download Section */}
-      <section className="py-10 bg-muted/50">
+      <section className="py-10 bg-muted">
         <div className="max-w-xl mx-auto px-4">
           <Card className="border-0 shadow-xl overflow-hidden bg-card/95 backdrop-blur">
             <CardContent className="p-6">
@@ -252,7 +252,7 @@ const PreLoginLanding = () => {
       </section>
 
       {/* Final CTA */}
-      <section className="py-12 bg-muted/40">
+      <section className="py-12 bg-muted">
         <div className="max-w-md mx-auto px-4 text-center">
           <div className="mb-6">
             <img src={mainIllust2} alt="김비서" className="w-56 mx-auto" />
@@ -276,7 +276,7 @@ const PreLoginLanding = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-8 bg-muted/50">
+      <footer className="border-t py-8 bg-muted">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
