@@ -6,10 +6,30 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Mail } from "lucide-react";
 import iccLogo from "@/assets/icc-2.webp";
-import { ServiceChatProvider } from "@/contexts/ServiceChatContext";
+import { ServiceChatProvider, useServiceChat } from "@/contexts/ServiceChatContext";
 import { ServiceChatPanel } from "@/components/chat/ServiceChatPanel";
 import { ServiceVoiceOverlay } from "@/components/chat/ServiceVoiceOverlay";
-import { FloatingServiceChatButton } from "@/components/chat/FloatingServiceChatButton";
+
+// 말풍선 형태의 챗봇 버튼
+function SpeechBubbleButton() {
+  const { openVoice } = useServiceChat();
+  
+  return (
+    <button
+      onClick={() => openVoice()}
+      className="absolute -top-8 -left-4 animate-bounce-subtle"
+    >
+      <div className="relative bg-white rounded-2xl px-3 py-1.5 shadow-lg">
+        <span className="text-xs font-medium text-primary whitespace-nowrap">
+          궁금한게 있으신가요?
+        </span>
+        {/* 말풍선 꼬리 */}
+        <div className="absolute -bottom-1.5 right-4 w-3 h-3 bg-white rotate-45 shadow-lg" />
+      </div>
+    </button>
+  );
+}
+
 function LoginContent() {
   const navigate = useNavigate();
   const [isEmailMode, setIsEmailMode] = useState(false);
@@ -44,10 +64,12 @@ function LoginContent() {
         <div className="w-full max-w-sm space-y-8">
           {/* 로고 & 타이틀 */}
           <div className="text-center space-y-4">
-            <div className="flex flex-col items-center justify-center">
+            <div className="relative flex flex-col items-center justify-center">
+              {/* 말풍선 버튼 */}
+              <SpeechBubbleButton />
               <img src={iccLogo} alt="김비서" className="h-20 w-auto opacity-95" style={{
-              filter: "drop-shadow(4px 8px 6px rgba(0, 0, 0, 0.3))"
-            }} />
+                filter: "drop-shadow(4px 8px 6px rgba(0, 0, 0, 0.3))"
+              }} />
             </div>
             <div className="space-y-1">
               <h1 className="font-bold text-primary-foreground text-3xl">
@@ -152,7 +174,6 @@ function LoginContent() {
       </footer>
 
       {/* 서비스 안내 챗봇 */}
-      <FloatingServiceChatButton />
       <ServiceVoiceOverlay />
       <ServiceChatPanel />
     </div>;
