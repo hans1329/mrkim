@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Bot, Send, Sparkles, MessageCircle, RotateCcw, Clock } from "lucide-react";
 import { getTodayStats, mockDeposits, mockAutoTransfers, mockEmployees, formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
+import kimSecretaryImg from "@/assets/kim-secretary.png";
 
 const quickPrompts = [
   "오늘 매출 얼마야?",
@@ -139,8 +140,16 @@ export function AIChatCard() {
   const isBriefingDisplay = !response && showBriefing;
 
   return (
-    <Card className="overflow-hidden bg-gradient-to-br from-[#2196F3] via-[#9C27B0] to-[#FF9800] border-0 shadow-lg min-h-[200px]">
-      <CardContent className="p-5">
+    <div className="relative pt-16">
+      {/* 김비서 캐릭터 이미지 - 카드 위에 겹침 */}
+      <img 
+        src={kimSecretaryImg} 
+        alt="김비서" 
+        className="absolute -top-2 right-4 w-28 h-28 object-contain z-10 drop-shadow-lg"
+      />
+      
+      <Card className="overflow-hidden bg-gradient-to-br from-[#2196F3] via-[#9C27B0] to-[#FF9800] border-0 shadow-lg min-h-[200px]">
+        <CardContent className="p-5">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -239,7 +248,8 @@ export function AIChatCard() {
             </button>
           ))}
         </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
