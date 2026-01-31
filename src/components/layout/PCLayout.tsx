@@ -5,9 +5,10 @@ import {
   Receipt, 
   Users, 
   Wallet, 
-  MoreHorizontal,
+  TrendingUp,
   Bell,
-  Settings
+  Settings,
+  HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -22,7 +23,7 @@ const navItems = [
   { title: "매출/매입", url: "/transactions", icon: Receipt },
   { title: "직원", url: "/employees", icon: Users },
   { title: "자금", url: "/funds", icon: Wallet },
-  { title: "더보기", url: "/more", icon: MoreHorizontal },
+  { title: "리포트", url: "/reports", icon: TrendingUp },
 ];
 
 interface PCLayoutProps {
@@ -98,6 +99,14 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           >
             <Settings className="h-5 w-5" />
             <span>설정</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+            onClick={() => navigate("/help")}
+          >
+            <HelpCircle className="h-5 w-5" />
+            <span>도움말</span>
           </Button>
         </div>
       </aside>
