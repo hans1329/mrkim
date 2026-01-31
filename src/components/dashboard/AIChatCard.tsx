@@ -199,7 +199,7 @@ export function AIChatCard() {
                     setShowBriefing(false);
                   }}
                 >
-                  <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                  <RotateCcw className="h-3.5 w-3.5 text-white/70" />
                 </Button>
               </div>
             )}
