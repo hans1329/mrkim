@@ -255,7 +255,7 @@ const PreLoginLanding = () => {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <img src={logo} alt="김비서 로고" className="h-6 w-auto" />
-                  <span className="font-bold">김 · 비 · 서</span>
+                  
                   <span className="text-xs text-muted-foreground">Mr. Kim</span>
                 </div>
                 <p className="text-sm text-muted-foreground">AI 기반 경영 비서 서비스</p>
