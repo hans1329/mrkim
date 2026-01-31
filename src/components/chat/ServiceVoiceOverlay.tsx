@@ -180,10 +180,7 @@ export function ServiceVoiceOverlay() {
       </div>
 
       {/* Footer 힌트 */}
-      <div className="pb-[calc(env(safe-area-inset-bottom)+24px)] text-center space-y-2">
-        <p className="text-xs text-white/50">
-          {status === "idle" ? "탭하여 음성 대화 시작" : ""}
-        </p>
+      <div className="pb-[calc(env(safe-area-inset-bottom)+24px)] text-center">
         <Button
           variant="ghost"
           size="sm"
