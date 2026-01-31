@@ -7,8 +7,7 @@ import {
   Wallet, 
   MoreHorizontal,
   Bell,
-  Settings,
-  AudioLines
+  Settings
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,6 +15,7 @@ import { NavLink } from "@/components/NavLink";
 import { useVoice } from "@/contexts/VoiceContext";
 import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
 import chaltteokImage from "@/assets/icc-4.webp";
+import chatbotIcon from "@/assets/icc-4.webp";
 
 const navItems = [
   { title: "홈", url: "/", icon: LayoutDashboard },
@@ -113,9 +113,9 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           <Button
             onClick={openVoice}
             size="lg"
-            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-gradient-to-br from-primary to-primary/80"
+            className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-white hover:bg-white/90 p-1"
           >
-            <AudioLines className="h-7 w-7" />
+            <img src={chatbotIcon} alt="김비서" className="h-12 w-12 object-contain" />
           </Button>
         )}
       </main>
