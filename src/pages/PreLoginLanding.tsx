@@ -258,7 +258,7 @@ const PreLoginLanding = () => {
                   
                   <span className="text-xs text-muted-foreground">Mr. Kim</span>
                 </div>
-                <p className="text-sm text-muted-foreground">AI 기반 경영 비서 서비스</p>
+                <p className="text-sm text-muted-foreground"> AI 기반 경영 비서 서비스</p>
               </div>
               
               {/* Contact Info */}
