@@ -14,6 +14,7 @@ import {
   Bot,
   ChevronRight
 } from "lucide-react";
+import chaltteokImage from "@/assets/icc-4.webp";
 
 const colorTokens = [
   { name: "background", desc: "앱 배경색", class: "bg-background" },
@@ -59,6 +60,58 @@ export default function DesignGuide() {
                 Bot 아이콘을 사용합니다. 마케팅 슬로건, PWA 아이콘, 챗봇 인터페이스 등 
                 브랜드의 핵심 정체성을 나타내는 요소로 일관되게 적용합니다.
               </p>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* 메인 캐릭터 - 찰떡이 */}
+        <section>
+          <h2 className="text-lg font-semibold mb-4">메인 캐릭터 로고</h2>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-6 mb-6">
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white border-2 border-border shadow-md p-2">
+                  <img src={chaltteokImage} alt="찰떡이" className="h-full w-full object-contain" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-2xl font-bold">찰떡이</h3>
+                    <Badge variant="secondary">메인 캐릭터</Badge>
+                  </div>
+                  <p className="text-primary font-medium">"무슨 얘기든 찰떡같이 알아듣는 AI"</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">캐릭터 컨셉</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1.5">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">•</span>
+                      <span>사장님의 말을 <strong className="text-foreground">찰떡같이 이해</strong>하는 똑똑한 AI 비서</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">•</span>
+                      <span>헤드셋을 착용한 귀여운 로봇 형태로 <strong className="text-foreground">친근하고 신뢰감</strong> 있는 이미지</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary">•</span>
+                      <span>언제나 경청하고 응답할 준비가 된 <strong className="text-foreground">24시간 AI 비서</strong></span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">활용 영역</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline">챗봇 버튼</Badge>
+                    <Badge variant="outline">음성 인터페이스</Badge>
+                    <Badge variant="outline">로딩 애니메이션</Badge>
+                    <Badge variant="outline">온보딩 가이드</Badge>
+                    <Badge variant="outline">마케팅 자료</Badge>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </section>
