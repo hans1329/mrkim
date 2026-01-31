@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Mail } from "lucide-react";
-import mrKimAvatar from "@/assets/mr-kim-avatar.webp";
+import iccLogo from "@/assets/icc.webp";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -38,7 +38,7 @@ export default function Login() {
         {/* 로고 & 타이틀 */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center">
-            <img src={mrKimAvatar} alt="Mr. Kim" className="h-20 w-auto" />
+            <img src={iccLogo} alt="김비서" className="h-20 w-auto" />
           </div>
           <div className="space-y-1">
             <h1 className="text-2xl font-bold text-primary-foreground">김 · 비 · 서</h1>
