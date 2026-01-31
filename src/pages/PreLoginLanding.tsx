@@ -43,7 +43,7 @@ const PreLoginLanding = () => {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src={logo} alt="김비서 로고" className="h-6 w-auto opacity-90" />
-            <span className="text-xl font-bold">김비서</span>
+            <span className="font-bold text-lg">김비서</span>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={() => navigate("/login")}>
