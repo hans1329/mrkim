@@ -184,20 +184,20 @@ const PreLoginLanding = () => {
       {/* Social Proof */}
       <section className="py-10 bg-white dark:bg-card">
         <div className="max-w-2xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-8 flex-wrap justify-center">
+          <div className="inline-flex items-center gap-10 flex-wrap justify-center">
             <div>
-              <p className="text-3xl font-black text-primary">3분</p>
-              <p className="text-xs text-muted-foreground">초기 설정 완료</p>
+              <p className="text-4xl lg:text-5xl font-black text-primary">3분</p>
+              <p className="text-sm text-muted-foreground mt-1">초기 설정 완료</p>
             </div>
-            <div className="w-px h-10 bg-border hidden sm:block" />
+            <div className="w-px h-14 bg-border hidden sm:block" />
             <div>
-              <p className="text-3xl font-black text-primary">무료</p>
-              <p className="text-xs text-muted-foreground">기본 기능 평생</p>
+              <p className="text-4xl lg:text-5xl font-black text-primary">무료</p>
+              <p className="text-sm text-muted-foreground mt-1">기본 기능 평생</p>
             </div>
-            <div className="w-px h-10 bg-border hidden sm:block" />
+            <div className="w-px h-14 bg-border hidden sm:block" />
             <div>
-              <p className="text-3xl font-black text-primary">24시간</p>
-              <p className="text-xs text-muted-foreground">AI 상담 지원</p>
+              <p className="text-4xl lg:text-5xl font-black text-primary">24시간</p>
+              <p className="text-sm text-muted-foreground mt-1">AI 상담 지원</p>
             </div>
           </div>
         </div>
