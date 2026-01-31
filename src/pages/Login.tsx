@@ -73,14 +73,16 @@ function LoginContent() {
             <div className="flex justify-center mb-2">
               <SpeechBubbleButton />
             </div>
-            <button 
-              onClick={() => openVoice()}
-              className="flex flex-col items-center justify-center cursor-pointer hover:scale-105 transition-transform"
-            >
-              <img src={iccLogo} alt="김비서" className="h-20 w-auto opacity-95" style={{
-                filter: "drop-shadow(4px 8px 6px rgba(0, 0, 0, 0.3))"
-              }} />
-            </button>
+            <div className="flex flex-col items-center justify-center">
+              <button 
+                onClick={() => openVoice()}
+                className="cursor-pointer hover:scale-105 transition-transform"
+              >
+                <img src={iccLogo} alt="김비서" className="h-20 w-auto opacity-95" style={{
+                  filter: "drop-shadow(4px 8px 6px rgba(0, 0, 0, 0.3))"
+                }} />
+              </button>
+            </div>
             <div className="space-y-1">
               <h1 className="font-bold text-primary-foreground text-3xl">
                 김 · 비 · 서
