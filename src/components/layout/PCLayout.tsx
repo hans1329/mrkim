@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
 import { useVoice } from "@/contexts/VoiceContext";
 import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
+import chaltteokImage from "@/assets/icc-4.webp";
 
 const navItems = [
   { title: "홈", url: "/", icon: LayoutDashboard },
@@ -44,6 +45,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
             className="cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => navigate("/profile")}
           >
+            <img src={chaltteokImage} alt="찰떡이" className="h-12 w-12 object-contain mb-3" />
             <h1 className="text-lg font-bold text-foreground leading-tight">
               {title?.includes("안녕하세요,") ? (
                 <>
