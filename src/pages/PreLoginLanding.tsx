@@ -7,25 +7,37 @@ import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
 import logo from "@/assets/logo.webp";
 import logoWhite from "@/assets/logo-white.webp";
-
 const PreLoginLanding = () => {
   const navigate = useNavigate();
-
-  const features = [
-    { icon: Calculator, title: "세무 자동화", description: "홈택스 연동으로 세금 신고 자동 처리" },
-    { icon: Users, title: "직원 관리", description: "급여 계산부터 4대보험까지 원클릭" },
-    { icon: TrendingUp, title: "매출 분석", description: "실시간 매출/비용 현황 한눈에" },
-    { icon: FileText, title: "리포트", description: "월간 경영 보고서 자동 생성" },
-  ];
-
-  const benefits = [
-    { icon: Zap, text: "3분 만에 시작", highlight: true },
-    { icon: Shield, text: "금융보안 인증 완료" },
-    { icon: Phone, text: "24시간 AI 상담" },
-  ];
-
-  return (
-    <div className="min-h-screen flex flex-col">
+  const features = [{
+    icon: Calculator,
+    title: "세무 자동화",
+    description: "홈택스 연동으로 세금 신고 자동 처리"
+  }, {
+    icon: Users,
+    title: "직원 관리",
+    description: "급여 계산부터 4대보험까지 원클릭"
+  }, {
+    icon: TrendingUp,
+    title: "매출 분석",
+    description: "실시간 매출/비용 현황 한눈에"
+  }, {
+    icon: FileText,
+    title: "리포트",
+    description: "월간 경영 보고서 자동 생성"
+  }];
+  const benefits = [{
+    icon: Zap,
+    text: "3분 만에 시작",
+    highlight: true
+  }, {
+    icon: Shield,
+    text: "금융보안 인증 완료"
+  }, {
+    icon: Phone,
+    text: "24시간 AI 상담"
+  }];
+  return <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -50,10 +62,7 @@ const PreLoginLanding = () => {
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-center">
             {/* Left: Text Content */}
             <div className="space-y-5 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full text-sm font-medium text-primary">
-                <Zap className="h-4 w-4" />
-                사업자를 위한 AI 비서
-              </div>
+              
               
               <h1 className="text-4xl lg:text-5xl font-black leading-tight">
                 사장님은<br />
@@ -66,21 +75,12 @@ const PreLoginLanding = () => {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                <Button 
-                  size="lg" 
-                  className="h-14 px-8 text-lg font-bold gap-2 rounded-xl"
-                  onClick={() => navigate("/login")}
-                >
+                <Button size="lg" className="h-14 px-8 text-lg font-bold gap-2 rounded-xl" onClick={() => navigate("/login")}>
                   <Bot className="h-5 w-5" />
                   무료로 시작하기
                   <ArrowRight className="h-5 w-5" />
                 </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  className="h-14 px-8 text-lg font-medium rounded-xl"
-                  onClick={() => navigate("/landing")}
-                >
+                <Button size="lg" variant="outline" className="h-14 px-8 text-lg font-medium rounded-xl" onClick={() => navigate("/landing")}>
                   <Calculator className="h-5 w-5 mr-2" />
                   생존 기간 테스트
                 </Button>
@@ -88,30 +88,17 @@ const PreLoginLanding = () => {
 
               {/* Trust Badges */}
               <div className="flex flex-wrap gap-4 justify-center lg:justify-start pt-2">
-                {benefits.map((benefit, i) => (
-                  <div 
-                    key={i}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm ${
-                      benefit.highlight 
-                        ? 'bg-primary/10 text-primary font-medium' 
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
+                {benefits.map((benefit, i) => <div key={i} className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm ${benefit.highlight ? 'bg-primary/10 text-primary font-medium' : 'bg-muted text-muted-foreground'}`}>
                     <benefit.icon className="h-4 w-4" />
                     {benefit.text}
-                  </div>
-                ))}
+                  </div>)}
               </div>
             </div>
 
             {/* Right: Illustration */}
             <div className="relative flex justify-center lg:justify-end">
               <div className="relative">
-                <img 
-                  src={mainIllust} 
-                  alt="김비서 AI" 
-                  className="w-72 lg:w-96"
-                />
+                <img src={mainIllust} alt="김비서 AI" className="w-72 lg:w-96" />
                 {/* Floating Chat Bubble */}
                 <div className="absolute -left-4 -top-2 bg-card p-3 rounded-2xl shadow-lg border animate-fade-in">
                   <div className="flex items-center gap-2">
@@ -120,7 +107,9 @@ const PreLoginLanding = () => {
                   </div>
                 </div>
                 {/* Floating Response */}
-                <div className="absolute -right-4 top-[85%] bg-primary text-primary-foreground p-3 rounded-2xl shadow-lg animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                <div className="absolute -right-4 top-[85%] bg-primary text-primary-foreground p-3 rounded-2xl shadow-lg animate-fade-in" style={{
+                animationDelay: '0.2s'
+              }}>
                   <div className="flex items-center gap-2">
                     <Bot className="h-5 w-5" />
                     <span className="text-sm font-medium">부가세 320만원 예정</span>
@@ -134,21 +123,9 @@ const PreLoginLanding = () => {
 
       {/* Wave Divider */}
       <div className="relative -mb-1">
-        <svg 
-          viewBox="0 0 1440 120" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-16 lg:h-24"
-          preserveAspectRatio="none"
-        >
-          <path 
-            d="M0 120L48 110C96 100 192 80 288 70C384 60 480 60 576 65C672 70 768 80 864 85C960 90 1056 90 1152 80C1248 70 1344 50 1392 40L1440 30V120H1392C1344 120 1248 120 1152 120C1056 120 960 120 864 120C768 120 672 120 576 120C480 120 384 120 288 120C192 120 96 120 48 120H0Z" 
-          className="fill-white dark:fill-card"
-          />
-          <path 
-            d="M0 120L48 105C96 90 192 60 288 50C384 40 480 50 576 60C672 70 768 80 864 75C960 70 1056 50 1152 45C1248 40 1344 50 1392 55L1440 60V120H1392C1344 120 1248 120 1152 120C1056 120 960 120 864 120C768 120 672 120 576 120C480 120 384 120 288 120C192 120 96 120 48 120H0Z" 
-            className="fill-white dark:fill-card"
-          />
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-16 lg:h-24" preserveAspectRatio="none">
+          <path d="M0 120L48 110C96 100 192 80 288 70C384 60 480 60 576 65C672 70 768 80 864 85C960 90 1056 90 1152 80C1248 70 1344 50 1392 40L1440 30V120H1392C1344 120 1248 120 1152 120C1056 120 960 120 864 120C768 120 672 120 576 120C480 120 384 120 288 120C192 120 96 120 48 120H0Z" className="fill-white dark:fill-card" />
+          <path d="M0 120L48 105C96 90 192 60 288 50C384 40 480 50 576 60C672 70 768 80 864 75C960 70 1056 50 1152 45C1248 40 1344 50 1392 55L1440 60V120H1392C1344 120 1248 120 1152 120C1056 120 960 120 864 120C768 120 672 120 576 120C480 120 384 120 288 120C192 120 96 120 48 120H0Z" className="fill-white dark:fill-card" />
         </svg>
       </div>
 
@@ -165,11 +142,7 @@ const PreLoginLanding = () => {
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {features.map((feature, i) => (
-              <Card 
-                key={i} 
-                className="border-0 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-card/90 backdrop-blur overflow-hidden group"
-              >
+            {features.map((feature, i) => <Card key={i} className="border-0 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-card/90 backdrop-blur overflow-hidden group">
                 <CardContent className="p-5 text-center">
                   <div className="mb-4 flex justify-center">
                     <feature.icon className="h-12 w-12 text-primary group-hover:scale-110 transition-transform duration-300" />
@@ -177,8 +150,7 @@ const PreLoginLanding = () => {
                   <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
       </section>
@@ -265,11 +237,7 @@ const PreLoginLanding = () => {
           <p className="text-muted-foreground text-sm mb-5">
             연결만 하면 김비서가 알아서 합니다
           </p>
-          <Button 
-            size="lg" 
-            className="h-12 px-8 text-base font-bold gap-2 rounded-xl"
-            onClick={() => navigate("/login")}
-          >
+          <Button size="lg" className="h-12 px-8 text-base font-bold gap-2 rounded-xl" onClick={() => navigate("/login")}>
             <img src={logoWhite} alt="김비서" className="h-5 w-auto" />
             무료로 시작하기
             <ArrowRight className="h-5 w-5" />
@@ -293,8 +261,6 @@ const PreLoginLanding = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default PreLoginLanding;
