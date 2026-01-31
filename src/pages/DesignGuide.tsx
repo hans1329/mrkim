@@ -5,41 +5,72 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Bell, 
-  Settings, 
-  TrendingUp, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Bot,
-  ChevronRight
-} from "lucide-react";
+import { Bell, Settings, TrendingUp, AlertTriangle, CheckCircle2, Bot, ChevronRight } from "lucide-react";
 import chaltteokImage from "@/assets/icc-4.webp";
-
-const colorTokens = [
-  { name: "background", desc: "앱 배경색", class: "bg-background" },
-  { name: "foreground", desc: "기본 텍스트", class: "bg-foreground" },
-  { name: "card", desc: "카드 배경", class: "bg-card" },
-  { name: "primary", desc: "주요 액션, 강조", class: "bg-primary" },
-  { name: "secondary", desc: "보조 요소", class: "bg-secondary" },
-  { name: "muted", desc: "비활성/배경", class: "bg-muted" },
-  { name: "accent", desc: "강조 포인트", class: "bg-accent" },
-  { name: "destructive", desc: "삭제/위험", class: "bg-destructive" },
-  { name: "success", desc: "성공/완료", class: "bg-success" },
-  { name: "warning", desc: "경고/주의", class: "bg-warning" },
-];
-
-const chartColors = [
-  { name: "chart-1", desc: "차트 색상 1", class: "bg-chart-1" },
-  { name: "chart-2", desc: "차트 색상 2", class: "bg-chart-2" },
-  { name: "chart-3", desc: "차트 색상 3", class: "bg-chart-3" },
-  { name: "chart-4", desc: "차트 색상 4", class: "bg-chart-4" },
-  { name: "chart-5", desc: "차트 색상 5", class: "bg-chart-5" },
-];
-
+const colorTokens = [{
+  name: "background",
+  desc: "앱 배경색",
+  class: "bg-background"
+}, {
+  name: "foreground",
+  desc: "기본 텍스트",
+  class: "bg-foreground"
+}, {
+  name: "card",
+  desc: "카드 배경",
+  class: "bg-card"
+}, {
+  name: "primary",
+  desc: "주요 액션, 강조",
+  class: "bg-primary"
+}, {
+  name: "secondary",
+  desc: "보조 요소",
+  class: "bg-secondary"
+}, {
+  name: "muted",
+  desc: "비활성/배경",
+  class: "bg-muted"
+}, {
+  name: "accent",
+  desc: "강조 포인트",
+  class: "bg-accent"
+}, {
+  name: "destructive",
+  desc: "삭제/위험",
+  class: "bg-destructive"
+}, {
+  name: "success",
+  desc: "성공/완료",
+  class: "bg-success"
+}, {
+  name: "warning",
+  desc: "경고/주의",
+  class: "bg-warning"
+}];
+const chartColors = [{
+  name: "chart-1",
+  desc: "차트 색상 1",
+  class: "bg-chart-1"
+}, {
+  name: "chart-2",
+  desc: "차트 색상 2",
+  class: "bg-chart-2"
+}, {
+  name: "chart-3",
+  desc: "차트 색상 3",
+  class: "bg-chart-3"
+}, {
+  name: "chart-4",
+  desc: "차트 색상 4",
+  class: "bg-chart-4"
+}, {
+  name: "chart-5",
+  desc: "차트 색상 5",
+  class: "bg-chart-5"
+}];
 export default function DesignGuide() {
-  return (
-    <MainLayout title="디자인 가이드" showBackButton>
+  return <MainLayout title="디자인 가이드" showBackButton>
       <div className="space-y-8 pb-8">
         {/* 브랜드 아이덴티티 */}
         <section>
@@ -70,7 +101,7 @@ export default function DesignGuide() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-6 mb-6">
-              <div className="flex h-64 w-64 items-center justify-center rounded-3xl bg-white border-2 border-border shadow-md p-4">
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white border-2 border-border p-2 shadow-none">
                   <img src={chaltteokImage} alt="찰떡이" className="h-full w-full object-contain" />
                 </div>
                 <div>
@@ -122,17 +153,13 @@ export default function DesignGuide() {
           <Card>
             <CardContent className="p-4">
               <div className="grid grid-cols-2 gap-3">
-                {colorTokens.map((token) => (
-                  <div key={token.name} className="flex items-center gap-3">
-                    <div 
-                      className={`h-10 w-10 rounded-lg border ${token.class}`}
-                    />
+                {colorTokens.map(token => <div key={token.name} className="flex items-center gap-3">
+                    <div className={`h-10 w-10 rounded-lg border ${token.class}`} />
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{token.name}</p>
                       <p className="text-xs text-muted-foreground">{token.desc}</p>
                     </div>
-                  </div>
-                ))}
+                  </div>)}
               </div>
             </CardContent>
           </Card>
@@ -144,19 +171,12 @@ export default function DesignGuide() {
           <Card>
             <CardContent className="p-4">
               <div className="flex gap-2 mb-4">
-                {chartColors.map((color) => (
-                  <div 
-                    key={color.name}
-                    className={`h-12 flex-1 rounded-lg ${color.class}`}
-                  />
-                ))}
+                {chartColors.map(color => <div key={color.name} className={`h-12 flex-1 rounded-lg ${color.class}`} />)}
               </div>
               <div className="grid grid-cols-5 gap-2 text-center">
-                {chartColors.map((color) => (
-                  <p key={color.name} className="text-xs text-muted-foreground">
+                {chartColors.map(color => <p key={color.name} className="text-xs text-muted-foreground">
                     {color.name.replace("chart-", "")}
-                  </p>
-                ))}
+                  </p>)}
               </div>
             </CardContent>
           </Card>
@@ -419,15 +439,19 @@ export default function DesignGuide() {
           <h2 className="text-lg font-semibold mb-4">리스트 아이템</h2>
           <Card>
             <CardContent className="divide-y p-0">
-              {[
-                { icon: TrendingUp, title: "리포트", desc: "경영 현황 분석" },
-                { icon: Bell, title: "알림", desc: "알림 관리" },
-                { icon: Settings, title: "설정", desc: "앱 설정" },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50"
-                >
+              {[{
+              icon: TrendingUp,
+              title: "리포트",
+              desc: "경영 현황 분석"
+            }, {
+              icon: Bell,
+              title: "알림",
+              desc: "알림 관리"
+            }, {
+              icon: Settings,
+              title: "설정",
+              desc: "앱 설정"
+            }].map(item => <div key={item.title} className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
                       <item.icon className="h-5 w-5 text-muted-foreground" />
@@ -438,8 +462,7 @@ export default function DesignGuide() {
                     </div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </div>
-              ))}
+                </div>)}
             </CardContent>
           </Card>
         </section>
@@ -458,6 +481,5 @@ export default function DesignGuide() {
           </Card>
         </section>
       </div>
-    </MainLayout>
-  );
+    </MainLayout>;
 }
