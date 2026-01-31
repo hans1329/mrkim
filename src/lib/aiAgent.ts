@@ -552,16 +552,74 @@ export function executeFunction(
 }
 
 // ============================================
+// Connection Status Check
+// ============================================
+export interface ConnectionStatus {
+  hometax: boolean;
+  card: boolean;
+  account: boolean;
+}
+
+export function getConnectionStatus(): ConnectionStatus {
+  try {
+    const saved = localStorage.getItem("kimsecretary_onboarding");
+    if (saved) {
+      const state = JSON.parse(saved);
+      return state.connections || { hometax: false, card: false, account: false };
+    }
+  } catch {
+    // ignore
+  }
+  return { hometax: false, card: false, account: false };
+}
+
+export function isAnyConnected(connections: ConnectionStatus): boolean {
+  return connections.hometax || connections.card || connections.account;
+}
+
+export function getConnectionPrompt(connections: ConnectionStatus): string {
+  const missing: string[] = [];
+  if (!connections.hometax) missing.push("홈택스");
+  if (!connections.card) missing.push("카드");
+  if (!connections.account) missing.push("계좌");
+  
+  if (missing.length === 0) return "";
+  
+  return `\n\n---\n\n💡 **더 정확한 정보를 원하시나요?**\n\n` +
+    `현재 ${missing.join(", ")} 연동이 필요해요.\n` +
+    `연동하시면 실제 데이터로 더 정확한 답변을 드릴 수 있어요.\n\n` +
+    `👉 **설정 > 연동 관리**에서 연결해주세요!`;
+}
+
+// 데이터 연동이 필요한 기능인지 체크
+const DATA_REQUIRED_FUNCTIONS = [
+  "get_balance",
+  "get_sales_report",
+  "get_expense_report",
+  "get_vat_status",
+  "list_employees",
+  "get_salary_status",
+  "process_payroll",
+  "forecast_cashflow",
+  "calculate_tax",
+  "get_auto_transfer_status",
+  "get_monthly_summary",
+];
+
+// ============================================
 // Main Response Generator
 // ============================================
 export interface AgentResponse {
   message: string;
   intent: ClassifiedIntent;
   executionResult?: ExecutionResult;
+  isMockData?: boolean;
 }
 
 export function generateAgentResponse(input: string): AgentResponse {
   const intent = classifyIntent(input);
+  const connections = getConnectionStatus();
+  const hasConnection = isAnyConnected(connections);
 
   switch (intent.type) {
     case "greeting":
@@ -585,12 +643,30 @@ export function generateAgentResponse(input: string): AgentResponse {
     case "business":
       if (intent.matchedFunction) {
         const result = executeFunction(intent.matchedFunction, intent.extractedParams);
+        const needsRealData = DATA_REQUIRED_FUNCTIONS.includes(intent.matchedFunction);
+        
+        // 연동 필요 기능인데 연동이 안 되어있으면 목업 데이터 표시 + 연동 권유
+        if (needsRealData && !hasConnection) {
+          const mockDataNotice = `📋 **시뮬레이션 데이터입니다**\n\n`;
+          const connectionPrompt = getConnectionPrompt(connections);
+          
+          return {
+            message: mockDataNotice + 
+              (result.requiresConfirmation ? result.confirmationMessage! : result.message) +
+              connectionPrompt,
+            intent,
+            executionResult: result,
+            isMockData: true,
+          };
+        }
+        
         return {
           message: result.requiresConfirmation 
             ? result.confirmationMessage! 
             : result.message,
           intent,
           executionResult: result,
+          isMockData: !hasConnection && needsRealData,
         };
       }
       return {
