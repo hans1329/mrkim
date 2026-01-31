@@ -149,8 +149,8 @@ const PreLoginLanding = () => {
                 className="border-0 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-card/90 backdrop-blur overflow-hidden group"
               >
                 <CardContent className="p-5 text-center">
-                  <div className="p-4 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl w-fit mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <feature.icon className="h-7 w-7 text-primary" />
+                  <div className="mb-4 flex justify-center">
+                    <feature.icon className="h-12 w-12 text-primary group-hover:scale-110 transition-transform duration-300" />
                   </div>
                   <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
