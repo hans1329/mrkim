@@ -6,6 +6,7 @@ import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
 import logo from "@/assets/logo.webp";
+import logoWhite from "@/assets/logo-white.webp";
 
 const PreLoginLanding = () => {
   const navigate = useNavigate();
@@ -269,7 +270,7 @@ const PreLoginLanding = () => {
             className="h-12 px-8 text-base font-bold gap-2 rounded-xl"
             onClick={() => navigate("/login")}
           >
-            <Bot className="h-5 w-5" />
+            <img src={logoWhite} alt="김비서" className="h-5 w-auto" />
             무료로 시작하기
             <ArrowRight className="h-5 w-5" />
           </Button>
