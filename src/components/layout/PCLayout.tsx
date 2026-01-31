@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
   Receipt, 
@@ -8,14 +8,12 @@ import {
   MoreHorizontal,
   Bell,
   Settings,
-  Bot,
-  AudioLines
+  Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
-import { useVoice } from "@/contexts/VoiceContext";
-import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
+import { PCSideChat } from "@/components/chat/PCSideChat";
 
 const navItems = [
   { title: "홈", url: "/", icon: LayoutDashboard },
@@ -33,7 +31,6 @@ interface PCLayoutProps {
 
 export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutProps) {
   const navigate = useNavigate();
-  const { openVoice, isOpen } = useVoice();
 
   return (
     <div className="flex h-screen w-full bg-gradient-to-br from-primary/5 via-background to-secondary/10">
@@ -49,14 +46,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
               <Bot className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground leading-tight">
-                {title?.includes("안녕하세요,") ? (
-                  <>
-                    안녕하세요,<br />
-                    {title.replace("안녕하세요, ", "")}
-                  </>
-                ) : title}
-              </h1>
+              <h1 className="text-lg font-bold text-foreground">{title}</h1>
               {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
             </div>
           </div>
@@ -106,26 +96,17 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
         </div>
       </aside>
 
-      {/* 메인 콘텐츠 - 풀스크린 */}
-      <main className="flex-1 overflow-auto relative">
-        <div className="max-w-6xl mx-auto p-6">
+      {/* 중앙 메인 콘텐츠 */}
+      <main className="flex-1 overflow-auto">
+        <div className="max-w-4xl mx-auto p-6">
           {children}
         </div>
-
-        {/* 플로팅 음성 버튼 */}
-        {!isOpen && (
-          <Button
-            onClick={openVoice}
-            size="lg"
-            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-gradient-to-br from-primary to-primary/80"
-          >
-            <AudioLines className="h-7 w-7" />
-          </Button>
-        )}
       </main>
 
-      {/* 음성 오버레이 */}
-      <VoiceOverlay />
+      {/* 우측 AI 채팅 패널 */}
+      <aside className="w-96 flex-shrink-0 border-l bg-card/30 backdrop-blur-sm">
+        <PCSideChat />
+      </aside>
     </div>
   );
 }
