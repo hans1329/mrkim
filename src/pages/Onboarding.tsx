@@ -229,7 +229,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >
             <img 
-              src={characterImg} 
+              src={`${characterImg}?v=${Date.now()}`} 
               alt="찰떡이" 
               className="w-32 h-32 object-contain drop-shadow-lg"
             />
