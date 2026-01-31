@@ -6,7 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Mail } from "lucide-react";
 import iccLogo from "@/assets/icc-2.webp";
-export default function Login() {
+import { ServiceChatProvider } from "@/contexts/ServiceChatContext";
+import { ServiceChatPanel } from "@/components/chat/ServiceChatPanel";
+import { FloatingServiceChatButton } from "@/components/chat/FloatingServiceChatButton";
+
+function LoginContent() {
   const navigate = useNavigate();
   const [isEmailMode, setIsEmailMode] = useState(false);
   const [email, setEmail] = useState("");
@@ -222,6 +226,18 @@ export default function Login() {
           © 2024 김비서. All rights reserved.
         </p>
       </footer>
+
+      {/* 서비스 안내 챗봇 */}
+      <FloatingServiceChatButton />
+      <ServiceChatPanel />
     </div>
+  );
+}
+
+export default function Login() {
+  return (
+    <ServiceChatProvider>
+      <LoginContent />
+    </ServiceChatProvider>
   );
 }
