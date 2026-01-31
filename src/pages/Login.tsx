@@ -41,7 +41,7 @@ export default function Login() {
             <img src={mrKimAvatar} alt="Mr. Kim" className="h-20 w-auto" />
           </div>
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold text-primary-foreground">김비서</h1>
+            <h1 className="text-2xl font-bold text-primary-foreground">김·비·서</h1>
             <p className="text-sm text-primary-foreground/80 tracking-wide">Mr. Kim</p>
           </div>
           <p className="text-primary-foreground/70 text-sm font-bold">
