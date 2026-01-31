@@ -2,16 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { 
-  Bot, 
   Building2, 
   CreditCard, 
   Landmark, 
   CheckCircle2, 
   ArrowRight,
   ArrowLeft,
-  Sparkles,
   Shield,
   Loader2,
   X
@@ -19,9 +16,10 @@ import {
 import { cn } from "@/lib/utils";
 import { useOnboarding, type OnboardingStep } from "@/hooks/useOnboarding";
 import { CardConnectionFlow } from "@/components/onboarding/CardConnectionFlow";
+import characterImg from "@/assets/icc-blue.webp";
 
-const steps: { key: OnboardingStep; title: string; icon: typeof Bot }[] = [
-  { key: "welcome", title: "환영", icon: Bot },
+const steps: { key: OnboardingStep; title: string; icon: typeof Building2 }[] = [
+  { key: "welcome", title: "시작", icon: Building2 },
   { key: "hometax", title: "국세청", icon: Building2 },
   { key: "card", title: "카드", icon: CreditCard },
   { key: "account", title: "계좌", icon: Landmark },
@@ -37,7 +35,6 @@ export default function Onboarding() {
   const [showCardFlow, setShowCardFlow] = useState(false);
   
   const currentIdx = stepIndex(currentStep);
-  const progress = ((currentIdx + 1) / steps.length) * 100;
 
   const handleConnect = async (service: "hometax" | "card" | "account") => {
     setIsConnecting(true);
@@ -81,56 +78,67 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex flex-col items-center justify-center p-4 relative">
-      {/* Exit Button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
-        onClick={handleExit}
-      >
-        <X className="h-5 w-5" />
-      </Button>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Subtle background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl" />
+        <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr from-primary/3 to-transparent rounded-full blur-3xl" />
+      </div>
 
-      {/* Back to Dashboard Link */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="absolute top-4 left-4 text-muted-foreground hover:text-foreground gap-1"
-        onClick={handleExit}
-      >
-        <ArrowLeft className="h-4 w-4" />
-        대시보드
-      </Button>
-
-      {/* Progress */}
-      <div className="w-full max-w-xs mb-6">
-        <Progress value={progress} className="h-1.5" />
-        <div className="flex justify-between mt-2 px-1">
+      {/* Header with navigation */}
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground gap-1.5 -ml-2"
+          onClick={handleExit}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">대시보드</span>
+        </Button>
+        
+        {/* Minimal step indicator */}
+        <div className="flex items-center gap-1.5">
           {steps.map((step, idx) => (
-            <div
+            <motion.div
               key={step.key}
               className={cn(
-                "flex flex-col items-center gap-0.5",
-                idx <= currentIdx ? "text-primary" : "text-muted-foreground"
+                "h-1.5 rounded-full transition-all duration-300",
+                idx === currentIdx 
+                  ? "w-6 bg-primary" 
+                  : idx < currentIdx 
+                    ? "w-1.5 bg-primary/40" 
+                    : "w-1.5 bg-muted-foreground/20"
               )}
-            >
-              <step.icon className="h-3.5 w-3.5" />
-              <span className="text-[9px]">{step.title}</span>
-            </div>
+              initial={false}
+              animate={{ 
+                width: idx === currentIdx ? 24 : 6,
+                opacity: idx <= currentIdx ? 1 : 0.5
+              }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            />
           ))}
         </div>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground hover:text-foreground -mr-2"
+          onClick={handleExit}
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.3 }}
-          className="w-full max-w-md"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="w-full max-w-sm relative z-10"
         >
           {currentStep === "welcome" && (
             <WelcomeStep onNext={handleNext} />
@@ -138,45 +146,56 @@ export default function Onboarding() {
           {currentStep === "hometax" && (
             <ConnectionStep
               title="국세청 연결"
-              description="홈택스 데이터를 연동하면 매출, 세금계산서, 부가세 현황을 자동으로 가져옵니다."
+              description="홈택스 데이터를 연동하면 매출과 세금 현황을 자동으로 가져옵니다."
               icon={Building2}
               isConnected={connections.hometax}
               isConnecting={isConnecting}
               onConnect={() => handleConnect("hometax")}
               onNext={handleNext}
               onSkip={handleSkip}
+              stepNumber={1}
+              totalSteps={3}
             />
           )}
           {currentStep === "card" && !showCardFlow && (
             <ConnectionStep
               title="카드 연결"
-              description="법인/사업자 카드를 연동하면 지출 내역이 자동 분류되고 비용 관리가 쉬워집니다."
+              description="사업자 카드를 연동하면 지출 내역이 자동으로 분류됩니다."
               icon={CreditCard}
               isConnected={connections.card}
               isConnecting={isConnecting}
               onConnect={handleCardConnect}
               onNext={handleNext}
               onSkip={handleSkip}
+              stepNumber={2}
+              totalSteps={3}
             />
           )}
           {currentStep === "card" && showCardFlow && (
-            <div className="bg-card rounded-3xl p-6 shadow-xl">
+            <motion.div 
+              className="bg-card rounded-2xl p-6 shadow-sm border"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
               <CardConnectionFlow 
                 onComplete={handleCardFlowComplete}
                 onBack={handleCardFlowBack}
               />
-            </div>
+            </motion.div>
           )}
           {currentStep === "account" && (
             <ConnectionStep
               title="계좌 연결"
-              description="사업용 계좌를 연동하면 입출금 내역을 실시간으로 확인하고 자금 흐름을 파악할 수 있습니다."
+              description="사업용 계좌를 연동하면 자금 흐름을 실시간으로 파악합니다."
               icon={Landmark}
               isConnected={connections.account}
               isConnecting={isConnecting}
               onConnect={() => handleConnect("account")}
               onNext={handleNext}
               onSkip={handleSkip}
+              stepNumber={3}
+              totalSteps={3}
             />
           )}
           {currentStep === "complete" && (
@@ -188,49 +207,90 @@ export default function Onboarding() {
   );
 }
 
-// Welcome Step
+// Welcome Step with character
 function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
-    <div className="bg-card rounded-3xl p-8 shadow-xl text-center space-y-6">
-      <div className="flex justify-center">
+    <div className="text-center space-y-8">
+      {/* Character with subtle animation */}
+      <motion.div 
+        className="flex justify-center"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
+      >
         <div className="relative">
-          <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
-            <Bot className="h-12 w-12 text-primary-foreground" />
-          </div>
-          <Sparkles className="absolute -top-1 -right-1 h-6 w-6 text-yellow-500" />
+          <motion.div
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <img 
+              src={characterImg} 
+              alt="찰떡이" 
+              className="w-32 h-32 object-contain drop-shadow-lg"
+            />
+          </motion.div>
+          {/* Subtle glow effect */}
+          <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl -z-10 scale-150" />
         </div>
-      </div>
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">데이터 연동 설정</h1>
-        <h2 className="text-lg text-muted-foreground mt-1">김비서가 더 똑똑해집니다</h2>
-      </div>
-      <p className="text-muted-foreground leading-relaxed">
-        사업 데이터를 연결하면<br />
-        <strong className="text-primary">실시간 분석</strong>과 <strong className="text-primary">자동 관리</strong>가 가능해요.
-      </p>
-      <div className="bg-muted/50 rounded-xl p-4 text-sm text-left space-y-2">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-          <span>매출/지출 자동 정리</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-          <span>부가세/급여 자동 분리</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-          <span>AI 경영 비서 24시간 대기</span>
-        </div>
-      </div>
-      <Button onClick={onNext} size="lg" className="w-full gap-2">
-        연동 시작하기
-        <ArrowRight className="h-4 w-4" />
-      </Button>
+      </motion.div>
+
+      {/* Text content */}
+      <motion.div 
+        className="space-y-3"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+      >
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          데이터 연동 설정
+        </h1>
+        <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">
+          사업 데이터를 연결하면<br />
+          김비서가 더 정확하게 도와드려요
+        </p>
+      </motion.div>
+
+      {/* Features - minimal style */}
+      <motion.div 
+        className="space-y-2"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.4 }}
+      >
+        {[
+          "매출·지출 자동 정리",
+          "세금·급여 분리 관리", 
+          "AI 경영 인사이트"
+        ].map((feature, idx) => (
+          <motion.div 
+            key={feature}
+            className="flex items-center justify-center gap-2 text-sm text-muted-foreground"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 + idx * 0.1, duration: 0.3 }}
+          >
+            <div className="w-1 h-1 rounded-full bg-primary" />
+            <span>{feature}</span>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* CTA Button */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.4 }}
+      >
+        <Button onClick={onNext} size="lg" className="w-full gap-2 h-12 text-base">
+          시작하기
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </motion.div>
     </div>
   );
 }
 
-// Connection Step
+// Connection Step - minimal style
 function ConnectionStep({
   title,
   description,
@@ -240,6 +300,8 @@ function ConnectionStep({
   onConnect,
   onNext,
   onSkip,
+  stepNumber,
+  totalSteps,
 }: {
   title: string;
   description: string;
@@ -249,73 +311,119 @@ function ConnectionStep({
   onConnect: () => void;
   onNext: () => void;
   onSkip: () => void;
+  stepNumber: number;
+  totalSteps: number;
 }) {
   return (
-    <div className="bg-card rounded-3xl p-8 shadow-xl space-y-6">
-      <div className="flex justify-center">
+    <div className="space-y-8">
+      {/* Step indicator */}
+      <motion.div 
+        className="text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+      >
+        <span className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
+          {stepNumber} / {totalSteps}
+        </span>
+      </motion.div>
+
+      {/* Icon */}
+      <motion.div 
+        className="flex justify-center"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.15, duration: 0.4 }}
+      >
         <div className={cn(
-          "h-20 w-20 rounded-2xl flex items-center justify-center",
+          "h-20 w-20 rounded-2xl flex items-center justify-center transition-all duration-300",
           isConnected 
-            ? "bg-green-500/10 text-green-500" 
-            : "bg-primary/10 text-primary"
+            ? "bg-green-500/10" 
+            : "bg-primary/10"
         )}>
           {isConnected ? (
-            <CheckCircle2 className="h-10 w-10" />
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              <CheckCircle2 className="h-10 w-10 text-green-500" />
+            </motion.div>
           ) : (
-            <Icon className="h-10 w-10" />
+            <Icon className="h-10 w-10 text-primary" />
           )}
         </div>
-      </div>
-      <div className="text-center">
-        <h2 className="text-xl font-bold text-foreground">{title}</h2>
-        <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+      </motion.div>
+
+      {/* Text content */}
+      <motion.div 
+        className="text-center space-y-2"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+      >
+        <h2 className="text-xl font-bold tracking-tight text-foreground">{title}</h2>
+        <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">
           {description}
         </p>
-      </div>
-      <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
-        <Shield className="h-4 w-4 shrink-0 text-green-500" />
-        <span>256bit SSL 암호화로 안전하게 연결됩니다</span>
-      </div>
-      {isConnected ? (
-        <Button onClick={onNext} size="lg" className="w-full gap-2">
-          다음 단계
-          <ArrowRight className="h-4 w-4" />
-        </Button>
-      ) : (
-        <div className="space-y-3">
-          <Button 
-            onClick={onConnect} 
-            size="lg" 
-            className="w-full gap-2"
-            disabled={isConnecting}
-          >
-            {isConnecting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                연결 중...
-              </>
-            ) : (
-              <>
-                연결하기
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
+      </motion.div>
+
+      {/* Security note */}
+      <motion.div 
+        className="flex items-center justify-center gap-2 text-xs text-muted-foreground"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        <Shield className="h-3.5 w-3.5 text-green-500" />
+        <span>256bit SSL 암호화 적용</span>
+      </motion.div>
+
+      {/* Actions */}
+      <motion.div 
+        className="space-y-3"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35, duration: 0.4 }}
+      >
+        {isConnected ? (
+          <Button onClick={onNext} size="lg" className="w-full gap-2 h-12">
+            다음
+            <ArrowRight className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="ghost" 
-            onClick={onSkip} 
-            className="w-full text-muted-foreground"
-            disabled={isConnecting}
-          >
-            나중에 하기
-          </Button>
-        </div>
-      )}
+        ) : (
+          <>
+            <Button 
+              onClick={onConnect} 
+              size="lg" 
+              className="w-full gap-2 h-12"
+              disabled={isConnecting}
+            >
+              {isConnecting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  연결 중...
+                </>
+              ) : (
+                "연결하기"
+              )}
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={onSkip} 
+              className="w-full text-muted-foreground h-10"
+              disabled={isConnecting}
+            >
+              나중에 하기
+            </Button>
+          </>
+        )}
+      </motion.div>
     </div>
   );
 }
 
-// Complete Step
+// Complete Step - minimal celebration
 function CompleteStep({ 
   onComplete, 
   connections 
@@ -326,48 +434,86 @@ function CompleteStep({
   const connectedCount = Object.values(connections).filter(Boolean).length;
   
   return (
-    <div className="bg-card rounded-3xl p-8 shadow-xl text-center space-y-6">
-      <div className="flex justify-center">
+    <div className="text-center space-y-8">
+      {/* Success icon with animation */}
+      <motion.div 
+        className="flex justify-center"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 200, damping: 15 }}
+      >
         <div className="relative">
-          <div className="h-24 w-24 rounded-full bg-gradient-to-br from-green-500 to-green-400 flex items-center justify-center shadow-lg">
-            <CheckCircle2 className="h-12 w-12 text-white" />
+          <div className="h-20 w-20 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/20">
+            <CheckCircle2 className="h-10 w-10 text-white" />
           </div>
-          <Sparkles className="absolute -top-1 -right-1 h-6 w-6 text-yellow-500" />
+          {/* Ripple effect */}
+          <motion.div
+            className="absolute inset-0 rounded-full border-2 border-green-500"
+            initial={{ scale: 1, opacity: 1 }}
+            animate={{ scale: 1.5, opacity: 0 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "easeOut" }}
+          />
         </div>
-      </div>
-      <div>
-        <h2 className="text-xl font-bold text-foreground">연동 완료!</h2>
-        <p className="text-muted-foreground mt-2">
+      </motion.div>
+
+      {/* Text content */}
+      <motion.div 
+        className="space-y-2"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+      >
+        <h2 className="text-xl font-bold tracking-tight text-foreground">설정 완료</h2>
+        <p className="text-muted-foreground text-sm">
           {connectedCount > 0 
             ? `${connectedCount}개 서비스가 연결되었습니다` 
             : "언제든 다시 방문해서 연결할 수 있어요"}
         </p>
-      </div>
-      <div className="bg-muted/50 rounded-xl p-4 space-y-3">
-        <ConnectionStatus label="국세청" connected={connections.hometax} />
-        <ConnectionStatus label="카드" connected={connections.card} />
-        <ConnectionStatus label="계좌" connected={connections.account} />
-      </div>
-      <Button onClick={onComplete} size="lg" className="w-full gap-2">
-        대시보드로 이동
-        <ArrowRight className="h-4 w-4" />
-      </Button>
-    </div>
-  );
-}
+      </motion.div>
 
-function ConnectionStatus({ label, connected }: { label: string; connected: boolean }) {
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      {connected ? (
-        <span className="flex items-center gap-1 text-green-500">
-          <CheckCircle2 className="h-4 w-4" />
-          연결됨
-        </span>
-      ) : (
-        <span className="text-muted-foreground/60">미연결</span>
-      )}
+      {/* Connection status - minimal */}
+      <motion.div 
+        className="space-y-2 py-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        {[
+          { label: "국세청", connected: connections.hometax },
+          { label: "카드", connected: connections.card },
+          { label: "계좌", connected: connections.account },
+        ].map((item, idx) => (
+          <motion.div 
+            key={item.label}
+            className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-muted/50"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 + idx * 0.1 }}
+          >
+            <span className="text-sm text-foreground">{item.label}</span>
+            {item.connected ? (
+              <span className="flex items-center gap-1.5 text-xs text-green-500 font-medium">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                연결됨
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground">미연결</span>
+            )}
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* CTA */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.4 }}
+      >
+        <Button onClick={onComplete} size="lg" className="w-full gap-2 h-12">
+          대시보드로 이동
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </motion.div>
     </div>
   );
 }
