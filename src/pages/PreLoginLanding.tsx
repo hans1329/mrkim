@@ -196,8 +196,8 @@ const PreLoginLanding = () => {
             </div>
             <div className="w-px h-14 bg-border hidden sm:block" />
             <div>
-              <p className="text-4xl lg:text-5xl font-black text-primary">24/7</p>
-              <p className="text-sm text-muted-foreground mt-1">AI 상담 지원</p>
+              <p className="text-4xl lg:text-5xl font-black text-primary">24 H</p>
+              <p className="text-sm text-muted-foreground mt-1">24시간 AI 상담</p>
             </div>
           </div>
         </div>
