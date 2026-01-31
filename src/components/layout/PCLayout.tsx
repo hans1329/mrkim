@@ -118,7 +118,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
               >
                 <div className="relative flex-shrink-0">
                   <Bell className="h-5 w-5" />
-                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                  <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
                     2
                   </span>
                 </div>
