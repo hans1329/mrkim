@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { 
+import {
   Building2, 
   CreditCard, 
   Landmark, 
@@ -33,6 +33,11 @@ export default function Onboarding() {
   const { currentStep, connections, goToStep, connectService, completeOnboarding } = useOnboarding();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showCardFlow, setShowCardFlow] = useState(false);
+  
+  // 페이지 진입 시 항상 첫 단계부터 시작
+  useEffect(() => {
+    goToStep("welcome");
+  }, []);
   
   const currentIdx = stepIndex(currentStep);
 
