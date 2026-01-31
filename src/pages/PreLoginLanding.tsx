@@ -131,10 +131,10 @@ const PreLoginLanding = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-12 bg-muted/30">
-        <div className="max-w-3xl mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="text-xl lg:text-2xl font-bold mb-2">
+      <section className="py-14 bg-muted/30">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl lg:text-3xl font-bold mb-3">
               사업 운영, 이제 <span className="text-primary">AI가</span> 대신합니다
             </h2>
             <p className="text-muted-foreground">
@@ -142,18 +142,18 @@ const PreLoginLanding = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {features.map((feature, i) => (
               <Card 
                 key={i} 
-                className="border-0 shadow-md hover:shadow-lg transition-shadow bg-card/80 backdrop-blur"
+                className="border-0 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-card/90 backdrop-blur overflow-hidden group"
               >
-                <CardContent className="p-4">
-                  <div className="p-2.5 bg-primary/10 rounded-lg w-fit mb-3">
-                    <feature.icon className="h-5 w-5 text-primary" />
+                <CardContent className="p-5 text-center">
+                  <div className="p-4 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl w-fit mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <feature.icon className="h-7 w-7 text-primary" />
                   </div>
-                  <h3 className="font-semibold text-base mb-1">{feature.title}</h3>
-                  <p className="text-xs text-muted-foreground">{feature.description}</p>
+                  <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
