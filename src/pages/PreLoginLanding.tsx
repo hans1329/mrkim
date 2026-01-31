@@ -68,7 +68,7 @@ const PreLoginLanding = () => {
     name: "이○○ 대표님",
     business: "온라인 쇼핑몰",
     rating: 5,
-    text: "직원 급여 계산하느라 매달 스트레스였는데, 이제 원클릭으로 끝나요."
+    text: "직원 급여 계산하느라 매달 스트레스였는데, 이제 원터치로 끝나요."
   }, {
     name: "박○○ 원장님",
     business: "피부과 의원",
