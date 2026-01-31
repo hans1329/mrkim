@@ -111,14 +111,14 @@ const PreLoginLanding = () => {
                   className="w-72 lg:w-96"
                 />
                 {/* Floating Chat Bubble */}
-                <div className="absolute -left-4 top-1/4 bg-card p-3 rounded-2xl shadow-lg border animate-fade-in">
+                <div className="absolute -left-4 top-[10%] bg-card p-3 rounded-2xl shadow-lg border animate-fade-in">
                   <div className="flex items-center gap-2">
                     <MessageCircle className="h-5 w-5 text-primary" />
                     <span className="text-sm font-medium">"이번 달 세금 얼마야?"</span>
                   </div>
                 </div>
                 {/* Floating Response */}
-                <div className="absolute -right-4 top-1/2 bg-primary text-primary-foreground p-3 rounded-2xl shadow-lg animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                <div className="absolute -right-4 top-[70%] bg-primary text-primary-foreground p-3 rounded-2xl shadow-lg animate-fade-in" style={{ animationDelay: '0.2s' }}>
                   <div className="flex items-center gap-2">
                     <Bot className="h-5 w-5" />
                     <span className="text-sm font-medium">부가세 320만원 예정</span>
