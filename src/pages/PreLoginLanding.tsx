@@ -265,7 +265,7 @@ const PreLoginLanding = () => {
             {/* Copyright & Info */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
               <p>© 2025 김비서. All rights reserved.</p>
-              <p>AI 기반 소상공인 경영 비서 서비스</p>
+              
             </div>
           </div>
         </div>
