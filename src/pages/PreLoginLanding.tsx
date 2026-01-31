@@ -1,14 +1,17 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bot, ArrowRight, Shield, Zap, TrendingUp, Calculator, Users, FileText, Phone, MessageCircle } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Bot, ArrowRight, Shield, Zap, TrendingUp, Calculator, Users, FileText, Phone, MessageCircle, Link2, Sparkles, CheckCircle2, Star } from "lucide-react";
 import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
 import logo from "@/assets/icc-3.webp";
 import logoWhite from "@/assets/icc-white.webp";
+
 const PreLoginLanding = () => {
   const navigate = useNavigate();
+  
   const features = [{
     icon: Calculator,
     title: "세무 자동화",
@@ -26,6 +29,7 @@ const PreLoginLanding = () => {
     title: "리포트",
     description: "월간 경영 보고서 자동 생성"
   }];
+
   const benefits = [{
     icon: Zap,
     text: "3분 만에 시작",
@@ -36,6 +40,54 @@ const PreLoginLanding = () => {
   }, {
     icon: Phone,
     text: "24시간 AI 상담"
+  }];
+
+  const howItWorks = [{
+    step: 1,
+    icon: Link2,
+    title: "계좌 연동",
+    description: "사업용 계좌와 카드를 안전하게 연결하세요"
+  }, {
+    step: 2,
+    icon: Sparkles,
+    title: "AI 분석",
+    description: "김비서가 자동으로 거래를 분류하고 분석합니다"
+  }, {
+    step: 3,
+    icon: CheckCircle2,
+    title: "명령만 하세요",
+    description: "세금 신고, 급여 계산 등 필요한 건 말만 하면 됩니다"
+  }];
+
+  const testimonials = [{
+    name: "김○○ 사장님",
+    business: "카페 운영 3년차",
+    rating: 5,
+    text: "세무사 비용 아끼고 시간도 절약! 이제 세금 걱정 없이 커피에만 집중해요."
+  }, {
+    name: "이○○ 대표님",
+    business: "온라인 쇼핑몰",
+    rating: 5,
+    text: "직원 급여 계산하느라 매달 스트레스였는데, 이제 원클릭으로 끝나요."
+  }, {
+    name: "박○○ 원장님",
+    business: "피부과 의원",
+    rating: 5,
+    text: "매출 분석 리포트 덕분에 어떤 시술이 수익성 좋은지 한눈에 파악돼요."
+  }];
+
+  const faqs = [{
+    question: "정말 무료인가요?",
+    answer: "네! 기본 기능은 평생 무료입니다. 계좌 연동, 매출/지출 분석, AI 상담 등 핵심 기능을 무료로 이용하실 수 있어요. 세무 신고 대행, 급여 자동 이체 등 고급 기능은 프로 플랜에서 제공됩니다."
+  }, {
+    question: "내 금융 정보는 안전한가요?",
+    answer: "물론입니다. 금융보안원 인증을 받은 보안 시스템을 사용하며, 모든 데이터는 암호화되어 저장됩니다. 김비서는 조회만 가능하고 출금이나 이체 권한은 없어요."
+  }, {
+    question: "어떤 은행/카드사를 연동할 수 있나요?",
+    answer: "국내 대부분의 시중은행(국민, 신한, 우리, 하나, 기업 등)과 주요 카드사를 지원합니다. 토스, 카카오뱅크 등 인터넷은행도 연동 가능해요."
+  }, {
+    question: "세무사가 없어도 되나요?",
+    answer: "간단한 세금 신고는 김비서가 자동으로 처리해드려요. 복잡한 세무 상담이 필요하시면 협력 세무사를 연결해드릴 수도 있습니다."
   }];
   return <div className="min-h-screen flex flex-col">
       {/* Header */}
@@ -118,6 +170,112 @@ const PreLoginLanding = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-14 bg-muted/30">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl lg:text-3xl font-bold mb-3">
+              <span className="text-primary">3단계</span>로 시작하세요
+            </h2>
+            <p className="text-muted-foreground">
+              복잡한 설정 없이 바로 시작할 수 있어요
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {howItWorks.map((item, i) => (
+              <div key={i} className="relative text-center">
+                {/* Connector Line */}
+                {i < howItWorks.length - 1 && (
+                  <div className="hidden md:block absolute top-10 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-primary/50 to-primary/20" />
+                )}
+                
+                <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
+                  <item.icon className="h-8 w-8 text-primary" />
+                  <span className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center">
+                    {item.step}
+                  </span>
+                </div>
+                
+                <h3 className="font-bold text-lg mb-2">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-14 bg-white dark:bg-card">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl lg:text-3xl font-bold mb-3">
+              사장님들의 <span className="text-primary">생생한 후기</span>
+            </h2>
+            <p className="text-muted-foreground">
+              이미 많은 사장님들이 김비서와 함께하고 있어요
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {testimonials.map((review, i) => (
+              <Card key={i} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+                <CardContent className="p-5">
+                  {/* Stars */}
+                  <div className="flex gap-0.5 mb-3">
+                    {[...Array(review.rating)].map((_, j) => (
+                      <Star key={j} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                  
+                  {/* Quote */}
+                  <p className="text-sm text-foreground mb-4 leading-relaxed">
+                    "{review.text}"
+                  </p>
+                  
+                  {/* Author */}
+                  <div className="pt-3 border-t">
+                    <p className="font-semibold text-sm">{review.name}</p>
+                    <p className="text-xs text-muted-foreground">{review.business}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-14 bg-muted/30">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl lg:text-3xl font-bold mb-3">
+              자주 묻는 질문
+            </h2>
+            <p className="text-muted-foreground">
+              궁금한 점이 있으시면 언제든 물어보세요
+            </p>
+          </div>
+
+          <Accordion type="single" collapsible className="space-y-3">
+            {faqs.map((faq, i) => (
+              <AccordionItem 
+                key={i} 
+                value={`faq-${i}`}
+                className="bg-card rounded-xl border-0 shadow-sm px-5"
+              >
+                <AccordionTrigger className="text-left font-semibold hover:no-underline py-4">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-4">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </section>
 
