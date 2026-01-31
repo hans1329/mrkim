@@ -17,9 +17,10 @@ function SpeechBubbleButton() {
   return (
     <button
       onClick={() => openVoice()}
-      className="absolute -top-12 left-1/2 -translate-x-1/2 animate-bounce-subtle"
+      className="absolute -top-12 left-1/2 -translate-x-1/2 animate-bounce-subtle w-screen flex justify-center pointer-events-none"
+      style={{ marginLeft: "calc(-50vw + 50%)" }}
     >
-      <div className="relative bg-white rounded-2xl px-4 py-2 shadow-lg">
+      <div className="relative bg-white rounded-2xl px-4 py-2 shadow-lg pointer-events-auto">
         <span className="text-xs font-medium text-primary whitespace-nowrap">
           궁금한게 있으시면 눌러주세요!
         </span>
