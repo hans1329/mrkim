@@ -36,6 +36,7 @@ function SpeechBubbleButton() {
 
 function LoginContent() {
   const navigate = useNavigate();
+  const { openVoice } = useServiceChat();
   const [isEmailMode, setIsEmailMode] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,11 +73,14 @@ function LoginContent() {
             <div className="flex justify-center mb-2">
               <SpeechBubbleButton />
             </div>
-            <div className="flex flex-col items-center justify-center">
+            <button 
+              onClick={() => openVoice()}
+              className="flex flex-col items-center justify-center cursor-pointer hover:scale-105 transition-transform"
+            >
               <img src={iccLogo} alt="김비서" className="h-20 w-auto opacity-95" style={{
                 filter: "drop-shadow(4px 8px 6px rgba(0, 0, 0, 0.3))"
               }} />
-            </div>
+            </button>
             <div className="space-y-1">
               <h1 className="font-bold text-primary-foreground text-3xl">
                 김 · 비 · 서
