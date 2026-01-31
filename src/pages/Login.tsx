@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Mail, Bot } from "lucide-react";
-import logo from "@/assets/logo.webp";
+import { ArrowLeft, Mail } from "lucide-react";
+import mrKimAvatar from "@/assets/mr-kim-avatar.webp";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -37,10 +37,8 @@ export default function Login() {
       <div className="w-full max-w-sm space-y-8">
         {/* 로고 & 타이틀 */}
         <div className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Bot className="w-6 h-6 text-primary" />
-            </div>
+          <div className="flex items-center justify-center">
+            <img src={mrKimAvatar} alt="Mr. Kim" className="w-20 h-20" />
           </div>
           <div className="space-y-1">
             <h1 className="text-2xl font-bold">김비서</h1>
