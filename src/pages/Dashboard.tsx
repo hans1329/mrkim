@@ -46,7 +46,7 @@ export default function Dashboard() {
             {/* 오늘의 요약 */}
             <section>
               <h2 className="mb-3 text-base font-semibold text-foreground">오늘의 요약</h2>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
                 <StatCard
                   title="오늘 매출"
                   value={formatCurrency(stats.income)}
