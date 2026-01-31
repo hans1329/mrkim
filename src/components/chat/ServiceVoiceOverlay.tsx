@@ -155,7 +155,7 @@ export function ServiceVoiceOverlay() {
         {/* FAQ 해시태그 버튼 */}
         {status === "idle" && (
           <div className="flex flex-wrap justify-center gap-2 max-w-sm mb-4">
-            {["#김비서가 뭐야?", "#어떤 기능이 있어?", "#요금은?", "#무료체험"].map((tag) => (
+            {["#김비서가 뭐야?", "#어떤 기능이 있어?", "#요금은?", "#무료체험", "#세금 신고", "#직원 관리", "#매출 분석"].map((tag) => (
               <button
                 key={tag}
                 onClick={() => {
@@ -172,6 +172,12 @@ export function ServiceVoiceOverlay() {
                       answer = "14일 무료 체험 후, 월 29,000원부터 시작합니다. 지금 가입하시면 첫 달 50% 할인 혜택이 있어요!";
                     } else if (question.includes("무료")) {
                       answer = "네! 14일간 모든 기능을 무료로 체험하실 수 있어요. 카드 등록 없이 바로 시작하세요!";
+                    } else if (question.includes("세금")) {
+                      answer = "부가세, 종합소득세 신고 일정을 자동 알림해드리고, 예상 세액 계산과 절세 팁도 제공해요!";
+                    } else if (question.includes("직원")) {
+                      answer = "직원 출퇴근 관리, 급여 자동 계산, 4대보험 처리까지 한 번에 관리할 수 있어요!";
+                    } else if (question.includes("매출")) {
+                      answer = "일별/주별/월별 매출 추이를 한눈에 보여드리고, AI가 매출 패턴을 분석해 인사이트를 제공합니다!";
                     }
                     setResponse(answer);
                     setStatus("speaking");
