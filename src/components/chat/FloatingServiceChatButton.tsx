@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { AudioLines } from "lucide-react";
 import { useServiceChat } from "@/contexts/ServiceChatContext";
+import logoImage from "@/assets/logo.webp";
 
 export function FloatingServiceChatButton() {
   const { isVoiceOpen, isChatOpen, openVoice } = useServiceChat();
@@ -10,10 +10,10 @@ export function FloatingServiceChatButton() {
   return (
     <Button
       onClick={openVoice}
-      className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform z-40 bg-white hover:bg-white/90 text-primary"
+      className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform z-40 bg-white hover:bg-white/90 p-2"
       size="icon"
     >
-      <AudioLines className="h-8 w-8" />
+      <img src={logoImage} alt="김비서" className="h-8 w-8 object-contain" />
     </Button>
   );
 }

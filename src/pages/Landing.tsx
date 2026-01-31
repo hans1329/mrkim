@@ -56,7 +56,7 @@ const Landing = () => {
 
   return (
     <ServiceChatProvider>
-    <div className={`flex h-screen overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-8 lg:px-8 transition-all duration-700 ${
+    <div className={`flex min-h-screen overflow-y-auto bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-8 lg:px-8 transition-all duration-700 ${
       showResult ? 'justify-center' : 'justify-center lg:justify-center'
     }`}>
       {/* PC 좌측 마케팅 영역 */}
@@ -142,7 +142,7 @@ const Landing = () => {
       </div>
 
       {/* 앱 영역 */}
-      <div className="w-full h-full lg:w-[580px] xl:w-[640px] lg:flex-shrink-0 overflow-auto">
+      <div className="w-full lg:w-[580px] xl:w-[640px] lg:flex-shrink-0">
         <div className="relative flex max-w-xl flex-col bg-transparent lg:max-w-none mx-auto">
           <div className="flex-1">
             {/* Landing Content */}
