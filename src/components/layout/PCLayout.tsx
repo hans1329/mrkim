@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
@@ -9,14 +9,13 @@ import {
   Bell,
   Settings,
   Bot,
-  MessageCircle,
-  X
+  AudioLines
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
-import { PCSideChat } from "@/components/chat/PCSideChat";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useVoice } from "@/contexts/VoiceContext";
+import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
 
 const navItems = [
   { title: "홈", url: "/", icon: LayoutDashboard },
@@ -34,7 +33,7 @@ interface PCLayoutProps {
 
 export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutProps) {
   const navigate = useNavigate();
-  const [chatOpen, setChatOpen] = useState(false);
+  const { openVoice, isOpen } = useVoice();
 
   return (
     <div className="flex h-screen w-full bg-gradient-to-br from-primary/5 via-background to-secondary/10">
@@ -106,29 +105,20 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           {children}
         </div>
 
-        {/* 플로팅 AI 채팅 버튼 */}
-        <Sheet open={chatOpen} onOpenChange={setChatOpen}>
-          <SheetTrigger asChild>
-            <Button
-              size="lg"
-              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50"
-            >
-              <MessageCircle className="h-6 w-6" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[400px] sm:w-[480px] p-0 flex flex-col">
-            <SheetHeader className="p-4 border-b">
-              <SheetTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-primary" />
-                김비서와 대화
-              </SheetTitle>
-            </SheetHeader>
-            <div className="flex-1 overflow-hidden">
-              <PCSideChat />
-            </div>
-          </SheetContent>
-        </Sheet>
+        {/* 플로팅 음성 버튼 */}
+        {!isOpen && (
+          <Button
+            onClick={openVoice}
+            size="lg"
+            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-gradient-to-br from-primary to-primary/80"
+          >
+            <AudioLines className="h-7 w-7" />
+          </Button>
+        )}
       </main>
+
+      {/* 음성 오버레이 */}
+      <VoiceOverlay />
     </div>
   );
 }
