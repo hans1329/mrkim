@@ -44,7 +44,7 @@ export default function Login() {
             <h1 className="text-2xl font-bold text-primary-foreground">김비서</h1>
             <p className="text-sm text-primary-foreground/80 tracking-wide">Mr. Kim</p>
           </div>
-          <p className="text-primary-foreground/70 text-sm">
+          <p className="text-primary-foreground/70 text-sm font-bold">
             명령만 하면 관리되는 사업장
           </p>
         </div>
