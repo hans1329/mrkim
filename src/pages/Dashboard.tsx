@@ -34,6 +34,39 @@ export default function Dashboard() {
           <AIChatCard />
         </section>
 
+        {/* 오늘의 요약 - 전체 너비 한 줄 */}
+        <section>
+          <h2 className="mb-3 text-base font-semibold text-foreground">오늘의 요약</h2>
+          <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
+            <StatCard
+              title="오늘 매출"
+              value={formatCurrency(stats.income)}
+              icon={TrendingUp}
+              trend={{ value: 12.5, isPositive: true }}
+              variant="primary"
+            />
+            <StatCard
+              title="오늘 지출"
+              value={formatCurrency(stats.expense)}
+              icon={TrendingDown}
+              trend={{ value: 3.2, isPositive: false }}
+            />
+            <StatCard
+              title="순이익"
+              value={formatCurrency(stats.profit)}
+              subtitle={`카드 ${stats.cardRatio}%`}
+              icon={Wallet}
+              variant="success"
+            />
+            <StatCard
+              title="운영자금"
+              value="₩15.3M"
+              subtitle="가용 잔액"
+              icon={PiggyBank}
+            />
+          </div>
+        </section>
+
         {/* PC: 2칼럼 그리드 레이아웃 / Mobile: 1칼럼 */}
         <div className={isMobile ? "space-y-6" : "grid grid-cols-2 gap-6"}>
           {/* 좌측 칼럼 */}
@@ -43,43 +76,13 @@ export default function Dashboard() {
               <TodayActionsCard />
             </section>
 
-            {/* 오늘의 요약 */}
-            <section>
-              <h2 className="mb-3 text-base font-semibold text-foreground">오늘의 요약</h2>
-              <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
-                <StatCard
-                  title="오늘 매출"
-                  value={formatCurrency(stats.income)}
-                  icon={TrendingUp}
-                  trend={{ value: 12.5, isPositive: true }}
-                  variant="primary"
-                />
-                <StatCard
-                  title="오늘 지출"
-                  value={formatCurrency(stats.expense)}
-                  icon={TrendingDown}
-                  trend={{ value: 3.2, isPositive: false }}
-                />
-                <StatCard
-                  title="순이익"
-                  value={formatCurrency(stats.profit)}
-                  subtitle={`카드 ${stats.cardRatio}%`}
-                  icon={Wallet}
-                  variant="success"
-                />
-                <StatCard
-                  title="운영자금"
-                  value="₩15.3M"
-                  subtitle="가용 잔액"
-                  icon={PiggyBank}
-                />
-              </div>
-            </section>
-
             {/* 주간 매출/지출 차트 */}
             <section>
               <WeeklyChart />
             </section>
+
+            {/* 예치금 현황 */}
+            <DepositCard deposits={mockDeposits} />
           </div>
 
           {/* 우측 칼럼 */}
@@ -93,9 +96,6 @@ export default function Dashboard() {
             <section>
               <EmployeeSummaryCard />
             </section>
-
-            {/* 예치금 현황 */}
-            <DepositCard deposits={mockDeposits} />
 
             {/* 자동이체 현황 */}
             <AutoTransferCard transfers={mockAutoTransfers} />
