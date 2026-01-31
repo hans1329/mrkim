@@ -155,7 +155,7 @@ export function ServiceVoiceOverlay() {
         {/* FAQ 해시태그 버튼 */}
         {status === "idle" && (
           <div className="flex flex-wrap justify-center gap-2 max-w-sm mb-4">
-            {["#김비서가 뭐야?", "#요금제 안내", "#무료체험 방법", "#어떤 기능이 있어?", "#보안은 안전해?", "#가입 방법", "#고객센터 연결"].map((tag) => (
+            {["#김비서가 뭐야?", "#뭘 해줄 수 있어?", "#어떻게 써?", "#얼마야?", "#왜 써야 해?", "#누가 쓰면 좋아?", "#무료로 써볼 수 있어?"].map((tag) => (
               <button
                 key={tag}
                 onClick={() => {
@@ -165,19 +165,19 @@ export function ServiceVoiceOverlay() {
                     const question = tag.replace("#", "");
                     let answer = "김비서에 대해 더 궁금한 점이 있으시면 말씀해주세요!";
                     if (question.includes("뭐야")) {
-                      answer = "김비서는 소상공인을 위한 AI 경영 비서입니다! 매출 관리, 직원 급여, 세금 신고까지 음성 명령 한 마디로 해결해드려요.";
-                    } else if (question.includes("요금")) {
-                      answer = "14일 무료 체험 후, 월 29,000원부터 시작합니다. 스타터/프로/엔터프라이즈 요금제가 있어요!";
+                      answer = "김비서는 소상공인을 위한 AI 경영 비서예요. 말 한마디로 매출, 세금, 직원 관리를 도와드려요!";
+                    } else if (question.includes("해줄")) {
+                      answer = "매출 분석, 세금 알림, 직원 급여 계산, 자동이체 관리 등 사업 운영 전반을 도와드려요.";
+                    } else if (question.includes("어떻게")) {
+                      answer = "계좌랑 카드만 연결하면 끝! 그 다음부턴 음성으로 물어보거나 명령하시면 돼요.";
+                    } else if (question.includes("얼마")) {
+                      answer = "월 29,000원부터 시작해요. 14일 무료 체험도 가능하고요!";
+                    } else if (question.includes("왜")) {
+                      answer = "복잡한 장부 정리, 세금 걱정 없이 본업에만 집중하실 수 있어요!";
+                    } else if (question.includes("누가")) {
+                      answer = "카페, 음식점, 소매점 등 매장을 운영하시는 사장님들께 딱이에요!";
                     } else if (question.includes("무료")) {
-                      answer = "회원가입만 하시면 14일간 모든 기능을 무료로 체험하실 수 있어요. 카드 등록 없이 바로 시작하세요!";
-                    } else if (question.includes("기능")) {
-                      answer = "매출/지출 자동 분류, 직원 급여 계산, 세무 지원, 자동이체 관리, AI 음성 비서 등 사업 운영에 필요한 기능을 제공합니다.";
-                    } else if (question.includes("보안")) {
-                      answer = "금융보안원 인증을 받은 보안 체계를 사용하며, 모든 데이터는 암호화되어 안전하게 보관됩니다.";
-                    } else if (question.includes("가입")) {
-                      answer = "이메일 또는 카카오/네이버 계정으로 간편하게 가입하실 수 있어요. 지금 바로 시작해보세요!";
-                    } else if (question.includes("고객센터")) {
-                      answer = "고객센터는 평일 09:00~18:00 운영되며, 카카오톡 채널 '김비서'로도 문의 가능합니다!";
+                      answer = "네! 14일간 모든 기능을 무료로 체험하실 수 있어요.";
                     }
                     setResponse(answer);
                     setStatus("speaking");
