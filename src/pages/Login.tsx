@@ -38,7 +38,7 @@ export default function Login() {
         {/* 로고 & 타이틀 */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center">
-            <img src={mrKimAvatar} alt="Mr. Kim" className="w-20 h-20" />
+            <img src={mrKimAvatar} alt="Mr. Kim" className="h-20 w-auto" />
           </div>
           <div className="space-y-1">
             <h1 className="text-2xl font-bold">김비서</h1>
