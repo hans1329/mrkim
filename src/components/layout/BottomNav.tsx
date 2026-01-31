@@ -20,7 +20,7 @@ export function BottomNav() {
             to={item.url}
             end={item.url === "/"}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-primary-foreground/70 transition-colors active:bg-white/10"
+              "flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-primary-foreground/40 transition-colors active:bg-white/10"
             )}
             activeClassName="text-white"
           >
