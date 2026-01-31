@@ -155,7 +155,7 @@ export function ServiceVoiceOverlay() {
         {/* FAQ 해시태그 버튼 */}
         {status === "idle" && (
           <div className="flex flex-wrap justify-center gap-2 max-w-sm mb-4">
-            {["#김비서가 뭐야?", "#어떤 기능이 있어?", "#요금은?", "#무료체험", "#세금 신고", "#직원 관리", "#매출 분석"].map((tag) => (
+            {["#김비서가 뭐야?", "#요금제 안내", "#무료체험 방법", "#어떤 기능이 있어?", "#보안은 안전해?", "#가입 방법", "#고객센터 연결"].map((tag) => (
               <button
                 key={tag}
                 onClick={() => {
@@ -166,18 +166,18 @@ export function ServiceVoiceOverlay() {
                     let answer = "김비서에 대해 더 궁금한 점이 있으시면 말씀해주세요!";
                     if (question.includes("뭐야")) {
                       answer = "김비서는 소상공인을 위한 AI 경영 비서입니다! 매출 관리, 직원 급여, 세금 신고까지 음성 명령 한 마디로 해결해드려요.";
-                    } else if (question.includes("기능")) {
-                      answer = "매출/지출 관리, 직원 급여 계산, 세무 지원, 자동이체 관리 등 사업장 운영에 필요한 모든 기능을 제공합니다.";
                     } else if (question.includes("요금")) {
-                      answer = "14일 무료 체험 후, 월 29,000원부터 시작합니다. 지금 가입하시면 첫 달 50% 할인 혜택이 있어요!";
+                      answer = "14일 무료 체험 후, 월 29,000원부터 시작합니다. 스타터/프로/엔터프라이즈 요금제가 있어요!";
                     } else if (question.includes("무료")) {
-                      answer = "네! 14일간 모든 기능을 무료로 체험하실 수 있어요. 카드 등록 없이 바로 시작하세요!";
-                    } else if (question.includes("세금")) {
-                      answer = "부가세, 종합소득세 신고 일정을 자동 알림해드리고, 예상 세액 계산과 절세 팁도 제공해요!";
-                    } else if (question.includes("직원")) {
-                      answer = "직원 출퇴근 관리, 급여 자동 계산, 4대보험 처리까지 한 번에 관리할 수 있어요!";
-                    } else if (question.includes("매출")) {
-                      answer = "일별/주별/월별 매출 추이를 한눈에 보여드리고, AI가 매출 패턴을 분석해 인사이트를 제공합니다!";
+                      answer = "회원가입만 하시면 14일간 모든 기능을 무료로 체험하실 수 있어요. 카드 등록 없이 바로 시작하세요!";
+                    } else if (question.includes("기능")) {
+                      answer = "매출/지출 자동 분류, 직원 급여 계산, 세무 지원, 자동이체 관리, AI 음성 비서 등 사업 운영에 필요한 기능을 제공합니다.";
+                    } else if (question.includes("보안")) {
+                      answer = "금융보안원 인증을 받은 보안 체계를 사용하며, 모든 데이터는 암호화되어 안전하게 보관됩니다.";
+                    } else if (question.includes("가입")) {
+                      answer = "이메일 또는 카카오/네이버 계정으로 간편하게 가입하실 수 있어요. 지금 바로 시작해보세요!";
+                    } else if (question.includes("고객센터")) {
+                      answer = "고객센터는 평일 09:00~18:00 운영되며, 카카오톡 채널 '김비서'로도 문의 가능합니다!";
                     }
                     setResponse(answer);
                     setStatus("speaking");
