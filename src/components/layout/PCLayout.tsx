@@ -194,7 +194,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           <Button
             onClick={openVoice}
             size="lg"
-            className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-white hover:bg-white/90 p-1 animate-bounce-subtle"
+            className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 p-1 animate-bounce-subtle"
           >
             <img src={chatbotIcon} alt="김비서" className="h-12 w-12 object-contain" />
           </Button>
