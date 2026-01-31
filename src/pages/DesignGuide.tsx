@@ -70,7 +70,7 @@ export default function DesignGuide() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-6 mb-6">
-              <div className="flex h-32 w-32 items-center justify-center rounded-2xl bg-white border-2 border-border shadow-md p-3">
+              <div className="flex h-64 w-64 items-center justify-center rounded-3xl bg-white border-2 border-border shadow-md p-4">
                   <img src={chaltteokImage} alt="찰떡이" className="h-full w-full object-contain" />
                 </div>
                 <div>
