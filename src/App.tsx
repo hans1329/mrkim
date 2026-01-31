@@ -35,8 +35,8 @@ const App = () => (
           <ChatProvider>
             <VoiceProvider>
               <Routes>
-                <Route path="/" element={<PreLoginLanding />} />
-                <Route path="/app" element={<Index />} />
+                <Route path="/" element={<Index />} />
+                <Route path="/intro" element={<PreLoginLanding />} />
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/employees" element={<Employees />} />
                 <Route path="/funds" element={<Funds />} />
