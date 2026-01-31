@@ -17,14 +17,21 @@ function SpeechBubbleButton() {
   return (
     <button
       onClick={() => openVoice()}
-      className="absolute -top-8 -left-4 animate-bounce-subtle"
+      className="absolute -top-12 left-1/2 -translate-x-1/2 animate-bounce-subtle"
     >
-      <div className="relative bg-white rounded-2xl px-3 py-1.5 shadow-lg">
+      <div className="relative bg-white rounded-2xl px-4 py-2 shadow-lg">
         <span className="text-xs font-medium text-primary whitespace-nowrap">
-          궁금한게 있으신가요?
+          궁금한게 있으시면 눌러주세요!
         </span>
-        {/* 말풍선 꼬리 */}
-        <div className="absolute -bottom-1.5 right-4 w-3 h-3 bg-white rotate-45 shadow-lg" />
+        {/* 말풍선 꼬리 - 더 뾰족하게 */}
+        <div 
+          className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0"
+          style={{
+            borderLeft: "6px solid transparent",
+            borderRight: "6px solid transparent",
+            borderTop: "10px solid white",
+          }}
+        />
       </div>
     </button>
   );
