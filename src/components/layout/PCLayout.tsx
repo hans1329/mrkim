@@ -15,7 +15,7 @@ import { NavLink } from "@/components/NavLink";
 import { useVoice } from "@/contexts/VoiceContext";
 import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
 import chaltteokImage from "@/assets/icc-4.webp";
-import chatbotIcon from "@/assets/icc-4.webp";
+import chatbotIcon from "@/assets/icc-blue.webp";
 
 const navItems = [
   { title: "홈", url: "/", icon: LayoutDashboard },
