@@ -251,13 +251,7 @@ const PreLoginLanding = () => {
           <div className="flex flex-col gap-6">
             {/* Logo & Brand */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <img src={logo} alt="김비서 로고" className="h-8 w-auto" />
-                <div>
-                  <span className="font-bold text-lg">김 · 비 · 서</span>
-                  <span className="text-xs text-muted-foreground ml-2">Mr. Kim</span>
-                </div>
-              </div>
+              
               <div className="flex items-center gap-6 text-sm">
                 <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">이용약관</a>
                 <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">개인정보처리방침</a>
