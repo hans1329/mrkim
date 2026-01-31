@@ -166,18 +166,18 @@ const PreLoginLanding = () => {
         <div className="max-w-2xl mx-auto px-4 text-center">
           <div className="inline-flex items-center gap-8 flex-wrap justify-center">
             <div>
-              <p className="text-3xl font-black text-primary">10,000+</p>
-              <p className="text-xs text-muted-foreground">사용 중인 사장님</p>
+              <p className="text-3xl font-black text-primary">3분</p>
+              <p className="text-xs text-muted-foreground">초기 설정 완료</p>
             </div>
             <div className="w-px h-10 bg-border hidden sm:block" />
             <div>
-              <p className="text-3xl font-black text-primary">4.9</p>
-              <p className="text-xs text-muted-foreground">앱스토어 평점</p>
+              <p className="text-3xl font-black text-primary">무료</p>
+              <p className="text-xs text-muted-foreground">기본 기능 평생</p>
             </div>
             <div className="w-px h-10 bg-border hidden sm:block" />
             <div>
-              <p className="text-3xl font-black text-primary">월 50시간</p>
-              <p className="text-xs text-muted-foreground">평균 절약 시간</p>
+              <p className="text-3xl font-black text-primary">24시간</p>
+              <p className="text-xs text-muted-foreground">AI 상담 지원</p>
             </div>
           </div>
         </div>
