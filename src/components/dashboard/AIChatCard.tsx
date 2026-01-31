@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bot, Send, Sparkles, MessageCircle, RotateCcw, Clock } from "lucide-react";
+import { Bot, Send, Sparkles, MessageCircle, RotateCcw, Clock, Settings } from "lucide-react";
 import { getTodayStats, mockDeposits, mockAutoTransfers, mockEmployees, formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
 
@@ -146,9 +146,12 @@ export function AIChatCard() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/secretary-settings")}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors"
+              className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors"
             >
               <Bot className="h-6 w-6 text-white" />
+              <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center border border-white/40">
+                <Settings className="h-2.5 w-2.5 text-white" />
+              </div>
             </button>
             <div>
               <h3 className="font-bold text-white">김비서</h3>
