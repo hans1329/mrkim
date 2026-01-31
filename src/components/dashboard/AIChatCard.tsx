@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bot, Send, Sparkles, MessageCircle, RotateCcw, Clock } from "lucide-react";
+import { Send, Sparkles, MessageCircle, RotateCcw, Clock } from "lucide-react";
 import { getTodayStats, mockDeposits, mockAutoTransfers, mockEmployees, formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
 import kimSecretaryImg from "@/assets/kim-secretary.png";
+import kimSecretaryWhiteImg from "@/assets/kim-secretary-white.webp";
 
 const quickPrompts = [
   "오늘 매출 얼마야?",
@@ -155,9 +156,9 @@ export function AIChatCard() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/secretary-settings")}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors overflow-hidden"
             >
-              <Bot className="h-6 w-6 text-white" />
+              <img src={kimSecretaryWhiteImg} alt="김비서" className="h-8 w-8 object-contain" />
             </button>
             <div>
               <h3 className="font-bold text-white">김비서</h3>
