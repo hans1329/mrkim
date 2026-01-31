@@ -1,19 +1,19 @@
 import { Button } from "@/components/ui/button";
-import { MessageCircle } from "lucide-react";
+import { AudioLines } from "lucide-react";
 import { useServiceChat } from "@/contexts/ServiceChatContext";
 
 export function FloatingServiceChatButton() {
-  const { isOpen, openChat } = useServiceChat();
+  const { isVoiceOpen, isChatOpen, openVoice } = useServiceChat();
   
-  if (isOpen) return null;
+  if (isVoiceOpen || isChatOpen) return null;
   
   return (
     <Button
-      onClick={openChat}
-      className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform z-40"
+      onClick={openVoice}
+      className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform z-40 bg-white hover:bg-white/90 text-primary"
       size="icon"
     >
-      <MessageCircle className="h-6 w-6" />
+      <AudioLines className="h-8 w-8" />
     </Button>
   );
 }
