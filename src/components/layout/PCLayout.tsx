@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
@@ -8,7 +8,9 @@ import {
   TrendingUp,
   Bell,
   Settings,
-  HelpCircle
+  HelpCircle,
+  PanelLeftClose,
+  PanelLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,6 +19,7 @@ import { useVoice } from "@/contexts/VoiceContext";
 import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
 import chaltteokImage from "@/assets/icc-4.webp";
 import chatbotIcon from "@/assets/icc-blue.webp";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
   { title: "홈", url: "/", icon: LayoutDashboard },
@@ -35,78 +38,147 @@ interface PCLayoutProps {
 export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutProps) {
   const navigate = useNavigate();
   const { openVoice, isOpen } = useVoice();
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen w-full bg-gradient-to-br from-primary/5 via-background to-secondary/10">
       {/* 좌측 네비게이션 사이드바 */}
-      <aside className="w-64 flex-shrink-0 border-r bg-card/50 backdrop-blur-sm flex flex-col">
+      <aside className={cn(
+        "flex-shrink-0 border-r bg-card/50 backdrop-blur-sm flex flex-col transition-all duration-300",
+        collapsed ? "w-16" : "w-64"
+      )}>
         {/* 로고 영역 */}
-        <div className="p-6 border-b">
+        <div className={cn("border-b", collapsed ? "p-3" : "p-6")}>
           <div 
             className="cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => navigate("/profile")}
           >
-            <img src={chaltteokImage} alt="찰떡이" className="h-12 w-12 object-contain mb-3" />
-            <h1 className="text-lg font-bold text-foreground leading-tight">
-              {title?.includes("안녕하세요,") ? (
-                <>
-                  안녕하세요,<br />
-                  {title.replace("안녕하세요, ", "")}
-                </>
-              ) : title}
-            </h1>
-            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+            <img 
+              src={chaltteokImage} 
+              alt="찰떡이" 
+              className={cn(
+                "object-contain transition-all",
+                collapsed ? "h-10 w-10 mx-auto" : "h-12 w-12 mb-3"
+              )} 
+            />
+            {!collapsed && (
+              <>
+                <h1 className="text-lg font-bold text-foreground leading-tight">
+                  {title?.includes("안녕하세요,") ? (
+                    <>
+                      안녕하세요,<br />
+                      {title.replace("안녕하세요, ", "")}
+                    </>
+                  ) : title}
+                </h1>
+                {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+              </>
+            )}
           </div>
         </div>
 
         {/* 네비게이션 메뉴 */}
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className={cn("flex-1 space-y-1", collapsed ? "p-2" : "p-4")}>
           {navItems.map((item) => (
-            <NavLink
-              key={item.title}
-              to={item.url}
-              end={item.url === "/"}
-              className={cn(
-                "flex items-center gap-3 rounded-xl px-4 py-3 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+            <Tooltip key={item.title} delayDuration={0}>
+              <TooltipTrigger asChild>
+                <NavLink
+                  to={item.url}
+                  end={item.url === "/"}
+                  className={cn(
+                    "flex items-center rounded-xl text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+                    collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
+                  )}
+                  activeClassName="bg-primary/10 text-primary font-medium"
+                >
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  {!collapsed && <span>{item.title}</span>}
+                </NavLink>
+              </TooltipTrigger>
+              {collapsed && (
+                <TooltipContent side="right">
+                  {item.title}
+                </TooltipContent>
               )}
-              activeClassName="bg-primary/10 text-primary font-medium"
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.title}</span>
-            </NavLink>
+            </Tooltip>
           ))}
         </nav>
 
         {/* 하단 유틸리티 */}
-        <div className="p-4 border-t space-y-1">
+        <div className={cn("border-t space-y-1", collapsed ? "p-2" : "p-4")}>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full text-muted-foreground hover:text-foreground",
+                  collapsed ? "justify-center p-3" : "justify-start gap-3"
+                )}
+                onClick={() => navigate("/notifications")}
+              >
+                <div className="relative flex-shrink-0">
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                    2
+                  </span>
+                </div>
+                {!collapsed && <span>알림</span>}
+              </Button>
+            </TooltipTrigger>
+            {collapsed && <TooltipContent side="right">알림</TooltipContent>}
+          </Tooltip>
+
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full text-muted-foreground hover:text-foreground",
+                  collapsed ? "justify-center p-3" : "justify-start gap-3"
+                )}
+                onClick={() => navigate("/settings")}
+              >
+                <Settings className="h-5 w-5 flex-shrink-0" />
+                {!collapsed && <span>설정</span>}
+              </Button>
+            </TooltipTrigger>
+            {collapsed && <TooltipContent side="right">설정</TooltipContent>}
+          </Tooltip>
+
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full text-muted-foreground hover:text-foreground",
+                  collapsed ? "justify-center p-3" : "justify-start gap-3"
+                )}
+                onClick={() => navigate("/help")}
+              >
+                <HelpCircle className="h-5 w-5 flex-shrink-0" />
+                {!collapsed && <span>도움말</span>}
+              </Button>
+            </TooltipTrigger>
+            {collapsed && <TooltipContent side="right">도움말</TooltipContent>}
+          </Tooltip>
+
+          {/* 사이드바 접기/펼치기 버튼 */}
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-            onClick={() => navigate("/notifications")}
+            className={cn(
+              "w-full text-muted-foreground hover:text-foreground",
+              collapsed ? "justify-center p-3" : "justify-start gap-3"
+            )}
+            onClick={() => setCollapsed(!collapsed)}
           >
-            <div className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
-                2
-              </span>
-            </div>
-            <span>알림</span>
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-            onClick={() => navigate("/settings")}
-          >
-            <Settings className="h-5 w-5" />
-            <span>설정</span>
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-            onClick={() => navigate("/help")}
-          >
-            <HelpCircle className="h-5 w-5" />
-            <span>도움말</span>
+            {collapsed ? (
+              <PanelLeft className="h-5 w-5 flex-shrink-0" />
+            ) : (
+              <>
+                <PanelLeftClose className="h-5 w-5 flex-shrink-0" />
+                <span>메뉴 접기</span>
+              </>
+            )}
           </Button>
         </div>
       </aside>
