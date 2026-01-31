@@ -6,6 +6,8 @@ import { AIChatCard } from "@/components/dashboard/AIChatCard";
 import { WeeklyChart } from "@/components/dashboard/WeeklyChart";
 import { RecentTransactionsCard } from "@/components/dashboard/RecentTransactionsCard";
 import { EmployeeSummaryCard } from "@/components/dashboard/EmployeeSummaryCard";
+import { TodayActionsCard } from "@/components/dashboard/TodayActionsCard";
+import { UrgentAlertBanner } from "@/components/dashboard/UrgentAlertBanner";
 import {
   getTodayStats,
   mockDeposits,
@@ -22,9 +24,17 @@ export default function Dashboard() {
   return (
     <MainLayout title="안녕하세요, 사장님 👋" subtitle="오늘도 김비서가 도와드릴게요">
       <div className="space-y-6">
+        {/* 긴급 알림 배너 */}
+        <UrgentAlertBanner />
+
         {/* AI 김비서 채팅 카드 */}
         <section>
           <AIChatCard />
+        </section>
+
+        {/* 오늘의 할 일 */}
+        <section>
+          <TodayActionsCard />
         </section>
 
         {/* 오늘의 요약 */}
