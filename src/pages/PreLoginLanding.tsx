@@ -6,7 +6,7 @@ import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
 import logo from "@/assets/icc-3.webp";
-import logoWhite from "@/assets/logo-white.webp";
+import logoWhite from "@/assets/icc-white.webp";
 const PreLoginLanding = () => {
   const navigate = useNavigate();
   const features = [{
