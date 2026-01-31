@@ -130,15 +130,17 @@ function LoginContent() {
               </div>
             </div>}
 
-          {/* 하단 링크들 */}
-          <div className="text-center text-sm pt-4">
-            <span className="text-primary-foreground/70">
-              계정이 없으신가요?{" "}
-            </span>
-            <Button variant="link" className="p-0 h-auto font-semibold text-primary-foreground hover:text-primary-foreground/80" onClick={() => navigate("/signup")}>
-              회원가입
-            </Button>
-          </div>
+          {/* 하단 링크들 - 이메일 모드일 때만 표시 */}
+          {isEmailMode && (
+            <div className="text-center text-sm pt-4">
+              <span className="text-primary-foreground/70">
+                계정이 없으신가요?{" "}
+              </span>
+              <Button variant="link" className="p-0 h-auto font-semibold text-primary-foreground hover:text-primary-foreground/80" onClick={() => navigate("/signup")}>
+                회원가입
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
