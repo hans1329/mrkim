@@ -29,7 +29,7 @@ const PreLoginLanding = () => {
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={logo} alt="김비서 로고" className="h-8 w-8" />
+            <img src={logo} alt="김비서 로고" className="h-8 w-auto" />
             <span className="text-xl font-bold">김비서</span>
           </div>
           <div className="flex items-center gap-2">
