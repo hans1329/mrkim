@@ -45,7 +45,7 @@ function LoginContent() {
           {/* 로고 & 타이틀 */}
           <div className="text-center space-y-4">
             <div className="flex flex-col items-center justify-center">
-              <img src={iccLogo} alt="김비서" className="h-20 w-auto opacity-80" style={{
+              <img src={iccLogo} alt="김비서" className="h-20 w-auto opacity-95" style={{
               filter: "drop-shadow(4px 8px 6px rgba(0, 0, 0, 0.3))"
             }} />
             </div>
