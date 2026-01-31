@@ -22,6 +22,7 @@ import FinancialServices from "./pages/FinancialServices";
 import PitchDeck from "./pages/PitchDeck";
 import Landing from "./pages/Landing";
 import SecretarySettings from "./pages/SecretarySettings";
+import Onboarding from "./pages/Onboarding";
 import DesignGuide from "./pages/DesignGuide";
 import NotFound from "./pages/NotFound";
 
@@ -53,6 +54,7 @@ const App = () => (
                 <Route path="/pitchdeck" element={<PitchDeck />} />
                 <Route path="/landing" element={<Landing />} />
                 <Route path="/secretary-settings" element={<SecretarySettings />} />
+                <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/design" element={<DesignGuide />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
