@@ -174,7 +174,7 @@ export function OnboardingWizard({
 // Welcome Step
 function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
-    <div className="bg-card rounded-3xl p-8 shadow-xl text-center space-y-6">
+    <div className="bg-card rounded-3xl p-8 shadow-xl text-center space-y-5">
       <div className="flex justify-center">
         <div className="relative">
           <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
@@ -183,7 +183,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           <Sparkles className="absolute -top-1 -right-1 h-6 w-6 text-yellow-500" />
         </div>
       </div>
-      <div>
+      <div className="-mt-1">
         <h1 className="text-2xl font-bold text-foreground">안녕하세요, 사장님!</h1>
         <h2 className="text-xl font-semibold text-primary mt-1">김비서입니다 👋</h2>
       </div>
