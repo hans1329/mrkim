@@ -24,6 +24,7 @@ import Landing from "./pages/Landing";
 import SecretarySettings from "./pages/SecretarySettings";
 import Onboarding from "./pages/Onboarding";
 import DesignGuide from "./pages/DesignGuide";
+import Engine from "./pages/Engine";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
                 <Route path="/secretary-settings" element={<SecretarySettings />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/design" element={<DesignGuide />} />
+                <Route path="/engine" element={<Engine />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
