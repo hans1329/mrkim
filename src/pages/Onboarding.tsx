@@ -215,10 +215,10 @@ export default function Onboarding() {
 // Welcome Step with character
 function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
-    <div className="text-center space-y-8">
+    <div className="text-center space-y-6">
       {/* Character with subtle animation */}
       <motion.div 
-        className="flex justify-center"
+        className="flex justify-center pt-6"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
@@ -241,7 +241,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
 
       {/* Text content */}
       <motion.div 
-        className="space-y-3"
+        className="space-y-3 -mt-2"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.4 }}
