@@ -65,7 +65,7 @@ export default function Engine() {
                     <h4 className="font-semibold">Hands (손)</h4>
                   </div>
                   <p className="text-sm text-muted-foreground">데이터 조회, 분류, 알림 실행</p>
-                  <Badge variant="secondary" className="mt-2">Edge Functions + APIs</Badge>
+                  <Badge variant="secondary" className="mt-2">Edge Functions (Lambda) + APIs</Badge>
                 </div>
               </div>
             </CardContent>
@@ -265,7 +265,7 @@ export default function Engine() {
               <CardContent>
                 <div className="flex flex-wrap gap-2">
                   <Badge>Gemini API</Badge>
-                  <Badge variant="secondary">Edge Functions</Badge>
+                  <Badge variant="secondary">Edge Functions (Lambda)</Badge>
                   <Badge variant="secondary">Codef API</Badge>
                   <Badge variant="secondary">PostgreSQL</Badge>
                   <Badge variant="outline">Realtime</Badge>
