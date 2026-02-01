@@ -225,17 +225,17 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
       >
         <div className="relative">
           <motion.div
-            animate={{ y: [0, -8, 0] }}
+            animate={{ y: [0, -6, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >
             <img 
               src={`${characterImg}?v=${Date.now()}`} 
               alt="찰떡이" 
-              className="w-32 h-32 object-contain drop-shadow-lg"
+              className="w-20 h-20 object-contain drop-shadow-lg"
             />
           </motion.div>
           {/* Subtle glow effect */}
-          <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl -z-10 scale-150" />
+          <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl -z-10 scale-125" />
         </div>
       </motion.div>
 
