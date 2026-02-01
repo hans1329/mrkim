@@ -215,14 +215,26 @@ export default function Onboarding() {
 // Welcome Step with character
 function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
-    <div className="text-center space-y-6">
-      {/* Character with subtle animation */}
+    <div className="text-center space-y-4">
+      {/* Character with speech bubble */}
       <motion.div 
-        className="flex justify-center pt-6"
+        className="flex flex-col items-center pt-8"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
       >
+        {/* Speech bubble */}
+        <motion.div
+          className="relative bg-primary text-primary-foreground px-4 py-2 rounded-2xl rounded-bl-sm mb-2 shadow-md"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
+          <span className="text-sm font-medium whitespace-nowrap">연동을 시작해 주세요!</span>
+          {/* Bubble tail */}
+          <div className="absolute -bottom-1.5 left-3 w-3 h-3 bg-primary rotate-45" />
+        </motion.div>
+        
         <div className="relative">
           <motion.div
             animate={{ y: [0, -6, 0] }}
