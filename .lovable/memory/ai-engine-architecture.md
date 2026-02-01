@@ -33,17 +33,83 @@ Updated: 2025-02-01
 - 일반 지식 질문
 ```
 
-**구현**: Tool Calling으로 의도 추출
+**구현**: Gemini Function Calling 스키마
 ```typescript
-tools: [{
+const classifyIntentTool = {
   name: "classify_intent",
+  description: "사용자 메시지의 의도를 분류하고 필요한 데이터를 판단합니다",
   parameters: {
-    intent: "sales_inquiry" | "tax_question" | "payroll" | "out_of_scope",
-    confidence: number,
-    requires_data: boolean
+    type: "object",
+    properties: {
+      // 주요 의도 분류
+      intent: {
+        type: "string",
+        enum: [
+          "sales_inquiry",       // 매출 조회 ("오늘 매출 얼마야?")
+          "expense_inquiry",     // 지출 조회 ("이번 달 지출 현황")
+          "tax_question",        // 세금 관련 ("부가세 얼마 내야 해?")
+          "payroll_inquiry",     // 급여/인사 ("직원 급여 현황")
+          "employee_management", // 인사 관리 ("신규 직원 등록")
+          "transaction_classify",// 거래 분류 ("이 거래 뭘로 처리해?")
+          "daily_briefing",      // 경영 브리핑 ("오늘 현황 알려줘")
+          "alert_check",         // 알림 확인 ("할 일 뭐 있어?")
+          "setting_change",      // 설정 변경 ("말투 바꿔줘")
+          "out_of_scope"         // 범위 외 ("맛집 추천해줘")
+        ],
+        description: "분류된 사용자 의도"
+      },
+      // 신뢰도
+      confidence: {
+        type: "number",
+        minimum: 0,
+        maximum: 1,
+        description: "의도 분류 신뢰도 (0.0 ~ 1.0)"
+      },
+      // 데이터 필요 여부
+      requires_data: {
+        type: "boolean",
+        description: "외부 데이터 조회가 필요한지 여부"
+      },
+      // 필요한 데이터 소스
+      data_sources: {
+        type: "array",
+        items: {
+          type: "string",
+          enum: ["card", "bank", "hometax", "employee", "none"]
+        },
+        description: "필요한 데이터 소스 목록"
+      },
+      // 기간 파라미터
+      time_period: {
+        type: "object",
+        properties: {
+          type: { 
+            type: "string", 
+            enum: ["today", "week", "month", "quarter", "year", "custom"] 
+          },
+          start_date: { type: "string", format: "date" },
+          end_date: { type: "string", format: "date" }
+        },
+        description: "조회 기간 (해당시)"
+      },
+      // 범위 외 사유
+      rejection_reason: {
+        type: "string",
+        description: "out_of_scope일 경우 거절 사유"
+      }
+    },
+    required: ["intent", "confidence", "requires_data"]
   }
-}]
+};
 ```
+
+**의도별 예시 매핑**:
+| 사용자 입력 | intent | data_sources |
+|------------|--------|--------------|
+| "오늘 매출 얼마야?" | `sales_inquiry` | `["card", "bank"]` |
+| "부가세 얼마 내야해?" | `tax_question` | `["hometax", "card"]` |
+| "직원 급여 현황" | `payroll_inquiry` | `["employee"]` |
+| "맛집 추천해줘" | `out_of_scope` | `["none"]` |
 
 ### 2.2 거래 자동 분류기 (Transaction Classifier)
 **목적**: 상호명 패턴으로 비용 카테고리 자동 분류
