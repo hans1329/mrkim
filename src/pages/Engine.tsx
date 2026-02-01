@@ -107,10 +107,48 @@ export default function Engine() {
                 </div>
 
                 <div className="p-3 rounded-lg bg-muted/50 overflow-x-auto">
-                  <p className="text-xs font-medium mb-2">Tool Calling 스키마 (주요 필드)</p>
-                  <code className="text-xs">
-                    intent: sales_inquiry | expense_inquiry | tax_question | payroll_inquiry | out_of_scope
-                  </code>
+                  <p className="text-xs font-medium mb-3">Tool Calling 스키마: classify_intent</p>
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+{`{
+  intent: "sales_inquiry" | "expense_inquiry" | "tax_question" 
+        | "payroll_inquiry" | "employee_management" 
+        | "transaction_classify" | "daily_briefing" 
+        | "alert_check" | "setting_change" | "out_of_scope",
+  
+  confidence: 0.0 ~ 1.0,
+  
+  requires_data: boolean,
+  
+  data_sources: ["card", "bank", "hometax", "employee", "none"],
+  
+  time_period: {
+    type: "today" | "week" | "month" | "quarter" | "year" | "custom",
+    start_date?: "YYYY-MM-DD",
+    end_date?: "YYYY-MM-DD"
+  },
+  
+  rejection_reason?: string  // out_of_scope일 경우
+}`}
+                  </pre>
+                </div>
+
+                <div className="overflow-x-auto mt-4">
+                  <p className="text-xs font-medium mb-2">의도별 매핑 예시</p>
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-2">사용자 입력</th>
+                        <th className="text-left py-2 px-2">intent</th>
+                        <th className="text-left py-2 px-2">data_sources</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-muted-foreground">
+                      <tr className="border-b"><td className="py-1.5 px-2">"오늘 매출 얼마야?"</td><td className="py-1.5 px-2">sales_inquiry</td><td className="py-1.5 px-2">card, bank</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"부가세 얼마 내야해?"</td><td className="py-1.5 px-2">tax_question</td><td className="py-1.5 px-2">hometax, card</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"직원 급여 현황"</td><td className="py-1.5 px-2">payroll_inquiry</td><td className="py-1.5 px-2">employee</td></tr>
+                      <tr><td className="py-1.5 px-2">"맛집 추천해줘"</td><td className="py-1.5 px-2">out_of_scope</td><td className="py-1.5 px-2">none</td></tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
