@@ -237,15 +237,15 @@ function ConnectionStep({
     <div className="bg-card rounded-3xl p-8 shadow-xl space-y-6">
       <div className="flex justify-center">
         <div className={cn(
-          "h-20 w-20 rounded-2xl flex items-center justify-center",
+          "h-14 w-14 rounded-xl flex items-center justify-center",
           isConnected 
             ? "bg-green-500/10 text-green-500" 
             : "bg-primary/10 text-primary"
         )}>
           {isConnected ? (
-            <CheckCircle2 className="h-10 w-10" />
+            <CheckCircle2 className="h-7 w-7" />
           ) : (
-            <Icon className="h-10 w-10" />
+            <Icon className="h-7 w-7" />
           )}
         </div>
       </div>
