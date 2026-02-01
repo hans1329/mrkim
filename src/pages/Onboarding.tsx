@@ -462,7 +462,7 @@ function CompleteStep({
   const connectedCount = Object.values(connections).filter(Boolean).length;
   
   return (
-    <div className="text-center space-y-8">
+    <div className="text-center space-y-6 pt-8">
       {/* Success icon with animation */}
       <motion.div 
         className="flex justify-center"
@@ -471,15 +471,15 @@ function CompleteStep({
         transition={{ type: "spring", stiffness: 200, damping: 15 }}
       >
         <div className="relative">
-          <div className="h-20 w-20 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/20">
-            <CheckCircle2 className="h-10 w-10 text-white" />
+          <div className="h-16 w-16 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/20">
+            <CheckCircle2 className="h-8 w-8 text-white" />
           </div>
-          {/* Ripple effect */}
+          {/* Ripple effect - slower animation */}
           <motion.div
             className="absolute inset-0 rounded-full border-2 border-green-500"
             initial={{ scale: 1, opacity: 1 }}
-            animate={{ scale: 1.5, opacity: 0 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "easeOut" }}
+            animate={{ scale: 1.6, opacity: 0 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
           />
         </div>
       </motion.div>
