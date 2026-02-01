@@ -177,10 +177,10 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
     <div className="bg-card rounded-3xl p-8 shadow-xl text-center space-y-5">
       <div className="flex justify-center">
         <div className="relative">
-          <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
-            <Bot className="h-12 w-12 text-primary-foreground" />
+          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
+            <Bot className="h-8 w-8 text-primary-foreground" />
           </div>
-          <Sparkles className="absolute -top-1 -right-1 h-6 w-6 text-yellow-500" />
+          <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-yellow-500" />
         </div>
       </div>
       <div className="-mt-1">
