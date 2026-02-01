@@ -474,12 +474,17 @@ function CompleteStep({
           <div className="h-16 w-16 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/20">
             <CheckCircle2 className="h-8 w-8 text-white" />
           </div>
-          {/* Ripple effect - slower animation */}
+          {/* Ripple effect - smooth loop */}
           <motion.div
             className="absolute inset-0 rounded-full border-2 border-green-500"
-            initial={{ scale: 1, opacity: 1 }}
-            animate={{ scale: 1.6, opacity: 0 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+            initial={{ scale: 1, opacity: 0.8 }}
+            animate={{ scale: 1.8, opacity: 0 }}
+            transition={{ 
+              duration: 1.5, 
+              repeat: Infinity, 
+              ease: [0.4, 0, 0.2, 1],
+              repeatDelay: 0.3
+            }}
           />
         </div>
       </motion.div>
