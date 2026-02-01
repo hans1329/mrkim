@@ -232,7 +232,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           >
             {/* Speech bubble */}
             <motion.div
-              className="relative bg-primary text-primary-foreground px-4 py-2 rounded-2xl mb-3 shadow-md"
+              className="relative bg-primary text-primary-foreground px-4 py-2 rounded-2xl mb-1 shadow-md"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.4 }}
