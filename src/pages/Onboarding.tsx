@@ -216,36 +216,47 @@ export default function Onboarding() {
 function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
     <div className="text-center space-y-4">
-      {/* Character with speech bubble */}
+      {/* Character with speech bubble - both animate together */}
       <motion.div 
         className="flex flex-col items-center pt-8"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
       >
-        {/* Speech bubble */}
-        <motion.div
-          className="relative bg-primary text-primary-foreground px-4 py-2 rounded-2xl rounded-bl-sm mb-2 shadow-md"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.4 }}
-        >
-          <span className="text-sm font-medium whitespace-nowrap">연동을 시작해 주세요!</span>
-          {/* Bubble tail */}
-          <div className="absolute -bottom-1.5 left-3 w-3 h-3 bg-primary rotate-45" />
-        </motion.div>
-        
         <div className="relative">
+          {/* Floating animation wrapper for both bubble and character */}
           <motion.div
+            className="flex flex-col items-center"
             animate={{ y: [0, -6, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >
+            {/* Speech bubble */}
+            <motion.div
+              className="relative bg-primary text-primary-foreground px-4 py-2 rounded-2xl mb-3 shadow-md"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+            >
+              <span className="text-sm font-medium whitespace-nowrap">연동을 시작해 주세요!</span>
+              {/* Centered pointed bubble tail */}
+              <div 
+                className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0"
+                style={{
+                  borderLeft: '6px solid transparent',
+                  borderRight: '6px solid transparent',
+                  borderTop: '8px solid hsl(var(--primary))',
+                }}
+              />
+            </motion.div>
+            
+            {/* Character image */}
             <img 
               src={`${characterImg}?v=${Date.now()}`} 
               alt="찰떡이" 
               className="w-20 h-20 object-contain drop-shadow-lg"
             />
           </motion.div>
+          
           {/* Subtle glow effect */}
           <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl -z-10 scale-125" />
         </div>
