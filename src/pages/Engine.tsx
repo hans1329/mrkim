@@ -57,7 +57,13 @@ export default function Engine() {
                     <h4 className="font-semibold">Head (두뇌)</h4>
                   </div>
                   <p className="text-sm text-muted-foreground">의도 분석, 판단, 조언 생성</p>
-                  <Badge variant="secondary" className="mt-2">Gemini API</Badge>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <Badge variant="secondary">Gemini Flash</Badge>
+                    <Badge variant="outline">Gemini Pro</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    일반 대화·분류는 <strong>Flash</strong>(빠름), 복잡한 분석·추론은 <strong>Pro</strong> 사용
+                  </p>
                 </div>
                 <div className="p-4 rounded-lg bg-accent/50 border border-accent">
                   <div className="flex items-center gap-2 mb-2">
