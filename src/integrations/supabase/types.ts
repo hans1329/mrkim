@@ -51,6 +51,7 @@ export type Database = {
           nickname: string | null
           phone: string | null
           priority_metrics: Json | null
+          secretary_avatar_url: string | null
           secretary_gender: string | null
           secretary_name: string | null
           secretary_phone: string | null
@@ -71,6 +72,7 @@ export type Database = {
           nickname?: string | null
           phone?: string | null
           priority_metrics?: Json | null
+          secretary_avatar_url?: string | null
           secretary_gender?: string | null
           secretary_name?: string | null
           secretary_phone?: string | null
@@ -91,6 +93,7 @@ export type Database = {
           nickname?: string | null
           phone?: string | null
           priority_metrics?: Json | null
+          secretary_avatar_url?: string | null
           secretary_gender?: string | null
           secretary_name?: string | null
           secretary_phone?: string | null
