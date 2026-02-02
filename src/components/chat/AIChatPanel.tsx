@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,6 +21,7 @@ const quickCommands = [
 ];
 
 export function AIChatPanel() {
+  const navigate = useNavigate();
   const { isOpen, closeChat } = useChat();
   const { 
     messages, 
@@ -93,7 +95,13 @@ export function AIChatPanel() {
           {/* Header */}
           <div className="flex items-center justify-between border-b bg-primary px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 overflow-hidden">
+              <button
+                onClick={() => {
+                  closeChat();
+                  navigate("/secretary-settings");
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 overflow-hidden cursor-pointer hover:bg-primary-foreground/30 transition-colors"
+              >
                 {secretaryAvatarUrl ? (
                   <img 
                     src={secretaryAvatarUrl} 
@@ -103,7 +111,7 @@ export function AIChatPanel() {
                 ) : (
                   <Bot className="h-5 w-5 text-primary-foreground" />
                 )}
-              </div>
+              </button>
               <div>
                 <h3 className="font-semibold text-primary-foreground">{secretaryName}</h3>
                 <p className="text-xs text-primary-foreground/70">
