@@ -26,6 +26,7 @@ import {
   Loader2,
   LogOut,
 } from "lucide-react";
+import { ConnectedAccountsCard } from "@/components/profile/ConnectedAccountsCard";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -479,6 +480,9 @@ export default function Profile() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 연결된 계좌 */}
+        <ConnectedAccountsCard />
 
         {/* 가입 정보 */}
         <Card>
