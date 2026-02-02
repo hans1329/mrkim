@@ -25,8 +25,13 @@ function parseRetryAfterSeconds(geminiErrorJson: any): number | null {
   const retryDelay = retryInfo?.retryDelay;
   if (typeof retryDelay !== "string") return null;
 
-  const m = retryDelay.match(/^(\d+)s$/);
-  return m ? Number(m[1]) : null;
+  // examples: "18s", "18.736829758s"
+  const m = retryDelay.match(/^(\d+(?:\.\d+)?)s$/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n)) return null;
+  // 사용자 UX를 위해 올림 처리
+  return Math.max(0, Math.ceil(n));
 }
 
 function buildGemini429Message(geminiErrorJson: any): { message: string; retryAfterSeconds: number | null } {
@@ -35,17 +40,28 @@ function buildGemini429Message(geminiErrorJson: any): { message: string; retryAf
   // Gemini는 429에 "요청 많음"뿐 아니라 Quota/Billing 이슈를 함께 반환할 수 있음.
   const raw = geminiErrorJson?.error?.message;
   const rawMsg = typeof raw === "string" ? raw : "";
+  const rawLower = rawMsg.toLowerCase();
+
+  const status = geminiErrorJson?.error?.status;
+  const statusStr = typeof status === "string" ? status : "";
+
+  const details = geminiErrorJson?.error?.details;
+  const hasQuotaFailure = Array.isArray(details)
+    ? details.some((d: any) => typeof d?.["@type"] === "string" && d["@type"].includes("QuotaFailure"))
+    : false;
 
   // 로그에서 확인된 케이스: free tier limit 자체가 0인 상태
   const isQuotaZeroOrExceeded =
-    rawMsg.includes("Quota exceeded") ||
-    rawMsg.includes("current quota") ||
-    rawMsg.includes("RESOURCE_EXHAUSTED") ||
-    rawMsg.includes("limit: 0");
+    statusStr === "RESOURCE_EXHAUSTED" ||
+    hasQuotaFailure ||
+    rawLower.includes("quota exceeded") ||
+    rawLower.includes("current quota") ||
+    rawLower.includes("resource exhausted") ||
+    rawLower.includes("limit: 0");
 
   const base = isQuotaZeroOrExceeded
-    ? "Gemini API 할당량(Quota)이 0이거나 초과되었습니다. Google AI Studio/Cloud Console에서 Billing 및 Rate limit 설정을 확인해주세요."
-    : "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
+    ? "Gemini API 리소스(Quota)가 소진되었거나 0으로 설정되어 있습니다. 이 API 키가 속한 Google 프로젝트의 Billing/Quota/Rate limit을 확인해주세요."
+    : "Gemini API 요청이 일시적으로 제한되었습니다(429). 잠시 후 다시 시도해주세요.";
 
   const suffix = retryAfterSeconds != null ? ` (재시도 권장: 약 ${retryAfterSeconds}초 후)` : "";
   return { message: base + suffix, retryAfterSeconds };
