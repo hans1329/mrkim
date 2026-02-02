@@ -154,7 +154,7 @@ export function AIChatCard() {
             <div className="relative">
               <button
                 onClick={() => navigate("/secretary-settings")}
-                className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors overflow-hidden"
+                className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors overflow-hidden"
               >
                 {secretaryAvatarUrl ? (
                   <img 
