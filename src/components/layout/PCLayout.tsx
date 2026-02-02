@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
 import { useVoice } from "@/contexts/VoiceContext";
+import { useChat } from "@/contexts/ChatContext";
 import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
+import { AIChatPanel } from "@/components/chat/AIChatPanel";
 const chaltteokImage = "/images/icc-4.webp";
 const chatbotIcon = "/images/icc-blue.webp";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -37,7 +39,8 @@ interface PCLayoutProps {
 
 export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutProps) {
   const navigate = useNavigate();
-  const { openVoice, isOpen } = useVoice();
+  const { openVoice, isOpen: isVoiceOpen } = useVoice();
+  const { isOpen: isChatOpen } = useChat();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -190,7 +193,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
         </div>
 
         {/* 플로팅 음성 버튼 */}
-        {!isOpen && (
+        {!isVoiceOpen && !isChatOpen && (
           <Button
             onClick={openVoice}
             size="lg"
@@ -200,6 +203,9 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           </Button>
         )}
       </main>
+
+      {/* AI 채팅 패널 */}
+      <AIChatPanel />
 
       {/* 음성 오버레이 */}
       <VoiceOverlay />
