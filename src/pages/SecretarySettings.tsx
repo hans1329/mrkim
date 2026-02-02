@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +26,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const genderOptions = [
   { id: "female", label: "여성", icon: "👩" },
@@ -61,6 +62,9 @@ export default function SecretarySettings() {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(["sales", "expenses", "alerts"]);
   const [secretaryName, setSecretaryName] = useState("김비서");
   const [secretaryGender, setSecretaryGender] = useState("female");
+  const [secretaryAvatarUrl, setSecretaryAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // DB 데이터로 초기화
   useEffect(() => {
@@ -69,6 +73,7 @@ export default function SecretarySettings() {
       setSecretaryGender(profile.secretary_gender || "female");
       setSpeakingStyle(profile.secretary_tone || "friendly");
       setBriefingFrequency(profile.briefing_frequency || "daily");
+      setSecretaryAvatarUrl((profile as any).secretary_avatar_url || null);
       
       if (profile.priority_metrics && Array.isArray(profile.priority_metrics)) {
         setSelectedMetrics(profile.priority_metrics);
@@ -86,6 +91,61 @@ export default function SecretarySettings() {
 
   const navigate = useNavigate();
 
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // 파일 크기 체크 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("파일 크기는 5MB 이하여야 합니다");
+      return;
+    }
+
+    // 이미지 파일 체크
+    if (!file.type.startsWith("image/")) {
+      toast.error("이미지 파일만 업로드 가능합니다");
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("로그인이 필요합니다");
+        return;
+      }
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/secretary-avatar.${fileExt}`;
+
+      // 기존 파일 삭제 시도 (에러 무시)
+      await supabase.storage.from("secretary-avatars").remove([fileName]);
+
+      // 새 파일 업로드
+      const { error: uploadError } = await supabase.storage
+        .from("secretary-avatars")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // 공개 URL 가져오기
+      const { data: { publicUrl } } = supabase.storage
+        .from("secretary-avatars")
+        .getPublicUrl(fileName);
+
+      // 캐시 방지를 위해 타임스탬프 추가
+      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
+      setSecretaryAvatarUrl(urlWithTimestamp);
+      toast.success("프로필 이미지가 업로드되었습니다");
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      toast.error("이미지 업로드에 실패했습니다");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const handleSave = async () => {
     console.log("Saving settings:", {
       secretary_name: secretaryName,
@@ -93,6 +153,7 @@ export default function SecretarySettings() {
       secretary_tone: speakingStyle,
       briefing_frequency: briefingFrequency,
       priority_metrics: selectedMetrics,
+      secretary_avatar_url: secretaryAvatarUrl,
     });
     
     const success = await updateProfile({
@@ -101,7 +162,8 @@ export default function SecretarySettings() {
       secretary_tone: speakingStyle,
       briefing_frequency: briefingFrequency,
       priority_metrics: selectedMetrics,
-    }, false);
+      secretary_avatar_url: secretaryAvatarUrl,
+    } as any, false);
     
     console.log("Save result:", success);
     
@@ -173,17 +235,30 @@ export default function SecretarySettings() {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Avatar className="h-20 w-20 border-2 border-primary/20">
-                  <AvatarImage src="" />
+                  <AvatarImage src={secretaryAvatarUrl || ""} />
                   <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-2xl">
                     <Bot className="h-10 w-10" />
                   </AvatarFallback>
                 </Avatar>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAvatarUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
                 <Button 
                   size="icon" 
                   variant="secondary" 
                   className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full shadow-md"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingAvatar}
                 >
-                  <Camera className="h-4 w-4" />
+                  {uploadingAvatar ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
               <div className="flex-1 space-y-2">
