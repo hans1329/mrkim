@@ -176,12 +176,32 @@ const PreLoginLanding = () => {
       </section>
 
       {/* Wave Divider - Hero to How It Works */}
-      <div className="relative h-16 lg:h-24 -mt-1">
-        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-          {/* 상단: 히어로 영역 배경색 */}
-          <path d="M0 0H1440V60C1320 80 1200 95 1080 90C960 85 840 65 720 55C600 45 480 45 360 55C240 65 120 85 0 95V0Z" className="fill-background" />
-          {/* 하단: 3단계 섹션 배경색 */}
-          <path d="M0 95C120 85 240 65 360 55C480 45 600 45 720 55C840 65 960 85 1080 90C1200 95 1320 80 1440 60V120H0V95Z" className="fill-muted/30" />
+      <div className="relative -mb-1">
+        <svg
+          viewBox="0 0 1440 120"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-16 lg:h-24"
+          preserveAspectRatio="none"
+        >
+          {/* 상단: 히어로 하단 톤(더 진한 곡률) */}
+          <path
+            d="M0 0V70C120 102 240 112 360 96C480 80 600 44 720 50C840 56 960 98 1080 100C1200 102 1320 86 1440 76V0H0Z"
+            className="fill-primary/10"
+          />
+          {/* 하단: 3단계 섹션 배경 */}
+          <path
+            d="M0 70C120 102 240 112 360 96C480 80 600 44 720 50C840 56 960 98 1080 100C1200 102 1320 86 1440 76V120H0V70Z"
+            className="fill-muted/30"
+          />
+          {/* 경계선(구분 강화) */}
+          <path
+            d="M0 70C120 102 240 112 360 96C480 80 600 44 720 50C840 56 960 98 1080 100C1200 102 1320 86 1440 76"
+            fill="none"
+            className="stroke-border/40"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          />
         </svg>
       </div>
 
