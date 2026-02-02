@@ -175,11 +175,13 @@ const PreLoginLanding = () => {
         </div>
       </section>
 
-      {/* Wave Divider - Hero to How It Works (Top) */}
-      <div className="relative -mb-1">
-        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-12 lg:h-20" preserveAspectRatio="none">
-          <path d="M0 120L60 105C120 90 240 60 360 50C480 40 600 50 720 60C840 70 960 80 1080 75C1200 70 1320 50 1380 40L1440 30V120H0Z" className="fill-muted/30" />
-          <path d="M0 120L60 105C120 90 240 60 360 50C480 40 600 50 720 60C840 70 960 80 1080 75C1200 70 1320 50 1380 40L1440 30" fill="none" className="stroke-border/40" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+      {/* Wave Divider - Hero to How It Works */}
+      <div className="relative h-16 lg:h-24 -mt-1">
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+          {/* 상단: 히어로 영역 배경색 */}
+          <path d="M0 0H1440V60C1320 80 1200 95 1080 90C960 85 840 65 720 55C600 45 480 45 360 55C240 65 120 85 0 95V0Z" className="fill-background" />
+          {/* 하단: 3단계 섹션 배경색 */}
+          <path d="M0 95C120 85 240 65 360 55C480 45 600 45 720 55C840 65 960 85 1080 90C1200 95 1320 80 1440 60V120H0V95Z" className="fill-muted/30" />
         </svg>
       </div>
 
