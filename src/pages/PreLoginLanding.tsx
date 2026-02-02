@@ -434,14 +434,24 @@ const PreLoginLanding = () => {
       </section>
 
       {/* Wave Divider - App Download to Final CTA */}
-      <div className="relative -mb-1">
-        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-10 lg:h-14" preserveAspectRatio="none">
-          <path d="M0 120L48 108C96 96 192 72 288 60C384 48 480 48 576 54C672 60 768 72 864 78C960 84 1056 84 1152 78C1248 72 1344 60 1392 54L1440 48V120H0Z" className="fill-white dark:fill-card" />
+      <div className="relative -mb-1 bg-white dark:bg-card">
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-12 lg:h-16" preserveAspectRatio="none">
+          <path
+            d="M0 120V68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72V120H0Z"
+            className="fill-muted/30"
+          />
+          <path
+            d="M0 68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72"
+            fill="none"
+            className="stroke-border/40"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          />
         </svg>
       </div>
 
       {/* Final CTA */}
-      <section className="py-12 bg-white dark:bg-card">
+      <section className="py-12 bg-muted/30">
         <div className="max-w-md mx-auto px-4 text-center">
           <div className="mb-8">
             <img src={mainIllust2} alt="김비서" className="w-80 lg:w-96 mx-auto" />
