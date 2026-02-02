@@ -312,11 +312,11 @@ export function AIChatPanel() {
                 }}
                 className="flex gap-2"
               >
-                <Input
+              <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={`${secretaryName}에게 명령하세요...`}
-                  className="flex-1"
+                  className="flex-1 text-sm placeholder:text-xs"
                   disabled={isLoading}
                 />
                 <Button 
