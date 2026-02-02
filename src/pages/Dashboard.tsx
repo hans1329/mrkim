@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DepositCard } from "@/components/dashboard/DepositCard";
 import { AutoTransferCard } from "@/components/dashboard/AutoTransferCard";
@@ -19,11 +21,24 @@ import { TrendingUp, TrendingDown, Wallet, PiggyBank } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProfile } from "@/hooks/useProfile";
+import { useChat } from "@/contexts/ChatContext";
 
 export default function Dashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { openChat } = useChat();
   const stats = getTodayStats();
   const isMobile = useIsMobile();
   const { profile, loading } = useProfile();
+  
+  // URL에 openChat=true가 있으면 채팅 열기
+  useEffect(() => {
+    if (searchParams.get("openChat") === "true") {
+      openChat();
+      // 파라미터 제거
+      searchParams.delete("openChat");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, openChat, setSearchParams]);
   
   // 로딩 중이면 빈 문자열로 깜빡임 방지, 완료되면 닉네임 > 이름 > null 순서
   const userName = loading ? "" : (profile?.nickname || profile?.name || null);

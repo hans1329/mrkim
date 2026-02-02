@@ -15,13 +15,15 @@ interface AppLayoutProps {
   subtitle?: string;
   showHeader?: boolean;
   showBackButton?: boolean;
+  onBack?: () => void;
 }
 export function AppLayout({
   children,
   title = "김비서",
   subtitle,
   showHeader = true,
-  showBackButton = false
+  showBackButton = false,
+  onBack
 }: AppLayoutProps) {
   const navigate = useNavigate();
 
@@ -122,7 +124,9 @@ export function AppLayout({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     {showBackButton && <Button variant="ghost" size="icon" className="h-9 w-9 -ml-2" onClick={() => {
-                        if (window.history.length > 1) {
+                        if (onBack) {
+                          onBack();
+                        } else if (window.history.length > 1) {
                           navigate(-1);
                         } else {
                           navigate("/");
