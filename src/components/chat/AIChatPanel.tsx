@@ -37,12 +37,14 @@ export function AIChatPanel() {
     secretaryName 
   } = useAIChat();
   const [input, setInput] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    scrollEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    scrollToBottom();
   }, [messages]);
 
   const handleSend = async () => {
@@ -153,7 +155,7 @@ export function AIChatPanel() {
           )}
 
           {/* Messages */}
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+          <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
               {/* 로딩 중 스켈레톤 */}
               {isLoadingHistory && (
@@ -221,6 +223,8 @@ export function AIChatPanel() {
                   </div>
                 </div>
               )}
+              {/* 스크롤 앵커 */}
+              <div ref={scrollEndRef} />
             </div>
           </ScrollArea>
 
