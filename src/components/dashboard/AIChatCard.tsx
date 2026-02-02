@@ -16,6 +16,38 @@ const quickPrompts = [
   "이번 달 요약",
 ];
 
+// 일반 플레이스홀더 메시지
+const defaultPlaceholders = [
+  "오늘 매출이 궁금해요",
+  "이번 달 경영 현황은?",
+  "급여일 언제야?",
+  "할 일이 뭐가 있어?",
+  "부가세 얼마나 모였어?",
+];
+
+// 미완료 설정 안내 메시지
+const getIncompleteSettingsMessages = (profile: any, secretaryName: string) => {
+  const messages: string[] = [];
+  
+  if (!profile?.secretary_avatar_url) {
+    messages.push(`${secretaryName}의 프로필 사진을 설정해보세요!`);
+  }
+  
+  if (!profile?.secretary_name || profile?.secretary_name === "김비서") {
+    messages.push("비서의 이름을 직접 지어주세요!");
+  }
+  
+  if (!profile?.secretary_tone || profile?.secretary_tone === "polite") {
+    messages.push("비서의 말투를 바꿔보세요!");
+  }
+  
+  if (!profile?.business_name) {
+    messages.push("사업장 정보를 등록해보세요!");
+  }
+  
+  return messages;
+};
+
 // 브리핑 메시지 생성
 const generateBriefingMessage = (): string => {
   const stats = getTodayStats();
@@ -106,6 +138,19 @@ export function AIChatCard() {
   // 설정한 비서 이름과 아바타 사용 (로딩 중에는 undefined)
   const secretaryName = profileLoading ? undefined : (profile?.secretary_name || "김비서");
   const secretaryAvatarUrl = profileLoading ? undefined : ((profile as any)?.secretary_avatar_url || null);
+  
+  // 랜덤 플레이스홀더 선택 (미완료 설정 우선)
+  const placeholder = useMemo(() => {
+    const incompleteMessages = getIncompleteSettingsMessages(profile, secretaryName || "김비서");
+    
+    // 미완료 설정이 있으면 그 중 랜덤 선택
+    if (incompleteMessages.length > 0) {
+      return incompleteMessages[Math.floor(Math.random() * incompleteMessages.length)];
+    }
+    
+    // 없으면 일반 플레이스홀더 중 랜덤 선택
+    return defaultPlaceholders[Math.floor(Math.random() * defaultPlaceholders.length)];
+  }, [profile, secretaryName]);
   
   // 브리핑 메시지
   const briefingMessage = useMemo(() => generateBriefingMessage(), []);
@@ -235,8 +280,8 @@ export function AIChatCard() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={secretaryName ? `${secretaryName}에게 물어보세요...` : "물어보세요..."}
-            className="flex-1 bg-white/20 border-0 backdrop-blur-sm text-white placeholder:text-white/60 focus-visible:ring-white/30"
+            placeholder={placeholder}
+            className="flex-1 bg-white/20 border-0 backdrop-blur-sm text-white placeholder:text-white/60 placeholder:text-xs focus-visible:ring-white/30"
             disabled={isTyping || profileLoading}
           />
           <Button 
