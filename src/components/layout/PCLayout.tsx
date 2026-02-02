@@ -17,8 +17,8 @@ import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
 import { useVoice } from "@/contexts/VoiceContext";
 import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
-import chaltteokImage from "@/assets/icc-4.webp";
-import chatbotIcon from "@/assets/icc-blue.webp";
+const chaltteokImage = "/images/icc-4.webp";
+const chatbotIcon = "/images/icc-blue.webp";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [

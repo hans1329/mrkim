@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bell, Settings, TrendingUp, AlertTriangle, CheckCircle2, Bot, ChevronRight } from "lucide-react";
-import chaltteokImage from "@/assets/icc-4.webp";
-import chaltteokBlue from "@/assets/icc-blue.webp";
-import chaltteokWhite from "@/assets/icc-white.webp";
+const chaltteokImage = "/images/icc-4.webp";
+const chaltteokBlue = "/images/icc-blue.webp";
+const chaltteokWhite = "/images/icc-white.webp";
 const colorTokens = [{
   name: "background",
   desc: "앱 배경색",
