@@ -178,7 +178,7 @@ export function VoiceOverlay() {
       </div>
 
       {/* Footer - 텍스트 채팅 전환 버튼 */}
-      <div className="pb-[calc(env(safe-area-inset-bottom)+24px)] px-6 flex flex-col items-center gap-3">
+      <div className="pb-[calc(env(safe-area-inset-bottom)+24px)] px-6 flex flex-col items-center">
         <Button
           variant="ghost"
           onClick={handleSwitchToChat}
@@ -187,9 +187,6 @@ export function VoiceOverlay() {
           <MessageCircle className="h-4 w-4" />
           텍스트로 대화하기
         </Button>
-        <p className="text-xs text-white/50">
-          {status === "idle" ? "탭하여 음성 대화 시작" : ""}
-        </p>
       </div>
     </div>
   );
