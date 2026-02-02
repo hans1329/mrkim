@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,6 +7,8 @@ const corsHeaders = {
 };
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
+// ============ 유틸리티 함수들 ============
 
 function safeJsonParse(text: string): any | null {
   try {
@@ -25,19 +28,16 @@ function parseRetryAfterSeconds(geminiErrorJson: any): number | null {
   const retryDelay = retryInfo?.retryDelay;
   if (typeof retryDelay !== "string") return null;
 
-  // examples: "18s", "18.736829758s"
   const m = retryDelay.match(/^(\d+(?:\.\d+)?)s$/);
   if (!m) return null;
   const n = Number(m[1]);
   if (!Number.isFinite(n)) return null;
-  // 사용자 UX를 위해 올림 처리
   return Math.max(0, Math.ceil(n));
 }
 
 function buildGemini429Message(geminiErrorJson: any): { message: string; retryAfterSeconds: number | null } {
   const retryAfterSeconds = parseRetryAfterSeconds(geminiErrorJson);
 
-  // Gemini는 429에 "요청 많음"뿐 아니라 Quota/Billing 이슈를 함께 반환할 수 있음.
   const raw = geminiErrorJson?.error?.message;
   const rawMsg = typeof raw === "string" ? raw : "";
   const rawLower = rawMsg.toLowerCase();
@@ -50,7 +50,6 @@ function buildGemini429Message(geminiErrorJson: any): { message: string; retryAf
     ? details.some((d: any) => typeof d?.["@type"] === "string" && d["@type"].includes("QuotaFailure"))
     : false;
 
-  // 로그에서 확인된 케이스: free tier limit 자체가 0인 상태
   const isQuotaZeroOrExceeded =
     statusStr === "RESOURCE_EXHAUSTED" ||
     hasQuotaFailure ||
@@ -67,6 +66,268 @@ function buildGemini429Message(geminiErrorJson: any): { message: string; retryAf
   return { message: base + suffix, retryAfterSeconds };
 }
 
+// ============ 의도 분류 Tool Calling 스키마 ============
+
+const classifyIntentTool = {
+  functionDeclarations: [{
+    name: "classify_intent",
+    description: "사용자 메시지의 의도를 분류하고 필요한 데이터를 판단합니다",
+    parameters: {
+      type: "object",
+      properties: {
+        intent: {
+          type: "string",
+          enum: [
+            "sales_inquiry",        // 매출 조회
+            "expense_inquiry",      // 지출 조회
+            "tax_question",         // 세금 관련
+            "payroll_inquiry",      // 급여/인사 조회
+            "employee_management",  // 인사 관리
+            "transaction_classify", // 거래 분류
+            "daily_briefing",       // 경영 브리핑
+            "alert_check",          // 알림 확인
+            "setting_change",       // 설정 변경
+            "general_advice",       // 일반 조언 (데이터 불필요)
+            "service_help",         // 서비스 사용법
+            "out_of_scope"          // 범위 외
+          ],
+          description: "분류된 사용자 의도"
+        },
+        confidence: {
+          type: "number",
+          description: "의도 분류 신뢰도 (0.0 ~ 1.0)"
+        },
+        requires_data: {
+          type: "boolean",
+          description: "외부 데이터(카드/계좌/홈택스) 조회가 필요한지 여부"
+        },
+        data_sources: {
+          type: "array",
+          items: {
+            type: "string",
+            enum: ["card", "bank", "hometax", "employee", "none"]
+          },
+          description: "필요한 데이터 소스 목록"
+        },
+        rejection_reason: {
+          type: "string",
+          description: "out_of_scope일 경우 거절 사유"
+        }
+      },
+      required: ["intent", "confidence", "requires_data", "data_sources"]
+    }
+  }]
+};
+
+// ============ 의도 분류 실행 ============
+
+async function classifyIntent(
+  userMessage: string,
+  geminiApiKey: string
+): Promise<{
+  intent: string;
+  confidence: number;
+  requiresData: boolean;
+  dataSources: string[];
+  rejectionReason?: string;
+}> {
+  const classificationPrompt = `사용자의 메시지를 분석하여 의도를 분류하세요.
+
+사용자 메시지: "${userMessage}"
+
+의도 분류 기준:
+- sales_inquiry: 매출, 수입, 판매 관련 질문 (예: "오늘 매출 얼마야?", "이번 달 수입")
+- expense_inquiry: 지출, 비용 관련 질문 (예: "이번 달 지출 현황", "경비 얼마 썼어?")
+- tax_question: 세금 관련 질문 (예: "부가세 얼마야?", "종소세 신고 언제야?")
+- payroll_inquiry: 급여, 인건비 조회 (예: "직원 급여 현황", "이번 달 인건비")
+- employee_management: 직원 등록/관리 (예: "직원 추가해줘", "직원 목록 보여줘")
+- transaction_classify: 거래 분류 요청 (예: "이 거래 뭘로 처리해?")
+- daily_briefing: 경영 현황 요약 (예: "오늘 현황 알려줘", "브리핑 해줘")
+- alert_check: 할 일, 알림 확인 (예: "할 일 뭐 있어?", "알림 확인")
+- setting_change: 설정 변경 (예: "말투 바꿔줘", "이름 변경")
+- general_advice: 일반 사업 조언 (예: "세금 신고 일정", "부가세란?")
+- service_help: 서비스 사용법 (예: "어떻게 써?", "연동 어떻게 해?")
+- out_of_scope: 업무 외 질문 (예: "맛집 추천", "날씨", "농담")
+
+requires_data가 true인 의도:
+- sales_inquiry, expense_inquiry, tax_question (숫자 조회), payroll_inquiry, daily_briefing
+
+requires_data가 false인 의도:
+- general_advice, service_help, setting_change, out_of_scope, employee_management`;
+
+  try {
+    const response = await fetch(`${GEMINI_API_URL}?key=${geminiApiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: classificationPrompt }] }],
+        tools: [classifyIntentTool],
+        toolConfig: {
+          functionCallingConfig: {
+            mode: "ANY",
+            allowedFunctionNames: ["classify_intent"]
+          }
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Intent classification failed:", response.status);
+      // 분류 실패 시 기본값 반환
+      return {
+        intent: "general_advice",
+        confidence: 0.5,
+        requiresData: false,
+        dataSources: ["none"]
+      };
+    }
+
+    const data = await response.json();
+    const functionCall = data.candidates?.[0]?.content?.parts?.[0]?.functionCall;
+
+    if (functionCall?.name === "classify_intent") {
+      const args = functionCall.args;
+      return {
+        intent: args.intent || "general_advice",
+        confidence: args.confidence || 0.5,
+        requiresData: args.requires_data ?? false,
+        dataSources: args.data_sources || ["none"],
+        rejectionReason: args.rejection_reason
+      };
+    }
+
+    return {
+      intent: "general_advice",
+      confidence: 0.5,
+      requiresData: false,
+      dataSources: ["none"]
+    };
+  } catch (error) {
+    console.error("classifyIntent error:", error);
+    return {
+      intent: "general_advice",
+      confidence: 0.5,
+      requiresData: false,
+      dataSources: ["none"]
+    };
+  }
+}
+
+// ============ 연동 상태 확인 ============
+
+interface ConnectionStatus {
+  hometax: boolean;
+  card: boolean;
+  bank: boolean;
+  employee: boolean;
+}
+
+async function checkConnectionStatus(userId: string): Promise<ConnectionStatus> {
+  // TODO: 실제 연동 테이블에서 조회
+  // 현재는 모두 미연동 상태로 반환
+  return {
+    hometax: false,
+    card: false,
+    bank: false,
+    employee: false
+  };
+}
+
+function getMissingDataSources(
+  requiredSources: string[],
+  connectionStatus: ConnectionStatus
+): string[] {
+  const missing: string[] = [];
+  
+  for (const source of requiredSources) {
+    if (source === "none") continue;
+    
+    if (source === "hometax" && !connectionStatus.hometax) missing.push("홈택스");
+    if (source === "card" && !connectionStatus.card) missing.push("카드사");
+    if (source === "bank" && !connectionStatus.bank) missing.push("은행 계좌");
+    if (source === "employee" && !connectionStatus.employee) missing.push("직원 정보");
+  }
+  
+  return missing;
+}
+
+// ============ 응답 생성 ============
+
+function buildConnectionRequiredResponse(
+  secretaryName: string,
+  missingSources: string[],
+  intent: string
+): string {
+  const sourceList = missingSources.join(", ");
+  
+  const intentDescriptions: Record<string, string> = {
+    sales_inquiry: "매출 정보",
+    expense_inquiry: "지출 현황",
+    tax_question: "세금 관련 정확한 금액",
+    payroll_inquiry: "급여 현황",
+    daily_briefing: "경영 현황 브리핑"
+  };
+  
+  const dataType = intentDescriptions[intent] || "요청하신 정보";
+  
+  return `사장님, **${dataType}**를 확인하려면 먼저 데이터 연동이 필요합니다.
+
+📋 **필요한 연동 항목**: ${sourceList}
+
+연동 방법:
+1. **설정 > 데이터 연결**로 이동
+2. 필요한 서비스 선택 후 인증 진행
+3. 연동 완료 후 실시간 데이터 확인 가능
+
+💡 연동은 약 1분이면 완료됩니다. 지금 바로 진행하시겠어요?`;
+}
+
+async function generateAIResponse(
+  messages: Array<{ role: string; content: string }>,
+  systemPrompt: string,
+  secretaryName: string,
+  geminiApiKey: string
+): Promise<string> {
+  const geminiMessages = messages.map((msg) => ({
+    role: msg.role === "assistant" ? "model" : "user",
+    parts: [{ text: msg.content }],
+  }));
+
+  const response = await fetch(`${GEMINI_API_URL}?key=${geminiApiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        { role: "user", parts: [{ text: systemPrompt }] },
+        { role: "model", parts: [{ text: `네, 알겠습니다. 저는 ${secretaryName}입니다. 사장님의 사업을 도와드리겠습니다.` }] },
+        ...geminiMessages,
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 1024,
+      },
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw { status: response.status, body: errorText };
+  }
+
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
+}
+
+// ============ 메인 핸들러 ============
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -78,107 +339,111 @@ serve(async (req) => {
       throw new Error("GEMINI_API_KEY is not configured");
     }
 
-    const { messages, secretaryName = "김비서", secretaryTone = "polite" } = await req.json();
+    const { messages, secretaryName = "김비서", secretaryTone = "polite", userId } = await req.json();
+
+    if (!messages || messages.length === 0) {
+      throw new Error("Messages array is required");
+    }
 
     // 말투 설정
-    const toneInstructions = {
+    const toneInstructions: Record<string, string> = {
       polite: "존댓말을 사용하고 정중하게 응답하세요.",
       friendly: "친근하고 편안한 말투로 응답하세요. 반말을 사용해도 됩니다.",
       cute: "귀엽고 애교있는 말투로 응답하세요. '~요', '~해요' 등의 부드러운 어미를 사용하세요.",
     };
 
+    // 1단계: 의도 분류
+    const lastUserMessage = messages.filter((m: any) => m.role === "user").pop()?.content || "";
+    const intentResult = await classifyIntent(lastUserMessage, GEMINI_API_KEY);
+    
+    console.log("Intent classification:", intentResult);
+
+    // 2단계: 범위 외 질문 처리
+    if (intentResult.intent === "out_of_scope") {
+      const outOfScopeResponse = `죄송합니다, ${intentResult.rejectionReason || "해당 질문은 제 업무 범위를 벗어납니다."}
+
+저는 사장님의 **경영 비서**로서 다음 업무를 도와드릴 수 있어요:
+- 📊 매출/지출 현황 확인
+- 💰 세금 신고 일정 및 안내
+- 👥 직원 급여/인사 관리
+- 📋 경영 브리핑
+
+다른 업무 관련 질문이 있으시면 말씀해주세요!`;
+      
+      return new Response(
+        JSON.stringify({ response: outOfScopeResponse, intent: intentResult }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 3단계: 데이터 필요 여부 확인
+    if (intentResult.requiresData) {
+      const connectionStatus = await checkConnectionStatus(userId || "");
+      const missingSources = getMissingDataSources(intentResult.dataSources, connectionStatus);
+      
+      if (missingSources.length > 0) {
+        // 연동 필요 안내
+        const connectionResponse = buildConnectionRequiredResponse(
+          secretaryName,
+          missingSources,
+          intentResult.intent
+        );
+        
+        return new Response(
+          JSON.stringify({ response: connectionResponse, intent: intentResult, requiresConnection: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // TODO: 연동된 경우 실제 데이터 조회 로직 추가
+    }
+
+    // 4단계: 일반 AI 응답 생성
     const systemPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.
 
-${toneInstructions[secretaryTone as keyof typeof toneInstructions] || toneInstructions.polite}
+${toneInstructions[secretaryTone] || toneInstructions.polite}
 
-## 중요: 데이터 연동 상태
-현재 사용자의 데이터(홈택스, 카드, 계좌)가 연동되어 있지 않습니다.
-
-**매출, 지출, 세금, 급여 등 실제 데이터가 필요한 질문을 받으면:**
-1. 절대로 가짜 숫자나 시뮬레이션 데이터를 제시하지 마세요
-2. 대신 다음과 같이 안내하세요:
-   - "정확한 [매출/지출/세금 등] 정보를 확인하려면 먼저 데이터 연동이 필요합니다."
-   - "설정 > 데이터 연결에서 홈택스, 카드사, 은행 계좌를 연동해주시면 실시간으로 확인해드릴게요."
-   - "연동은 1분이면 완료됩니다. 도와드릴까요?"
-
-## 답변 가능한 범위 (데이터 연동 없이도 가능)
+## 답변 가능한 범위
 - 세금 신고 일정, 부가세/종합소득세 일반 안내
 - 인사/노무 관련 일반 질문
 - 사업 운영 조언
 - 서비스 사용법 안내
 
-## 범위 외 질문
-음식점 추천, 개인 상담, 일반 지식 등은 정중히 거절하고 업무 관련 도움을 제안하세요.
+## 주의사항
+- 구체적인 금액(매출, 지출, 세금 등)을 묻는 질문에는 가짜 숫자를 만들지 마세요
+- 실제 데이터가 필요한 경우 "데이터 연동이 필요합니다"라고 안내하세요
 
 응답은 마크다운 형식으로 간결하게 작성하세요.`;
 
-    // Gemini API 포맷으로 변환
-    const geminiMessages = messages.map((msg: { role: string; content: string }) => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }],
-    }));
-
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          { role: "user", parts: [{ text: systemPrompt }] },
-          { role: "model", parts: [{ text: "네, 알겠습니다. 저는 " + secretaryName + "입니다. 사장님의 사업을 도와드리겠습니다." }] },
-          ...geminiMessages,
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        },
-        safetySettings: [
-          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Gemini API error:", response.status, errorText);
-      const errorJson = safeJsonParse(errorText);
-      
-      if (response.status === 429) {
-        const { message, retryAfterSeconds } = buildGemini429Message(errorJson);
-        return new Response(
-          JSON.stringify({
-            error: message,
-            code: "GEMINI_RATE_LIMIT",
-            retry_after_seconds: retryAfterSeconds,
-          }),
-          {
-            status: 429,
-            headers: {
-              ...corsHeaders,
-              "Content-Type": "application/json",
-              ...(retryAfterSeconds != null ? { "Retry-After": String(retryAfterSeconds) } : {}),
-            },
-          }
-        );
-      }
-      
-      throw new Error(`Gemini API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
+    const aiResponse = await generateAIResponse(messages, systemPrompt, secretaryName, GEMINI_API_KEY);
 
     return new Response(
-      JSON.stringify({ response: aiResponse }),
+      JSON.stringify({ response: aiResponse, intent: intentResult }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
+
+  } catch (error: any) {
+    // 429 에러 특별 처리
+    if (error?.status === 429) {
+      const errorJson = safeJsonParse(error.body || "");
+      const { message, retryAfterSeconds } = buildGemini429Message(errorJson);
+      return new Response(
+        JSON.stringify({
+          error: message,
+          code: "GEMINI_RATE_LIMIT",
+          retry_after_seconds: retryAfterSeconds,
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            ...(retryAfterSeconds != null ? { "Retry-After": String(retryAfterSeconds) } : {}),
+          },
+        }
+      );
+    }
+
     console.error("chat-ai error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
