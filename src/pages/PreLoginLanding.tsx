@@ -6,12 +6,43 @@ import { Bot, ArrowRight, Shield, Zap, TrendingUp, Calculator, Users, FileText, 
 import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
+import { ServiceChatProvider, useServiceChat } from "@/contexts/ServiceChatContext";
+import { ServiceChatPanel } from "@/components/chat/ServiceChatPanel";
+import { ServiceVoiceOverlay } from "@/components/chat/ServiceVoiceOverlay";
 const logo = "/images/icc-3.webp";
 const logoWhite = "/images/icc-white.webp";
 const iccBlue = "/images/icc-blue.webp";
 const icc = "/images/icc-5.webp";
 
-const PreLoginLanding = () => {
+// 말풍선 형태의 챗봇 버튼
+function FloatingChatBubble() {
+  const { openVoice } = useServiceChat();
+  
+  return (
+    <button 
+      onClick={() => openVoice()} 
+      className="fixed bottom-6 right-6 z-50 animate-bounce-subtle"
+    >
+      <div className="relative bg-primary rounded-2xl px-4 py-2.5 shadow-lg flex items-center gap-2">
+        <img src={icc} alt="김비서" className="h-6 w-6" />
+        <span className="text-sm font-medium text-primary-foreground whitespace-nowrap">
+          궁금한게 있으신가요?
+        </span>
+        {/* 말풍선 꼬리 */}
+        <div 
+          className="absolute -bottom-2 right-6 w-0 h-0"
+          style={{
+            borderLeft: "6px solid transparent",
+            borderRight: "6px solid transparent",
+            borderTop: "10px solid hsl(var(--primary))",
+          }}
+        />
+      </div>
+    </button>
+  );
+}
+
+const PreLoginLandingContent = () => {
   const navigate = useNavigate();
   
   const features = [{
@@ -576,6 +607,18 @@ const PreLoginLanding = () => {
           </div>
         </div>
       </footer>
+
+      {/* 서비스 안내 챗봇 */}
+      <FloatingChatBubble />
+      <ServiceVoiceOverlay />
+      <ServiceChatPanel />
     </div>;
 };
-export default PreLoginLanding;
+
+export default function PreLoginLanding() {
+  return (
+    <ServiceChatProvider>
+      <PreLoginLandingContent />
+    </ServiceChatProvider>
+  );
+}
