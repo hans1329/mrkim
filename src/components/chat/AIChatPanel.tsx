@@ -205,29 +205,58 @@ export function AIChatPanel() {
                   </div>
                 </div>
               )}
-              {!isLoadingHistory && messages.map((message) => (
+              {!isLoadingHistory && messages.map((message, index) => (
                 <div
                   key={message.id}
                   className={cn(
-                    "flex animate-fade-in",
+                    "flex gap-2 animate-fade-in",
                     message.role === "user" ? "justify-end" : "justify-start"
                   )}
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div
-                    className={cn(
-                      "max-w-[85%] rounded-2xl px-4 py-3",
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-br-md"
-                        : "bg-muted/60 text-foreground rounded-bl-md"
-                    )}
-                  >
-                    {message.role === "assistant" ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
-                      </div>
-                    ) : (
-                      <p className="whitespace-pre-wrap text-sm">{message.content}</p>
-                    )}
+                  {/* 봇 아바타 */}
+                  {message.role === "assistant" && (
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden shadow-sm">
+                      {secretaryAvatarUrl ? (
+                        <img 
+                          src={secretaryAvatarUrl} 
+                          alt={secretaryName} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <img 
+                          src="/images/icc-blue.webp" 
+                          alt={secretaryName}
+                          className="w-5 h-5 object-contain"
+                        />
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-col gap-1 max-w-[75%]">
+                    <div
+                      className={cn(
+                        "rounded-2xl px-4 py-3 shadow-sm",
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-br-md"
+                          : "bg-gradient-to-br from-card to-muted/60 text-foreground rounded-bl-md border border-border/50"
+                      )}
+                    >
+                      {message.role === "assistant" ? (
+                        <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                          <ReactMarkdown>{message.content}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                      )}
+                    </div>
+                    {/* 타임스탬프 */}
+                    <span className={cn(
+                      "text-[10px] text-muted-foreground/60 px-1",
+                      message.role === "user" ? "text-right" : "text-left"
+                    )}>
+                      {new Date(message.timestamp).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
                   </div>
                 </div>
               ))}
