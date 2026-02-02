@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, Mail, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 const iccLogo = "/images/icc-2.webp";
 
 export default function Signup() {
@@ -14,24 +16,70 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleSignup = () => {
-    // TODO: Supabase Google OAuth 연결
-    console.log("Google signup clicked");
-    navigate("/");
+  const handleGoogleSignup = async () => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) {
+      toast.error("Google 가입 실패: " + error.message);
+      setIsLoading(false);
+    }
   };
 
-  const handleKakaoSignup = () => {
-    // TODO: Kakao OAuth 연결
-    console.log("Kakao signup clicked");
-    navigate("/");
+  const handleKakaoSignup = async () => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'kakao',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) {
+      toast.error("카카오 가입 실패: " + error.message);
+      setIsLoading(false);
+    }
   };
 
-  const handleEmailSignup = (e: React.FormEvent) => {
+  const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Supabase Email/Password 연결
-    console.log("Email signup:", name, email, password);
-    navigate("/");
+    
+    if (password !== confirmPassword) {
+      toast.error("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+    
+    if (password.length < 6) {
+      toast.error("비밀번호는 6자 이상이어야 합니다.");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    const { error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: {
+          name: name.trim(),
+        },
+      },
+    });
+    
+    if (error) {
+      toast.error("회원가입 실패: " + error.message);
+      setIsLoading(false);
+      return;
+    }
+    
+    toast.success("회원가입 성공! 이메일을 확인해주세요.");
+    navigate("/login");
   };
 
   return (
@@ -83,6 +131,7 @@ export default function Signup() {
                 variant="outline"
                 className="w-full h-12 gap-3 text-base bg-white hover:bg-white/90 text-foreground border-0"
                 onClick={handleGoogleSignup}
+                disabled={isLoading}
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path
@@ -112,6 +161,7 @@ export default function Signup() {
                   color: "#000000",
                 }}
                 onClick={handleKakaoSignup}
+                disabled={isLoading}
               >
                 <svg
                   className="h-5 w-5"
@@ -218,8 +268,9 @@ export default function Signup() {
                 <Button
                   type="submit"
                   className="w-full h-12 bg-white text-primary hover:bg-white/90"
+                  disabled={isLoading}
                 >
-                  가입하기
+                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "가입하기"}
                 </Button>
               </form>
             </div>
