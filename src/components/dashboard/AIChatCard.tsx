@@ -231,7 +231,7 @@ export function AIChatCard() {
         )}
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="flex gap-2 mb-3 mt-6">
+        <form onSubmit={handleSubmit} className="flex gap-2 mb-3 mt-3">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
