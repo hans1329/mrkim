@@ -103,8 +103,9 @@ export function AIChatCard() {
   const [isTyping, setIsTyping] = useState(false);
   const [showBriefing, setShowBriefing] = useState(false);
   
-  // 설정한 비서 이름 사용 (로딩 중에는 undefined)
+  // 설정한 비서 이름과 아바타 사용 (로딩 중에는 undefined)
   const secretaryName = profileLoading ? undefined : (profile?.secretary_name || "김비서");
+  const secretaryAvatarUrl = profileLoading ? undefined : ((profile as any)?.secretary_avatar_url || null);
   
   // 브리핑 메시지
   const briefingMessage = useMemo(() => generateBriefingMessage(), []);
@@ -152,9 +153,17 @@ export function AIChatCard() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/secretary-settings")}
-              className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors"
+              className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors overflow-hidden"
             >
-              <Bot className="h-6 w-6 text-white" />
+              {secretaryAvatarUrl ? (
+                <img 
+                  src={secretaryAvatarUrl} 
+                  alt={secretaryName || "비서"} 
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Bot className="h-6 w-6 text-white" />
+              )}
               <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 flex items-center justify-center">
                 <Settings className="h-3 w-3 text-white/80" />
               </div>
