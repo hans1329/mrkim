@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Bot, Send, Sparkles, MessageCircle, RotateCcw, Clock, Settings } from "lucide-react";
 import { getTodayStats, mockDeposits, mockAutoTransfers, mockEmployees, formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
@@ -96,14 +97,14 @@ const generateQuickResponse = (input: string): string => {
 export function AIChatCard() {
   const navigate = useNavigate();
   const { openChat } = useChat();
-  const { profile } = useProfile();
+  const { profile, loading: profileLoading } = useProfile();
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showBriefing, setShowBriefing] = useState(false);
   
-  // 설정한 비서 이름 사용
-  const secretaryName = profile?.secretary_name || "김비서";
+  // 설정한 비서 이름 사용 (로딩 중에는 undefined)
+  const secretaryName = profileLoading ? undefined : (profile?.secretary_name || "김비서");
   
   // 브리핑 메시지
   const briefingMessage = useMemo(() => generateBriefingMessage(), []);
@@ -159,7 +160,11 @@ export function AIChatCard() {
               </div>
             </button>
             <div>
-              <h3 className="font-bold text-white">{secretaryName}</h3>
+              {secretaryName ? (
+                <h3 className="font-bold text-white">{secretaryName}</h3>
+              ) : (
+                <Skeleton className="h-5 w-16 bg-white/30" />
+              )}
               <p className="text-xs text-white/80">AI 경영 비서가 도와드릴게요</p>
             </div>
           </div>
@@ -219,9 +224,9 @@ export function AIChatCard() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={`${secretaryName}에게 물어보세요...`}
+            placeholder={secretaryName ? `${secretaryName}에게 물어보세요...` : "물어보세요..."}
             className="flex-1 bg-white/20 border-0 backdrop-blur-sm text-white placeholder:text-white/60 focus-visible:ring-white/30"
-            disabled={isTyping}
+            disabled={isTyping || profileLoading}
           />
           <Button 
             type="submit" 
