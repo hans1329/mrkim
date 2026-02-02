@@ -173,6 +173,13 @@ const PreLoginLanding = () => {
         </div>
       </section>
 
+      {/* Wave Divider - Hero to How It Works */}
+      <div className="relative -mb-1">
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-12 lg:h-20" preserveAspectRatio="none">
+          <path d="M0 120L60 105C120 90 240 60 360 50C480 40 600 50 720 60C840 70 960 80 1080 75C1200 70 1320 50 1380 40L1440 30V120H0Z" className="fill-muted/30" />
+        </svg>
+      </div>
+
       {/* How It Works Section */}
       <section className="py-14 bg-muted/30">
         <div className="max-w-4xl mx-auto px-4">
@@ -207,6 +214,14 @@ const PreLoginLanding = () => {
           </div>
         </div>
       </section>
+
+      {/* Wave Divider - How It Works to Testimonials */}
+      <div className="relative -mb-1">
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-12 lg:h-20" preserveAspectRatio="none">
+          <path d="M0 0V60C60 75 180 90 300 85C420 80 540 55 660 45C780 35 900 40 1020 55C1140 70 1260 95 1380 100L1440 105V0H0Z" className="fill-muted/30" />
+          <path d="M0 120L48 105C96 90 192 60 288 55C384 50 480 70 576 80C672 90 768 90 864 80C960 70 1056 50 1152 45C1248 40 1344 50 1392 55L1440 60V120H0Z" className="fill-white dark:fill-card" />
+        </svg>
+      </div>
 
       {/* Testimonials Section */}
       <section className="py-14 bg-white dark:bg-card">
@@ -247,6 +262,14 @@ const PreLoginLanding = () => {
           </div>
         </div>
       </section>
+
+      {/* Wave Divider - Testimonials to FAQ */}
+      <div className="relative -mb-1">
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-12 lg:h-20" preserveAspectRatio="none">
+          <path d="M0 0V70C120 85 240 95 360 90C480 85 600 65 720 55C840 45 960 45 1080 55C1200 65 1320 85 1380 95L1440 100V0H0Z" className="fill-white dark:fill-card" />
+          <path d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H0Z" className="fill-muted/30" />
+        </svg>
+      </div>
 
       {/* FAQ Section */}
       <section className="py-14 bg-muted/30">
@@ -312,6 +335,13 @@ const PreLoginLanding = () => {
           </div>
         </div>
       </section>
+
+      {/* Wave Divider - Features to Social Proof */}
+      <div className="relative -mb-1">
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-10 lg:h-16" preserveAspectRatio="none">
+          <path d="M0 120L80 110C160 100 320 80 480 70C640 60 800 60 960 65C1120 70 1280 80 1360 85L1440 90V120H0Z" className="fill-white dark:fill-card" />
+        </svg>
+      </div>
 
       {/* Social Proof */}
       <section className="py-10 bg-white dark:bg-card">
@@ -383,6 +413,13 @@ const PreLoginLanding = () => {
         </div>
       </section>
 
+      {/* Wave Divider - App Download to Final CTA */}
+      <div className="relative -mb-1">
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-10 lg:h-14" preserveAspectRatio="none">
+          <path d="M0 120L48 108C96 96 192 72 288 60C384 48 480 48 576 54C672 60 768 72 864 78C960 84 1056 84 1152 78C1248 72 1344 60 1392 54L1440 48V120H0Z" className="fill-white dark:fill-card" />
+        </svg>
+      </div>
+
       {/* Final CTA */}
       <section className="py-12 bg-white dark:bg-card">
         <div className="max-w-md mx-auto px-4 text-center">
@@ -403,8 +440,16 @@ const PreLoginLanding = () => {
         </div>
       </section>
 
+      {/* Wave Divider - Final CTA to Footer */}
+      <div className="relative -mb-1">
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-10 lg:h-14" preserveAspectRatio="none">
+          <path d="M0 0V60C120 75 240 85 360 80C480 75 600 55 720 50C840 45 960 55 1080 65C1200 75 1320 85 1380 90L1440 95V0H0Z" className="fill-white dark:fill-card" />
+          <path d="M0 120L60 108C120 96 240 72 360 66C480 60 600 72 720 78C840 84 960 84 1080 78C1200 72 1320 60 1380 54L1440 48V120H0Z" className="fill-muted/30" />
+        </svg>
+      </div>
+
       {/* Footer */}
-      <footer className="border-t py-10 bg-muted/30">
+      <footer className="py-10 bg-muted/30">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex flex-col gap-6">
             {/* Top: Logo & Contact & Social */}
