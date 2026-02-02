@@ -25,11 +25,12 @@ export default function Dashboard() {
   const isMobile = useIsMobile();
   const { profile, loading } = useProfile();
   
-  // 로딩 중이면 빈 문자열로 깜빡임 방지, 완료되면 닉네임 > 이름 > "사장님" 순서
-  const displayName = loading ? "" : (profile?.nickname || profile?.name || "사장님");
+  // 로딩 중이면 빈 문자열로 깜빡임 방지, 완료되면 닉네임 > 이름 > null 순서
+  const userName = loading ? "" : (profile?.nickname || profile?.name || null);
+  const greeting = userName ? `안녕하세요, ${userName}님 👋` : "안녕하세요, 사장님 👋";
 
   return (
-    <MainLayout title={`안녕하세요, ${displayName}님 👋`} subtitle="오늘도 김비서가 도와드릴게요">
+    <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요">
       <div className="space-y-6">
         {/* 연동 상태 / 긴급 알림 배너 */}
         <ConnectionStatusBanner />
