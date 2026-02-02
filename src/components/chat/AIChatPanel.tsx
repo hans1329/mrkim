@@ -125,6 +125,7 @@ export function AIChatPanel() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => {
+                  closeChat();
                   navigate("/secretary-settings?from=chat");
                 }}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 overflow-hidden cursor-pointer hover:bg-primary-foreground/30 transition-colors"
