@@ -499,7 +499,7 @@ const PreLoginLanding = () => {
                 <p className="font-medium text-foreground">Contact</p>
                 <p>contact@kimsecretary.com</p>
                 <p>1588-0000</p>
-                <p>서울시 강남구 테헤란로 123</p>
+                <p>서울 서초구 서초동 1338-12</p>
               </div>
               
               {/* Social Links */}
