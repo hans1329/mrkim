@@ -178,7 +178,7 @@ export function VoiceOverlay() {
       </div>
 
       {/* Footer - 텍스트 채팅 전환 버튼 */}
-      <div className="pb-[calc(env(safe-area-inset-bottom)+24px)] px-6 flex flex-col items-center">
+      <div className="pb-[calc(env(safe-area-inset-bottom)+48px)] px-6 flex flex-col items-center">
         <Button
           variant="ghost"
           onClick={handleSwitchToChat}
