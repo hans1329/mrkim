@@ -154,15 +154,15 @@ export function AIChatCard() {
             <div className="relative">
               <button
                 onClick={() => navigate("/secretary-settings")}
-                className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors overflow-hidden"
+                className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors overflow-hidden"
               >
-              {secretaryAvatarUrl ? (
-                <img 
-                  src={secretaryAvatarUrl} 
-                  alt={secretaryName || "비서"} 
-                  className="h-full w-full object-contain"
-                />
-              ) : (
+                {secretaryAvatarUrl ? (
+                  <img 
+                    src={secretaryAvatarUrl} 
+                    alt={secretaryName || "비서"} 
+                    className="h-full w-auto object-contain"
+                  />
+                ) : (
                   <Bot className="h-8 w-8 text-white" />
                 )}
               </button>
