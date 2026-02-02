@@ -496,11 +496,9 @@ const PreLoginLanding = () => {
               
               {/* Business Info */}
               <div className="space-y-1 text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">상호: 주식회사 더김비서</p>
-                <p>개인정보책임자: 송하진</p>
+                <p><span className="font-medium text-foreground">상호: 주식회사 더김비서</span> | 개인정보책임자: 송하진</p>
                 <p>소재지: 서울 서초구 서초동 1338-12</p>
-                <p>사업자등록번호: 692-86-03042</p>
-                <p>통신판매업신고번호: 2023-서울중구-0345</p>
+                <p>사업자등록번호: 692-86-03042 | 통신판매업신고번호: 2023-서울중구-0345</p>
               </div>
               
               {/* Contact Us */}
