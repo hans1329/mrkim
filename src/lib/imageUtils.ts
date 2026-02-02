@@ -3,27 +3,25 @@
  */
 
 interface ResizeOptions {
-  maxWidth?: number;
-  maxHeight?: number;
+  maxSize?: number; // 가장 긴 변의 최대 크기
   quality?: number; // 0-1
   format?: "image/jpeg" | "image/webp" | "image/png";
 }
 
 const defaultOptions: ResizeOptions = {
-  maxWidth: 400,
-  maxHeight: 400,
+  maxSize: 800,
   quality: 0.8,
   format: "image/webp",
 };
 
 /**
- * 이미지 파일을 리사이즈하고 압축합니다.
+ * 이미지 파일을 원본 비율을 유지하면서 리사이즈하고 압축합니다.
  */
 export async function resizeAndCompressImage(
   file: File,
   options: ResizeOptions = {}
 ): Promise<File> {
-  const { maxWidth, maxHeight, quality, format } = { ...defaultOptions, ...options };
+  const { maxSize, quality, format } = { ...defaultOptions, ...options };
 
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -36,11 +34,12 @@ export async function resizeAndCompressImage(
     }
 
     img.onload = () => {
-      // 원본 비율 유지하면서 리사이즈
+      // 원본 비율 유지하면서 가장 긴 변을 maxSize로 제한
       let { width, height } = img;
       
-      if (width > maxWidth! || height > maxHeight!) {
-        const ratio = Math.min(maxWidth! / width, maxHeight! / height);
+      const longestSide = Math.max(width, height);
+      if (longestSide > maxSize!) {
+        const ratio = maxSize! / longestSide;
         width = Math.round(width * ratio);
         height = Math.round(height * ratio);
       }

@@ -117,10 +117,9 @@ export default function SecretarySettings() {
         return;
       }
 
-      // 이미지 리사이즈 및 압축 (400x400, WebP, 80% 품질)
+      // 이미지 리사이즈 및 압축 (긴 변 최대 400px, WebP, 80% 품질)
       const compressedFile = await resizeAndCompressImage(file, {
-        maxWidth: 400,
-        maxHeight: 400,
+        maxSize: 400,
         quality: 0.8,
         format: "image/webp",
       });
