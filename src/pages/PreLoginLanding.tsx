@@ -10,10 +10,8 @@ const logo = "/images/icc-3.webp";
 const logoWhite = "/images/icc-white.webp";
 const iccBlue = "/images/icc-blue.webp";
 const icc = "/images/icc-5.webp";
-
 const PreLoginLanding = () => {
   const navigate = useNavigate();
-  
   const features = [{
     icon: Calculator,
     title: "세무 자동화",
@@ -31,7 +29,6 @@ const PreLoginLanding = () => {
     title: "리포트",
     description: "월간 경영 보고서 자동 생성"
   }];
-
   const benefits = [{
     icon: Zap,
     text: "3분 만에 시작",
@@ -43,7 +40,6 @@ const PreLoginLanding = () => {
     icon: Phone,
     text: "24시간 AI 상담"
   }];
-
   const howItWorks = [{
     step: 1,
     icon: Link2,
@@ -60,7 +56,6 @@ const PreLoginLanding = () => {
     title: "명령만 하세요",
     description: "세금 신고, 급여 계산 등 필요한 건 말만 하세요!"
   }];
-
   const testimonials = [{
     name: "김○○ 사장님",
     business: "카페 운영 3년차",
@@ -77,7 +72,6 @@ const PreLoginLanding = () => {
     rating: 5,
     text: "매출 분석 리포트 덕분에 어떤 시술이 수익성 좋은지 한눈에 파악돼요."
   }];
-
   const faqs = [{
     question: "정말 무료인가요?",
     answer: "네! 기본 기능은 평생 무료입니다. 계좌 연동, 매출/지출 분석, AI 상담 등 핵심 기능을 무료로 이용하실 수 있어요. 세무 신고 대행, 급여 자동 이체 등 고급 기능은 프로 플랜에서 제공됩니다."
@@ -111,7 +105,7 @@ const PreLoginLanding = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden flex-1 flex items-center bg-gradient-to-b from-background via-background to-primary/10">
+      <section className="relative overflow-hidden flex-1 flex items-center bg-background">
         <div className="max-w-4xl mx-auto px-4 py-12 lg:py-16">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-center">
             {/* Left: Text Content */}
@@ -119,7 +113,7 @@ const PreLoginLanding = () => {
               
               
               <h1 className="text-4xl lg:text-5xl font-black leading-tight">
-                사장님은<br />
+                사장님은 말로 <br />
                 <span className="text-primary">명령만</span> 하세요!
               </h1>
               
@@ -177,31 +171,8 @@ const PreLoginLanding = () => {
 
       {/* Wave Divider - Hero to How It Works */}
       <div className="relative -mb-1">
-        <svg
-          viewBox="0 0 1440 120"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-16 lg:h-24"
-          preserveAspectRatio="none"
-        >
-          {/* 상단: 히어로 하단 톤(더 진한 곡률) */}
-          <path
-            d="M0 0V70C120 102 240 112 360 96C480 80 600 44 720 50C840 56 960 98 1080 100C1200 102 1320 86 1440 76V0H0Z"
-            className="fill-primary/10"
-          />
-          {/* 하단: 3단계 섹션 배경 */}
-          <path
-            d="M0 70C120 102 240 112 360 96C480 80 600 44 720 50C840 56 960 98 1080 100C1200 102 1320 86 1440 76V120H0V70Z"
-            className="fill-muted/30"
-          />
-          {/* 경계선(구분 강화) */}
-          <path
-            d="M0 70C120 102 240 112 360 96C480 80 600 44 720 50C840 56 960 98 1080 100C1200 102 1320 86 1440 76"
-            fill="none"
-            className="stroke-border/40"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-          />
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-12 lg:h-20" preserveAspectRatio="none">
+          <path d="M0 120L60 105C120 90 240 60 360 50C480 40 600 50 720 60C840 70 960 80 1080 75C1200 70 1320 50 1380 40L1440 30V120H0Z" className="fill-muted/30" />
         </svg>
       </div>
 
@@ -218,12 +189,9 @@ const PreLoginLanding = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {howItWorks.map((item, i) => (
-              <div key={i} className="relative text-center">
+            {howItWorks.map((item, i) => <div key={i} className="relative text-center">
                 {/* Connector Line */}
-                {i < howItWorks.length - 1 && (
-                  <div className="hidden md:block absolute top-10 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-primary/50 to-primary/20" />
-                )}
+                {i < howItWorks.length - 1 && <div className="hidden md:block absolute top-10 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-primary/50 to-primary/20" />}
                 
                 <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
                   <item.icon className="h-8 w-8 text-primary" />
@@ -234,8 +202,7 @@ const PreLoginLanding = () => {
                 
                 <h3 className="font-bold text-lg mb-2">{item.title}</h3>
                 <p className="text-sm text-muted-foreground">{item.description}</p>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </section>
@@ -261,14 +228,11 @@ const PreLoginLanding = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
-            {testimonials.map((review, i) => (
-              <Card key={i} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            {testimonials.map((review, i) => <Card key={i} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
                 <CardContent className="p-5">
                   {/* Stars */}
                   <div className="flex gap-0.5 mb-3">
-                    {[...Array(review.rating)].map((_, j) => (
-                      <Star key={j} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    ))}
+                    {[...Array(review.rating)].map((_, j) => <Star key={j} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)}
                   </div>
                   
                   {/* Quote */}
@@ -282,8 +246,7 @@ const PreLoginLanding = () => {
                     <p className="text-xs text-muted-foreground">{review.business}</p>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
       </section>
@@ -309,20 +272,14 @@ const PreLoginLanding = () => {
           </div>
 
           <Accordion type="single" collapsible className="space-y-3">
-            {faqs.map((faq, i) => (
-              <AccordionItem 
-                key={i} 
-                value={`faq-${i}`}
-                className="bg-card rounded-xl border-0 shadow-sm px-5"
-              >
+            {faqs.map((faq, i) => <AccordionItem key={i} value={`faq-${i}`} className="bg-card rounded-xl border-0 shadow-sm px-5">
                 <AccordionTrigger className="text-left font-semibold hover:no-underline py-4">
                   {faq.question}
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground pb-4">
                   {faq.answer}
                 </AccordionContent>
-              </AccordionItem>
-            ))}
+              </AccordionItem>)}
           </Accordion>
         </div>
       </section>
@@ -365,18 +322,9 @@ const PreLoginLanding = () => {
       <div className="relative -mb-1 bg-white dark:bg-card">
         <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-10 lg:h-16" preserveAspectRatio="none">
           {/* Fill the lower section color with a pronounced wave to ensure the divider stays visible */}
-          <path
-            d="M0 120V68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72V120H0Z"
-            className="fill-muted/30"
-          />
+          <path d="M0 120V68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72V120H0Z" className="fill-muted/30" />
           {/* Subtle stroke to prevent the wave from visually blending into adjacent blocks */}
-          <path
-            d="M0 68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72"
-            fill="none"
-            className="stroke-border/40"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-          />
+          <path d="M0 68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72" fill="none" className="stroke-border/40" strokeWidth="1" vectorEffect="non-scaling-stroke" />
         </svg>
       </div>
 
@@ -461,17 +409,8 @@ const PreLoginLanding = () => {
       {/* Wave Divider - App Download to Final CTA */}
       <div className="relative -mb-1 bg-white dark:bg-card">
         <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-12 lg:h-16" preserveAspectRatio="none">
-          <path
-            d="M0 120V68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72V120H0Z"
-            className="fill-muted/30"
-          />
-          <path
-            d="M0 68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72"
-            fill="none"
-            className="stroke-border/40"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-          />
+          <path d="M0 120V68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72V120H0Z" className="fill-muted/30" />
+          <path d="M0 68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72" fill="none" className="stroke-border/40" strokeWidth="1" vectorEffect="non-scaling-stroke" />
         </svg>
       </div>
 
