@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Bot, Send, X, MessageCircle, Sparkles, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
@@ -18,7 +19,7 @@ const quickCommands = [
 
 export function AIChatPanel() {
   const { isOpen, closeChat } = useChat();
-  const { messages, isLoading, sendMessage, resetChat, secretaryName } = useAIChat();
+  const { messages, isLoading, isLoadingHistory, sendMessage, resetChat, secretaryName } = useAIChat();
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -81,8 +82,23 @@ export function AIChatPanel() {
       {/* Messages */}
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
-          {/* 환영 메시지 (메시지가 없을 때) */}
-          {messages.length === 0 && (
+          {/* 로딩 중 스켈레톤 */}
+          {isLoadingHistory && (
+            <div className="space-y-4">
+              <div className="flex justify-start">
+                <Skeleton className="h-16 w-3/4 rounded-2xl" />
+              </div>
+              <div className="flex justify-end">
+                <Skeleton className="h-10 w-1/2 rounded-2xl" />
+              </div>
+              <div className="flex justify-start">
+                <Skeleton className="h-20 w-4/5 rounded-2xl" />
+              </div>
+            </div>
+          )}
+          
+          {/* 환영 메시지 (메시지가 없고 로딩 완료 시) */}
+          {!isLoadingHistory && messages.length === 0 && (
             <div className="flex justify-start animate-fade-in">
               <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-muted/60 text-foreground rounded-bl-md">
                 <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
@@ -98,7 +114,7 @@ export function AIChatPanel() {
               </div>
             </div>
           )}
-          {messages.map((message) => (
+          {!isLoadingHistory && messages.map((message) => (
             <div
               key={message.id}
               className={cn(
