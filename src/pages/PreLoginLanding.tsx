@@ -130,7 +130,7 @@ const PreLoginLanding = () => {
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                 <Button size="lg" className="h-14 px-8 text-lg font-bold gap-2 rounded-xl" onClick={() => navigate("/login")}>
-                  <img src={icc} alt="김비서" className="h-6 w-auto opacity-80" />
+                  <img src={icc} alt="김비서" className="h-6 w-auto opacity-90" />
                   무료로 시작하기
                   <ArrowRight className="h-5 w-5" />
                 </Button>
