@@ -174,7 +174,11 @@ export function PCSideChat() {
           {isTyping && (
             <div className="flex justify-start">
               <div className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3">
-                <Sparkles className="h-4 w-4 animate-pulse-soft text-primary" />
+                <img 
+                  src="/images/icc-blue.webp" 
+                  alt="처리 중" 
+                  className="h-6 w-6 animate-bounce"
+                />
                 <span className="text-sm text-muted-foreground">처리 중...</span>
               </div>
             </div>
