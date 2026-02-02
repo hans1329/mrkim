@@ -175,10 +175,11 @@ const PreLoginLanding = () => {
         </div>
       </section>
 
-      {/* Wave Divider - Hero to How It Works */}
+      {/* Wave Divider - Hero to How It Works (Top) */}
       <div className="relative -mb-1">
         <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-12 lg:h-20" preserveAspectRatio="none">
           <path d="M0 120L60 105C120 90 240 60 360 50C480 40 600 50 720 60C840 70 960 80 1080 75C1200 70 1320 50 1380 40L1440 30V120H0Z" className="fill-muted/30" />
+          <path d="M0 120L60 105C120 90 240 60 360 50C480 40 600 50 720 60C840 70 960 80 1080 75C1200 70 1320 50 1380 40L1440 30" fill="none" className="stroke-border/40" strokeWidth="1" vectorEffect="non-scaling-stroke" />
         </svg>
       </div>
 
