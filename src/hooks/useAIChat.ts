@@ -54,11 +54,23 @@ export function useAIChat() {
       });
 
       if (!response.ok) {
+        let errorMessage = `API error: ${response.status}`;
+        try {
+          const errJson = await response.json();
+          if (typeof errJson?.error === "string" && errJson.error.trim()) {
+            errorMessage = errJson.error;
+          }
+        } catch {
+          // ignore JSON parse errors
+        }
+
         if (response.status === 429) {
-          toast.error("요청이 너무 많습니다. 잠시 후 다시 시도해주세요.");
+          toast.error(errorMessage);
           throw new Error("Rate limit exceeded");
         }
-        throw new Error(`API error: ${response.status}`);
+
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
