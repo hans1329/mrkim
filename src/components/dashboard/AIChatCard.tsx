@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Bot, Send, Sparkles, MessageCircle, RotateCcw, Clock, Settings } from "lucide-react";
 import { getTodayStats, mockDeposits, mockAutoTransfers, mockEmployees, formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
+import { useProfile } from "@/hooks/useProfile";
 
 const quickPrompts = [
   "오늘 매출 얼마야?",
@@ -95,10 +96,14 @@ const generateQuickResponse = (input: string): string => {
 export function AIChatCard() {
   const navigate = useNavigate();
   const { openChat } = useChat();
+  const { profile } = useProfile();
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showBriefing, setShowBriefing] = useState(false);
+  
+  // 설정한 비서 이름 사용
+  const secretaryName = profile?.secretary_name || "김비서";
   
   // 브리핑 메시지
   const briefingMessage = useMemo(() => generateBriefingMessage(), []);
@@ -154,7 +159,7 @@ export function AIChatCard() {
               </div>
             </button>
             <div>
-              <h3 className="font-bold text-white">김비서</h3>
+              <h3 className="font-bold text-white">{secretaryName}</h3>
               <p className="text-xs text-white/80">AI 경영 비서가 도와드릴게요</p>
             </div>
           </div>
@@ -214,7 +219,7 @@ export function AIChatCard() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="김비서에게 물어보세요..."
+            placeholder={`${secretaryName}에게 물어보세요...`}
             className="flex-1 bg-white/20 border-0 backdrop-blur-sm text-white placeholder:text-white/60 focus-visible:ring-white/30"
             disabled={isTyping}
           />
