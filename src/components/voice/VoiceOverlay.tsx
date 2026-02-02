@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Mic, MicOff, Sparkles } from "lucide-react";
+import { X, Mic, MicOff, Sparkles, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/contexts/VoiceContext";
+import { useChat } from "@/contexts/ChatContext";
 
 type VoiceStatus = "idle" | "listening" | "processing" | "speaking";
 
 export function VoiceOverlay() {
   const { isOpen, closeVoice } = useVoice();
+  const { openChat } = useChat();
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [transcript, setTranscript] = useState("");
   const [response, setResponse] = useState("");
@@ -48,6 +50,12 @@ export function VoiceOverlay() {
       setResponse("");
     }
   }, [isOpen]);
+
+  // 텍스트 채팅으로 전환
+  const handleSwitchToChat = () => {
+    closeVoice();
+    openChat();
+  };
 
   const getStatusText = () => {
     switch (status) {
@@ -169,8 +177,16 @@ export function VoiceOverlay() {
         )}
       </div>
 
-      {/* Footer 힌트 */}
-      <div className="pb-[calc(env(safe-area-inset-bottom)+24px)] text-center">
+      {/* Footer - 텍스트 채팅 전환 버튼 */}
+      <div className="pb-[calc(env(safe-area-inset-bottom)+24px)] px-6 flex flex-col items-center gap-3">
+        <Button
+          variant="ghost"
+          onClick={handleSwitchToChat}
+          className="text-white/70 hover:text-white hover:bg-white/20 gap-2"
+        >
+          <MessageCircle className="h-4 w-4" />
+          텍스트로 대화하기
+        </Button>
         <p className="text-xs text-white/50">
           {status === "idle" ? "탭하여 음성 대화 시작" : ""}
         </p>
