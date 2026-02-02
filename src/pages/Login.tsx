@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Mail } from "lucide-react";
-import iccLogo from "@/assets/icc-2.webp";
+const iccLogo = "/images/icc-2.webp";
 import { ServiceChatProvider, useServiceChat } from "@/contexts/ServiceChatContext";
 import { ServiceChatPanel } from "@/components/chat/ServiceChatPanel";
 import { ServiceVoiceOverlay } from "@/components/chat/ServiceVoiceOverlay";

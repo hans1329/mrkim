@@ -6,10 +6,10 @@ import { Bot, ArrowRight, Shield, Zap, TrendingUp, Calculator, Users, FileText, 
 import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
-import logo from "@/assets/icc-3.webp";
-import logoWhite from "@/assets/icc-white.webp";
-import iccBlue from "@/assets/icc-blue.webp";
-import icc from "@/assets/icc-5.webp";
+const logo = "/images/icc-3.webp";
+const logoWhite = "/images/icc-white.webp";
+const iccBlue = "/images/icc-blue.webp";
+const icc = "/images/icc-5.webp";
 
 const PreLoginLanding = () => {
   const navigate = useNavigate();

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useVoice } from "@/contexts/VoiceContext";
-import chatbotIcon from "@/assets/icc-blue.webp";
+const chatbotIcon = "/images/icc-blue.webp";
 
 export function FloatingVoiceButton() {
   const { isOpen, openVoice } = useVoice();
