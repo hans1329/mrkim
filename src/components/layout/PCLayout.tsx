@@ -15,12 +15,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
-import { useVoice } from "@/contexts/VoiceContext";
-import { useChat } from "@/contexts/ChatContext";
 import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
 import { AIChatPanel } from "@/components/chat/AIChatPanel";
+import { FloatingVoiceButton } from "@/components/voice/FloatingVoiceButton";
 const chaltteokImage = "/images/icc-4.webp";
-const chatbotIcon = "/images/icc-5.webp";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
@@ -39,8 +37,6 @@ interface PCLayoutProps {
 
 export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutProps) {
   const navigate = useNavigate();
-  const { openVoice, isOpen: isVoiceOpen } = useVoice();
-  const { isOpen: isChatOpen } = useChat();
   const [collapsed, setCollapsed] = useState(false);
 
   // PC에서는 body 스크롤 비활성화 (main만 스크롤)
@@ -201,15 +197,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
         </div>
 
         {/* 플로팅 음성 버튼 */}
-        {!isVoiceOpen && !isChatOpen && (
-          <Button
-            onClick={openVoice}
-            size="lg"
-            className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-primary hover:bg-primary/90 p-2 animate-bounce-subtle"
-          >
-            <img src={chatbotIcon} alt="김비서" className="h-10 w-auto object-contain opacity-90" />
-          </Button>
-        )}
+        <FloatingVoiceButton />
       </main>
 
       {/* AI 채팅 패널 */}
