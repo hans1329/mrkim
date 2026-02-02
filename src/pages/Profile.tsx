@@ -119,7 +119,7 @@ export default function Profile() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bot className="h-4 w-4 text-primary" />
-                <CardTitle className="text-base">김비서 연락 번호</CardTitle>
+                <CardTitle className="text-base">김비서가 연락 할 번호</CardTitle>
               </div>
               {isVerified && (
                 <Badge variant="secondary" className="gap-1 bg-green-100 text-green-700">
