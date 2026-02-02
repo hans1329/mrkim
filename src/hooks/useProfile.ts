@@ -74,9 +74,12 @@ export function useProfile() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다");
 
+      // priority_metrics는 jsonb로 저장되므로 그대로 전달
+      const dbUpdates = { ...updates } as Record<string, unknown>;
+      
       const { error } = await supabase
         .from("profiles")
-        .update(updates)
+        .update(dbUpdates)
         .eq("user_id", user.id);
 
       if (error) throw error;

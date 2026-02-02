@@ -101,17 +101,29 @@ export default function SecretarySettings() {
   const handleSave = async () => {
     const briefingValue = briefingEnabled ? briefingTime : "disabled";
     
+    console.log("Saving settings:", {
+      secretary_name: secretaryName,
+      secretary_gender: secretaryGender,
+      secretary_tone: speakingStyle,
+      briefing_frequency: briefingValue,
+      priority_metrics: selectedMetrics,
+    });
+    
     const success = await updateProfile({
       secretary_name: secretaryName,
       secretary_gender: secretaryGender,
       secretary_tone: speakingStyle,
       briefing_frequency: briefingValue,
       priority_metrics: selectedMetrics,
-    }, false); // 기본 toast 비활성화
+    }, false);
+    
+    console.log("Save result:", success);
     
     if (success) {
       toast.success(`${secretaryName} 설정이 저장되었습니다`);
       navigate("/");
+    } else {
+      toast.error("설정 저장에 실패했습니다");
     }
   };
 
