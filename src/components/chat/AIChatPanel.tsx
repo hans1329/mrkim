@@ -275,16 +275,15 @@ export function AIChatPanel() {
             </div>
           </ScrollArea>
 
-          {/* Quick Commands - 지난 대화가 아닐 때만 표시 */}
           {!isViewingPastSession && (
             <div className="border-t px-4 py-2">
-              <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
+              <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {quickCommands.map((cmd) => (
                   <Button
                     key={cmd}
                     variant="outline"
                     size="sm"
-                    className="shrink-0 text-xs"
+                    className="shrink-0 text-xs text-muted-foreground border-border/50 hover:text-foreground"
                     onClick={() => handleQuickCommand(cmd)}
                   >
                     {cmd}
