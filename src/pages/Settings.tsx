@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,14 +26,43 @@ import {
   Landmark,
   CheckCircle2,
   RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function Settings() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { connections, resetOnboarding } = useOnboarding();
+  const { profile, loading, updating, updateProfile } = useProfile();
+
+  // 사업장 정보 로컬 상태
+  const [businessName, setBusinessName] = useState("");
+  const [businessRegNumber, setBusinessRegNumber] = useState("");
+  const [businessType, setBusinessType] = useState("");
+
+  // 프로필 데이터 로드 시 로컬 상태 업데이트
+  useEffect(() => {
+    if (profile) {
+      setBusinessName(profile.business_name || "");
+      setBusinessRegNumber(profile.business_registration_number || "");
+      setBusinessType(profile.business_type || "");
+    }
+  }, [profile]);
+
+  const handleSaveBusinessInfo = async () => {
+    const success = await updateProfile({
+      business_name: businessName || null,
+      business_registration_number: businessRegNumber || null,
+      business_type: businessType || null,
+    });
+    
+    if (success) {
+      // 성공 알림은 updateProfile 내에서 처리됨
+    }
+  };
 
   return (
     <MainLayout title="설정" subtitle="앱 설정을 관리하세요" showBackButton>
@@ -46,28 +76,60 @@ export default function Settings() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="space-y-2">
-              <Label className="text-xs">사업장명</Label>
-              <Input defaultValue="맛있는 식당" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">사업자등록번호</Label>
-              <Input defaultValue="123-45-67890" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">업종</Label>
-              <Select defaultValue="restaurant">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="restaurant">요식업</SelectItem>
-                  <SelectItem value="retail">소매업</SelectItem>
-                  <SelectItem value="service">서비스업</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button className="w-full">저장</Button>
+            {loading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-xs">사업장명</Label>
+                  <Input 
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="사업장명을 입력하세요"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">사업자등록번호</Label>
+                  <Input 
+                    value={businessRegNumber}
+                    onChange={(e) => setBusinessRegNumber(e.target.value)}
+                    placeholder="000-00-00000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">업종</Label>
+                  <Select value={businessType} onValueChange={setBusinessType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="업종을 선택하세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="restaurant">요식업</SelectItem>
+                      <SelectItem value="retail">소매업</SelectItem>
+                      <SelectItem value="service">서비스업</SelectItem>
+                      <SelectItem value="manufacturing">제조업</SelectItem>
+                      <SelectItem value="wholesale">도매업</SelectItem>
+                      <SelectItem value="other">기타</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={handleSaveBusinessInfo}
+                  disabled={updating}
+                >
+                  {updating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      저장 중...
+                    </>
+                  ) : (
+                    "저장"
+                  )}
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
 
