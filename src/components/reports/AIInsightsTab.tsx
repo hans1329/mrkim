@@ -106,7 +106,7 @@ export function AIInsightsTab() {
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             <img
-              src="/images/icc.webp"
+              src="/images/icc-5.webp"
               alt="김비서"
               className="h-12 w-auto object-contain"
             />
