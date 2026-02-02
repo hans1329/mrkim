@@ -289,7 +289,7 @@ export default function Engine() {
                       </a>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
-                      <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener noreferrer">
+                      <a href="https://elevenlabs.io/app/developers/api-keys" target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
                         ElevenLabs API
                       </a>
