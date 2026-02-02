@@ -37,15 +37,20 @@ export function AIChatPanel() {
     secretaryName 
   } = useAIChat();
   const [input, setInput] = useState("");
-  const scrollEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    scrollEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // ScrollArea 내부의 viewport를 찾아서 스크롤
+    const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (viewport) {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
   };
 
   useEffect(() => {
     if (isOpen) {
-      scrollToBottom();
+      // 약간의 딜레이를 줘서 DOM 업데이트 후 스크롤
+      setTimeout(scrollToBottom, 50);
     }
   }, [messages, isOpen]);
 
@@ -157,7 +162,7 @@ export function AIChatPanel() {
           )}
 
           {/* Messages */}
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
             <div className="space-y-4">
               {/* 로딩 중 스켈레톤 */}
               {isLoadingHistory && (
@@ -229,8 +234,6 @@ export function AIChatPanel() {
                   </div>
                 </div>
               )}
-              {/* 스크롤 앵커 */}
-              <div ref={scrollEndRef} />
             </div>
           </ScrollArea>
 
