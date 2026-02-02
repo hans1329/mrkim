@@ -294,6 +294,12 @@ export default function Engine() {
                         ElevenLabs API
                       </a>
                     </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                        Twilio Console
+                      </a>
+                    </Button>
                   </div>
                 </div>
               </CardContent>
