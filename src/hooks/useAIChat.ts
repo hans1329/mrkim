@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "./useProfile";
 import { toast } from "sonner";
@@ -16,15 +16,89 @@ export function useAIChat() {
   const { profile } = useProfile();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
 
+  // 대화 기록 불러오기
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setIsLoadingHistory(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("chat_messages")
+          .select("id, role, content, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true })
+          .limit(100);
+
+        if (error) {
+          console.error("Failed to load chat history:", error);
+          setIsLoadingHistory(false);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const loadedMessages: ChatMessage[] = data.map((msg) => ({
+            id: msg.id,
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+            timestamp: new Date(msg.created_at),
+          }));
+          setMessages(loadedMessages);
+        }
+      } catch (error) {
+        console.error("Error loading chat history:", error);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadChatHistory();
+  }, []);
+
+  // 메시지 저장
+  const saveMessage = async (role: "user" | "assistant", content: string): Promise<string | null> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from("chat_messages")
+        .insert({
+          user_id: user.id,
+          role,
+          content,
+        })
+        .select("id")
+        .single();
+
+      if (error) {
+        console.error("Failed to save message:", error);
+        return null;
+      }
+
+      return data?.id || null;
+    } catch (error) {
+      console.error("Error saving message:", error);
+      return null;
+    }
+  };
+
   const sendMessage = useCallback(async (userInput: string) => {
     if (!userInput.trim()) return;
 
+    // 사용자 메시지 저장 및 표시
+    const userMessageId = await saveMessage("user", userInput);
+    
     const userMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: userMessageId || Date.now().toString(),
       role: "user",
       content: userInput,
       timestamp: new Date(),
@@ -74,11 +148,15 @@ export function useAIChat() {
       }
 
       const data = await response.json();
+      const assistantContent = data.response || "죄송합니다, 응답을 생성하지 못했습니다.";
+      
+      // AI 응답 저장
+      const assistantMessageId = await saveMessage("assistant", assistantContent);
       
       const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: assistantMessageId || (Date.now() + 1).toString(),
         role: "assistant",
-        content: data.response || "죄송합니다, 응답을 생성하지 못했습니다.",
+        content: assistantContent,
         timestamp: new Date(),
       };
 
@@ -86,10 +164,13 @@ export function useAIChat() {
     } catch (error) {
       console.error("AI Chat error:", error);
       
+      const errorContent = "죄송합니다, 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+      await saveMessage("assistant", errorContent);
+      
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "죄송합니다, 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+        content: errorContent,
         timestamp: new Date(),
       };
       
@@ -99,13 +180,27 @@ export function useAIChat() {
     }
   }, [messages, secretaryName, secretaryTone]);
 
-  const resetChat = useCallback(() => {
+  const resetChat = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // DB에서 대화 기록 삭제
+        await supabase
+          .from("chat_messages")
+          .delete()
+          .eq("user_id", user.id);
+      }
+    } catch (error) {
+      console.error("Failed to delete chat history:", error);
+    }
+    
     setMessages([]);
   }, []);
 
   return {
     messages,
     isLoading,
+    isLoadingHistory,
     sendMessage,
     resetChat,
     secretaryName,
