@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, Mail, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 const iccLogo = "/images/icc-2.webp";
 import { ServiceChatProvider, useServiceChat } from "@/contexts/ServiceChatContext";
 import { ServiceChatPanel } from "@/components/chat/ServiceChatPanel";
@@ -40,20 +42,52 @@ function LoginContent() {
   const [isEmailMode, setIsEmailMode] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const handleGoogleLogin = () => {
-    // TODO: Supabase Google OAuth 연결
-    console.log("Google login clicked");
-    navigate("/");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) {
+      toast.error("Google 로그인 실패: " + error.message);
+      setIsLoading(false);
+    }
   };
-  const handleKakaoLogin = () => {
-    // TODO: Kakao OAuth 연결
-    console.log("Kakao login clicked");
-    navigate("/");
+
+  const handleKakaoLogin = async () => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'kakao',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) {
+      toast.error("카카오 로그인 실패: " + error.message);
+      setIsLoading(false);
+    }
   };
-  const handleEmailLogin = (e: React.FormEvent) => {
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Supabase Email/Password 연결
-    console.log("Email login:", email, password);
+    setIsLoading(true);
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    
+    if (error) {
+      toast.error("로그인 실패: " + error.message);
+      setIsLoading(false);
+      return;
+    }
+    
+    toast.success("로그인 성공!");
     navigate("/");
   };
   return <div className="min-h-screen bg-primary flex flex-col">
@@ -98,7 +132,7 @@ function LoginContent() {
 
           {!isEmailMode ? <div className="space-y-3">
               {/* 소셜 로그인 버튼들 */}
-              <Button variant="outline" className="w-full h-12 gap-3 text-base bg-white hover:bg-white/90 text-foreground border-0" onClick={handleGoogleLogin}>
+              <Button variant="outline" className="w-full h-12 gap-3 text-base bg-white hover:bg-white/90 text-foreground border-0" onClick={handleGoogleLogin} disabled={isLoading}>
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -111,7 +145,7 @@ function LoginContent() {
               <Button className="w-full h-12 gap-3 text-base border-0" style={{
             backgroundColor: "#FEE500",
             color: "#000000"
-          }} onClick={handleKakaoLogin}>
+          }} onClick={handleKakaoLogin} disabled={isLoading}>
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3zm5.907 8.06l1.47-1.424a.472.472 0 0 0-.656-.678l-1.928 1.866V9.282a.472.472 0 0 0-.944 0v2.557a.471.471 0 0 0 0 .222v2.276a.472.472 0 1 0 .944 0v-1.691l.466-.45 1.572 2.341a.472.472 0 0 0 .782-.526l-1.706-2.95zm-9.6-1.59a.472.472 0 0 0-.472.472v4.531a.472.472 0 1 0 .944 0V9.942a.472.472 0 0 0-.472-.472zm3.5 0a.472.472 0 0 0-.472.472v4.531a.472.472 0 1 0 .944 0v-1.414l1.099 1.645a.472.472 0 1 0 .786-.526l-1.328-1.988 1.328-1.285a.472.472 0 0 0-.656-.678l-1.229 1.189V9.942a.472.472 0 0 0-.472-.472zm-5.446 1.322a.472.472 0 1 0 0 .944h1.035v3.115a.472.472 0 1 0 .944 0v-3.115h1.035a.472.472 0 1 0 0-.944H6.361z" />
                 </svg>
@@ -152,8 +186,8 @@ function LoginContent() {
                   </Label>
                   <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required className="bg-white/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50" />
                 </div>
-                <Button type="submit" className="w-full h-12 bg-white text-primary hover:bg-white/90">
-                  로그인
+                <Button type="submit" className="w-full h-12 bg-white text-primary hover:bg-white/90" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "로그인"}
                 </Button>
               </form>
 
