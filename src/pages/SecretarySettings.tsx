@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,11 +38,11 @@ const speakingStyles = [
   { id: "cute", label: "귀여운체", example: "오늘 매출 234만원이에용~ 🎉" },
 ];
 
-const briefingTimes = [
-  { id: "morning", label: "아침 9시", icon: "🌅" },
-  { id: "lunch", label: "점심 12시", icon: "☀️" },
-  { id: "evening", label: "저녁 6시", icon: "🌆" },
-  { id: "night", label: "밤 10시", icon: "🌙" },
+// briefing_frequency는 DB에서 'realtime', 'daily', 'weekly'만 허용
+const briefingFrequencyOptions = [
+  { id: "realtime", label: "실시간", description: "중요 변동 시 즉시 알림" },
+  { id: "daily", label: "매일", description: "하루 한 번 정기 브리핑" },
+  { id: "weekly", label: "매주", description: "일주일 한 번 요약 브리핑" },
 ];
 
 const interestMetrics = [
@@ -59,9 +57,7 @@ export default function SecretarySettings() {
   const { profile, loading, updating, updateProfile } = useProfile();
   
   const [speakingStyle, setSpeakingStyle] = useState("friendly");
-  const [briefingEnabled, setBriefingEnabled] = useState(true);
-  const [briefingTime, setBriefingTime] = useState("morning");
-  const [briefingFrequency, setBriefingFrequency] = useState([1]);
+  const [briefingFrequency, setBriefingFrequency] = useState("daily");
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(["sales", "expenses", "alerts"]);
   const [secretaryName, setSecretaryName] = useState("김비서");
   const [secretaryGender, setSecretaryGender] = useState("female");
@@ -72,15 +68,7 @@ export default function SecretarySettings() {
       setSecretaryName(profile.secretary_name || "김비서");
       setSecretaryGender(profile.secretary_gender || "female");
       setSpeakingStyle(profile.secretary_tone || "friendly");
-      
-      // briefing_frequency는 "daily", "morning", "lunch" 등의 조합으로 저장
-      const freq = profile.briefing_frequency || "daily";
-      if (freq.includes("morning")) setBriefingTime("morning");
-      else if (freq.includes("lunch")) setBriefingTime("lunch");
-      else if (freq.includes("evening")) setBriefingTime("evening");
-      else if (freq.includes("night")) setBriefingTime("night");
-      
-      setBriefingEnabled(!freq.includes("disabled"));
+      setBriefingFrequency(profile.briefing_frequency || "daily");
       
       if (profile.priority_metrics && Array.isArray(profile.priority_metrics)) {
         setSelectedMetrics(profile.priority_metrics);
@@ -99,13 +87,11 @@ export default function SecretarySettings() {
   const navigate = useNavigate();
 
   const handleSave = async () => {
-    const briefingValue = briefingEnabled ? briefingTime : "disabled";
-    
     console.log("Saving settings:", {
       secretary_name: secretaryName,
       secretary_gender: secretaryGender,
       secretary_tone: speakingStyle,
-      briefing_frequency: briefingValue,
+      briefing_frequency: briefingFrequency,
       priority_metrics: selectedMetrics,
     });
     
@@ -113,7 +99,7 @@ export default function SecretarySettings() {
       secretary_name: secretaryName,
       secretary_gender: secretaryGender,
       secretary_tone: speakingStyle,
-      briefing_frequency: briefingValue,
+      briefing_frequency: briefingFrequency,
       priority_metrics: selectedMetrics,
     }, false);
     
@@ -125,14 +111,6 @@ export default function SecretarySettings() {
     } else {
       toast.error("설정 저장에 실패했습니다");
     }
-  };
-
-  const getFrequencyLabel = (value: number) => {
-    if (value === 1) return "매일";
-    if (value === 2) return "이틀에 한번";
-    if (value === 3) return "3일에 한번";
-    if (value === 7) return "일주일에 한번";
-    return `${value}일에 한번`;
   };
 
   if (loading) {
@@ -316,61 +294,35 @@ export default function SecretarySettings() {
             </CardTitle>
             <CardDescription>정기 브리핑 시간과 빈도를 설정하세요</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* 브리핑 활성화 */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>정기 브리핑</Label>
-                <p className="text-sm text-muted-foreground">
-                  설정된 시간에 경영 현황을 알려드려요
-                </p>
-              </div>
-              <Switch checked={briefingEnabled} onCheckedChange={setBriefingEnabled} />
-            </div>
-
-            {briefingEnabled && (
-              <>
-                {/* 브리핑 시간 */}
-                <div className="space-y-3">
-                  <Label>브리핑 시간</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {briefingTimes.map((time) => (
-                      <Button
-                        key={time.id}
-                        variant={briefingTime === time.id ? "default" : "outline"}
-                        className="justify-start gap-2"
-                        onClick={() => setBriefingTime(time.id)}
-                      >
-                        <span>{time.icon}</span>
-                        {time.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 브리핑 빈도 */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label>브리핑 빈도</Label>
-                    <span className="text-sm font-medium text-primary">
-                      {getFrequencyLabel(briefingFrequency[0])}
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              브리핑 빈도를 설정하세요
+            </p>
+            <div className="space-y-2">
+              {briefingFrequencyOptions.map((option) => (
+                <div
+                  key={option.id}
+                  className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
+                    briefingFrequency === option.id 
+                      ? "border-primary bg-primary/5" 
+                      : "border-border hover:border-primary/50"
+                  }`}
+                  onClick={() => setBriefingFrequency(option.id)}
+                >
+                  <div>
+                    <span className={briefingFrequency === option.id ? "font-medium" : "text-muted-foreground"}>
+                      {option.label}
                     </span>
+                    <p className="text-xs text-muted-foreground">{option.description}</p>
                   </div>
-                  <Slider
-                    value={briefingFrequency}
-                    onValueChange={setBriefingFrequency}
-                    min={1}
-                    max={7}
-                    step={1}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>매일</span>
-                    <span>일주일</span>
-                  </div>
+                  {briefingFrequency === option.id && (
+                    <Badge variant="secondary" className="bg-primary/10 text-primary">
+                      선택됨
+                    </Badge>
+                  )}
                 </div>
-              </>
-            )}
+              ))}
+            </div>
           </CardContent>
         </Card>
 
