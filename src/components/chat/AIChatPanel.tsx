@@ -236,10 +236,10 @@ export function AIChatPanel() {
                   <div className="flex flex-col gap-1 max-w-[75%]">
                     <div
                       className={cn(
-                        "rounded-2xl px-4 py-3 shadow-sm",
+                        "rounded-2xl px-4 py-3",
                         message.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-gradient-to-br from-card to-muted/60 text-foreground rounded-bl-md border border-border/50"
+                          ? "bg-primary text-primary-foreground rounded-br-md shadow-[0_2px_8px_-2px_rgba(0,0,0,0.1)]"
+                          : "bg-gradient-to-br from-card to-muted/60 text-foreground rounded-bl-md border border-border/50 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.08)]"
                       )}
                     >
                       {message.role === "assistant" ? (
