@@ -182,7 +182,7 @@ export function VoiceOverlay() {
         <Button
           variant="ghost"
           onClick={handleSwitchToChat}
-          className="text-white/70 hover:text-white hover:bg-white/20 gap-2"
+          className="text-white/70 hover:text-white hover:bg-white/20 gap-2 border border-white/30"
         >
           <MessageCircle className="h-4 w-4" />
           텍스트로 대화하기
