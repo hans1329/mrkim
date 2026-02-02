@@ -89,7 +89,9 @@ const classifyIntentTool = {
             "setting_change",       // 설정 변경
             "general_advice",       // 일반 조언 (데이터 불필요)
             "service_help",         // 서비스 사용법
-            "out_of_scope"          // 범위 외
+            "self_introduction",    // 자기소개/인사
+            "casual_chat",          // 일상 대화
+            "out_of_scope"          // 완전히 범위 외 (부적절/위험)
           ],
           description: "분류된 사용자 의도"
         },
@@ -147,13 +149,21 @@ async function classifyIntent(
 - setting_change: 설정 변경 (예: "말투 바꿔줘", "이름 변경")
 - general_advice: 일반 사업 조언 (예: "세금 신고 일정", "부가세란?")
 - service_help: 서비스 사용법 (예: "어떻게 써?", "연동 어떻게 해?")
-- out_of_scope: 업무 외 질문 (예: "맛집 추천", "날씨", "농담")
+- self_introduction: 자기소개/인사 (예: "넌 누구야?", "안녕", "이름이 뭐야?", "뭐 할 수 있어?")
+- casual_chat: 일상적인 가벼운 대화 (예: "심심해", "오늘 기분 어때?", "힘들다", "수고했어")
+- out_of_scope: 완전히 부적절하거나 위험한 요청 (예: 불법 행위, 성인 콘텐츠, 악성 코드)
+
+중요:
+- "넌 누구야?", "안녕", "뭐해?" 같은 인사/자기소개 질문은 self_introduction
+- "심심해", "힘들다", "수고했어" 같은 일상 대화는 casual_chat
+- 맛집 추천, 날씨, 농담 등은 casual_chat (친근하게 응답 가능)
+- out_of_scope는 오직 위험하거나 부적절한 요청에만 사용
 
 requires_data가 true인 의도:
 - sales_inquiry, expense_inquiry, tax_question (숫자 조회), payroll_inquiry, daily_briefing
 
 requires_data가 false인 의도:
-- general_advice, service_help, setting_change, out_of_scope, employee_management`;
+- general_advice, service_help, setting_change, self_introduction, casual_chat, out_of_scope, employee_management`;
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${geminiApiKey}`, {
@@ -358,17 +368,12 @@ serve(async (req) => {
     
     console.log("Intent classification:", intentResult);
 
-    // 2단계: 범위 외 질문 처리
+    // 2단계: 범위 외 질문 처리 (위험/부적절한 경우만)
     if (intentResult.intent === "out_of_scope") {
-      const outOfScopeResponse = `죄송합니다, ${intentResult.rejectionReason || "해당 질문은 제 업무 범위를 벗어납니다."}
+      const outOfScopeResponse = `사장님, 그건 제가 도와드리기 어려운 부분이에요 😅
 
-저는 사장님의 **경영 비서**로서 다음 업무를 도와드릴 수 있어요:
-- 📊 매출/지출 현황 확인
-- 💰 세금 신고 일정 및 안내
-- 👥 직원 급여/인사 관리
-- 📋 경영 브리핑
-
-다른 업무 관련 질문이 있으시면 말씀해주세요!`;
+혹시 다른 업무 관련해서 도움이 필요하시면 편하게 말씀해주세요! 
+매출 확인, 세금 안내, 직원 관리 등 경영에 필요한 건 뭐든 도와드릴게요. 💼`;
       
       return new Response(
         JSON.stringify({ response: outOfScopeResponse, intent: intentResult }),
@@ -402,6 +407,23 @@ serve(async (req) => {
     const systemPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.
 
 ${toneInstructions[secretaryTone] || toneInstructions.polite}
+
+## 성격
+- 따뜻하고 친근한 비서
+- 사장님을 진심으로 응원하는 마음
+- 가끔 이모지를 적절히 사용해서 친근함 표현
+- 딱딱하게 거절하지 않고 부드럽게 대화
+
+## 자기소개 (self_introduction 의도일 때)
+"안녕하세요!" 또는 "넌 누구야?" 같은 질문에는:
+- 자연스럽게 자기소개 ("안녕하세요, ${secretaryName}예요! 사장님의 경영 비서로 일하고 있어요 😊")
+- 할 수 있는 일 간단히 소개 (매출 확인, 세금 안내, 직원 관리 등)
+
+## 일상 대화 (casual_chat 의도일 때)
+"심심해", "힘들다", "오늘 어때?" 같은 일상 대화에는:
+- 공감하며 친근하게 대화 ("사장님 고생이 많으시네요 😊 힘내세요!")
+- 자연스럽게 업무 관련 도움 제안 ("뭔가 도와드릴 일 있으시면 말씀해주세요~")
+- 맛집, 날씨 등 간단한 잡담은 가볍게 응대 후 업무 연결
 
 ## 답변 가능한 범위
 - 세금 신고 일정, 부가세/종합소득세 일반 안내
