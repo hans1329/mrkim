@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, X, Sparkles, AudioLines } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Bot, Send, X, AudioLines } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { useServiceChat } from "@/contexts/ServiceChatContext";
+import { useServiceFAQ } from "@/hooks/useServiceFAQ";
 
 interface Message {
   id: string;
@@ -14,38 +16,9 @@ interface Message {
   timestamp: Date;
 }
 
-const quickQuestions = [
-  "김비서가 뭐야?",
-  "어떤 기능이 있어?",
-  "요금은 얼마야?",
-  "무료 체험 가능해?",
-];
-
-// 데모용 응답 (나중에 AI로 대체)
-const getServiceResponse = (input: string): string => {
-  const lowerInput = input.toLowerCase();
-  
-  if (lowerInput.includes("뭐야") || lowerInput.includes("무엇") || lowerInput.includes("소개")) {
-    return "**김비서**는 소상공인을 위한 AI 경영 비서입니다! 🤖\n\n매출 관리, 직원 급여, 세금 신고까지 복잡한 사업장 관리를 **음성 명령 한 마디**로 해결해드려요.\n\n\"오늘 매출 얼마야?\" 라고 물어보시면 바로 답변해드립니다!";
-  }
-  
-  if (lowerInput.includes("기능") || lowerInput.includes("할 수 있")) {
-    return "김비서의 주요 기능이에요:\n\n📊 **매출/지출 관리** - 실시간 현황 파악\n👥 **직원 관리** - 급여, 4대보험 자동 계산\n💰 **자금 관리** - 자동이체, 예치금 관리\n📋 **세무 지원** - 부가세, 종합소득세 안내\n🔔 **알림 서비스** - 중요 일정 리마인드\n\n모두 **음성으로** 편하게 이용하실 수 있어요!";
-  }
-  
-  if (lowerInput.includes("요금") || lowerInput.includes("가격") || lowerInput.includes("얼마")) {
-    return "김비서 요금 안내입니다:\n\n🆓 **무료 체험** - 14일간 모든 기능 무료\n💼 **스탠다드** - 월 29,000원\n🏢 **프로** - 월 49,000원 (다중 사업장)\n\n지금 가입하시면 **첫 달 50% 할인** 혜택이 있어요!";
-  }
-  
-  if (lowerInput.includes("무료") || lowerInput.includes("체험") || lowerInput.includes("시작")) {
-    return "네, **14일 무료 체험**이 가능합니다! 🎉\n\n카드 등록 없이 바로 시작할 수 있어요.\n\n👆 위의 **회원가입** 버튼을 눌러 시작해보세요!";
-  }
-  
-  return "궁금한 점이 있으시군요! 😊\n\n김비서는 소상공인의 사업장 관리를 도와주는 AI 비서입니다.\n\n더 자세한 내용이 궁금하시면 아래 질문을 눌러보세요!";
-};
-
 export function ServiceChatPanel() {
   const { isChatOpen, closeChat, switchToVoice } = useServiceChat();
+  const { findAnswer, quickQuestions, isLoading: isFAQLoading } = useServiceFAQ();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -75,12 +48,13 @@ export function ServiceChatPanel() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const userInput = input;
     setInput("");
     setIsTyping(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 600 + Math.random() * 400));
+    await new Promise((resolve) => setTimeout(resolve, 400 + Math.random() * 300));
 
-    const response = getServiceResponse(input);
+    const response = findAnswer(userInput);
     const assistantMessage: Message = {
       id: (Date.now() + 1).toString(),
       role: "assistant",
@@ -95,6 +69,10 @@ export function ServiceChatPanel() {
   const handleQuickQuestion = (question: string) => {
     setInput(question);
   };
+
+  // 기본 빠른 질문 (FAQ 로딩 전)
+  const defaultQuickQuestions = ["김비서가 뭐야?", "어떤 기능이 있어?", "요금은 얼마야?", "무료 체험 가능해?"];
+  const displayQuestions = quickQuestions.length > 0 ? quickQuestions : defaultQuickQuestions;
 
   return (
     <div
@@ -166,7 +144,11 @@ export function ServiceChatPanel() {
           {isTyping && (
             <div className="flex justify-start">
               <div className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3">
-                <Sparkles className="h-4 w-4 animate-pulse-soft text-primary" />
+                <img 
+                  src="/images/icc-blue.webp" 
+                  alt="처리 중" 
+                  className="h-6 w-auto animate-bounce"
+                />
                 <span className="text-sm text-muted-foreground">입력 중...</span>
               </div>
             </div>
@@ -177,17 +159,25 @@ export function ServiceChatPanel() {
       {/* Quick Questions */}
       <div className="border-t px-4 py-2">
         <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
-          {quickQuestions.map((q) => (
-            <Button
-              key={q}
-              variant="outline"
-              size="sm"
-              className="shrink-0 text-xs"
-              onClick={() => handleQuickQuestion(q)}
-            >
-              {q}
-            </Button>
-          ))}
+          {isFAQLoading ? (
+            <>
+              <Skeleton className="h-8 w-24 shrink-0" />
+              <Skeleton className="h-8 w-28 shrink-0" />
+              <Skeleton className="h-8 w-20 shrink-0" />
+            </>
+          ) : (
+            displayQuestions.map((q) => (
+              <Button
+                key={q}
+                variant="outline"
+                size="sm"
+                className="shrink-0 text-xs"
+                onClick={() => handleQuickQuestion(q)}
+              >
+                {q}
+              </Button>
+            ))
+          )}
         </div>
       </div>
 
