@@ -108,7 +108,7 @@ export function AIInsightsTab() {
             <img
               src="/images/icc-5.webp"
               alt="김비서"
-              className="h-12 w-auto object-contain"
+              className="h-12 w-auto object-contain opacity-80"
             />
             <div>
               <p className="font-semibold text-primary">김비서 AI 분석</p>
