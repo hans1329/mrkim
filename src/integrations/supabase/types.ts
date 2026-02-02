@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          end_at: string | null
+          id: string
+          is_active: boolean
+          is_popup: boolean
+          start_at: string | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          end_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_popup?: boolean
+          start_at?: string | null
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          end_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_popup?: boolean
+          start_at?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      api_usage_logs: {
+        Row: {
+          cost_estimate: number | null
+          created_at: string
+          duration_ms: number | null
+          endpoint: string | null
+          id: string
+          metadata: Json | null
+          service: string
+          tokens_input: number | null
+          tokens_output: number | null
+          user_id: string | null
+        }
+        Insert: {
+          cost_estimate?: number | null
+          created_at?: string
+          duration_ms?: number | null
+          endpoint?: string | null
+          id?: string
+          metadata?: Json | null
+          service: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          cost_estimate?: number | null
+          created_at?: string
+          duration_ms?: number | null
+          endpoint?: string | null
+          id?: string
+          metadata?: Json | null
+          service?: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -104,6 +185,54 @@ export type Database = {
         }
         Relationships: []
       }
+      push_campaigns: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          message: string
+          scheduled_at: string | null
+          sent_at: string | null
+          sent_count: number | null
+          status: string
+          target_roles: string[] | null
+          target_type: string
+          target_user_ids: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message: string
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string
+          target_roles?: string[] | null
+          target_type?: string
+          target_user_ids?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message?: string
+          scheduled_at?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string
+          target_roles?: string[] | null
+          target_type?: string
+          target_user_ids?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_faq: {
         Row: {
           answer: string
@@ -134,6 +263,51 @@ export type Database = {
           priority?: number
           question?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_feedback: {
+        Row: {
+          admin_notes: string | null
+          category: string
+          content: string
+          created_at: string
+          id: string
+          responded_at: string | null
+          responded_by: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          category?: string
+          content: string
+          created_at?: string
+          id?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_email?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

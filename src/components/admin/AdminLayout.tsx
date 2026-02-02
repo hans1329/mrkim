@@ -8,13 +8,18 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  ExternalLink
+  ExternalLink,
+  Megaphone,
+  Bell,
+  HelpCircle,
+  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -22,10 +27,29 @@ interface AdminLayoutProps {
   loading?: boolean;
 }
 
-const menuItems = [
-  { path: "/admin", label: "대시보드", icon: LayoutDashboard },
-  { path: "/admin/faq", label: "FAQ 관리", icon: MessageSquare },
-  { path: "/admin/users", label: "사용자 관리", icon: Users },
+const menuGroups = [
+  {
+    label: "일반",
+    items: [
+      { path: "/admin", label: "대시보드", icon: LayoutDashboard },
+      { path: "/admin/faq", label: "FAQ 관리", icon: MessageSquare },
+      { path: "/admin/users", label: "사용자 관리", icon: Users },
+    ],
+  },
+  {
+    label: "운영",
+    items: [
+      { path: "/admin/announcements", label: "공지사항", icon: Megaphone },
+      { path: "/admin/push", label: "푸시 알림", icon: Bell },
+      { path: "/admin/feedback", label: "피드백/문의", icon: HelpCircle },
+    ],
+  },
+  {
+    label: "시스템",
+    items: [
+      { path: "/admin/api-usage", label: "API 사용량", icon: Activity },
+    ],
+  },
 ];
 
 export function AdminLayout({ children, title, loading = false }: AdminLayoutProps) {
@@ -49,7 +73,7 @@ export function AdminLayout({ children, title, loading = false }: AdminLayoutPro
     navigate("/");
   };
 
-  const NavItem = ({ item }: { item: typeof menuItems[0] }) => {
+  const NavItem = ({ item }: { item: { path: string; label: string; icon: React.ComponentType<{ className?: string }> } }) => {
     const isActive = location.pathname === item.path;
     const content = (
       <Link
@@ -63,7 +87,7 @@ export function AdminLayout({ children, title, loading = false }: AdminLayoutPro
       >
         <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive && "drop-shadow-sm")} />
         {!sidebarCollapsed && (
-          <span className={cn("font-medium", isActive && "font-semibold")}>{item.label}</span>
+          <span className={cn("font-medium text-sm", isActive && "font-semibold")}>{item.label}</span>
         )}
       </Link>
     );
@@ -111,9 +135,23 @@ export function AdminLayout({ children, title, loading = false }: AdminLayoutPro
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {menuItems.map((item) => (
-            <NavItem key={item.path} item={item} />
+        <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto scrollbar-thin">
+          {menuGroups.map((group, idx) => (
+            <div key={group.label}>
+              {!sidebarCollapsed && (
+                <p className="px-3 mb-2 text-xs font-medium text-primary-foreground/40 uppercase tracking-wider">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <NavItem key={item.path} item={item} />
+                ))}
+              </div>
+              {idx < menuGroups.length - 1 && !sidebarCollapsed && (
+                <Separator className="mt-4 bg-primary-foreground/10" />
+              )}
+            </div>
           ))}
         </nav>
 
