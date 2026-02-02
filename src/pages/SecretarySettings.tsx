@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Bot, 
   Camera, 
@@ -20,10 +21,11 @@ import {
   Wallet,
   Receipt,
   Save,
-  HelpCircle
+  HelpCircle,
+  Loader2
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useToast } from "@/hooks/use-toast";
+import { useProfile } from "@/hooks/useProfile";
 
 const genderOptions = [
   { id: "female", label: "여성", icon: "👩" },
@@ -31,7 +33,7 @@ const genderOptions = [
 ];
 
 const speakingStyles = [
-  { id: "formal", label: "격식체", example: "오늘 매출은 234만원입니다." },
+  { id: "polite", label: "격식체", example: "오늘 매출은 234만원입니다." },
   { id: "friendly", label: "친근체", example: "오늘 매출 234만원이에요!" },
   { id: "cute", label: "귀여운체", example: "오늘 매출 234만원이에용~ 🎉" },
 ];
@@ -44,22 +46,45 @@ const briefingTimes = [
 ];
 
 const interestMetrics = [
-  { id: "revenue", label: "매출/수익", icon: TrendingUp },
-  { id: "expense", label: "지출/비용", icon: Receipt },
+  { id: "sales", label: "매출/수익", icon: TrendingUp },
+  { id: "expenses", label: "지출/비용", icon: Receipt },
   { id: "employees", label: "직원 현황", icon: Users },
   { id: "funds", label: "자금 현황", icon: Wallet },
-  { id: "tax", label: "세금/부가세", icon: BarChart3 },
+  { id: "alerts", label: "긴급 알림", icon: BarChart3 },
 ];
 
 export default function SecretarySettings() {
-  const { toast } = useToast();
+  const { profile, loading, updating, updateProfile } = useProfile();
+  
   const [speakingStyle, setSpeakingStyle] = useState("friendly");
   const [briefingEnabled, setBriefingEnabled] = useState(true);
   const [briefingTime, setBriefingTime] = useState("morning");
-  const [briefingFrequency, setBriefingFrequency] = useState([1]); // 1 = 매일
-  const [selectedMetrics, setSelectedMetrics] = useState(["revenue", "expense", "tax"]);
+  const [briefingFrequency, setBriefingFrequency] = useState([1]);
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(["sales", "expenses", "alerts"]);
   const [secretaryName, setSecretaryName] = useState("김비서");
   const [secretaryGender, setSecretaryGender] = useState("female");
+
+  // DB 데이터로 초기화
+  useEffect(() => {
+    if (profile) {
+      setSecretaryName(profile.secretary_name || "김비서");
+      setSecretaryGender(profile.secretary_gender || "female");
+      setSpeakingStyle(profile.secretary_tone || "friendly");
+      
+      // briefing_frequency는 "daily", "morning", "lunch" 등의 조합으로 저장
+      const freq = profile.briefing_frequency || "daily";
+      if (freq.includes("morning")) setBriefingTime("morning");
+      else if (freq.includes("lunch")) setBriefingTime("lunch");
+      else if (freq.includes("evening")) setBriefingTime("evening");
+      else if (freq.includes("night")) setBriefingTime("night");
+      
+      setBriefingEnabled(!freq.includes("disabled"));
+      
+      if (profile.priority_metrics && Array.isArray(profile.priority_metrics)) {
+        setSelectedMetrics(profile.priority_metrics);
+      }
+    }
+  }, [profile]);
 
   const toggleMetric = (metricId: string) => {
     setSelectedMetrics(prev => 
@@ -69,10 +94,15 @@ export default function SecretarySettings() {
     );
   };
 
-  const handleSave = () => {
-    toast({
-      title: "설정이 저장되었습니다",
-      description: "김비서가 새로운 설정으로 응답합니다.",
+  const handleSave = async () => {
+    const briefingValue = briefingEnabled ? briefingTime : "disabled";
+    
+    await updateProfile({
+      secretary_name: secretaryName,
+      secretary_gender: secretaryGender,
+      secretary_tone: speakingStyle,
+      briefing_frequency: briefingValue,
+      priority_metrics: selectedMetrics,
     });
   };
 
@@ -83,6 +113,50 @@ export default function SecretarySettings() {
     if (value === 7) return "일주일에 한번";
     return `${value}일에 한번`;
   };
+
+  if (loading) {
+    return (
+      <MainLayout title="김비서 설정" subtitle="나만의 AI 비서를 커스터마이징하세요" showBackButton>
+        <div className="space-y-6 pb-8">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-20 w-20 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="py-6">
+              <Skeleton className="h-32 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <MainLayout title="김비서 설정" subtitle="나만의 AI 비서를 커스터마이징하세요" showBackButton>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground">로그인이 필요합니다</p>
+            <Button className="mt-4" onClick={() => window.location.href = "/login"}>
+              로그인하기
+            </Button>
+          </CardContent>
+        </Card>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout title="김비서 설정" subtitle="나만의 AI 비서를 커스터마이징하세요" showBackButton>
@@ -326,9 +400,9 @@ export default function SecretarySettings() {
         </Card>
 
         {/* 저장 버튼 */}
-        <Button onClick={handleSave} className="w-full gap-2" size="lg">
-          <Save className="h-5 w-5" />
-          설정 저장하기
+        <Button onClick={handleSave} className="w-full gap-2" size="lg" disabled={updating}>
+          {updating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+          {updating ? "저장 중..." : "설정 저장하기"}
         </Button>
       </div>
     </MainLayout>
