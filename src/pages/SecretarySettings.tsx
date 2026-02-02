@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,16 +95,22 @@ export default function SecretarySettings() {
     );
   };
 
+  const navigate = useNavigate();
+
   const handleSave = async () => {
     const briefingValue = briefingEnabled ? briefingTime : "disabled";
     
-    await updateProfile({
+    const success = await updateProfile({
       secretary_name: secretaryName,
       secretary_gender: secretaryGender,
       secretary_tone: speakingStyle,
       briefing_frequency: briefingValue,
       priority_metrics: selectedMetrics,
     });
+    
+    if (success) {
+      navigate("/");
+    }
   };
 
   const getFrequencyLabel = (value: number) => {
