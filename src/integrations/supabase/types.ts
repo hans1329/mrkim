@@ -104,6 +104,39 @@ export type Database = {
         }
         Relationships: []
       }
+      service_faq: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          is_active: boolean
+          keywords: string[]
+          priority: number
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          priority?: number
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          priority?: number
+          question?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
