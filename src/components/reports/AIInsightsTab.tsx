@@ -106,9 +106,9 @@ export function AIInsightsTab() {
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             <img
-              src="/images/icc-blue.webp"
+              src="/images/icc.webp"
               alt="김비서"
-              className="h-12 w-12 rounded-full border-2 border-primary/30 bg-primary/10 p-1"
+              className="h-12 w-auto object-contain"
             />
             <div>
               <p className="font-semibold text-primary">김비서 AI 분석</p>
