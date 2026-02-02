@@ -29,6 +29,7 @@ import {
 export default function Profile() {
   const navigate = useNavigate();
   const { profile, loading, updating, updateProfile, updateSecretaryPhone } = useProfile();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   // 개인 정보 폼 상태
   const [name, setName] = useState("");
@@ -91,6 +92,45 @@ export default function Profile() {
     updateSecretaryPhone("", false);
     setSecretaryPhone("");
     setVerificationCode("");
+  };
+
+  // 로그아웃 처리
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    
+    setIsLoggingOut(true);
+    try {
+      // 세션 확인
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // 로그아웃 실행
+        const { error } = await supabase.auth.signOut();
+        
+        if (error) {
+          console.error("로그아웃 오류:", error);
+          toast.error("로그아웃 중 오류가 발생했습니다");
+          setIsLoggingOut(false);
+          return;
+        }
+      }
+      
+      // 로컬 스토리지 정리 (Supabase 관련 항목)
+      const keysToRemove = Object.keys(localStorage).filter(key => 
+        key.startsWith('sb-') || key.includes('supabase')
+      );
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      toast.success("로그아웃되었습니다");
+      
+      // 페이지 이동
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("로그아웃 처리 오류:", error);
+      toast.error("로그아웃 중 오류가 발생했습니다");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const getInitials = () => {
@@ -397,13 +437,15 @@ export default function Profile() {
         <Button 
           variant="ghost" 
           className="w-full gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-          onClick={async () => {
-            await supabase.auth.signOut();
-            navigate("/login");
-          }}
+          onClick={handleLogout}
+          disabled={isLoggingOut}
         >
-          <LogOut className="h-4 w-4" />
-          로그아웃
+          {isLoggingOut ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <LogOut className="h-4 w-4" />
+          )}
+          {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
         </Button>
       </div>
     </MainLayout>
