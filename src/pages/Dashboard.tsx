@@ -18,13 +18,18 @@ import {
 import { TrendingUp, TrendingDown, Wallet, PiggyBank } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function Dashboard() {
   const stats = getTodayStats();
   const isMobile = useIsMobile();
+  const { profile } = useProfile();
+  
+  // 닉네임 우선, 없으면 이름, 둘 다 없으면 "사장님"
+  const displayName = profile?.nickname || profile?.name || "사장님";
 
   return (
-    <MainLayout title="안녕하세요, 사장님 👋" subtitle="오늘도 김비서가 도와드릴게요">
+    <MainLayout title={`안녕하세요, ${displayName}님 👋`} subtitle="오늘도 김비서가 도와드릴게요">
       <div className="space-y-6">
         {/* 연동 상태 / 긴급 알림 배너 */}
         <ConnectionStatusBanner />
