@@ -44,7 +44,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="flex h-screen w-full bg-gradient-to-br from-primary/5 via-background to-secondary/10">
+    <div className="flex h-screen w-full overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/10">
       {/* 좌측 네비게이션 사이드바 */}
       <aside className={cn(
         "flex-shrink-0 border-r bg-card/50 backdrop-blur-sm flex flex-col transition-all duration-300",
