@@ -221,7 +221,7 @@ export function AIChatPanel() {
                     <img 
                       src="/images/icc-blue.webp" 
                       alt="처리 중" 
-                      className="h-6 w-6 animate-bounce"
+                      className="h-6 w-auto animate-bounce"
                     />
                     <span className="text-sm text-muted-foreground">처리 중...</span>
                   </div>
