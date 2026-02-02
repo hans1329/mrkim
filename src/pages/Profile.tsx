@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
+import { resizeAndCompressImage } from "@/lib/imageUtils";
 import {
   User,
   Phone,
@@ -30,6 +31,8 @@ export default function Profile() {
   const navigate = useNavigate();
   const { profile, loading, updating, updateProfile, updateSecretaryPhone } = useProfile();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // 개인 정보 폼 상태
   const [name, setName] = useState("");
@@ -54,6 +57,65 @@ export default function Profile() {
   // 개인 정보 저장
   const handleSavePersonalInfo = async () => {
     await updateProfile({ name, nickname });
+  };
+
+  // 프로필 이미지 업로드
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 이미지 파일 확인
+    if (!file.type.startsWith("image/")) {
+      toast.error("이미지 파일만 업로드 가능합니다");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("로그인이 필요합니다");
+
+      // 이미지 압축 (최대 400px, WebP)
+      const compressedFile = await resizeAndCompressImage(file, {
+        maxSize: 400,
+        quality: 0.85,
+        format: "image/webp",
+      });
+
+      // 기존 아바타 삭제
+      if (profile?.avatar_url) {
+        const oldPath = profile.avatar_url.split("/").slice(-2).join("/");
+        await supabase.storage.from("user-avatars").remove([oldPath]);
+      }
+
+      // 새 아바타 업로드
+      const fileName = `${user.id}/avatar-${Date.now()}.webp`;
+      const { error: uploadError } = await supabase.storage
+        .from("user-avatars")
+        .upload(fileName, compressedFile, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // 공개 URL 가져오기
+      const { data: { publicUrl } } = supabase.storage
+        .from("user-avatars")
+        .getPublicUrl(fileName);
+
+      // 프로필 업데이트
+      await updateProfile({ avatar_url: publicUrl });
+      toast.success("프로필 사진이 변경되었습니다");
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      toast.error("프로필 사진 업로드에 실패했습니다");
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   // 인증번호 발송 (UI만 - 실제 연동은 Edge Function)
@@ -187,17 +249,34 @@ export default function Profile() {
             <div className="flex flex-col items-center">
               <div className="relative">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={profile.avatar_url || undefined} alt="프로필" />
+                  <AvatarImage 
+                    src={profile.avatar_url || undefined} 
+                    alt="프로필" 
+                    className="object-cover"
+                  />
                   <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                     {getInitials()}
                   </AvatarFallback>
                 </Avatar>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
                 <Button
                   size="icon"
                   variant="secondary"
                   className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full shadow-md"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
                 >
-                  <Camera className="h-4 w-4" />
+                  {isUploadingAvatar ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
               <h2 className="mt-4 text-xl font-bold">{profile.name || profile.nickname || "이름 없음"}</h2>
