@@ -67,7 +67,7 @@ export function useProfile() {
     }
   };
 
-  const updateProfile = async (updates: Partial<Profile>) => {
+  const updateProfile = async (updates: Partial<Profile>, showToast = true) => {
     try {
       setUpdating(true);
       
@@ -82,7 +82,9 @@ export function useProfile() {
       if (error) throw error;
       
       setProfile(prev => prev ? { ...prev, ...updates } : null);
-      toast.success("프로필이 저장되었습니다");
+      if (showToast) {
+        toast.success("프로필이 저장되었습니다");
+      }
       return true;
     } catch (error) {
       console.error("Error updating profile:", error);

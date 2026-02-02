@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProfile } from "@/hooks/useProfile";
+import { toast } from "sonner";
 
 const genderOptions = [
   { id: "female", label: "여성", icon: "👩" },
@@ -106,9 +107,10 @@ export default function SecretarySettings() {
       secretary_tone: speakingStyle,
       briefing_frequency: briefingValue,
       priority_metrics: selectedMetrics,
-    });
+    }, false); // 기본 toast 비활성화
     
     if (success) {
+      toast.success(`${secretaryName} 설정이 저장되었습니다`);
       navigate("/");
     }
   };
