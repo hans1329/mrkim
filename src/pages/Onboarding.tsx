@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useOnboarding, type OnboardingStep } from "@/hooks/useOnboarding";
 import { CardConnectionFlow } from "@/components/onboarding/CardConnectionFlow";
-const characterImg = "/images/icc.webp";
+const characterImg = "/images/icc-5.webp";
 
 const steps: { key: OnboardingStep; title: string; icon: typeof Building2 }[] = [
   { key: "welcome", title: "시작", icon: Building2 },
