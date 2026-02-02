@@ -27,6 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { resizeAndCompressImage } from "@/lib/imageUtils";
 
 const genderOptions = [
   { id: "female", label: "여성", icon: "👩" },
@@ -95,9 +96,9 @@ export default function SecretarySettings() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // 파일 크기 체크 (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("파일 크기는 5MB 이하여야 합니다");
+    // 파일 크기 체크 (10MB - 압축 전 허용)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("파일 크기는 10MB 이하여야 합니다");
       return;
     }
 
@@ -116,16 +117,23 @@ export default function SecretarySettings() {
         return;
       }
 
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}/secretary-avatar.${fileExt}`;
+      // 이미지 리사이즈 및 압축 (400x400, WebP, 80% 품질)
+      const compressedFile = await resizeAndCompressImage(file, {
+        maxWidth: 400,
+        maxHeight: 400,
+        quality: 0.8,
+        format: "image/webp",
+      });
+
+      const fileName = `${user.id}/secretary-avatar.webp`;
 
       // 기존 파일 삭제 시도 (에러 무시)
       await supabase.storage.from("secretary-avatars").remove([fileName]);
 
-      // 새 파일 업로드
+      // 압축된 파일 업로드
       const { error: uploadError } = await supabase.storage
         .from("secretary-avatars")
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, compressedFile, { upsert: true });
 
       if (uploadError) throw uploadError;
 
