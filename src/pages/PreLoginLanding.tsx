@@ -166,7 +166,7 @@ const PreLoginLanding = () => {
               }}>
                   <div className="flex items-center gap-2">
                     <Bot className="h-5 w-5" />
-                    <span className="text-sm font-medium">부가세 320만원 예정</span>
+                    <span className="text-sm font-medium">부가세 320만원 예정 입니다</span>
                   </div>
                 </div>
               </div>
