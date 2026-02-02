@@ -27,6 +27,7 @@ import DesignGuide from "./pages/DesignGuide";
 import Engine from "./pages/Engine";
 import NotFound from "./pages/NotFound";
 // Admin pages
+import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminFAQ from "./pages/admin/AdminFAQ";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -63,6 +64,7 @@ const App = () => (
                 <Route path="/design" element={<DesignGuide />} />
                 <Route path="/engine" element={<Engine />} />
                 {/* Admin Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/faq" element={<AdminFAQ />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
