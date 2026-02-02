@@ -501,16 +501,16 @@ const PreLoginLanding = () => {
                 <p>소재지: 서울 서초구 서초동 1338-12</p>
                 <p>사업자등록번호: 692-86-03042</p>
                 <p>통신판매업신고번호: 2023-서울중구-0345</p>
-                <a href="mailto:hajin@thenexa.io" className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors">
-                  <Mail className="h-4 w-4" />
-                  <span>hajin@thenexa.io</span>
-                </a>
               </div>
               
-              {/* Social Links */}
+              {/* Contact Us */}
               <div className="space-y-2">
-                <p className="font-medium text-sm">Follow Us</p>
+                <p className="font-medium text-sm">Contact Us</p>
                 <div className="flex items-center gap-3">
+                  {/* 이메일 */}
+                  <a href="mailto:hajin@thenexa.io" className="w-9 h-9 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-opacity" aria-label="이메일">
+                    <Mail className="w-5 h-5" />
+                  </a>
                   {/* 카카오톡 */}
                   <a href="#" className="w-9 h-9 flex items-center justify-center rounded-full bg-[#FEE500] text-[#3C1E1E] hover:opacity-80 transition-opacity" aria-label="카카오톡">
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
