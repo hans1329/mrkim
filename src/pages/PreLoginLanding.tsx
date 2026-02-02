@@ -111,7 +111,7 @@ const PreLoginLanding = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden flex-1 flex items-center bg-background">
+      <section className="relative overflow-hidden flex-1 flex items-center bg-gradient-to-b from-background to-muted/20">
         <div className="max-w-4xl mx-auto px-4 py-12 lg:py-16">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-center">
             {/* Left: Text Content */}
