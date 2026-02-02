@@ -15,7 +15,7 @@ export function useAdminAuth() {
         
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          navigate("/login");
+          navigate("/admin/login", { replace: true });
           return;
         }
 
@@ -30,15 +30,15 @@ export function useAdminAuth() {
         if (error) throw error;
 
         if (!data) {
-          // Not an admin, redirect to home
-          navigate("/");
+          // Not an admin, redirect to admin login
+          navigate("/admin/login", { replace: true });
           return;
         }
 
         setIsAdmin(true);
       } catch (error) {
         console.error("Error checking admin role:", error);
-        navigate("/");
+        navigate("/admin/login", { replace: true });
       } finally {
         setLoading(false);
       }
