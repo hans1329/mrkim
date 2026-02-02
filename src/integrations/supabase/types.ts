@@ -119,6 +119,60 @@ export type Database = {
         }
         Relationships: []
       }
+      connected_accounts: {
+        Row: {
+          account_alias: string | null
+          account_holder: string | null
+          account_number: string
+          account_type: string
+          bank_code: string
+          bank_name: string
+          codef_account_id: string | null
+          codef_connected: boolean | null
+          created_at: string
+          hyphen_connected: boolean | null
+          hyphen_consent_at: string | null
+          id: string
+          is_active: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_alias?: string | null
+          account_holder?: string | null
+          account_number: string
+          account_type?: string
+          bank_code: string
+          bank_name: string
+          codef_account_id?: string | null
+          codef_connected?: boolean | null
+          created_at?: string
+          hyphen_connected?: boolean | null
+          hyphen_consent_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_alias?: string | null
+          account_holder?: string | null
+          account_number?: string
+          account_type?: string
+          bank_code?: string
+          bank_name?: string
+          codef_account_id?: string | null
+          codef_connected?: boolean | null
+          created_at?: string
+          hyphen_connected?: boolean | null
+          hyphen_consent_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
