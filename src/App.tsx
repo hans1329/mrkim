@@ -31,6 +31,10 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminFAQ from "./pages/admin/AdminFAQ";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
+import AdminPush from "./pages/admin/AdminPush";
+import AdminFeedback from "./pages/admin/AdminFeedback";
+import AdminApiUsage from "./pages/admin/AdminApiUsage";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +72,10 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/faq" element={<AdminFAQ />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/admin/announcements" element={<AdminAnnouncements />} />
+                <Route path="/admin/push" element={<AdminPush />} />
+                <Route path="/admin/feedback" element={<AdminFeedback />} />
+                <Route path="/admin/api-usage" element={<AdminApiUsage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
