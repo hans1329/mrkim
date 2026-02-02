@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Mail, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { WelcomeModal } from "@/components/auth/WelcomeModal";
 const iccLogo = "/images/icc-2.webp";
 
 export default function Signup() {
@@ -17,6 +18,7 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   const handleGoogleSignup = async () => {
     setIsLoading(true);
@@ -78,15 +80,20 @@ export default function Signup() {
       return;
     }
     
-    // 세션이 있으면 바로 진입 (이메일 인증 비활성화 시)
+    // 세션이 있으면 축하 모달 표시 (이메일 인증 비활성화 시)
     if (data.session) {
-      toast.success("회원가입 성공!");
-      navigate("/");
+      setIsLoading(false);
+      setShowWelcome(true);
     } else {
       // 이메일 인증이 필요한 경우
       toast.success("회원가입 성공! 이메일을 확인해주세요.");
       navigate("/login");
     }
+  };
+
+  const handleStartApp = () => {
+    setShowWelcome(false);
+    navigate("/");
   };
 
   return (
@@ -305,6 +312,13 @@ export default function Signup() {
           © 2024 김비서. All rights reserved.
         </p>
       </footer>
+
+      {/* 가입 축하 모달 */}
+      <WelcomeModal 
+        open={showWelcome} 
+        userName={name} 
+        onStart={handleStartApp} 
+      />
     </div>
   );
 }
