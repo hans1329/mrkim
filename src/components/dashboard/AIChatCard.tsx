@@ -153,7 +153,7 @@ export function AIChatCard() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/secretary-settings")}
-              className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors overflow-hidden"
+              className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors overflow-hidden"
             >
               {secretaryAvatarUrl ? (
                 <img 
@@ -162,7 +162,7 @@ export function AIChatCard() {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <Bot className="h-6 w-6 text-white" />
+                <Bot className="h-8 w-8 text-white" />
               )}
               <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 flex items-center justify-center">
                 <Settings className="h-3 w-3 text-white/80" />
