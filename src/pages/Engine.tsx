@@ -12,8 +12,10 @@ import {
   Shield,
   ArrowRight,
   Database,
-  Zap
+  Zap,
+  ExternalLink
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Engine() {
   return (
@@ -268,13 +270,31 @@ export default function Engine() {
               <CardHeader>
                 <CardTitle className="text-base">기술 스택</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="flex flex-wrap gap-2">
                   <Badge>Gemini API</Badge>
                   <Badge variant="secondary">Edge Functions (Lambda)</Badge>
                   <Badge variant="secondary">Codef API</Badge>
                   <Badge variant="secondary">PostgreSQL</Badge>
                   <Badge variant="outline">Realtime</Badge>
+                </div>
+                
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground mb-2">API 키 발급</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                        Gemini API
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                        ElevenLabs API
+                      </a>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
