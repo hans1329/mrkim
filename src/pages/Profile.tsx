@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   User,
   Phone,
@@ -14,10 +17,52 @@ import {
   Camera,
   Building2,
   Home,
+  Bot,
+  ShieldCheck,
+  Loader2,
 } from "lucide-react";
 
 export default function Profile() {
   const navigate = useNavigate();
+  
+  // 김비서 연락용 번호 상태
+  const [secretaryPhone, setSecretaryPhone] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isVerified, setIsVerified] = useState(false);
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // 인증번호 발송 (UI만 - 실제 연동은 Edge Function)
+  const handleSendCode = async () => {
+    if (!secretaryPhone || secretaryPhone.length < 10) {
+      toast.error("올바른 전화번호를 입력해주세요");
+      return;
+    }
+    
+    setIsSending(true);
+    // TODO: Twilio Verify API 연동
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setIsSending(false);
+    setIsCodeSent(true);
+    toast.success("인증번호가 발송되었습니다");
+  };
+
+  // 인증번호 확인 (UI만)
+  const handleVerifyCode = async () => {
+    if (verificationCode.length !== 6) {
+      toast.error("6자리 인증번호를 입력해주세요");
+      return;
+    }
+    
+    setIsVerifying(true);
+    // TODO: Twilio Verify API 확인 연동
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setIsVerifying(false);
+    setIsVerified(true);
+    setIsCodeSent(false);
+    toast.success("전화번호가 인증되었습니다");
+  };
 
   return (
     <MainLayout title="내 프로필" subtitle="프로필 정보를 관리하세요" showBackButton>
@@ -65,6 +110,117 @@ export default function Profile() {
               <Input defaultValue="맛집사장님" placeholder="앱에서 표시될 이름" />
             </div>
             <Button className="w-full">저장</Button>
+          </CardContent>
+        </Card>
+
+        {/* 김비서 연락용 번호 */}
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base">김비서 연락 번호</CardTitle>
+              </div>
+              {isVerified && (
+                <Badge variant="secondary" className="gap-1 bg-green-100 text-green-700">
+                  <ShieldCheck className="h-3 w-3" />
+                  인증됨
+                </Badge>
+              )}
+            </div>
+            <CardDescription className="text-xs">
+              김비서가 브리핑, 긴급 알림 등을 전화로 알려드릴 번호입니다
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!isVerified ? (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-xs">전화번호</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="tel"
+                      placeholder="01012345678"
+                      value={secretaryPhone}
+                      onChange={(e) => setSecretaryPhone(e.target.value.replace(/\D/g, ""))}
+                      disabled={isCodeSent}
+                      className="flex-1"
+                    />
+                    <Button 
+                      variant="outline" 
+                      onClick={handleSendCode}
+                      disabled={isSending || isCodeSent}
+                    >
+                      {isSending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : isCodeSent ? (
+                        "발송됨"
+                      ) : (
+                        "인증요청"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                
+                {isCodeSent && (
+                  <div className="space-y-2">
+                    <Label className="text-xs">인증번호 (6자리)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        placeholder="000000"
+                        maxLength={6}
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
+                        className="flex-1 tracking-widest text-center font-mono"
+                      />
+                      <Button onClick={handleVerifyCode} disabled={isVerifying}>
+                        {isVerifying ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "확인"
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      인증번호가 오지 않나요?{" "}
+                      <button 
+                        className="text-primary underline"
+                        onClick={() => {
+                          setIsCodeSent(false);
+                          setVerificationCode("");
+                        }}
+                      >
+                        다시 보내기
+                      </button>
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                  <Phone className="h-4 w-4 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    {secretaryPhone.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">김비서 브리핑/알림 수신 번호</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setIsVerified(false);
+                    setSecretaryPhone("");
+                    setVerificationCode("");
+                  }}
+                >
+                  변경
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
