@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useServiceChat } from "@/contexts/ServiceChatContext";
-const chatbotIcon = "/images/icc-blue.webp";
+const chatbotIcon = "/images/icc-5.webp";
 
 export function FloatingServiceChatButton() {
   const { isVoiceOpen, isChatOpen, openVoice } = useServiceChat();
@@ -10,10 +10,10 @@ export function FloatingServiceChatButton() {
   return (
     <Button
       onClick={openVoice}
-      className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:scale-105 transition-transform z-40 bg-white hover:bg-white/90 p-1 animate-bounce-subtle"
+      className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:scale-105 transition-transform z-40 bg-primary hover:bg-primary/90 p-1 animate-bounce-subtle"
       size="icon"
     >
-      <img src={chatbotIcon} alt="김비서" className="h-12 w-12 object-contain" />
+      <img src={chatbotIcon} alt="김비서" className="h-12 w-12 object-contain opacity-90" />
     </Button>
   );
 }
