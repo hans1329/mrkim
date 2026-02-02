@@ -23,10 +23,10 @@ import { useProfile } from "@/hooks/useProfile";
 export default function Dashboard() {
   const stats = getTodayStats();
   const isMobile = useIsMobile();
-  const { profile } = useProfile();
+  const { profile, loading } = useProfile();
   
-  // 닉네임 우선, 없으면 이름, 둘 다 없으면 "사장님"
-  const displayName = profile?.nickname || profile?.name || "사장님";
+  // 로딩 중이면 빈 문자열로 깜빡임 방지, 완료되면 닉네임 > 이름 > "사장님" 순서
+  const displayName = loading ? "" : (profile?.nickname || profile?.name || "사장님");
 
   return (
     <MainLayout title={`안녕하세요, ${displayName}님 👋`} subtitle="오늘도 김비서가 도와드릴게요">
