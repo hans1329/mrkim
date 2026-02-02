@@ -82,7 +82,7 @@ export default function Engine() {
           {/* 핵심 모듈 */}
           <Card>
             <CardHeader>
-              <CardTitle>핵심 모듈 구성</CardTitle>
+              <CardTitle>AI 엔진 핵심 모듈 구성</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               
