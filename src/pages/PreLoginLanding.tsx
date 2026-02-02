@@ -8,6 +8,7 @@ import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
 import logo from "@/assets/icc-3.webp";
 import logoWhite from "@/assets/icc-white.webp";
+import iccBlue from "@/assets/icc-blue.webp";
 
 const PreLoginLanding = () => {
   const navigate = useNavigate();
@@ -128,7 +129,7 @@ const PreLoginLanding = () => {
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                 <Button size="lg" className="h-14 px-8 text-lg font-bold gap-2 rounded-xl" onClick={() => navigate("/login")}>
-                  <Bot className="h-5 w-5" />
+                  <img src={iccBlue} alt="김비서" className="h-6 w-auto" />
                   무료로 시작하기
                   <ArrowRight className="h-5 w-5" />
                 </Button>
