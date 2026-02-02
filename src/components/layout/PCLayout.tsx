@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
@@ -42,6 +42,14 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
   const { openVoice, isOpen: isVoiceOpen } = useVoice();
   const { isOpen: isChatOpen } = useChat();
   const [collapsed, setCollapsed] = useState(false);
+
+  // PC에서는 body 스크롤 비활성화 (main만 스크롤)
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/10">
