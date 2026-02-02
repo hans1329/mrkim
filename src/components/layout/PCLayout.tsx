@@ -20,7 +20,7 @@ import { useChat } from "@/contexts/ChatContext";
 import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
 import { AIChatPanel } from "@/components/chat/AIChatPanel";
 const chaltteokImage = "/images/icc-4.webp";
-const chatbotIcon = "/images/icc-blue.webp";
+const chatbotIcon = "/images/icc-5.webp";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
@@ -205,9 +205,9 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           <Button
             onClick={openVoice}
             size="lg"
-            className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-white hover:bg-white/90 p-1 animate-bounce-subtle"
+            className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-primary hover:bg-primary/90 p-2 animate-bounce-subtle"
           >
-            <img src={chatbotIcon} alt="김비서" className="h-12 w-12 object-contain" />
+            <img src={chatbotIcon} alt="김비서" className="h-10 w-auto object-contain opacity-80" />
           </Button>
         )}
       </main>

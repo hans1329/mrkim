@@ -342,14 +342,10 @@ export function FloatingChatButton() {
   return (
     <Button
       onClick={openChat}
-      className="absolute bottom-20 right-4 h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform z-40 bg-primary hover:bg-primary/90"
+      className="absolute bottom-20 right-4 h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform z-40"
       size="icon"
     >
-      <img 
-        src="/images/icc-5.webp" 
-        alt="채팅" 
-        className="h-8 w-auto object-contain opacity-80"
-      />
+      <MessageCircle className="h-6 w-6" />
     </Button>
   );
 }
