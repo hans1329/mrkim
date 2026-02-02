@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Bot, ArrowRight, Shield, Zap, TrendingUp, Calculator, Users, FileText, Phone, MessageCircle, Link2, Sparkles, CheckCircle2, Star } from "lucide-react";
+import { Bot, ArrowRight, Shield, Zap, TrendingUp, Calculator, Users, FileText, Phone, MessageCircle, Link2, Sparkles, CheckCircle2, Star, Mail } from "lucide-react";
 import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
@@ -494,12 +494,17 @@ const PreLoginLanding = () => {
                 <p className="text-sm text-muted-foreground"> AI 기반 경영 비서 서비스</p>
               </div>
               
-              {/* Contact Info */}
+              {/* Business Info */}
               <div className="space-y-1 text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">Contact</p>
-                <p>contact@kimsecretary.com</p>
-                <p>1588-0000</p>
-                <p>서울 서초구 서초동 1338-12</p>
+                <p className="font-medium text-foreground">상호: 주식회사 더김비서</p>
+                <p>개인정보책임자: 송하진</p>
+                <p>소재지: 서울 서초구 서초동 1338-12</p>
+                <p>사업자등록번호: 692-86-03042</p>
+                <p>통신판매업신고번호: 2023-서울중구-0345</p>
+                <a href="mailto:hajin@thenexa.io" className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors">
+                  <Mail className="h-4 w-4" />
+                  <span>hajin@thenexa.io</span>
+                </a>
               </div>
               
               {/* Social Links */}
