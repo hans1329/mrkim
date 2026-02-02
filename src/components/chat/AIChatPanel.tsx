@@ -34,7 +34,8 @@ export function AIChatPanel() {
     resetChat, 
     startNewChat,
     loadMessagesByDate,
-    secretaryName 
+    secretaryName,
+    secretaryAvatarUrl,
   } = useAIChat();
   const [input, setInput] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -92,8 +93,16 @@ export function AIChatPanel() {
           {/* Header */}
           <div className="flex items-center justify-between border-b bg-primary px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20">
-                <Bot className="h-5 w-5 text-primary-foreground" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 overflow-hidden">
+                {secretaryAvatarUrl ? (
+                  <img 
+                    src={secretaryAvatarUrl} 
+                    alt={secretaryName} 
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Bot className="h-5 w-5 text-primary-foreground" />
+                )}
               </div>
               <div>
                 <h3 className="font-semibold text-primary-foreground">{secretaryName}</h3>

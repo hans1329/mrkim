@@ -39,6 +39,7 @@ export function useAIChat() {
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
+  const secretaryAvatarUrl = (profile as any)?.secretary_avatar_url || null;
 
   // 세션 목록 불러오기 (날짜별 그룹화)
   const loadSessions = useCallback(async () => {
@@ -318,5 +319,6 @@ export function useAIChat() {
     startNewChat,
     loadMessagesByDate,
     secretaryName,
+    secretaryAvatarUrl,
   };
 }
