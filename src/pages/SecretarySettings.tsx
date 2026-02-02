@@ -242,7 +242,7 @@ export default function SecretarySettings() {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Avatar className="h-20 w-20 border-2 border-primary/20">
-                  <AvatarImage src={secretaryAvatarUrl || ""} />
+                  <AvatarImage src={secretaryAvatarUrl || ""} className="object-contain" />
                   <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-2xl">
                     <Bot className="h-10 w-10" />
                   </AvatarFallback>
