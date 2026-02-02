@@ -1,43 +1,25 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, X, MessageCircle, Sparkles, CheckCircle, XCircle } from "lucide-react";
+import { Bot, Send, X, MessageCircle, Sparkles, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { generateAgentResponse, ExecutionResult } from "@/lib/aiAgent";
 import ReactMarkdown from "react-markdown";
 import { useChat } from "@/contexts/ChatContext";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-  executionResult?: ExecutionResult;
-  awaitingConfirmation?: boolean;
-}
+import { useAIChat } from "@/hooks/useAIChat";
 
 const quickCommands = [
   "오늘 매출 얼마야?",
   "부가세 현황 확인",
   "직원 목록 보여줘",
-  "김민수 퇴사 처리해줘",
-  "남는 돈 파킹통장으로 옮겨",
+  "이번 달 경영 현황 알려줘",
+  "할 일 뭐 있어?",
 ];
 
 export function AIChatPanel() {
   const { isOpen, closeChat } = useChat();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: "안녕하세요, **김비서**입니다! 👋\n\n사장님의 업무를 도와드릴게요.\n\n💡 **추천 명령**:\n• \"오늘 매출 알려줘\"\n• \"직원 목록 보여줘\"\n• \"부가세 현황 확인\"",
-      timestamp: new Date(),
-    },
-  ]);
+  const { messages, isLoading, sendMessage, resetChat, secretaryName } = useAIChat();
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [pendingConfirmation, setPendingConfirmation] = useState<ExecutionResult | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,63 +29,10 @@ export function AIChatPanel() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    if (!input.trim() || isLoading) return;
+    const userInput = input;
     setInput("");
-    setIsTyping(true);
-
-    await new Promise((resolve) => setTimeout(resolve, 600 + Math.random() * 400));
-
-    const response = generateAgentResponse(input);
-    const assistantMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      role: "assistant",
-      content: response.message,
-      timestamp: new Date(),
-      executionResult: response.executionResult,
-      awaitingConfirmation: response.executionResult?.requiresConfirmation,
-    };
-
-    if (response.executionResult?.requiresConfirmation) {
-      setPendingConfirmation(response.executionResult);
-    }
-
-    setMessages((prev) => [...prev, assistantMessage]);
-    setIsTyping(false);
-  };
-
-  const handleConfirmAction = async (confirmed: boolean) => {
-    if (!pendingConfirmation) return;
-
-    setIsTyping(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const resultMessage: Message = {
-      id: Date.now().toString(),
-      role: "assistant",
-      content: confirmed 
-        ? pendingConfirmation.message 
-        : "❌ 작업이 취소되었습니다.",
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => {
-      const updated = prev.map((msg) => 
-        msg.awaitingConfirmation ? { ...msg, awaitingConfirmation: false } : msg
-      );
-      return [...updated, resultMessage];
-    });
-
-    setPendingConfirmation(null);
-    setIsTyping(false);
+    await sendMessage(userInput);
   };
 
   const handleQuickCommand = (command: string) => {
@@ -124,23 +53,51 @@ export function AIChatPanel() {
             <Bot className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <h3 className="font-semibold text-primary-foreground">김비서</h3>
+            <h3 className="font-semibold text-primary-foreground">{secretaryName}</h3>
             <p className="text-xs text-primary-foreground/70">AI 경영 비서</p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={closeChat}
-          className="text-primary-foreground hover:bg-primary-foreground/20"
-        >
-          <X className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={resetChat}
+            className="text-primary-foreground hover:bg-primary-foreground/20"
+            title="대화 초기화"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={closeChat}
+            className="text-primary-foreground hover:bg-primary-foreground/20"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
+          {/* 환영 메시지 (메시지가 없을 때) */}
+          {messages.length === 0 && (
+            <div className="flex justify-start animate-fade-in">
+              <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-muted/60 text-foreground rounded-bl-md">
+                <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                  <p>안녕하세요, <strong>{secretaryName}</strong>입니다! 👋</p>
+                  <p>사장님의 업무를 도와드릴게요.</p>
+                  <p>💡 <strong>추천 명령</strong>:</p>
+                  <ul>
+                    <li>"오늘 매출 알려줘"</li>
+                    <li>"직원 목록 보여줘"</li>
+                    <li>"부가세 현황 확인"</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
           {messages.map((message) => (
             <div
               key={message.id}
@@ -164,33 +121,10 @@ export function AIChatPanel() {
                 ) : (
                   <p className="whitespace-pre-wrap text-sm">{message.content}</p>
                 )}
-                
-                {/* 확인 버튼 */}
-                {message.awaitingConfirmation && pendingConfirmation && (
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-border/50">
-                    <Button
-                      size="sm"
-                      onClick={() => handleConfirmAction(true)}
-                      className="flex-1 gap-1"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      확인
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleConfirmAction(false)}
-                      className="flex-1 gap-1"
-                    >
-                      <XCircle className="h-4 w-4" />
-                      취소
-                    </Button>
-                  </div>
-                )}
               </div>
             </div>
           ))}
-          {isTyping && (
+          {isLoading && (
             <div className="flex justify-start">
               <div className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3">
                 <Sparkles className="h-4 w-4 animate-pulse-soft text-primary" />
@@ -230,14 +164,14 @@ export function AIChatPanel() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="김비서에게 명령하세요..."
+            placeholder={`${secretaryName}에게 명령하세요...`}
             className="flex-1"
-            disabled={isTyping || !!pendingConfirmation}
+            disabled={isLoading}
           />
           <Button 
             type="submit" 
             size="icon" 
-            disabled={!input.trim() || isTyping || !!pendingConfirmation}
+            disabled={!input.trim() || isLoading}
           >
             <Send className="h-4 w-4" />
           </Button>
