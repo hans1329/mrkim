@@ -61,7 +61,7 @@ export default function Signup() {
     
     setIsLoading(true);
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
@@ -78,8 +78,15 @@ export default function Signup() {
       return;
     }
     
-    toast.success("회원가입 성공! 이메일을 확인해주세요.");
-    navigate("/login");
+    // 세션이 있으면 바로 진입 (이메일 인증 비활성화 시)
+    if (data.session) {
+      toast.success("회원가입 성공!");
+      navigate("/");
+    } else {
+      // 이메일 인증이 필요한 경우
+      toast.success("회원가입 성공! 이메일을 확인해주세요.");
+      navigate("/login");
+    }
   };
 
   return (
