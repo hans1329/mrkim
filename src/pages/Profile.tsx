@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import {
   Bot,
   ShieldCheck,
   Loader2,
+  LogOut,
 } from "lucide-react";
 
 export default function Profile() {
@@ -389,6 +391,19 @@ export default function Profile() {
         >
           <Home className="h-4 w-4" />
           홈으로 가기
+        </Button>
+
+        {/* 로그아웃 */}
+        <Button 
+          variant="ghost" 
+          className="w-full gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+          onClick={async () => {
+            await supabase.auth.signOut();
+            navigate("/login");
+          }}
+        >
+          <LogOut className="h-4 w-4" />
+          로그아웃
         </Button>
       </div>
     </MainLayout>
