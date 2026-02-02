@@ -4,9 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bot, Send, Sparkles, MessageCircle, RotateCcw, Clock, Settings } from "lucide-react";
+import { Bot, Send, Sparkles, Mic, RotateCcw, Clock, Settings } from "lucide-react";
 import { getTodayStats, mockDeposits, mockAutoTransfers, mockEmployees, formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
+import { useVoice } from "@/contexts/VoiceContext";
 import { useProfile } from "@/hooks/useProfile";
 
 const quickPrompts = [
@@ -129,6 +130,7 @@ const generateQuickResponse = (input: string): string => {
 export function AIChatCard() {
   const navigate = useNavigate();
   const { openChat } = useChat();
+  const { openVoice } = useVoice();
   const { profile, loading: profileLoading } = useProfile();
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<string | null>(null);
@@ -227,10 +229,10 @@ export function AIChatCard() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={openChat}
+            onClick={openVoice}
             className="gap-1.5 bg-white/20 hover:bg-white/30 text-white border border-white/40 backdrop-blur-sm"
           >
-            <MessageCircle className="h-4 w-4" />
+            <Mic className="h-4 w-4" />
             대화
           </Button>
         </div>
