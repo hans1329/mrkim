@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,9 @@ const interestMetrics = [
 ];
 
 export default function SecretarySettings() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromChat = searchParams.get("from") === "chat";
   const { profile, loading, updating, updateProfile } = useProfile();
   
   const [speakingStyle, setSpeakingStyle] = useState("friendly");
@@ -90,7 +93,6 @@ export default function SecretarySettings() {
     );
   };
 
-  const navigate = useNavigate();
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -176,15 +178,30 @@ export default function SecretarySettings() {
     
     if (success) {
       toast.success(`${secretaryName} 설정이 저장되었습니다`);
-      navigate("/");
+      // 채팅에서 왔으면 채팅 열린 상태로 돌아가기
+      if (fromChat) {
+        navigate("/?openChat=true");
+      } else {
+        navigate("/");
+      }
     } else {
       toast.error("설정 저장에 실패했습니다");
     }
   };
 
+  const handleBack = () => {
+    if (fromChat) {
+      navigate("/?openChat=true");
+    } else if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
+
   if (loading) {
     return (
-      <MainLayout title="김비서 설정" subtitle="나만의 AI 비서를 커스터마이징하세요" showBackButton>
+      <MainLayout title="김비서 설정" subtitle="나만의 AI 비서를 커스터마이징하세요" showBackButton onBack={handleBack}>
         <div className="space-y-6 pb-8">
           <Card>
             <CardHeader>
@@ -213,7 +230,7 @@ export default function SecretarySettings() {
 
   if (!profile) {
     return (
-      <MainLayout title="김비서 설정" subtitle="나만의 AI 비서를 커스터마이징하세요" showBackButton>
+      <MainLayout title="김비서 설정" subtitle="나만의 AI 비서를 커스터마이징하세요" showBackButton onBack={handleBack}>
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">로그인이 필요합니다</p>
@@ -227,7 +244,7 @@ export default function SecretarySettings() {
   }
 
   return (
-    <MainLayout title="김비서 설정" subtitle="나만의 AI 비서를 커스터마이징하세요" showBackButton>
+    <MainLayout title="김비서 설정" subtitle="나만의 AI 비서를 커스터마이징하세요" showBackButton onBack={handleBack}>
       <div className="space-y-6 pb-8">
         {/* 프로필 섹션 */}
         <Card>
