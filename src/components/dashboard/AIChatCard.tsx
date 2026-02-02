@@ -176,7 +176,7 @@ export function AIChatCard() {
               ) : (
                 <Skeleton className="h-5 w-16 bg-white/30" />
               )}
-              <p className="text-xs text-white/80">AI 경영 비서가 도와드릴게요</p>
+              <p className="text-xs text-white/80">당신의 AI 경영 비서</p>
             </div>
           </div>
           <Button
