@@ -4,6 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Bot, Send, X, MessageCircle, Sparkles, RotateCcw, History, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
@@ -40,6 +50,7 @@ export function AIChatPanel() {
     secretaryAvatarUrl,
   } = useAIChat();
   const [input, setInput] = useState("");
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -71,14 +82,31 @@ export function AIChatPanel() {
   const isViewingPastSession = selectedDate && !isToday(selectedDate);
 
   return (
-    <div
-      className={cn(
-        "absolute inset-0 z-50 flex flex-col bg-card transition-all duration-300",
-        isOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
-      )}
-    >
-      {/* 세션 목록 뷰 */}
-      {showSessionList && (
+    <>
+      {/* 대화 초기화 확인 모달 */}
+      <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <AlertDialogContent className="w-[calc(100%-2rem)] rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>대화를 초기화할까요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              현재 대화 내용이 모두 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={resetChat}>초기화</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div
+        className={cn(
+          "absolute inset-0 z-50 flex flex-col bg-card transition-all duration-300",
+          isOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
+        )}
+      >
+        {/* 세션 목록 뷰 */}
+        {showSessionList && (
         <ChatSessionList
           sessions={sessions}
           selectedDate={selectedDate}
@@ -143,7 +171,7 @@ export function AIChatPanel() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={resetChat}
+                  onClick={() => setShowResetConfirm(true)}
                   className="text-primary-foreground hover:bg-primary-foreground/20"
                   title="대화 초기화"
                 >
@@ -338,7 +366,8 @@ export function AIChatPanel() {
           </div>
         </>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 
