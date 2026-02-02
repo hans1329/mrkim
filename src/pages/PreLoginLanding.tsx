@@ -339,8 +339,19 @@ const PreLoginLanding = () => {
       {/* Wave Divider - Features to Social Proof */}
       <div className="relative -mb-1 bg-white dark:bg-card">
         <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-10 lg:h-16" preserveAspectRatio="none">
-          <path d="M0 0V60C120 75 240 85 360 80C480 75 600 55 720 50C840 45 960 55 1080 65C1200 75 1320 85 1380 90L1440 95V0H0Z" className="fill-white dark:fill-card" />
-          <path d="M0 120L80 110C160 100 320 80 480 70C640 60 800 60 960 65C1120 70 1280 80 1360 85L1440 90V120H0Z" className="fill-muted/30" />
+          {/* Fill the lower section color with a pronounced wave to ensure the divider stays visible */}
+          <path
+            d="M0 120V68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72V120H0Z"
+            className="fill-muted/30"
+          />
+          {/* Subtle stroke to prevent the wave from visually blending into adjacent blocks */}
+          <path
+            d="M0 68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72"
+            fill="none"
+            className="stroke-border/40"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          />
         </svg>
       </div>
 
