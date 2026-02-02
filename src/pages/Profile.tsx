@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { useProfile } from "@/hooks/useProfile";
 import {
   User,
   Phone,
@@ -24,14 +26,32 @@ import {
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { profile, loading, updating, updateProfile, updateSecretaryPhone } = useProfile();
+  
+  // 개인 정보 폼 상태
+  const [name, setName] = useState("");
+  const [nickname, setNickname] = useState("");
   
   // 김비서 연락용 번호 상태
   const [secretaryPhone, setSecretaryPhone] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
-  const [isVerified, setIsVerified] = useState(false);
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+
+  // 프로필 데이터 로드 시 폼 초기화
+  useEffect(() => {
+    if (profile) {
+      setName(profile.name || "");
+      setNickname(profile.nickname || "");
+      setSecretaryPhone(profile.secretary_phone || "");
+    }
+  }, [profile]);
+
+  // 개인 정보 저장
+  const handleSavePersonalInfo = async () => {
+    await updateProfile({ name, nickname });
+  };
 
   // 인증번호 발송 (UI만 - 실제 연동은 Edge Function)
   const handleSendCode = async () => {
@@ -58,11 +78,63 @@ export default function Profile() {
     setIsVerifying(true);
     // TODO: Twilio Verify API 확인 연동
     await new Promise(resolve => setTimeout(resolve, 1500));
+    await updateSecretaryPhone(secretaryPhone, true);
     setIsVerifying(false);
-    setIsVerified(true);
     setIsCodeSent(false);
-    toast.success("전화번호가 인증되었습니다");
+    setVerificationCode("");
   };
+
+  // 번호 변경 시작
+  const handleChangeNumber = () => {
+    updateSecretaryPhone("", false);
+    setSecretaryPhone("");
+    setVerificationCode("");
+  };
+
+  const getInitials = () => {
+    if (profile?.name) return profile.name.charAt(0);
+    if (profile?.nickname) return profile.nickname.charAt(0);
+    return "?";
+  };
+
+  if (loading) {
+    return (
+      <MainLayout title="내 프로필" subtitle="프로필 정보를 관리하세요" showBackButton>
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex flex-col items-center">
+                <Skeleton className="h-24 w-24 rounded-full" />
+                <Skeleton className="mt-4 h-6 w-24" />
+                <Skeleton className="mt-2 h-4 w-32" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <MainLayout title="내 프로필" subtitle="프로필 정보를 관리하세요" showBackButton>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground">로그인이 필요합니다</p>
+            <Button className="mt-4" onClick={() => navigate("/login")}>
+              로그인하기
+            </Button>
+          </CardContent>
+        </Card>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout title="내 프로필" subtitle="프로필 정보를 관리하세요" showBackButton>
@@ -73,9 +145,9 @@ export default function Profile() {
             <div className="flex flex-col items-center">
               <div className="relative">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src="/placeholder.svg" alt="프로필" />
+                  <AvatarImage src={profile.avatar_url || undefined} alt="프로필" />
                   <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                    사장
+                    {getInitials()}
                   </AvatarFallback>
                 </Avatar>
                 <Button
@@ -86,8 +158,10 @@ export default function Profile() {
                   <Camera className="h-4 w-4" />
                 </Button>
               </div>
-              <h2 className="mt-4 text-xl font-bold">김사장</h2>
-              <p className="text-sm text-muted-foreground">맛있는 식당 대표</p>
+              <h2 className="mt-4 text-xl font-bold">{profile.name || profile.nickname || "이름 없음"}</h2>
+              <p className="text-sm text-muted-foreground">
+                {profile.business_name || "사업장 미등록"}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -103,13 +177,28 @@ export default function Profile() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label className="text-xs">이름</Label>
-              <Input defaultValue="김사장" />
+              <Input 
+                value={name} 
+                onChange={(e) => setName(e.target.value)}
+                placeholder="이름을 입력하세요"
+              />
             </div>
             <div className="space-y-2">
               <Label className="text-xs">닉네임</Label>
-              <Input defaultValue="맛집사장님" placeholder="앱에서 표시될 이름" />
+              <Input 
+                value={nickname} 
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="앱에서 표시될 이름" 
+              />
             </div>
-            <Button className="w-full">저장</Button>
+            <Button 
+              className="w-full" 
+              onClick={handleSavePersonalInfo}
+              disabled={updating}
+            >
+              {updating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              저장
+            </Button>
           </CardContent>
         </Card>
 
@@ -121,7 +210,7 @@ export default function Profile() {
                 <Bot className="h-4 w-4 text-primary" />
                 <CardTitle className="text-base">김비서가 연락 할 번호</CardTitle>
               </div>
-              {isVerified && (
+              {profile.secretary_phone_verified && (
                 <Badge variant="secondary" className="gap-1 bg-green-100 text-green-700">
                   <ShieldCheck className="h-3 w-3" />
                   인증됨
@@ -133,7 +222,7 @@ export default function Profile() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!isVerified ? (
+            {!profile.secretary_phone_verified ? (
               <>
                 <div className="space-y-2">
                   <Label className="text-xs">전화번호</Label>
@@ -204,18 +293,14 @@ export default function Profile() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">
-                    {secretaryPhone.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")}
+                    {profile.secretary_phone?.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")}
                   </p>
                   <p className="text-xs text-muted-foreground">김비서 브리핑/알림 수신 번호</p>
                 </div>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => {
-                    setIsVerified(false);
-                    setSecretaryPhone("");
-                    setVerificationCode("");
-                  }}
+                  onClick={handleChangeNumber}
                 >
                   변경
                 </Button>
@@ -238,19 +323,10 @@ export default function Profile() {
                 <Phone className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">010-1234-5678</p>
+                <p className="text-sm font-medium">
+                  {profile.phone?.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3") || "미등록"}
+                </p>
                 <p className="text-xs text-muted-foreground">휴대폰</p>
-              </div>
-              <Button variant="outline" size="sm">수정</Button>
-            </div>
-            <Separator />
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">owner@restaurant.com</p>
-                <p className="text-xs text-muted-foreground">이메일</p>
               </div>
               <Button variant="outline" size="sm">수정</Button>
             </div>
@@ -271,8 +347,10 @@ export default function Profile() {
                 <Building2 className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">맛있는 식당</p>
-                <p className="text-xs text-muted-foreground">123-45-67890</p>
+                <p className="text-sm font-medium">{profile.business_name || "사업장 미등록"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {profile.business_registration_number || "사업자등록번호 미등록"}
+                </p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => navigate("/settings")}>
                 설정
@@ -288,7 +366,13 @@ export default function Profile() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">가입일</p>
-                <p className="text-sm font-medium">2024년 1월 15일</p>
+                <p className="text-sm font-medium">
+                  {new Date(profile.created_at).toLocaleDateString("ko-KR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
               </div>
             </div>
           </CardContent>
