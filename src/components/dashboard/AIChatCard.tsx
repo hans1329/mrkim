@@ -166,8 +166,8 @@ export function AIChatCard() {
                   <Bot className="h-8 w-8 text-white" />
                 )}
               </button>
-              <div className="absolute -bottom-1 -right-1 h-6 w-6 flex items-center justify-center bg-white/40 rounded-full backdrop-blur-sm shadow">
-                <Settings className="h-3.5 w-3.5 text-white" />
+              <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 flex items-center justify-center bg-black/20 rounded-full">
+                <Settings className="h-2.5 w-2.5 text-white/70" />
               </div>
             </div>
             <div>
