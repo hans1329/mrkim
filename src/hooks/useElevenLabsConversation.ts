@@ -67,9 +67,8 @@ export function useElevenLabsConversation() {
     };
   }, [firstMessage, systemPrompt]);
 
-  // ElevenLabs useConversation 훅
+  // ElevenLabs useConversation 훅 - overrides 없이 초기화 (startSession에서 전달)
   const conversation = useConversation({
-    overrides,
     onConnect: () => {
       console.log("Connected to ElevenLabs agent");
       setIsConnecting(false);
@@ -138,11 +137,12 @@ export function useElevenLabsConversation() {
         throw new Error(error?.message || "Signed URL을 가져오지 못했습니다.");
       }
 
-      console.log("Starting conversation with signed URL");
+      console.log("Starting conversation with signed URL and overrides");
 
-      // 대화 시작 (signedUrl 연결)
+      // 대화 시작 (signedUrl + overrides 함께 전달)
       await conversation.startSession({
         signedUrl: data.signedUrl,
+        overrides,
       });
       
     } catch (error: any) {
