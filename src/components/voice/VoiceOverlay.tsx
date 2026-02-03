@@ -118,8 +118,8 @@ export function VoiceOverlay() {
         </div>
       </ScrollArea>
 
-      {/* Voice Status Area */}
-      <div className="flex flex-col items-center py-8 px-6">
+      {/* Main Content - 화면 중앙 */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6">
         {/* 권한 거부 상태 */}
         {permissionDenied ? (
           <div className="flex flex-col items-center gap-4">
@@ -140,7 +140,7 @@ export function VoiceOverlay() {
           </div>
         ) : (
           <>
-            {/* 음성 시각화 */}
+            {/* 음성 시각화 - 마이크 버튼 */}
             <div className="relative mb-6">
               {/* 펄스 애니메이션 */}
               {isConnected && !isSpeaking && (
@@ -156,29 +156,31 @@ export function VoiceOverlay() {
                 </>
               )}
               
-              {/* 상태 아이콘 */}
-              <div
+              {/* 클릭 가능한 마이크 버튼 */}
+              <button
+                onClick={isConnected ? endSession : startSession}
+                disabled={isConnecting}
                 className={cn(
-                  "relative z-10 flex h-24 w-24 items-center justify-center rounded-full transition-all duration-300",
+                  "relative z-10 flex h-28 w-28 items-center justify-center rounded-full transition-all duration-300",
                   isConnecting
-                    ? "bg-white/30 text-white"
+                    ? "bg-white/30 text-white cursor-wait"
                     : isConnected && !isSpeaking
-                    ? "bg-white text-primary scale-110 shadow-2xl"
+                    ? "bg-white text-primary scale-110 shadow-2xl hover:scale-105"
                     : isConnected && isSpeaking
                     ? "bg-white/30 text-white"
-                    : "bg-white/20 text-white"
+                    : "bg-white/20 text-white hover:bg-white/30 hover:scale-105"
                 )}
               >
                 {isConnecting ? (
-                  <Loader2 className="h-10 w-10 animate-spin" />
+                  <Loader2 className="h-12 w-12 animate-spin" />
                 ) : isConnected && !isSpeaking ? (
-                  <Mic className="h-10 w-10" />
+                  <Mic className="h-12 w-12" />
                 ) : isSpeaking ? (
-                  <Sparkles className="h-10 w-10 animate-pulse" />
+                  <Sparkles className="h-12 w-12 animate-pulse" />
                 ) : (
-                  <MicOff className="h-10 w-10" />
+                  <Mic className="h-12 w-12" />
                 )}
-              </div>
+              </button>
             </div>
 
             {/* 상태 텍스트 */}
@@ -206,31 +208,19 @@ export function VoiceOverlay() {
                 ))}
               </div>
             )}
+
+            {/* 연결된 상태에서 종료 안내 */}
+            {isConnected && (
+              <p className="text-white/50 text-xs mt-4">
+                마이크를 다시 누르면 종료됩니다
+              </p>
+            )}
           </>
         )}
       </div>
 
       {/* Footer */}
       <div className="pb-[calc(env(safe-area-inset-bottom)+80px)] px-6 flex flex-col items-center gap-3">
-        {!permissionDenied && !isConnected && (
-          <Button
-            variant="outline"
-            onClick={startSession}
-            disabled={isConnecting}
-            className="border-white/30 text-white bg-white/10 hover:bg-white/20"
-          >
-            음성 시작
-          </Button>
-        )}
-        {isConnected && (
-          <Button
-            variant="outline"
-            onClick={endSession}
-            className="border-white/30 text-white bg-white/10 hover:bg-white/20"
-          >
-            대화 종료
-          </Button>
-        )}
         <Button
           variant="ghost"
           onClick={handleSwitchToChat}
