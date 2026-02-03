@@ -78,6 +78,34 @@ export function useElevenLabsConversation() {
     };
   }, [firstMessage, systemPrompt, voiceId]);
 
+  const formatDisconnectDetails = useCallback((details: any) => {
+    if (!details) return "";
+
+    const ctx = details?.context;
+    const code = (typeof ctx?.code === "number" ? ctx.code : undefined) ??
+      (typeof details?.code === "number" ? details.code : undefined);
+    const reason = (typeof ctx?.reason === "string" ? ctx.reason : undefined) ??
+      (typeof details?.reason === "string" ? details.reason : undefined);
+    const wasClean = (typeof ctx?.wasClean === "boolean" ? ctx.wasClean : undefined) ??
+      (typeof details?.wasClean === "boolean" ? details.wasClean : undefined);
+    const disconnectReason = typeof details?.reason === "string" ? details.reason : undefined;
+
+    const parts: string[] = [];
+    if (disconnectReason) parts.push(`reason=${disconnectReason}`);
+    if (code !== undefined) parts.push(`code=${code}`);
+    if (reason) parts.push(`closeReason=${reason}`);
+    if (wasClean !== undefined) parts.push(`clean=${wasClean}`);
+
+    if (parts.length) return parts.join(", ");
+
+    try {
+      const json = JSON.stringify(details);
+      return json === "{}" ? String(details) : json;
+    } catch {
+      return String(details);
+    }
+  }, []);
+
   // 안정적인 콜백 참조를 위한 메모이제이션
   const handleConnect = useCallback(() => {
     console.log("Connected to ElevenLabs agent");
@@ -89,21 +117,25 @@ export function useElevenLabsConversation() {
     const started = hasStartedRef.current;
     const wasEnding = endingRef.current;
 
+    const detailText = formatDisconnectDetails(details);
+
     console.log("Disconnected from ElevenLabs agent", details);
+    if (detailText) {
+      console.log("Disconnect details:", detailText);
+    }
 
     hasStartedRef.current = false;
     endingRef.current = false;
     setIsConnecting(false);
 
     if (started && !wasEnding) {
-      const detailText = details ? JSON.stringify(details) : "";
       const msg = detailText
         ? `연결이 종료되었습니다. (${detailText})`
         : "연결이 종료되었습니다. 다시 시도해주세요.";
       setLastError(msg);
       toast.error("음성 연결이 끊어졌습니다. 다시 시도해주세요.");
     }
-  }, []);
+  }, [formatDisconnectDetails]);
 
   const handleMessage = useCallback((message: any) => {
     console.log("Message received:", message);
@@ -215,8 +247,10 @@ export function useElevenLabsConversation() {
     try {
       await conversation.endSession();
     } finally {
-      // In some cases onDisconnect may not fire; ensure we don't suppress future errors.
-      endingRef.current = false;
+      // Ideally onDisconnect resets endingRef. As a fallback, clear it after a short delay.
+      setTimeout(() => {
+        endingRef.current = false;
+      }, 1500);
     }
 
     setMessages([]);
