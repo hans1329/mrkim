@@ -92,7 +92,11 @@ export function useElevenLabsConversation() {
           ? `연결이 종료되었습니다. (${detailText})`
           : "연결이 종료되었습니다. 다시 시도해주세요.";
         setLastError(msg);
+        toast.error("음성 연결이 끊어졌습니다. 다시 시도해주세요.");
       }
+    },
+    onStatusChange: (status: any) => {
+      console.log("ElevenLabs status:", status);
     },
     onMessage: (message: any) => {
       console.log("Message received:", message);
