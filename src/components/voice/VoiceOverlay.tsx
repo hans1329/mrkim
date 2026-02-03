@@ -98,28 +98,32 @@ export function VoiceOverlay() {
         </Button>
       </div>
 
-      {/* Messages Area */}
-      <ScrollArea className="flex-1 px-4">
-        <div className="space-y-3 py-4">
-          {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={cn(
-                "max-w-[85%] rounded-2xl px-4 py-3 animate-fade-in",
-                msg.role === "user"
-                  ? "ml-auto bg-white text-primary"
-                  : "mr-auto bg-white/20 text-white"
-              )}
-            >
-              <p className="text-sm">{msg.text}</p>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
+      {/* Main Content - 화면 중앙에 마이크 버튼 */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 relative">
+        {/* 메시지가 있을 때만 상단에 메시지 영역 표시 */}
+        {messages.length > 0 && (
+          <div className="absolute top-0 left-0 right-0 max-h-[40%] overflow-hidden">
+            <ScrollArea className="h-full px-4">
+              <div className="space-y-3 py-4">
+                {messages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "max-w-[85%] rounded-2xl px-4 py-3 animate-fade-in",
+                      msg.role === "user"
+                        ? "ml-auto bg-white text-primary"
+                        : "mr-auto bg-white/20 text-white"
+                    )}
+                  >
+                    <p className="text-sm">{msg.text}</p>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+          </div>
+        )}
 
-      {/* Main Content - 화면 중앙 */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6">
         {/* 권한 거부 상태 */}
         {permissionDenied ? (
           <div className="flex flex-col items-center gap-4">
