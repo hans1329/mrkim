@@ -17,6 +17,7 @@ export function useElevenLabsConversation() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const hasStartedRef = useRef(false);
+  const endingRef = useRef(false);
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryGender = profile?.secretary_gender || "female";
@@ -74,10 +75,24 @@ export function useElevenLabsConversation() {
       setIsConnecting(false);
       setLastError(null);
     },
-    onDisconnect: () => {
-      console.log("Disconnected from ElevenLabs agent");
+    onDisconnect: (details: any) => {
+      const started = hasStartedRef.current;
+      const wasEnding = endingRef.current;
+
+      console.log("Disconnected from ElevenLabs agent", details);
+
       hasStartedRef.current = false;
+      endingRef.current = false;
       setIsConnecting(false);
+
+      // Unexpected disconnect right after connecting is the primary symptom we're debugging.
+      if (started && !wasEnding) {
+        const detailText = details ? JSON.stringify(details) : "";
+        const msg = detailText
+          ? `연결이 종료되었습니다. (${detailText})`
+          : "연결이 종료되었습니다. 다시 시도해주세요.";
+        setLastError(msg);
+      }
     },
     onMessage: (message: any) => {
       console.log("Message received:", message);
@@ -130,20 +145,38 @@ export function useElevenLabsConversation() {
       // 마이크 권한 요청
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Edge Function에서 signed URL 가져오기
+      // Edge Function에서 WebRTC token(우선) 또는 signed URL(폴백) 가져오기
       const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
 
-      if (error || !data?.signedUrl) {
-        throw new Error(error?.message || "Signed URL을 가져오지 못했습니다.");
+      if (error) {
+        throw new Error(error.message);
       }
 
-      console.log("Starting conversation with signed URL and overrides");
+      const token = data?.token as string | undefined;
+      const signedUrl = (data?.signedUrl || data?.signed_url) as string | undefined;
 
-      // 대화 시작 (signedUrl + overrides 함께 전달)
-      await conversation.startSession({
-        signedUrl: data.signedUrl,
-        overrides,
-      });
+      if (!token && !signedUrl) {
+        throw new Error("연결 토큰을 가져오지 못했습니다.");
+      }
+
+      console.log(
+        "Starting conversation",
+        token ? "(webrtc token)" : "(signed url websocket)",
+      );
+
+      if (token) {
+        await conversation.startSession({
+          conversationToken: token,
+          connectionType: "webrtc",
+          overrides,
+        });
+      } else {
+        await conversation.startSession({
+          signedUrl: signedUrl!,
+          connectionType: "websocket",
+          overrides,
+        });
+      }
       
     } catch (error: any) {
       console.error("Failed to start voice session:", error);
@@ -158,10 +191,17 @@ export function useElevenLabsConversation() {
         toast.error(error.message || "음성 연결에 실패했습니다.");
       }
     }
-  }, [conversation, isConnecting, permissionDenied]);
+  }, [conversation, isConnecting, permissionDenied, overrides]);
 
   const endSession = useCallback(async () => {
-    await conversation.endSession();
+    endingRef.current = true;
+    try {
+      await conversation.endSession();
+    } finally {
+      // In some cases onDisconnect may not fire; ensure we don't suppress future errors.
+      endingRef.current = false;
+    }
+
     setMessages([]);
     hasStartedRef.current = false;
   }, [conversation]);
