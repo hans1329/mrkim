@@ -39,6 +39,7 @@ export function useAIChat() {
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
+  const secretaryGender = profile?.secretary_gender || "female";
   const secretaryAvatarUrl = (profile as any)?.secretary_avatar_url || null;
 
   // 세션 목록 불러오기 (날짜별 그룹화)
@@ -221,6 +222,7 @@ export function useAIChat() {
           messages: recentMessages,
           secretaryName,
           secretaryTone,
+          secretaryGender,
         }),
       });
 
@@ -278,7 +280,7 @@ export function useAIChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, secretaryName, secretaryTone, selectedDate, loadSessions]);
+  }, [messages, secretaryName, secretaryTone, secretaryGender, selectedDate, loadSessions]);
 
   const resetChat = useCallback(async () => {
     try {
@@ -319,6 +321,7 @@ export function useAIChat() {
     startNewChat,
     loadMessagesByDate,
     secretaryName,
+    secretaryGender,
     secretaryAvatarUrl,
   };
 }
