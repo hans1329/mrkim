@@ -29,14 +29,15 @@ export function VoiceOverlay() {
   const secretaryName = profile?.secretary_name || "김비서";
   const isConnected = status === "connected";
 
-  // 오버레이 닫힐 때 상태 초기화
+  // 오버레이가 닫힐 때만 세션 종료 (열릴 때는 무시)
+  const wasOpenRef = useRef(isOpen);
   useEffect(() => {
-    if (!isOpen) {
-      if (isConnected) {
-        endSession();
-      }
+    // 이전에 열려있다가 닫히는 경우에만 세션 종료
+    if (wasOpenRef.current && !isOpen && status === "connected") {
+      endSession();
     }
-  }, [isOpen, isConnected, endSession]);
+    wasOpenRef.current = isOpen;
+  }, [isOpen, status, endSession]);
 
   // 메시지 스크롤
   useEffect(() => {
