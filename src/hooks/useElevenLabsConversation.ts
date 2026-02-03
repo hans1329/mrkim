@@ -168,17 +168,19 @@ export function useElevenLabsConversation() {
         token ? "(webrtc token)" : "(signed url websocket)",
       );
 
+      // 먼저 overrides 없이 시도 (에이전트 설정 문제 진단용)
+      // overrides가 활성화되지 않은 에이전트에서는 overrides 전달 시 연결이 끊길 수 있음
       if (token) {
         await conversation.startSession({
           conversationToken: token,
           connectionType: "webrtc",
-          overrides,
+          // overrides 제거하여 테스트
         });
       } else {
         await conversation.startSession({
           signedUrl: signedUrl!,
           connectionType: "websocket",
-          overrides,
+          // overrides 제거하여 테스트
         });
       }
       
@@ -195,7 +197,7 @@ export function useElevenLabsConversation() {
         toast.error(error.message || "음성 연결에 실패했습니다.");
       }
     }
-  }, [conversation, isConnecting, permissionDenied, overrides]);
+  }, [conversation, isConnecting, permissionDenied]);
 
   const endSession = useCallback(async () => {
     endingRef.current = true;
