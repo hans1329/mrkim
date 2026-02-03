@@ -13,7 +13,6 @@ export function VoiceOverlay() {
   const { openChat } = useChat();
   const { profile } = useProfile();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const hasAutoStarted = useRef(false);
   
   const {
     status,
@@ -21,6 +20,7 @@ export function VoiceOverlay() {
     isConnecting,
     messages,
     permissionDenied,
+    lastError,
     startSession,
     endSession,
     resetPermission,
@@ -29,18 +29,9 @@ export function VoiceOverlay() {
   const secretaryName = profile?.secretary_name || "김비서";
   const isConnected = status === "connected";
 
-  // 오버레이 열릴 때 한 번만 자동으로 세션 시작
-  useEffect(() => {
-    if (isOpen && status === "disconnected" && !isConnecting && !permissionDenied && !hasAutoStarted.current) {
-      hasAutoStarted.current = true;
-      startSession();
-    }
-  }, [isOpen, status, isConnecting, permissionDenied, startSession]);
-
   // 오버레이 닫힐 때 상태 초기화
   useEffect(() => {
     if (!isOpen) {
-      hasAutoStarted.current = false;
       if (isConnected) {
         endSession();
       }
@@ -62,7 +53,6 @@ export function VoiceOverlay() {
 
   const handleRetry = () => {
     resetPermission();
-    hasAutoStarted.current = false;
     startSession();
   };
 
@@ -74,7 +64,7 @@ export function VoiceOverlay() {
   const getStatusText = () => {
     if (permissionDenied) return "마이크 권한이 필요합니다";
     if (isConnecting) return "연결 중...";
-    if (!isConnected) return "연결 대기 중";
+    if (!isConnected) return "버튼을 눌러 시작하세요";
     if (isSpeaking) return `${secretaryName}가 말하고 있어요...`;
     return "듣고 있어요...";
   };
@@ -193,6 +183,12 @@ export function VoiceOverlay() {
             {/* 상태 텍스트 */}
             <p className="text-white/80 text-sm mb-2">{getStatusText()}</p>
 
+            {lastError && !isConnected && (
+              <p className="text-white/60 text-xs text-center max-w-xs mb-2">
+                {lastError}
+              </p>
+            )}
+
             {/* 음파 애니메이션 (듣는 중) */}
             {isConnected && !isSpeaking && (
               <div className="flex items-center gap-1 h-6">
@@ -215,6 +211,16 @@ export function VoiceOverlay() {
 
       {/* Footer */}
       <div className="pb-[calc(env(safe-area-inset-bottom)+80px)] px-6 flex flex-col items-center gap-3">
+        {!permissionDenied && !isConnected && (
+          <Button
+            variant="outline"
+            onClick={startSession}
+            disabled={isConnecting}
+            className="border-white/30 text-white bg-white/10 hover:bg-white/20"
+          >
+            음성 시작
+          </Button>
+        )}
         {isConnected && (
           <Button
             variant="outline"
