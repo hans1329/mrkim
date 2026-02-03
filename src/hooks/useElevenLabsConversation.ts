@@ -1,5 +1,5 @@
 import { useConversation } from "@elevenlabs/react";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
@@ -15,18 +15,18 @@ export function useElevenLabsConversation() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
   const hasStartedRef = useRef(false);
 
-  // 비서 설정에 따른 시스템 프롬프트 생성
-  const getSystemPrompt = useCallback(() => {
-    const secretaryName = profile?.secretary_name || "김비서";
-    const secretaryGender = profile?.secretary_gender || "female";
-    const secretaryTone = profile?.secretary_tone || "professional";
-    
-    const genderDescription = secretaryGender === "male" 
-      ? "남성적이고 차분한 어조" 
+  const secretaryName = profile?.secretary_name || "김비서";
+  const secretaryGender = profile?.secretary_gender || "female";
+  const secretaryTone = profile?.secretary_tone || "professional";
+
+  const systemPrompt = useMemo(() => {
+    const genderDescription = secretaryGender === "male"
+      ? "남성적이고 차분한 어조"
       : "여성적이고 부드러운 어조";
-    
+
     const toneDescription = {
       professional: "전문적이고 격식있는",
       friendly: "친근하고 다정한",
@@ -51,22 +51,34 @@ export function useElevenLabsConversation() {
 - 민감한 금융 결정은 전문가 상담을 권유합니다
 - 모르는 정보는 솔직히 인정합니다
 - 음성 대화에 맞게 짧고 자연스럽게 응답합니다`;
-  }, [profile]);
+  }, [secretaryGender, secretaryName, secretaryTone]);
 
-  // 비서 설정에 따른 첫 인사말
-  const getFirstMessage = useCallback(() => {
-    const secretaryName = profile?.secretary_name || "김비서";
+  const firstMessage = useMemo(() => {
     return `안녕하세요, ${secretaryName}입니다. 무엇을 도와드릴까요?`;
-  }, [profile]);
+  }, [secretaryName]);
+
+  const overrides = useMemo(() => {
+    return {
+      agent: {
+        prompt: { prompt: systemPrompt },
+        firstMessage,
+        language: "ko",
+      },
+    };
+  }, [firstMessage, systemPrompt]);
 
   // ElevenLabs useConversation 훅
   const conversation = useConversation({
+    overrides,
     onConnect: () => {
       console.log("Connected to ElevenLabs agent");
       setIsConnecting(false);
+      setLastError(null);
     },
     onDisconnect: () => {
       console.log("Disconnected from ElevenLabs agent");
+      hasStartedRef.current = false;
+      setIsConnecting(false);
     },
     onMessage: (message: any) => {
       console.log("Message received:", message);
@@ -97,6 +109,8 @@ export function useElevenLabsConversation() {
     },
     onError: (error) => {
       console.error("ElevenLabs error:", error);
+      const msg = error instanceof Error ? error.message : "Unknown error";
+      setLastError(msg);
       toast.error("음성 연결 중 오류가 발생했습니다.");
       setIsConnecting(false);
     },
@@ -111,6 +125,7 @@ export function useElevenLabsConversation() {
     hasStartedRef.current = true;
     setIsConnecting(true);
     setMessages([]);
+    setLastError(null);
 
     try {
       // 마이크 권한 요청
@@ -125,18 +140,9 @@ export function useElevenLabsConversation() {
 
       console.log("Starting conversation with signed URL");
 
-      // 대화 시작 (overrides 포함)
+      // 대화 시작 (signedUrl 연결)
       await conversation.startSession({
         signedUrl: data.signedUrl,
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: getSystemPrompt()
-            },
-            firstMessage: getFirstMessage(),
-            language: "ko",
-          },
-        },
       });
       
     } catch (error: any) {
@@ -148,10 +154,11 @@ export function useElevenLabsConversation() {
         setPermissionDenied(true);
         toast.error("마이크 권한이 필요합니다. 브라우저 설정에서 마이크 접근을 허용해주세요.");
       } else {
+        setLastError(error?.message || "Unknown error");
         toast.error(error.message || "음성 연결에 실패했습니다.");
       }
     }
-  }, [conversation, getSystemPrompt, getFirstMessage, isConnecting, permissionDenied]);
+  }, [conversation, isConnecting, permissionDenied]);
 
   const endSession = useCallback(async () => {
     await conversation.endSession();
@@ -162,6 +169,7 @@ export function useElevenLabsConversation() {
   const resetPermission = useCallback(() => {
     setPermissionDenied(false);
     hasStartedRef.current = false;
+    setLastError(null);
   }, []);
 
   return {
@@ -170,6 +178,7 @@ export function useElevenLabsConversation() {
     isConnecting,
     messages,
     permissionDenied,
+    lastError,
     startSession,
     endSession,
     resetPermission,
