@@ -1,73 +1,67 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Mic, MicOff, Sparkles, MessageCircle } from "lucide-react";
+import { X, Mic, MicOff, Sparkles, MessageCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/contexts/VoiceContext";
 import { useChat } from "@/contexts/ChatContext";
-
-type VoiceStatus = "idle" | "listening" | "processing" | "speaking";
+import { useElevenLabsConversation } from "@/hooks/useElevenLabsConversation";
+import { useProfile } from "@/hooks/useProfile";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function VoiceOverlay() {
   const { isOpen, closeVoice } = useVoice();
   const { openChat } = useChat();
-  const [status, setStatus] = useState<VoiceStatus>("idle");
-  const [transcript, setTranscript] = useState("");
-  const [response, setResponse] = useState("");
+  const { profile } = useProfile();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const {
+    status,
+    isSpeaking,
+    isConnecting,
+    messages,
+    startSession,
+    endSession,
+  } = useElevenLabsConversation();
 
-  // 데모용 상태 시뮬레이션
-  const handleMicClick = () => {
-    if (status === "idle") {
-      setStatus("listening");
-      setTranscript("");
-      setResponse("");
-      
-      // 시뮬레이션: 3초 후 인식 완료
-      setTimeout(() => {
-        setTranscript("오늘 매출 알려줘");
-        setStatus("processing");
-        
-        // 처리 후 응답
-        setTimeout(() => {
-          setResponse("오늘 총 매출은 2,340,000원이며, 순이익은 520,000원입니다.");
-          setStatus("speaking");
-          
-          // 응답 후 대기
-          setTimeout(() => {
-            setStatus("idle");
-          }, 3000);
-        }, 1000);
-      }, 3000);
-    } else if (status === "listening") {
-      setStatus("idle");
+  const secretaryName = profile?.secretary_name || "김비서";
+  const isConnected = status === "connected";
+
+  // 오버레이 열릴 때 자동으로 세션 시작
+  useEffect(() => {
+    if (isOpen && status === "disconnected" && !isConnecting) {
+      startSession();
     }
+  }, [isOpen, status, isConnecting, startSession]);
+
+  // 오버레이 닫힐 때 세션 종료
+  useEffect(() => {
+    if (!isOpen && isConnected) {
+      endSession();
+    }
+  }, [isOpen, isConnected, endSession]);
+
+  // 메시지 스크롤
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleClose = () => {
+    if (isConnected) {
+      endSession();
+    }
+    closeVoice();
   };
 
-  // 오버레이가 닫힐 때 상태 리셋
-  useEffect(() => {
-    if (!isOpen) {
-      setStatus("idle");
-      setTranscript("");
-      setResponse("");
-    }
-  }, [isOpen]);
-
-  // 텍스트 채팅으로 전환
   const handleSwitchToChat = () => {
-    closeVoice();
+    handleClose();
     openChat();
   };
 
   const getStatusText = () => {
-    switch (status) {
-      case "listening":
-        return "듣고 있어요...";
-      case "processing":
-        return "처리 중...";
-      case "speaking":
-        return "김비서가 답변 중...";
-      default:
-        return "마이크를 눌러 말씀하세요";
-    }
+    if (isConnecting) return "연결 중...";
+    if (!isConnected) return "연결 대기 중";
+    if (isSpeaking) return `${secretaryName}가 말하고 있어요...`;
+    return "듣고 있어요...";
   };
 
   return (
@@ -84,81 +78,95 @@ export function VoiceOverlay() {
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-white">김비서</h3>
+            <h3 className="font-semibold text-white">{secretaryName}</h3>
             <p className="text-xs text-white/70">음성 대화</p>
           </div>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          onClick={closeVoice}
+          onClick={handleClose}
           className="text-white hover:bg-white/20"
         >
           <X className="h-5 w-5" />
         </Button>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6">
-        {/* 사용자 발화 */}
-        {transcript && (
-          <div className="mb-6 max-w-xs text-center animate-fade-in">
-            <p className="text-sm text-white/60 mb-1">내가 말한 내용</p>
-            <p className="text-lg text-white font-medium">{transcript}</p>
-          </div>
-        )}
+      {/* Messages Area */}
+      <ScrollArea className="flex-1 px-4">
+        <div className="space-y-3 py-4">
+          {messages.map((msg, idx) => (
+            <div
+              key={idx}
+              className={cn(
+                "max-w-[85%] rounded-2xl px-4 py-3 animate-fade-in",
+                msg.role === "user"
+                  ? "ml-auto bg-white text-primary"
+                  : "mr-auto bg-white/20 text-white"
+              )}
+            >
+              <p className="text-sm">{msg.text}</p>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
 
-        {/* 음성 시각화 영역 */}
-        <div className="relative mb-8">
-          {/* 외곽 펄스 애니메이션 */}
-          {status === "listening" && (
+      {/* Voice Status Area */}
+      <div className="flex flex-col items-center py-8 px-6">
+        {/* 음성 시각화 */}
+        <div className="relative mb-6">
+          {/* 펄스 애니메이션 */}
+          {isConnected && !isSpeaking && (
             <>
               <div className="absolute inset-0 rounded-full bg-white/20 animate-ping" style={{ animationDuration: '1.5s' }} />
               <div className="absolute inset-[-20px] rounded-full bg-white/10 animate-pulse" />
             </>
           )}
-          {status === "speaking" && (
+          {isSpeaking && (
             <>
               <div className="absolute inset-[-10px] rounded-full bg-white/15 animate-pulse" />
               <div className="absolute inset-[-25px] rounded-full bg-white/10 animate-pulse" style={{ animationDelay: '0.2s' }} />
             </>
           )}
           
-          {/* 메인 마이크 버튼 */}
-          <button
-            onClick={handleMicClick}
-            disabled={status === "processing" || status === "speaking"}
+          {/* 상태 아이콘 */}
+          <div
             className={cn(
-              "relative z-10 flex h-32 w-32 items-center justify-center rounded-full transition-all duration-300",
-              status === "listening" 
-                ? "bg-white text-primary scale-110 shadow-2xl" 
-                : status === "processing" || status === "speaking"
-                ? "bg-white/30 text-white cursor-not-allowed"
-                : "bg-white/20 text-white hover:bg-white/30 hover:scale-105"
+              "relative z-10 flex h-24 w-24 items-center justify-center rounded-full transition-all duration-300",
+              isConnecting
+                ? "bg-white/30 text-white"
+                : isConnected && !isSpeaking
+                ? "bg-white text-primary scale-110 shadow-2xl"
+                : isConnected && isSpeaking
+                ? "bg-white/30 text-white"
+                : "bg-white/20 text-white"
             )}
           >
-            {status === "listening" ? (
-              <MicOff className="h-12 w-12" />
-            ) : status === "processing" ? (
-              <Sparkles className="h-12 w-12 animate-spin" />
+            {isConnecting ? (
+              <Loader2 className="h-10 w-10 animate-spin" />
+            ) : isConnected && !isSpeaking ? (
+              <Mic className="h-10 w-10" />
+            ) : isSpeaking ? (
+              <Sparkles className="h-10 w-10 animate-pulse" />
             ) : (
-              <Mic className="h-12 w-12" />
+              <MicOff className="h-10 w-10" />
             )}
-          </button>
+          </div>
         </div>
 
         {/* 상태 텍스트 */}
-        <p className="text-white/80 text-sm mb-4">{getStatusText()}</p>
+        <p className="text-white/80 text-sm mb-2">{getStatusText()}</p>
 
         {/* 음파 애니메이션 (듣는 중) */}
-        {status === "listening" && (
-          <div className="flex items-center gap-1 h-8">
+        {isConnected && !isSpeaking && (
+          <div className="flex items-center gap-1 h-6">
             {[...Array(5)].map((_, i) => (
               <div
                 key={i}
                 className="w-1 bg-white/60 rounded-full animate-pulse"
                 style={{
-                  height: `${Math.random() * 24 + 8}px`,
+                  height: `${Math.random() * 16 + 8}px`,
                   animationDelay: `${i * 0.1}s`,
                   animationDuration: '0.5s',
                 }}
@@ -166,19 +174,19 @@ export function VoiceOverlay() {
             ))}
           </div>
         )}
-
-        {/* AI 응답 */}
-        {response && (
-          <div className="mt-6 max-w-sm text-center animate-fade-in">
-            <div className="rounded-2xl bg-white/20 backdrop-blur-sm px-6 py-4">
-              <p className="text-white leading-relaxed">{response}</p>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Footer - 텍스트 채팅 전환 버튼 */}
-      <div className="pb-[calc(env(safe-area-inset-bottom)+80px)] px-6 flex flex-col items-center">
+      {/* Footer */}
+      <div className="pb-[calc(env(safe-area-inset-bottom)+80px)] px-6 flex flex-col items-center gap-3">
+        {isConnected && (
+          <Button
+            variant="outline"
+            onClick={endSession}
+            className="border-white/30 text-white bg-white/10 hover:bg-white/20"
+          >
+            대화 종료
+          </Button>
+        )}
         <Button
           variant="ghost"
           onClick={handleSwitchToChat}

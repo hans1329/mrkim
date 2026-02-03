@@ -13,31 +13,30 @@ serve(async (req) => {
 
   try {
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
+    const ELEVENLABS_AGENT_ID = Deno.env.get("ELEVENLABS_AGENT_ID");
+    
     if (!ELEVENLABS_API_KEY) {
       throw new Error("ELEVENLABS_API_KEY is not configured");
     }
+    
+    if (!ELEVENLABS_AGENT_ID) {
+      throw new Error("ELEVENLABS_AGENT_ID is not configured");
+    }
 
-    // Parse request body for agent configuration
-    let agentId: string | undefined;
+    // Parse request body for overrides
     let overrides: Record<string, any> | undefined;
-
     try {
       const body = await req.json();
-      agentId = body.agentId;
       overrides = body.overrides;
     } catch {
       // Body is optional
     }
 
-    if (!agentId) {
-      throw new Error("agentId is required");
-    }
+    console.log("Requesting signed URL for agent:", ELEVENLABS_AGENT_ID);
 
-    console.log("Requesting conversation token for agent:", agentId);
-
-    // Get conversation token from ElevenLabs
+    // Get signed URL from ElevenLabs (for WebSocket connection)
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${agentId}`,
+      `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${ELEVENLABS_AGENT_ID}`,
       {
         method: "GET",
         headers: {
@@ -49,22 +48,23 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("ElevenLabs API error:", response.status, errorText);
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+      throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
 
     return new Response(
       JSON.stringify({ 
-        token: data.token,
-        agentId 
+        signedUrl: data.signed_url,
+        agentId: ELEVENLABS_AGENT_ID,
+        overrides
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
   } catch (error: unknown) {
-    console.error("Error generating conversation token:", error);
+    console.error("Error generating signed URL:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({ error: errorMessage }),
