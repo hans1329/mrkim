@@ -80,70 +80,73 @@ export function useElevenLabsConversation() {
     };
   }, [firstMessage, systemPrompt, voiceId]);
 
-  // ElevenLabs useConversation 훅 - overrides 없이 초기화 (startSession에서 전달)
-  const conversation = useConversation({
-    onConnect: () => {
-      console.log("Connected to ElevenLabs agent");
-      setIsConnecting(false);
-      setLastError(null);
-    },
-    onDisconnect: (details: any) => {
-      const started = hasStartedRef.current;
-      const wasEnding = endingRef.current;
+  // 안정적인 콜백 참조를 위한 메모이제이션
+  const handleConnect = useCallback(() => {
+    console.log("Connected to ElevenLabs agent");
+    setIsConnecting(false);
+    setLastError(null);
+  }, []);
 
-      console.log("Disconnected from ElevenLabs agent", details);
+  const handleDisconnect = useCallback((details: any) => {
+    const started = hasStartedRef.current;
+    const wasEnding = endingRef.current;
 
-      hasStartedRef.current = false;
-      endingRef.current = false;
-      setIsConnecting(false);
+    console.log("Disconnected from ElevenLabs agent", details);
 
-      // Unexpected disconnect right after connecting is the primary symptom we're debugging.
-      if (started && !wasEnding) {
-        const detailText = details ? JSON.stringify(details) : "";
-        const msg = detailText
-          ? `연결이 종료되었습니다. (${detailText})`
-          : "연결이 종료되었습니다. 다시 시도해주세요.";
-        setLastError(msg);
-        toast.error("음성 연결이 끊어졌습니다. 다시 시도해주세요.");
-      }
-    },
-    onStatusChange: (status: any) => {
-      console.log("ElevenLabs status:", status);
-    },
-    onMessage: (message: any) => {
-      console.log("Message received:", message);
-      
-      // 사용자 발화 처리
-      if (message.type === "user_transcript") {
-        const userText = message.user_transcription_event?.user_transcript;
-        if (userText) {
-          setMessages(prev => [...prev, {
-            role: "user",
-            text: userText,
-            timestamp: new Date()
-          }]);
-        }
-      }
-      
-      // 에이전트 응답 처리
-      if (message.type === "agent_response") {
-        const agentText = message.agent_response_event?.agent_response;
-        if (agentText) {
-          setMessages(prev => [...prev, {
-            role: "agent",
-            text: agentText,
-            timestamp: new Date()
-          }]);
-        }
-      }
-    },
-    onError: (error) => {
-      console.error("ElevenLabs error:", error);
-      const msg = error instanceof Error ? error.message : "Unknown error";
+    hasStartedRef.current = false;
+    endingRef.current = false;
+    setIsConnecting(false);
+
+    if (started && !wasEnding) {
+      const detailText = details ? JSON.stringify(details) : "";
+      const msg = detailText
+        ? `연결이 종료되었습니다. (${detailText})`
+        : "연결이 종료되었습니다. 다시 시도해주세요.";
       setLastError(msg);
-      toast.error("음성 연결 중 오류가 발생했습니다.");
-      setIsConnecting(false);
-    },
+      toast.error("음성 연결이 끊어졌습니다. 다시 시도해주세요.");
+    }
+  }, []);
+
+  const handleMessage = useCallback((message: any) => {
+    console.log("Message received:", message);
+    
+    if (message.type === "user_transcript") {
+      const userText = message.user_transcription_event?.user_transcript;
+      if (userText) {
+        setMessages(prev => [...prev, {
+          role: "user",
+          text: userText,
+          timestamp: new Date()
+        }]);
+      }
+    }
+    
+    if (message.type === "agent_response") {
+      const agentText = message.agent_response_event?.agent_response;
+      if (agentText) {
+        setMessages(prev => [...prev, {
+          role: "agent",
+          text: agentText,
+          timestamp: new Date()
+        }]);
+      }
+    }
+  }, []);
+
+  const handleError = useCallback((error: unknown) => {
+    console.error("ElevenLabs error:", error);
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    setLastError(msg);
+    toast.error("음성 연결 중 오류가 발생했습니다.");
+    setIsConnecting(false);
+  }, []);
+
+  // ElevenLabs useConversation 훅 - 안정적인 콜백 참조 사용
+  const conversation = useConversation({
+    onConnect: handleConnect,
+    onDisconnect: handleDisconnect,
+    onMessage: handleMessage,
+    onError: handleError,
   });
 
   const startSession = useCallback(async () => {
