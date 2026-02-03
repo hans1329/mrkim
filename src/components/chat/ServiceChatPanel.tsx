@@ -3,34 +3,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bot, Send, X, AudioLines } from "lucide-react";
+import { Bot, Send, X, AudioLines, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { useServiceChat } from "@/contexts/ServiceChatContext";
-import { useServiceFAQ } from "@/hooks/useServiceFAQ";
+import { useServiceChatAI } from "@/hooks/useServiceChat";
 
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-}
+// 빠른 질문 목록
+const QUICK_QUESTIONS = [
+  "김비서가 뭐야?",
+  "어떤 기능이 있어?",
+  "요금은 얼마야?",
+  "무료 체험 가능해?",
+];
 
 export function ServiceChatPanel() {
   const { isChatOpen, closeChat, switchToVoice } = useServiceChat();
-  const { findAnswer, quickQuestions, isLoading: isFAQLoading } = useServiceFAQ();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: "안녕하세요! 👋 **김비서**에 대해 궁금한 점을 물어보세요.\n\n💡 아래 버튼을 눌러 빠르게 알아보세요!",
-      timestamp: new Date(),
-    },
-  ]);
+  const { messages, isLoading, sendMessage } = useServiceChatAI();
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // 메시지가 추가되면 스크롤
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -38,41 +31,16 @@ export function ServiceChatPanel() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    if (!input.trim() || isLoading) return;
+    
     const userInput = input;
     setInput("");
-    setIsTyping(true);
-
-    await new Promise((resolve) => setTimeout(resolve, 400 + Math.random() * 300));
-
-    const response = findAnswer(userInput);
-    const assistantMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      role: "assistant",
-      content: response,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, assistantMessage]);
-    setIsTyping(false);
+    await sendMessage(userInput);
   };
 
   const handleQuickQuestion = (question: string) => {
     setInput(question);
   };
-
-  // 기본 빠른 질문 (FAQ 로딩 전)
-  const defaultQuickQuestions = ["김비서가 뭐야?", "어떤 기능이 있어?", "요금은 얼마야?", "무료 체험 가능해?"];
-  const displayQuestions = quickQuestions.length > 0 ? quickQuestions : defaultQuickQuestions;
 
   return (
     <div
@@ -89,7 +57,10 @@ export function ServiceChatPanel() {
           </div>
           <div>
             <h3 className="font-semibold text-primary-foreground">김비서 안내</h3>
-            <p className="text-xs text-primary-foreground/70">서비스 문의</p>
+            <div className="flex items-center gap-1 text-xs text-primary-foreground/70">
+              <Sparkles className="h-3 w-3" />
+              <span>AI 상담</span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -141,7 +112,9 @@ export function ServiceChatPanel() {
               </div>
             </div>
           ))}
-          {isTyping && (
+          
+          {/* 로딩 상태 */}
+          {isLoading && (
             <div className="flex justify-start">
               <div className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3">
                 <img 
@@ -149,7 +122,7 @@ export function ServiceChatPanel() {
                   alt="처리 중" 
                   className="h-6 w-auto animate-bounce"
                 />
-                <span className="text-sm text-muted-foreground">입력 중...</span>
+                <span className="text-sm text-muted-foreground">생각 중...</span>
               </div>
             </div>
           )}
@@ -159,25 +132,18 @@ export function ServiceChatPanel() {
       {/* Quick Questions */}
       <div className="border-t px-4 py-2">
         <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
-          {isFAQLoading ? (
-            <>
-              <Skeleton className="h-8 w-24 shrink-0" />
-              <Skeleton className="h-8 w-28 shrink-0" />
-              <Skeleton className="h-8 w-20 shrink-0" />
-            </>
-          ) : (
-            displayQuestions.map((q) => (
-              <Button
-                key={q}
-                variant="outline"
-                size="sm"
-                className="shrink-0 text-xs"
-                onClick={() => handleQuickQuestion(q)}
-              >
-                {q}
-              </Button>
-            ))
-          )}
+          {QUICK_QUESTIONS.map((q) => (
+            <Button
+              key={q}
+              variant="outline"
+              size="sm"
+              className="shrink-0 text-xs"
+              onClick={() => handleQuickQuestion(q)}
+              disabled={isLoading}
+            >
+              {q}
+            </Button>
+          ))}
         </div>
       </div>
 
@@ -195,12 +161,12 @@ export function ServiceChatPanel() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="김비서에 대해 물어보세요..."
             className="flex-1"
-            disabled={isTyping}
+            disabled={isLoading}
           />
           <Button 
             type="submit" 
             size="icon" 
-            disabled={!input.trim() || isTyping}
+            disabled={!input.trim() || isLoading}
           >
             <Send className="h-4 w-4" />
           </Button>
