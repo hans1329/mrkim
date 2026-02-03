@@ -13,7 +13,12 @@ import {
   ArrowRight,
   Database,
   Zap,
-  ExternalLink
+  ExternalLink,
+  Mic,
+  Volume2,
+  MessageCircle,
+  Phone,
+  Headphones
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -29,7 +34,7 @@ export default function Engine() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">김비서 AI 엔진 아키텍처</h1>
-              <p className="text-muted-foreground text-sm">v1.0 · 2025-02-01 업데이트</p>
+              <p className="text-muted-foreground text-sm">v1.1 · 2025-02-03 업데이트</p>
             </div>
           </div>
         </div>
@@ -79,6 +84,170 @@ export default function Engine() {
             </CardContent>
           </Card>
 
+          {/* 응답 채널 구성 - 신규 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 text-blue-500" />
+                응답 채널 구성
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                동일한 AI 엔진을 기반으로, 채널에 맞는 응답 형식을 제공합니다.
+              </p>
+              
+              <div className="grid md:grid-cols-3 gap-4">
+                {/* 텍스트 채널 */}
+                <div className="p-4 rounded-lg border bg-card">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-full bg-blue-500/10">
+                      <MessageSquare className="h-4 w-4 text-blue-500" />
+                    </div>
+                    <h4 className="font-semibold">텍스트 채널</h4>
+                  </div>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>• <strong>chat-ai</strong> Edge Function</p>
+                    <p>• 마크다운 응답</p>
+                    <p>• 상세한 정보 제공</p>
+                    <p>• 대화 히스토리 저장</p>
+                  </div>
+                  <Badge className="mt-3" variant="outline">로그인 사용자</Badge>
+                </div>
+
+                {/* 음성 채널 */}
+                <div className="p-4 rounded-lg border bg-card">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-full bg-purple-500/10">
+                      <Headphones className="h-4 w-4 text-purple-500" />
+                    </div>
+                    <h4 className="font-semibold">음성 채널</h4>
+                  </div>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>• <strong>ElevenLabs</strong> Conversational AI</p>
+                    <p>• 실시간 음성 대화</p>
+                    <p>• 짧고 명확한 응답</p>
+                    <p>• TTS/STT 통합</p>
+                  </div>
+                  <Badge className="mt-3" variant="outline">로그인 사용자</Badge>
+                </div>
+
+                {/* 서비스 채널 */}
+                <div className="p-4 rounded-lg border bg-card">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-full bg-green-500/10">
+                      <MessageCircle className="h-4 w-4 text-green-500" />
+                    </div>
+                    <h4 className="font-semibold">서비스 안내</h4>
+                  </div>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>• <strong>service-chat</strong> Edge Function</p>
+                    <p>• 서비스 소개 특화</p>
+                    <p>• 요금제/기능 안내</p>
+                    <p>• 비로그인 접근 가능</p>
+                  </div>
+                  <Badge className="mt-3" variant="outline">모든 방문자</Badge>
+                </div>
+              </div>
+
+              {/* 채널 흐름도 */}
+              <div className="mt-6 p-4 rounded-lg bg-muted/30">
+                <p className="text-xs font-medium mb-3">채널 통합 흐름</p>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <Badge variant="outline">사용자 입력</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="outline">채널 감지</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">공통 의도 분류</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">채널별 응답 포맷</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge>출력</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 음성 엔진 상세 - 신규 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Volume2 className="h-5 w-5 text-purple-500" />
+                음성 응답 엔진
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* 실시간 대화 */}
+                <div className="p-4 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Mic className="h-5 w-5 text-purple-500" />
+                    <h4 className="font-semibold">실시간 음성 대화</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    ElevenLabs Conversational AI를 통한 양방향 실시간 대화
+                  </p>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">프로토콜</span>
+                      <Badge variant="outline" className="text-xs">WebRTC</Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Edge Function</span>
+                      <code className="text-xs bg-muted px-1 rounded">elevenlabs-conversation-token</code>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">언어</span>
+                      <span>한국어 (ko)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* TTS */}
+                <div className="p-4 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Volume2 className="h-5 w-5 text-blue-500" />
+                    <h4 className="font-semibold">텍스트 → 음성 (TTS)</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    텍스트 응답을 자연스러운 음성으로 변환
+                  </p>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">모델</span>
+                      <Badge variant="outline" className="text-xs">eleven_multilingual_v2</Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Edge Function</span>
+                      <code className="text-xs bg-muted px-1 rounded">elevenlabs-tts</code>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">포맷</span>
+                      <span>MP3 44.1kHz</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 전화 알림 */}
+              <div className="p-4 rounded-lg border border-orange-500/30 bg-orange-500/5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Phone className="h-5 w-5 text-orange-500" />
+                  <h4 className="font-semibold">긴급 전화 알림</h4>
+                  <Badge variant="outline" className="text-xs">Phase 2</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Twilio Voice + ElevenLabs TTS를 결합한 아웃바운드 음성 알림
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <Badge variant="secondary">세금 마감 알림</Badge>
+                  <Badge variant="secondary">급여일 알림</Badge>
+                  <Badge variant="secondary">긴급 이상 감지</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* 핵심 모듈 */}
           <Card>
             <CardHeader>
@@ -107,9 +276,9 @@ export default function Engine() {
                   <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
                     <p className="text-xs font-medium text-red-600 mb-2">✗ 범위 외 → 거절</p>
                     <ul className="text-xs space-y-1 text-muted-foreground">
-                      <li>• 음식점 추천</li>
+                      <li>• 불법/위험 요청</li>
                       <li>• 개인적인 상담</li>
-                      <li>• 일반 지식 질문</li>
+                      <li>• 부적절한 콘텐츠</li>
                     </ul>
                   </div>
                 </div>
@@ -121,7 +290,8 @@ export default function Engine() {
   intent: "sales_inquiry" | "expense_inquiry" | "tax_question" 
         | "payroll_inquiry" | "employee_management" 
         | "transaction_classify" | "daily_briefing" 
-        | "alert_check" | "setting_change" | "out_of_scope",
+        | "alert_check" | "setting_change" 
+        | "self_introduction" | "casual_chat" | "out_of_scope",
   
   confidence: 0.0 ~ 1.0,
   
@@ -153,8 +323,8 @@ export default function Engine() {
                     <tbody className="text-muted-foreground">
                       <tr className="border-b"><td className="py-1.5 px-2">"오늘 매출 얼마야?"</td><td className="py-1.5 px-2">sales_inquiry</td><td className="py-1.5 px-2">card, bank</td></tr>
                       <tr className="border-b"><td className="py-1.5 px-2">"부가세 얼마 내야해?"</td><td className="py-1.5 px-2">tax_question</td><td className="py-1.5 px-2">hometax, card</td></tr>
-                      <tr className="border-b"><td className="py-1.5 px-2">"직원 급여 현황"</td><td className="py-1.5 px-2">payroll_inquiry</td><td className="py-1.5 px-2">employee</td></tr>
-                      <tr><td className="py-1.5 px-2">"맛집 추천해줘"</td><td className="py-1.5 px-2">out_of_scope</td><td className="py-1.5 px-2">none</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"넌 누구야?"</td><td className="py-1.5 px-2">self_introduction</td><td className="py-1.5 px-2">none</td></tr>
+                      <tr><td className="py-1.5 px-2">"심심해"</td><td className="py-1.5 px-2">casual_chat</td><td className="py-1.5 px-2">none</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -273,10 +443,10 @@ export default function Engine() {
               <CardContent className="space-y-4">
                 <div className="flex flex-wrap gap-2">
                   <Badge>Gemini API</Badge>
-                  <Badge variant="secondary">Edge Functions (Lambda)</Badge>
+                  <Badge variant="secondary">ElevenLabs</Badge>
+                  <Badge variant="secondary">Edge Functions</Badge>
                   <Badge variant="secondary">Codef API</Badge>
-                  <Badge variant="secondary">PostgreSQL</Badge>
-                  <Badge variant="outline">Realtime</Badge>
+                  <Badge variant="outline">PostgreSQL</Badge>
                 </div>
                 
                 <div className="pt-2 border-t">
@@ -306,6 +476,48 @@ export default function Engine() {
             </Card>
           </div>
 
+          {/* Edge Functions 목록 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Edge Functions 구성</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 px-3">함수명</th>
+                      <th className="text-left py-2 px-3">역할</th>
+                      <th className="text-left py-2 px-3">인증</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-muted-foreground">
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">chat-ai</code></td>
+                      <td className="py-2 px-3">메인 AI 채팅 (로그인 사용자)</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Optional</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">service-chat</code></td>
+                      <td className="py-2 px-3">서비스 안내 챗봇</td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs">Public</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">elevenlabs-conversation-token</code></td>
+                      <td className="py-2 px-3">음성 대화 토큰 발급</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Optional</Badge></td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">elevenlabs-tts</code></td>
+                      <td className="py-2 px-3">텍스트 → 음성 변환</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Optional</Badge></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* 구현 로드맵 */}
           <Card>
             <CardHeader>
@@ -314,11 +526,13 @@ export default function Engine() {
             <CardContent>
               <div className="space-y-3">
                 {[
-                  { step: 1, name: "기본 채팅 AI", priority: "높음", color: "bg-red-500" },
-                  { step: 2, name: "거래 분류기", priority: "높음", color: "bg-red-500" },
-                  { step: 3, name: "알림 생성기", priority: "중간", color: "bg-yellow-500" },
-                  { step: 4, name: "일일 브리핑", priority: "낮음", color: "bg-green-500" },
-                  { step: 5, name: "음성 브리핑", priority: "낮음", color: "bg-green-500" },
+                  { step: 1, name: "기본 채팅 AI", priority: "완료", color: "bg-green-500" },
+                  { step: 2, name: "서비스 안내 AI", priority: "완료", color: "bg-green-500" },
+                  { step: 3, name: "음성 TTS 엔진", priority: "완료", color: "bg-green-500" },
+                  { step: 4, name: "실시간 음성 대화", priority: "진행중", color: "bg-yellow-500" },
+                  { step: 5, name: "거래 분류기", priority: "예정", color: "bg-gray-400" },
+                  { step: 6, name: "알림 생성기", priority: "예정", color: "bg-gray-400" },
+                  { step: 7, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
                 ].map((item) => (
                   <div key={item.step} className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
@@ -326,7 +540,7 @@ export default function Engine() {
                     </div>
                     <span className="flex-1 text-sm">{item.name}</span>
                     <div className={`w-2 h-2 rounded-full ${item.color}`} />
-                    <span className="text-xs text-muted-foreground w-12">{item.priority}</span>
+                    <span className="text-xs text-muted-foreground w-14">{item.priority}</span>
                   </div>
                 ))}
               </div>
