@@ -1,5 +1,5 @@
 import { useConversation } from "@elevenlabs/react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
@@ -14,6 +14,8 @@ export function useElevenLabsConversation() {
   const { profile } = useProfile();
   const [isConnecting, setIsConnecting] = useState(false);
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const hasStartedRef = useRef(false);
 
   // 비서 설정에 따른 시스템 프롬프트 생성
   const getSystemPrompt = useCallback(() => {
@@ -101,6 +103,12 @@ export function useElevenLabsConversation() {
   });
 
   const startSession = useCallback(async () => {
+    // 이미 시작 중이거나 권한이 거부된 경우 중복 실행 방지
+    if (isConnecting || hasStartedRef.current || permissionDenied) {
+      return;
+    }
+    
+    hasStartedRef.current = true;
     setIsConnecting(true);
     setMessages([]);
 
@@ -133,27 +141,37 @@ export function useElevenLabsConversation() {
       
     } catch (error: any) {
       console.error("Failed to start voice session:", error);
+      hasStartedRef.current = false;
       setIsConnecting(false);
       
       if (error.name === "NotAllowedError") {
+        setPermissionDenied(true);
         toast.error("마이크 권한이 필요합니다. 브라우저 설정에서 마이크 접근을 허용해주세요.");
       } else {
         toast.error(error.message || "음성 연결에 실패했습니다.");
       }
     }
-  }, [conversation, getSystemPrompt, getFirstMessage]);
+  }, [conversation, getSystemPrompt, getFirstMessage, isConnecting, permissionDenied]);
 
   const endSession = useCallback(async () => {
     await conversation.endSession();
     setMessages([]);
+    hasStartedRef.current = false;
   }, [conversation]);
+
+  const resetPermission = useCallback(() => {
+    setPermissionDenied(false);
+    hasStartedRef.current = false;
+  }, []);
 
   return {
     status: conversation.status,
     isSpeaking: conversation.isSpeaking,
     isConnecting,
     messages,
+    permissionDenied,
     startSession,
     endSession,
+    resetPermission,
   };
 }
