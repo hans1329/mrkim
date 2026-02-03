@@ -32,10 +32,44 @@ serve(async (req) => {
       // Body is optional
     }
 
+    // Prefer WebRTC token (more stable). Fallback to signed URL (WebSocket).
+    console.log("Requesting conversation token for agent:", ELEVENLABS_AGENT_ID);
+
+    const tokenRes = await fetch(
+      `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${ELEVENLABS_AGENT_ID}`,
+      {
+        method: "GET",
+        headers: {
+          "xi-api-key": ELEVENLABS_API_KEY,
+        },
+      }
+    );
+
+    if (tokenRes.ok) {
+      const tokenData = await tokenRes.json();
+
+      return new Response(
+        JSON.stringify({
+          token: tokenData.token,
+          agentId: ELEVENLABS_AGENT_ID,
+          overrides,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const tokenErrorText = await tokenRes.text();
+    console.warn(
+      "Token endpoint failed, falling back to signed URL:",
+      tokenRes.status,
+      tokenErrorText,
+    );
+
     console.log("Requesting signed URL for agent:", ELEVENLABS_AGENT_ID);
 
-    // Get signed URL from ElevenLabs (for WebSocket connection)
-    const response = await fetch(
+    const signedUrlRes = await fetch(
       `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${ELEVENLABS_AGENT_ID}`,
       {
         method: "GET",
@@ -45,22 +79,28 @@ serve(async (req) => {
       }
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("ElevenLabs API error:", response.status, errorText);
-      throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
+    if (!signedUrlRes.ok) {
+      const signedUrlErrorText = await signedUrlRes.text();
+      console.error(
+        "ElevenLabs signed-url API error:",
+        signedUrlRes.status,
+        signedUrlErrorText,
+      );
+      throw new Error(
+        `ElevenLabs API error (token: ${tokenRes.status}, signed-url: ${signedUrlRes.status}) - ${signedUrlErrorText}`,
+      );
     }
 
-    const data = await response.json();
+    const signedUrlData = await signedUrlRes.json();
 
     return new Response(
-      JSON.stringify({ 
-        signedUrl: data.signed_url,
+      JSON.stringify({
+        signedUrl: signedUrlData.signed_url,
         agentId: ELEVENLABS_AGENT_ID,
-        overrides
+        overrides,
       }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   } catch (error: unknown) {
