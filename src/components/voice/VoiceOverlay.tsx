@@ -62,6 +62,19 @@ export function VoiceOverlay() {
     openChat();
   };
 
+  const handleMicClick = () => {
+    console.log("Mic clicked, isConnected:", isConnected, "isConnecting:", isConnecting);
+    if (isConnecting) return;
+    
+    if (isConnected) {
+      console.log("Ending session...");
+      endSession();
+    } else {
+      console.log("Starting session...");
+      startSession();
+    }
+  };
+
   const getStatusText = () => {
     if (permissionDenied) return "마이크 권한이 필요합니다";
     if (isConnecting) return "연결 중...";
@@ -162,17 +175,17 @@ export function VoiceOverlay() {
               
               {/* 클릭 가능한 마이크 버튼 */}
               <button
-                onClick={isConnected ? endSession : startSession}
+                onClick={handleMicClick}
                 disabled={isConnecting}
                 className={cn(
-                  "relative z-10 flex h-28 w-28 items-center justify-center rounded-full transition-all duration-300",
+                  "relative z-10 flex h-28 w-28 items-center justify-center rounded-full transition-all duration-300 cursor-pointer",
                   isConnecting
                     ? "bg-white/30 text-white cursor-wait"
                     : isConnected && !isSpeaking
-                    ? "bg-white text-primary scale-110 shadow-2xl hover:scale-105"
+                    ? "bg-white text-primary scale-110 shadow-2xl hover:scale-105 active:scale-100"
                     : isConnected && isSpeaking
-                    ? "bg-white/30 text-white"
-                    : "bg-white/20 text-white hover:bg-white/30 hover:scale-105"
+                    ? "bg-white/30 text-white hover:bg-white/40 active:bg-white/50"
+                    : "bg-white/20 text-white hover:bg-white/30 hover:scale-105 active:scale-100"
                 )}
               >
                 {isConnecting ? (
