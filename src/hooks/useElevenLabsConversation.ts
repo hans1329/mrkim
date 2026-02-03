@@ -58,13 +58,11 @@ export function useElevenLabsConversation() {
     return `안녕하세요, ${secretaryName}입니다. 무엇을 도와드릴까요?`;
   }, [secretaryName]);
 
-  // 성별에 따른 음성 선택 (한국어 지원 다국어 음성)
-  // ElevenLabs Voice Library에서 한국어 잘 되는 음성 선택
+  // 성별에 따른 한국어 음성 선택
   const voiceId = useMemo(() => {
-    // 남성: Daniel (온화한 남성 음성), 여성: Sarah (부드러운 여성 음성)
     return secretaryGender === "male" 
-      ? "onwK4e9ZLuTAKqWW03F9"  // Daniel
-      : "EXAVITQu4vr4xnSDxMaL"; // Sarah
+      ? "ZJCNdZEjYwkOElxugmW2"  // 남성 한국어 음성
+      : "uyVNoMrnUku1dZyVEXwD"; // 여성 한국어 음성
   }, [secretaryGender]);
 
   const overrides = useMemo(() => {
