@@ -255,7 +255,8 @@ serve(async (req) => {
       );
     }
 
-    const { action, cardCompanyId, loginId, password, connectedId } = await req.json();
+    const body = await req.json();
+    const { action, cardCompanyId, loginId, password, connectedId, startDate, endDate, cardNo } = body;
 
     const publicKey = Deno.env.get("CODEF_PUBLIC_KEY");
     if (!publicKey) {
@@ -279,7 +280,6 @@ serve(async (req) => {
       return await handleGetCards(accessToken, connectedId, cardCompanyId);
     } else if (action === "getTransactions") {
       // 승인 내역 조회
-      const { startDate, endDate, cardNo } = await req.json().catch(() => ({}));
       return await handleGetTransactions(accessToken, connectedId, cardCompanyId, startDate, endDate, cardNo);
     } else {
       return new Response(
