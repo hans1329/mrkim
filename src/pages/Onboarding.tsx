@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const characterImg = "/images/icc-5.webp";
+
+// 이미지 프리로딩 함수
+const preloadImage = (src: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = reject;
+    img.src = src;
+  });
+};
+
+// 앱 시작 시 캐릭터 이미지 미리 로드
+if (typeof window !== 'undefined') {
+  preloadImage(characterImg);
+}
 
 const steps: { key: OnboardingStep; title: string; icon: typeof Building2 }[] = [
   { key: "welcome", title: "시작", icon: Building2 },
@@ -357,11 +372,14 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
               />
             </motion.div>
             
-            {/* Character image */}
+            {/* Character image - preloaded with high priority */}
             <img 
-              src={`${characterImg}?v=${Date.now()}`} 
+              src={characterImg}
               alt="찰떡이" 
               className="w-20 h-20 object-contain drop-shadow-lg"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
             />
           </motion.div>
           
