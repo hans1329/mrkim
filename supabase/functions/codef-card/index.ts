@@ -520,11 +520,22 @@ function parseCodefResponse(text: string): any {
     return JSON.parse(text);
   } catch {
     try {
-      const decoded = decodeURIComponent(text);
+      // Codef 응답은 percent-encoding + 공백을 '+'로 보내는 케이스가 있어 함께 처리
+      const decoded = decodeURIComponent(text.replace(/\+/g, "%20"));
       return JSON.parse(decoded);
     } catch {
       return { raw: text };
     }
+  }
+}
+
+function normalizeCodefMessage(msg: string | undefined): string {
+  if (!msg) return "";
+  // msg 자체가 URL 인코딩/플러스 공백인 경우도 있어 안전하게 복원
+  try {
+    return decodeURIComponent(msg.replace(/\+/g, "%20"));
+  } catch {
+    return msg.replace(/\+/g, " ");
   }
 }
 
@@ -545,43 +556,133 @@ async function handleGetTransactions(
     );
   }
 
+  if (!connectedId) {
+    return new Response(
+      JSON.stringify({ success: false, error: "connectedId가 필요합니다." }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   // 기본값: 최근 3개월
   const now = new Date();
   const defaultEndDate = now.toISOString().slice(0, 10).replace(/-/g, "");
   const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
   const defaultStartDate = threeMonthsAgo.toISOString().slice(0, 10).replace(/-/g, "");
 
-  const requestBody = {
+  const normalizedStart = startDate?.replace(/-/g, "") || defaultStartDate;
+  const normalizedEnd = endDate?.replace(/-/g, "") || defaultEndDate;
+
+  const buildApprovalRequestBody = (cardNoValue: string) => ({
     connectedId,
     organization: organizationCode,
-    startDate: startDate?.replace(/-/g, "") || defaultStartDate,
-    endDate: endDate?.replace(/-/g, "") || defaultEndDate,
-    orderBy: "0",  // 0: 최신순
-    inquiryType: "0",  // 0: 전체, 1: 신용, 2: 체크
-    cardNo: cardNo || "",
-    memberStoreInfoType: "0",  // 가맹점 정보 포함
-  };
-
-  console.log("Getting transactions for connectedId:", connectedId, "period:", requestBody.startDate, "~", requestBody.endDate);
-
-  const response = await fetch(`${CODEF_API_URL}/v1/kr/card/p/account/approval-list`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(requestBody),
+    startDate: normalizedStart,
+    endDate: normalizedEnd,
+    orderBy: "0", // 0: 최신순
+    inquiryType: "0", // 0: 전체, 1: 신용, 2: 체크
+    cardNo: cardNoValue,
+    memberStoreInfoType: "0", // 가맹점 정보 포함
   });
 
-  const responseText = await response.text();
-  console.log("Transactions response length:", responseText.length);
+  const fetchApprovalList = async (cardNoValue: string) => {
+    const requestBody = buildApprovalRequestBody(cardNoValue);
 
-  const data = parseCodefResponse(responseText);
-  const result = data.result || {};
-  const isSuccess = result.code === "CF-00000";
+    const response = await fetch(`${CODEF_API_URL}/v1/kr/card/p/account/approval-list`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
 
-  if (isSuccess) {
+    const responseText = await response.text();
+    const data = parseCodefResponse(responseText);
+    const result = data.result || {};
+    const isSuccess = result.code === "CF-00000";
+
+    if (!isSuccess) {
+      const msg = normalizeCodefMessage(result.message) || "승인 내역 조회 실패";
+      throw new Error(msg);
+    }
+
     const rawTransactions = Array.isArray(data.data) ? data.data : (data.data?.resList || []);
+    return { rawTransactions, period: { startDate: requestBody.startDate, endDate: requestBody.endDate } };
+  };
+
+  const fetchCardNosIfNeeded = async (): Promise<string[]> => {
+    const cardNoFromRequest = (cardNo || "").trim();
+    if (cardNoFromRequest) return [cardNoFromRequest];
+
+    // cardNo가 없으면 카드 목록을 조회한 뒤, 각 카드별로 승인내역을 합쳐 반환
+    const cardListReq = {
+      connectedId,
+      organization: organizationCode,
+      birthDate: "",
+      inquiryType: "0",
+    };
+
+    const resp = await fetch(`${CODEF_API_URL}/v1/kr/card/p/account/card-list`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(cardListReq),
+    });
+
+    const respText = await resp.text();
+    const parsed = parseCodefResponse(respText);
+    const result = parsed.result || {};
+    const isSuccess = result.code === "CF-00000";
+
+    if (!isSuccess) {
+      const msg = normalizeCodefMessage(result.message) || "카드 목록 조회 실패";
+      throw new Error(msg);
+    }
+
+    const cards = Array.isArray(parsed.data) ? parsed.data : [];
+    const cardNos = cards
+      .map((c: any) => (c?.resCardNo ? String(c.resCardNo) : ""))
+      .filter((no: string) => no.length > 0);
+
+    // 중복 제거
+    return Array.from(new Set(cardNos));
+  };
+
+  console.log(
+    "Getting transactions for connectedId:",
+    connectedId,
+    "period:",
+    normalizedStart,
+    "~",
+    normalizedEnd,
+    "organization:",
+    organizationCode
+  );
+
+  try {
+    const cardNosToQuery = await fetchCardNosIfNeeded();
+    if (cardNosToQuery.length === 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: "조회 가능한 카드가 없습니다." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const results = await Promise.allSettled(cardNosToQuery.map((no) => fetchApprovalList(no)));
+    const fulfilled = results.filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled");
+    const rejected = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+
+    if (fulfilled.length === 0) {
+      const firstErr = rejected[0]?.reason;
+      const msg = firstErr instanceof Error ? firstErr.message : "승인 내역 조회 실패";
+      return new Response(
+        JSON.stringify({ success: false, error: msg }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const rawTransactions = fulfilled.flatMap((r) => r.value.rawTransactions || []);
     
     // 거래 데이터 정규화
     const transactions = rawTransactions.map((tx: any) => ({
@@ -618,19 +719,17 @@ async function handleGetTransactions(
         message: `${transactions.length}건의 거래를 조회했습니다.`,
         transactions,
         period: {
-          startDate: requestBody.startDate,
-          endDate: requestBody.endDate,
+          startDate: normalizedStart,
+          endDate: normalizedEnd,
         },
+        warnings: rejected.length > 0 ? `${rejected.length}개 카드 조회 실패` : undefined,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } else {
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "승인 내역 조회 실패";
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: result.message || "승인 내역 조회 실패",
-        code: result.code,
-      }),
+      JSON.stringify({ success: false, error: msg }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
