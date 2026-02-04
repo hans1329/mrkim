@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.elevenlabs-tts]
 verify_jwt = false
+
+[functions.codef-card]
+verify_jwt = false

@@ -16,9 +16,10 @@ import {
   EyeOff,
   Smartphone,
   Lock,
-  Building2
+  AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCardConnection } from "@/hooks/useCardConnection";
 
 // 카드사 목록 (실제 Codef 지원 카드사)
 const CARD_COMPANIES = [
@@ -33,18 +34,21 @@ const CARD_COMPANIES = [
   { id: "nh", name: "NH농협카드", logo: "💳", color: "bg-green-600" },
 ];
 
-// 목업 카드 데이터
-const MOCK_CARDS = [
-  { id: "1", name: "신한 Deep Dream", number: "****-****-****-1234", type: "신용" },
-  { id: "2", name: "신한 Mr.Life", number: "****-****-****-5678", type: "체크" },
-  { id: "3", name: "신한 법인카드", number: "****-****-****-9012", type: "법인" },
-];
-
-type FlowStep = "select-company" | "auth" | "verify" | "select-cards" | "complete";
+type FlowStep = "select-company" | "auth" | "loading" | "select-cards" | "complete";
 
 interface CardConnectionFlowProps {
   onComplete: () => void;
   onBack: () => void;
+}
+
+interface CardInfo {
+  cardNo: string;
+  cardName: string;
+  cardType: string;
+  validPeriod: string;
+  issueDate: string;
+  userName: string;
+  sleepYN: string;
 }
 
 export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowProps) {
@@ -53,47 +57,58 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
   const [authMethod, setAuthMethod] = useState<"id" | "cert">("id");
   const [credentials, setCredentials] = useState({ id: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const [agreedTerms, setAgreedTerms] = useState(false);
+  const [fetchedCards, setFetchedCards] = useState<CardInfo[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const { isLoading, registerCardAccount, getCards, connectedId } = useCardConnection();
 
   const stepProgress: Record<FlowStep, number> = {
-    "select-company": 20,
-    "auth": 40,
-    "verify": 60,
-    "select-cards": 80,
+    "select-company": 25,
+    "auth": 50,
+    "loading": 75,
+    "select-cards": 85,
     "complete": 100,
   };
 
   const handleSelectCompany = (companyId: string) => {
     setSelectedCompany(companyId);
+    setError(null);
   };
 
   const handleAuth = async () => {
-    if (!credentials.id || !credentials.password || !agreedTerms) return;
-    setIsLoading(true);
-    // 시뮬레이션: Codef API 인증 요청
-    await new Promise((r) => setTimeout(r, 1500));
-    setIsLoading(false);
-    setStep("verify");
+    if (!credentials.id || !credentials.password || !agreedTerms || !selectedCompany) return;
+    
+    setError(null);
+    setStep("loading");
+    
+    try {
+      // 실제 Codef API 호출
+      const success = await registerCardAccount(
+        selectedCompany,
+        credentials.id,
+        credentials.password
+      );
+      
+      if (success) {
+        // 카드 목록 조회
+        const cards = await getCards(selectedCompany);
+        setFetchedCards(cards);
+        setStep("select-cards");
+      } else {
+        setError("카드사 연결에 실패했습니다. 로그인 정보를 확인해주세요.");
+        setStep("auth");
+      }
+    } catch (err) {
+      console.error("Auth error:", err);
+      setError(err instanceof Error ? err.message : "연결 중 오류가 발생했습니다.");
+      setStep("auth");
+    }
   };
 
-  const handleVerify = async () => {
-    if (verificationCode.length !== 6) return;
-    setIsLoading(true);
-    // 시뮬레이션: SMS 인증 확인
-    await new Promise((r) => setTimeout(r, 1000));
-    setIsLoading(false);
-    setStep("select-cards");
-  };
-
-  const handleSelectCards = async () => {
+  const handleSelectCards = () => {
     if (selectedCards.length === 0) return;
-    setIsLoading(true);
-    // 시뮬레이션: 카드 연결 완료
-    await new Promise((r) => setTimeout(r, 1000));
-    setIsLoading(false);
     setStep("complete");
   };
 
@@ -111,7 +126,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
         <div className="flex justify-between text-[10px] text-muted-foreground">
           <span>카드사 선택</span>
           <span>로그인</span>
-          <span>인증</span>
+          <span>연결 중</span>
           <span>카드 선택</span>
           <span>완료</span>
         </div>
@@ -193,6 +208,14 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 </p>
               </div>
 
+              {/* 에러 메시지 */}
+              {error && (
+                <div className="flex items-start gap-2 bg-destructive/10 rounded-lg p-3 text-xs">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
+                  <p className="text-destructive">{error}</p>
+                </div>
+              )}
+
               {/* 인증 방법 선택 */}
               <div className="flex gap-2 p-1 bg-muted rounded-lg">
                 <button
@@ -250,10 +273,10 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 <div className="bg-muted/50 rounded-xl p-4 text-center">
                   <Lock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground">
-                    공동인증서 선택 화면이 표시됩니다
+                    공동인증서 로그인은 준비 중입니다
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    (목업 모드에서는 아이디 로그인을 이용해주세요)
+                    아이디 로그인을 이용해주세요
                   </p>
                 </div>
               )}
@@ -263,7 +286,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 <Shield className="h-4 w-4 shrink-0 text-primary mt-0.5" />
                 <div className="text-muted-foreground">
                   <p className="font-medium text-foreground">256bit SSL 암호화 전송</p>
-                  <p className="mt-0.5">입력하신 정보는 암호화되어 안전하게 전송되며, 저장되지 않습니다.</p>
+                  <p className="mt-0.5">입력하신 정보는 RSA로 암호화되어 안전하게 전송됩니다.</p>
                 </div>
               </div>
 
@@ -286,13 +309,13 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 </Button>
                 <Button
                   onClick={handleAuth}
-                  disabled={!credentials.id || !credentials.password || !agreedTerms || isLoading}
+                  disabled={!credentials.id || !credentials.password || !agreedTerms || isLoading || authMethod === "cert"}
                   className="flex-1"
                 >
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                      인증 중...
+                      연결 중...
                     </>
                   ) : (
                     <>
@@ -305,65 +328,21 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
             </div>
           )}
 
-          {/* Step 3: SMS 인증 */}
-          {step === "verify" && (
-            <div className="space-y-4">
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary/10 mx-auto flex items-center justify-center mb-2">
-                  <Smartphone className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-lg font-bold">본인 인증</h3>
+          {/* Step 3: 로딩 화면 */}
+          {step === "loading" && (
+            <div className="space-y-4 text-center py-8">
+              <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto flex items-center justify-center">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">카드사 연결 중</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  등록된 휴대폰으로 인증번호가 발송되었습니다
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  010-****-1234
+                  {selectedCompanyData?.name}에 접속하고 있습니다...
                 </p>
               </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">인증번호 6자리</Label>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="000000"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
-                  className="text-center text-2xl tracking-[0.5em] font-mono"
-                />
-                <p className="text-xs text-muted-foreground text-center">
-                  인증번호가 오지 않나요? <button className="text-primary underline">재발송</button>
-                </p>
-              </div>
-
-              <div className="bg-yellow-500/10 rounded-lg p-3 text-xs text-yellow-700 dark:text-yellow-400">
-                💡 <strong>목업 모드:</strong> 아무 6자리 숫자를 입력하세요
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep("auth")} className="flex-1">
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  이전
-                </Button>
-                <Button
-                  onClick={handleVerify}
-                  disabled={verificationCode.length !== 6 || isLoading}
-                  className="flex-1"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                      확인 중...
-                    </>
-                  ) : (
-                    <>
-                      확인
-                      <ArrowRight className="h-4 w-4 ml-1" />
-                    </>
-                  )}
-                </Button>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                최대 30초까지 소요될 수 있습니다
+              </p>
             </div>
           )}
 
@@ -374,75 +353,89 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 <div className="w-12 h-12 rounded-full bg-green-500/10 mx-auto flex items-center justify-center mb-2">
                   <CheckCircle2 className="h-6 w-6 text-green-500" />
                 </div>
-                <h3 className="text-lg font-bold">카드 선택</h3>
+                <h3 className="text-lg font-bold">카드 연결 완료</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  연결할 카드를 선택해주세요
+                  {fetchedCards.length > 0 
+                    ? "연결할 카드를 선택해주세요"
+                    : "카드사 연결이 완료되었습니다"}
                 </p>
               </div>
 
-              <div className="space-y-2">
-                {MOCK_CARDS.map((card) => (
-                  <button
-                    key={card.id}
-                    onClick={() => {
-                      setSelectedCards((prev) =>
-                        prev.includes(card.id)
-                          ? prev.filter((id) => id !== card.id)
-                          : [...prev, card.id]
-                      );
-                    }}
-                    className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left",
-                      selectedCards.includes(card.id)
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    )}
-                  >
-                    <div className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center",
-                      selectedCompanyData?.color || "bg-gray-500",
-                      "text-white"
-                    )}>
-                      <CreditCard className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{card.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {card.number} · {card.type}
-                      </p>
-                    </div>
-                    <div className={cn(
-                      "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                      selectedCards.includes(card.id)
-                        ? "border-primary bg-primary"
-                        : "border-muted-foreground"
-                    )}>
-                      {selectedCards.includes(card.id) && (
-                        <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
+              {fetchedCards.length > 0 ? (
+                <div className="space-y-2">
+                  {fetchedCards.map((card, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedCards((prev) =>
+                          prev.includes(card.cardNo)
+                            ? prev.filter((no) => no !== card.cardNo)
+                            : [...prev, card.cardNo]
+                        );
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left",
+                        selectedCards.includes(card.cardNo)
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
                       )}
-                    </div>
-                  </button>
-                ))}
-              </div>
+                    >
+                      <div className={cn(
+                        "w-10 h-10 rounded-lg flex items-center justify-center",
+                        selectedCompanyData?.color || "bg-gray-500",
+                        "text-white"
+                      )}>
+                        <CreditCard className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{card.cardName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {card.cardNo} · {card.cardType}
+                        </p>
+                      </div>
+                      <div className={cn(
+                        "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                        selectedCards.includes(card.cardNo)
+                          ? "border-primary bg-primary"
+                          : "border-muted-foreground"
+                      )}>
+                        {selectedCards.includes(card.cardNo) && (
+                          <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-muted/50 rounded-xl p-4 text-center">
+                  <CreditCard className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    조회된 카드가 없습니다
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    카드사에 등록된 카드가 있는지 확인해주세요
+                  </p>
+                </div>
+              )}
 
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep("verify")} className="flex-1">
+                <Button variant="outline" onClick={() => setStep("auth")} className="flex-1">
                   <ArrowLeft className="h-4 w-4 mr-1" />
                   이전
                 </Button>
                 <Button
                   onClick={handleSelectCards}
-                  disabled={selectedCards.length === 0 || isLoading}
+                  disabled={fetchedCards.length > 0 && selectedCards.length === 0}
                   className="flex-1"
                 >
-                  {isLoading ? (
+                  {fetchedCards.length > 0 ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                      연결 중...
+                      {selectedCards.length}개 카드 연결
+                      <ArrowRight className="h-4 w-4 ml-1" />
                     </>
                   ) : (
                     <>
-                      {selectedCards.length}개 카드 연결
+                      완료
                       <ArrowRight className="h-4 w-4 ml-1" />
                     </>
                   )}
@@ -462,19 +455,23 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
               <div>
                 <h3 className="text-lg font-bold">카드 연결 완료!</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {selectedCards.length}개의 카드가 연결되었습니다
+                  {selectedCompanyData?.name}가 연결되었습니다
                 </p>
               </div>
 
-              <div className="bg-muted/50 rounded-xl p-4 space-y-2">
-                {MOCK_CARDS.filter((c) => selectedCards.includes(c.id)).map((card) => (
-                  <div key={card.id} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>{card.name}</span>
-                    <span className="text-muted-foreground">({card.number})</span>
-                  </div>
-                ))}
-              </div>
+              {fetchedCards.length > 0 && selectedCards.length > 0 && (
+                <div className="bg-muted/50 rounded-xl p-4 space-y-2">
+                  {fetchedCards
+                    .filter((c) => selectedCards.includes(c.cardNo))
+                    .map((card, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <span>{card.cardName}</span>
+                        <span className="text-muted-foreground">({card.cardNo})</span>
+                      </div>
+                    ))}
+                </div>
+              )}
 
               <p className="text-xs text-muted-foreground">
                 지출 내역이 자동으로 분류되어 관리됩니다
