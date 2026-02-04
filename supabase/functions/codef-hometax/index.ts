@@ -99,12 +99,24 @@ serve(async (req) => {
     console.log("Hometax API response status:", response.status);
     console.log("Hometax API response:", responseText);
 
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch {
-      data = { raw: responseText };
-    }
+    const parseMaybeEncodedJson = (text: string) => {
+      // 1) Plain JSON
+      try {
+        return JSON.parse(text);
+      } catch {
+        // ignore
+      }
+
+      // 2) Sometimes CODEF responses arrive percent-encoded (e.g. %7B%22result%22...)
+      try {
+        const decoded = decodeURIComponent(text);
+        return JSON.parse(decoded);
+      } catch {
+        return { raw: text };
+      }
+    };
+
+    const data = parseMaybeEncodedJson(responseText);
 
     // 응답 파싱 - data가 배열인 경우 처리
     const result = data.result || {};
@@ -120,16 +132,23 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: isSuccess,
-        message: isSuccess ? "사업자 정보가 확인되었습니다." : (result.message || "조회에 실패했습니다."),
+        // 우리 서비스 기준의 사용자 친화적 메시지
+        message: isSuccess
+          ? "사업자 정보가 확인되었습니다."
+          : (typeof result.message === "string" && result.message.trim()
+              ? result.message
+              : "조회에 실패했습니다."),
         code: result.code,
-        data: isSuccess ? {
-          businessNumber: matchingData.resCompanyIdentityNo || cleanedNumber,
-          businessStatus: matchingData.resBusinessStatus || "조회 결과 없음",
-          taxationType: matchingData.resTaxationTypeCode || "-",
-          taxationTypeDesc: getTaxationTypeDesc(matchingData.resTaxationTypeCode),
-          closingDate: matchingData.resClosingDate || null,
-          transferDate: matchingData.resTransferTaxTypeDate || null,
-        } : null,
+        data: isSuccess
+          ? {
+              businessNumber: matchingData.resCompanyIdentityNo || cleanedNumber,
+              businessStatus: matchingData.resBusinessStatus || "조회 결과 없음",
+              taxationType: matchingData.resTaxationTypeCode || "-",
+              taxationTypeDesc: getTaxationTypeDesc(matchingData.resTaxationTypeCode),
+              closingDate: matchingData.resClosingDate || null,
+              transferDate: matchingData.resTransferTaxTypeDate || null,
+            }
+          : null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
