@@ -115,9 +115,9 @@ export function ConnectionStatusBanner() {
             <div
               key={conn.key}
               className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-full text-xs",
+                "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
                 conn.connected 
-                  ? "bg-success/20 text-success" 
+                  ? "bg-green-500 text-white" 
                   : "bg-muted text-muted-foreground"
               )}
             >
