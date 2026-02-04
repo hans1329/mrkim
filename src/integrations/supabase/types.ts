@@ -175,12 +175,18 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_connected: boolean | null
+          account_connected_at: string | null
           avatar_url: string | null
           briefing_frequency: string | null
           business_name: string | null
           business_registration_number: string | null
           business_type: string | null
+          card_connected: boolean | null
+          card_connected_at: string | null
           created_at: string
+          hometax_connected: boolean | null
+          hometax_connected_at: string | null
           id: string
           name: string | null
           nickname: string | null
@@ -196,12 +202,18 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_connected?: boolean | null
+          account_connected_at?: string | null
           avatar_url?: string | null
           briefing_frequency?: string | null
           business_name?: string | null
           business_registration_number?: string | null
           business_type?: string | null
+          card_connected?: boolean | null
+          card_connected_at?: string | null
           created_at?: string
+          hometax_connected?: boolean | null
+          hometax_connected_at?: string | null
           id?: string
           name?: string | null
           nickname?: string | null
@@ -217,12 +229,18 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_connected?: boolean | null
+          account_connected_at?: string | null
           avatar_url?: string | null
           briefing_frequency?: string | null
           business_name?: string | null
           business_registration_number?: string | null
           business_type?: string | null
+          card_connected?: boolean | null
+          card_connected_at?: string | null
           created_at?: string
+          hometax_connected?: boolean | null
+          hometax_connected_at?: string | null
           id?: string
           name?: string | null
           nickname?: string | null
