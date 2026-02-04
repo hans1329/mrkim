@@ -92,9 +92,14 @@ serve(async (req) => {
       data = { raw: responseText };
     }
 
-    // 응답 파싱
+    // 응답 파싱 - data가 배열인 경우 처리
     const result = data.result || {};
-    const businessData = data.data || {};
+    const businessDataArray = Array.isArray(data.data) ? data.data : [data.data];
+    
+    // 조회한 사업자번호와 일치하는 데이터 찾기
+    const matchingData = businessDataArray.find(
+      (item: any) => item?.resCompanyIdentityNo === testBusinessNumber
+    ) || businessDataArray[0] || {};
 
     return new Response(
       JSON.stringify({
@@ -102,11 +107,12 @@ serve(async (req) => {
         message: result.message || "조회 완료",
         code: result.code,
         data: {
-          businessStatus: businessData.resBusinessStatus || "조회 결과 없음",
-          taxationType: businessData.resTaxationTypeCode || "-",
-          taxationTypeDesc: getTaxationTypeDesc(businessData.resTaxationTypeCode),
-          closingDate: businessData.resClosingDate || null,
-          transferDate: businessData.resTransferTaxTypeDate || null,
+          businessNumber: matchingData.resCompanyIdentityNo || testBusinessNumber,
+          businessStatus: matchingData.resBusinessStatus || "조회 결과 없음",
+          taxationType: matchingData.resTaxationTypeCode || "-",
+          taxationTypeDesc: getTaxationTypeDesc(matchingData.resTaxationTypeCode),
+          closingDate: matchingData.resClosingDate || null,
+          transferDate: matchingData.resTransferTaxTypeDate || null,
         },
         raw: data, // 디버깅용 원본 응답
       }),

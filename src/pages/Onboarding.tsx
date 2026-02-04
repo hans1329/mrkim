@@ -475,16 +475,17 @@ function ConnectionStep({
           </div>
           {connectionResult.success ? (
             <div className="space-y-1.5 text-sm">
-              {connectionResult.raw?.data?.map((item: any, idx: number) => (
-                <div key={idx} className="bg-background rounded p-2 border">
-                  <div className="font-mono text-xs text-muted-foreground">
-                    사업자번호: {item.resCompanyIdentityNo}
-                  </div>
-                  <div className="text-foreground mt-1">
-                    {item.resBusinessStatus?.replace(/\n/g, " ")}
-                  </div>
+              <div className="bg-background rounded p-3 border">
+                <div className="font-mono text-xs text-muted-foreground">
+                  사업자번호: {connectionResult.data?.businessNumber}
                 </div>
-              ))}
+                <div className="text-foreground mt-1.5 font-medium">
+                  {connectionResult.data?.businessStatus?.replace(/\n/g, " ")}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  과세유형: {connectionResult.data?.taxationTypeDesc}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="text-destructive text-sm">
