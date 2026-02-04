@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -20,67 +20,69 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { mockTransactions, Transaction, formatCurrency } from "@/data/mockData";
-import { Plus, Search, TrendingUp, TrendingDown, Receipt, Sparkles } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatCurrency } from "@/data/mockData";
+import { Plus, Search, TrendingUp, TrendingDown, Receipt, Sparkles, LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TransactionClassifier } from "@/components/transactions/TransactionClassifier";
+import { useTransactions, useTransactionStats, useAddTransaction, type TransactionInsert } from "@/hooks/useTransactions";
+import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 export default function Transactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
   const [filter, setFilter] = useState<"all" | "income" | "expense">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newTransaction, setNewTransaction] = useState({
     type: "income" as "income" | "expense",
-    category: "",
     description: "",
     amount: "",
-    paymentMethod: "card" as "card" | "cash" | "transfer",
+    source_type: "card" as "card" | "bank",
+    source_name: "",
   });
 
-  const filteredTransactions = transactions.filter((t) => {
-    const matchesFilter = filter === "all" || t.type === filter;
-    const matchesSearch =
-      t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.category.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesFilter && matchesSearch;
+  const { data: transactions, isLoading } = useTransactions({
+    type: filter === "all" ? undefined : filter,
+    searchTerm: searchTerm || undefined,
   });
 
-  const totalIncome = transactions
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpense = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
+  const { data: stats, isLoading: isStatsLoading } = useTransactionStats();
+  const addTransaction = useAddTransaction();
 
   const handleAddTransaction = () => {
-    if (!newTransaction.category || !newTransaction.description || !newTransaction.amount) return;
+    if (!newTransaction.description || !newTransaction.amount) {
+      toast.error("거래 내용과 금액을 입력해주세요");
+      return;
+    }
 
-    const amount = parseInt(newTransaction.amount);
-    const vatAmount = newTransaction.type === "income" ? Math.round(amount / 11) : undefined;
-
-    const transaction: Transaction = {
-      id: Date.now().toString(),
-      type: newTransaction.type,
-      category: newTransaction.category,
+    const input: TransactionInsert = {
+      transaction_date: new Date().toISOString().split("T")[0],
       description: newTransaction.description,
-      amount,
-      paymentMethod: newTransaction.paymentMethod,
-      date: new Date().toISOString().split("T")[0],
-      vatAmount,
+      amount: parseInt(newTransaction.amount),
+      type: newTransaction.type,
+      source_type: newTransaction.source_type,
+      source_name: newTransaction.source_name || undefined,
     };
 
-    setTransactions([transaction, ...transactions]);
-    setNewTransaction({
-      type: "income",
-      category: "",
-      description: "",
-      amount: "",
-      paymentMethod: "card",
+    addTransaction.mutate(input, {
+      onSuccess: () => {
+        toast.success("거래가 추가되었습니다");
+        setNewTransaction({
+          type: "income",
+          description: "",
+          amount: "",
+          source_type: "card",
+          source_name: "",
+        });
+        setIsDialogOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message || "거래 추가에 실패했습니다");
+      },
     });
-    setIsDialogOpen(false);
   };
+
+  const isEmpty = !isLoading && (!transactions || transactions.length === 0);
 
   return (
     <MainLayout title="매출/매입" subtitle="거래 내역을 관리하세요" showBackButton>
@@ -98,23 +100,41 @@ export default function Transactions() {
           <div className="grid grid-cols-3 gap-2">
             <Card>
               <CardContent className="p-3 text-center">
-                <TrendingUp className="mx-auto h-5 w-5 text-success" />
+                <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-green-500/10">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                </div>
                 <p className="mt-1 text-xs text-muted-foreground">매출</p>
-                <p className="text-sm font-bold">{formatCurrency(totalIncome)}</p>
+                {isStatsLoading ? (
+                  <Skeleton className="mx-auto mt-1 h-4 w-16" />
+                ) : (
+                  <p className="text-sm font-bold">{formatCurrency(stats?.totalIncome || 0)}</p>
+                )}
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
-                <TrendingDown className="mx-auto h-5 w-5 text-destructive" />
+                <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-red-500/10">
+                  <TrendingDown className="h-4 w-4 text-red-600" />
+                </div>
                 <p className="mt-1 text-xs text-muted-foreground">지출</p>
-                <p className="text-sm font-bold">{formatCurrency(totalExpense)}</p>
+                {isStatsLoading ? (
+                  <Skeleton className="mx-auto mt-1 h-4 w-16" />
+                ) : (
+                  <p className="text-sm font-bold">{formatCurrency(stats?.totalExpense || 0)}</p>
+                )}
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
-                <Receipt className="mx-auto h-5 w-5 text-primary" />
+                <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                  <Receipt className="h-4 w-4 text-primary" />
+                </div>
                 <p className="mt-1 text-xs text-muted-foreground">순이익</p>
-                <p className="text-sm font-bold">{formatCurrency(totalIncome - totalExpense)}</p>
+                {isStatsLoading ? (
+                  <Skeleton className="mx-auto mt-1 h-4 w-16" />
+                ) : (
+                  <p className="text-sm font-bold">{formatCurrency(stats?.netProfit || 0)}</p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -169,19 +189,9 @@ export default function Transactions() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>카테고리</Label>
+                    <Label>거래처/내용</Label>
                     <Input
-                      placeholder="예: 식자재, 관리비"
-                      value={newTransaction.category}
-                      onChange={(e) =>
-                        setNewTransaction({ ...newTransaction, category: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>설명</Label>
-                    <Input
-                      placeholder="거래 내용을 입력하세요"
+                      placeholder="예: 스타벅스 강남점"
                       value={newTransaction.description}
                       onChange={(e) =>
                         setNewTransaction({ ...newTransaction, description: e.target.value })
@@ -200,11 +210,11 @@ export default function Transactions() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>결제 방법</Label>
+                    <Label>결제 수단</Label>
                     <Select
-                      value={newTransaction.paymentMethod}
-                      onValueChange={(value: "card" | "cash" | "transfer") =>
-                        setNewTransaction({ ...newTransaction, paymentMethod: value })
+                      value={newTransaction.source_type}
+                      onValueChange={(value: "card" | "bank") =>
+                        setNewTransaction({ ...newTransaction, source_type: value })
                       }
                     >
                       <SelectTrigger>
@@ -212,13 +222,26 @@ export default function Transactions() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="card">카드</SelectItem>
-                        <SelectItem value="cash">현금</SelectItem>
-                        <SelectItem value="transfer">계좌이체</SelectItem>
+                        <SelectItem value="bank">계좌이체</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={handleAddTransaction} className="w-full">
-                    추가하기
+                  <div className="space-y-2">
+                    <Label>카드/은행명 (선택)</Label>
+                    <Input
+                      placeholder="예: 신한카드"
+                      value={newTransaction.source_name}
+                      onChange={(e) =>
+                        setNewTransaction({ ...newTransaction, source_name: e.target.value })
+                      }
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleAddTransaction} 
+                    className="w-full"
+                    disabled={addTransaction.isPending}
+                  >
+                    {addTransaction.isPending ? "추가 중..." : "추가하기"}
                   </Button>
                 </div>
               </DialogContent>
@@ -226,48 +249,90 @@ export default function Transactions() {
           </div>
 
           {/* 거래 목록 */}
-          <Card>
-            <CardContent className="divide-y p-0">
-              {filteredTransactions.map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-full",
-                      transaction.type === "income" ? "bg-success/10" : "bg-destructive/10"
-                    )}>
-                      {transaction.type === "income" ? (
-                        <TrendingUp className="h-5 w-5 text-success" />
-                      ) : (
-                        <TrendingDown className="h-5 w-5 text-destructive" />
-                      )}
+          {isLoading ? (
+            <Card>
+              <CardContent className="divide-y p-0">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div>
+                        <Skeleton className="h-4 w-32 mb-1" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{transaction.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {transaction.category} · {transaction.date}
-                      </p>
+                    <div className="text-right">
+                      <Skeleton className="h-4 w-20 mb-1" />
+                      <Skeleton className="h-5 w-12" />
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className={cn(
-                      "font-semibold",
-                      transaction.type === "income" ? "text-success" : "text-destructive"
-                    )}>
-                      {transaction.type === "income" ? "+" : "-"}
-                      {formatCurrency(transaction.amount)}
-                    </p>
-                    <Badge variant="outline" className="text-xs">
-                      {transaction.paymentMethod === "card"
-                        ? "카드"
-                        : transaction.paymentMethod === "cash"
-                        ? "현금"
-                        : "이체"}
-                    </Badge>
-                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ) : isEmpty ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                  <LinkIcon className="h-8 w-8 text-muted-foreground" />
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+                <h3 className="mb-2 font-semibold">거래 내역이 없습니다</h3>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  카드/계좌를 연동하면 거래 내역이 자동으로 수집됩니다
+                </p>
+                <div className="flex gap-2">
+                  <Button asChild variant="outline">
+                    <Link to="/onboarding">데이터 연동하기</Link>
+                  </Button>
+                  <Button onClick={() => setIsDialogOpen(true)}>
+                    <Plus className="mr-1 h-4 w-4" />
+                    수동 추가
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="divide-y p-0">
+                {transactions?.map((transaction) => (
+                  <div key={transaction.id} className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-full",
+                        transaction.type === "income" ? "bg-green-500/10" : "bg-red-500/10"
+                      )}>
+                        {transaction.category_icon ? (
+                          <span className="text-lg">{transaction.category_icon}</span>
+                        ) : transaction.type === "income" ? (
+                          <TrendingUp className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <TrendingDown className="h-5 w-5 text-red-600" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium">{transaction.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {transaction.category || "미분류"} · {transaction.transaction_date}
+                          {transaction.source_name && ` · ${transaction.source_name}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={cn(
+                        "font-semibold",
+                        transaction.type === "income" ? "text-green-600" : "text-red-600"
+                      )}>
+                        {transaction.type === "income" ? "+" : "-"}
+                        {formatCurrency(transaction.amount)}
+                      </p>
+                      <Badge variant="outline" className="text-xs">
+                        {transaction.source_type === "card" ? "카드" : "계좌"}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="classify">
