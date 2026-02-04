@@ -179,40 +179,31 @@ export default function Transactions() {
           <div className="grid grid-cols-3 gap-2">
             <Card>
               <CardContent className="p-3 text-center">
-                <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-green-500/10">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">매출</p>
+                <p className="text-sm text-muted-foreground">매출</p>
                 {isStatsLoading ? (
-                  <Skeleton className="mx-auto mt-1 h-4 w-16" />
+                  <Skeleton className="mx-auto mt-1 h-6 w-20" />
                 ) : (
-                  <p className="text-sm font-bold">{formatCurrency(stats?.totalIncome || 0)}</p>
+                  <p className="mt-1 text-lg font-bold text-green-600">{formatCurrency(stats?.totalIncome || 0)}</p>
                 )}
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
-                <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-red-500/10">
-                  <TrendingDown className="h-4 w-4 text-red-600" />
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">지출</p>
+                <p className="text-sm text-muted-foreground">지출</p>
                 {isStatsLoading ? (
-                  <Skeleton className="mx-auto mt-1 h-4 w-16" />
+                  <Skeleton className="mx-auto mt-1 h-6 w-20" />
                 ) : (
-                  <p className="text-sm font-bold">{formatCurrency(stats?.totalExpense || 0)}</p>
+                  <p className="mt-1 text-lg font-bold text-red-600">{formatCurrency(stats?.totalExpense || 0)}</p>
                 )}
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
-                <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  <Receipt className="h-4 w-4 text-primary" />
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">순이익</p>
+                <p className="text-sm text-muted-foreground">순이익</p>
                 {isStatsLoading ? (
-                  <Skeleton className="mx-auto mt-1 h-4 w-16" />
+                  <Skeleton className="mx-auto mt-1 h-6 w-20" />
                 ) : (
-                  <p className="text-sm font-bold">{formatCurrency(stats?.netProfit || 0)}</p>
+                  <p className="mt-1 text-lg font-bold text-primary">{formatCurrency(stats?.netProfit || 0)}</p>
                 )}
               </CardContent>
             </Card>
