@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.codef-card]
 verify_jwt = false
+
+[functions.codef-bank]
+verify_jwt = false

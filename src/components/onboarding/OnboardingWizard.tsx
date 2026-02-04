@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { OnboardingStep } from "@/hooks/useOnboarding";
 import { CardConnectionFlow } from "./CardConnectionFlow";
+import { AccountConnectionFlow } from "./AccountConnectionFlow";
 
 interface OnboardingWizardProps {
   currentStep: OnboardingStep;
@@ -48,6 +49,7 @@ export function OnboardingWizard({
 }: OnboardingWizardProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [showCardFlow, setShowCardFlow] = useState(false);
+  const [showAccountFlow, setShowAccountFlow] = useState(false);
   const currentIdx = stepIndex(currentStep);
   const progress = ((currentIdx + 1) / steps.length) * 100;
 
@@ -82,6 +84,20 @@ export function OnboardingWizard({
 
   const handleCardFlowBack = () => {
     setShowCardFlow(false);
+  };
+
+  const handleAccountConnect = () => {
+    setShowAccountFlow(true);
+  };
+
+  const handleAccountFlowComplete = () => {
+    onConnect("account");
+    setShowAccountFlow(false);
+    handleNext();
+  };
+
+  const handleAccountFlowBack = () => {
+    setShowAccountFlow(false);
   };
 
   return (
@@ -150,17 +166,25 @@ export function OnboardingWizard({
               />
             </div>
           )}
-          {currentStep === "account" && (
+          {currentStep === "account" && !showAccountFlow && (
             <ConnectionStep
               title="계좌 연결"
               description="사업용 계좌를 연동하면 입출금 내역을 실시간으로 확인하고 자금 흐름을 파악할 수 있습니다."
               icon={Landmark}
               isConnected={connections.account}
               isConnecting={isConnecting}
-              onConnect={() => handleConnect("account")}
+              onConnect={handleAccountConnect}
               onNext={handleNext}
               onSkip={handleSkip}
             />
+          )}
+          {currentStep === "account" && showAccountFlow && (
+            <div className="bg-card rounded-3xl p-6 shadow-xl">
+              <AccountConnectionFlow 
+                onComplete={handleAccountFlowComplete}
+                onBack={handleAccountFlowBack}
+              />
+            </div>
           )}
           {currentStep === "complete" && (
             <CompleteStep onComplete={onComplete} connections={connections} />
