@@ -112,6 +112,56 @@ export function useProfile() {
     });
   };
 
+  // 연동 상태 전체 초기화
+  const resetConnections = async () => {
+    try {
+      setUpdating(true);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("로그인이 필요합니다");
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          hometax_connected: false,
+          hometax_connected_at: null,
+          card_connected: false,
+          card_connected_at: null,
+          account_connected: false,
+          account_connected_at: null,
+        })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      
+      // 로컬 상태 업데이트
+      setProfile(prev => prev ? {
+        ...prev,
+        hometax_connected: false,
+        hometax_connected_at: null,
+        card_connected: false,
+        card_connected_at: null,
+        account_connected: false,
+        account_connected_at: null,
+      } : null);
+
+      // 로컬스토리지의 codef 정보도 삭제
+      localStorage.removeItem("codef_connected_id");
+      localStorage.removeItem("codef_card_company");
+      localStorage.removeItem("codef_card_company_name");
+      localStorage.removeItem("codef_bank_connected_id");
+      localStorage.removeItem("codef_bank_code");
+      localStorage.removeItem("codef_bank_name");
+
+      return true;
+    } catch (error) {
+      console.error("Error resetting connections:", error);
+      return false;
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
 
@@ -128,6 +178,7 @@ export function useProfile() {
     updating,
     updateProfile,
     updateSecretaryPhone,
+    resetConnections,
     refetch: fetchProfile,
   };
 }
