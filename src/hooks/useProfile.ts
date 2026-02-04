@@ -20,6 +20,13 @@ export interface Profile {
   secretary_tone: string | null;
   briefing_frequency: string | null;
   priority_metrics: string[] | null;
+  // 연동 상태
+  hometax_connected: boolean | null;
+  hometax_connected_at: string | null;
+  card_connected: boolean | null;
+  card_connected_at: string | null;
+  account_connected: boolean | null;
+  account_connected_at: string | null;
   created_at: string;
   updated_at: string;
 }
