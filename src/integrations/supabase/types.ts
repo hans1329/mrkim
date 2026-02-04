@@ -173,6 +173,48 @@ export type Database = {
         }
         Relationships: []
       }
+      hometax_sync_status: {
+        Row: {
+          created_at: string
+          id: string
+          last_sync_at: string | null
+          purchase_count: number | null
+          sales_count: number | null
+          sync_error: string | null
+          sync_status: string | null
+          total_purchase_amount: number | null
+          total_sales_amount: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          purchase_count?: number | null
+          sales_count?: number | null
+          sync_error?: string | null
+          sync_status?: string | null
+          total_purchase_amount?: number | null
+          total_sales_amount?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          purchase_count?: number | null
+          sales_count?: number | null
+          sync_error?: string | null
+          sync_status?: string | null
+          total_purchase_amount?: number | null
+          total_sales_amount?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_connected: boolean | null
@@ -335,6 +377,63 @@ export type Database = {
           priority?: number
           question?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      tax_invoices: {
+        Row: {
+          buyer_business_number: string | null
+          buyer_name: string | null
+          created_at: string
+          id: string
+          invoice_date: string
+          invoice_type: string
+          issue_id: string | null
+          item_name: string | null
+          supplier_business_number: string | null
+          supplier_name: string | null
+          supply_amount: number
+          synced_at: string
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          buyer_business_number?: string | null
+          buyer_name?: string | null
+          created_at?: string
+          id?: string
+          invoice_date: string
+          invoice_type: string
+          issue_id?: string | null
+          item_name?: string | null
+          supplier_business_number?: string | null
+          supplier_name?: string | null
+          supply_amount?: number
+          synced_at?: string
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          buyer_business_number?: string | null
+          buyer_name?: string | null
+          created_at?: string
+          id?: string
+          invoice_date?: string
+          invoice_type?: string
+          issue_id?: string | null
+          item_name?: string | null
+          supplier_business_number?: string | null
+          supplier_name?: string | null
+          supply_amount?: number
+          synced_at?: string
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

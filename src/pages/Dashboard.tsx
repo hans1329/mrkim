@@ -10,6 +10,7 @@ import { RecentTransactionsCard } from "@/components/dashboard/RecentTransaction
 import { EmployeeSummaryCard } from "@/components/dashboard/EmployeeSummaryCard";
 import { TodayActionsCard } from "@/components/dashboard/TodayActionsCard";
 import { ConnectionStatusBanner } from "@/components/dashboard/ConnectionStatusBanner";
+import { HometaxSummaryCard } from "@/components/dashboard/HometaxSummaryCard";
 import {
   getTodayStats,
   mockDeposits,
@@ -108,6 +109,11 @@ export default function Dashboard() {
 
           {/* 우측 칼럼 */}
           <div className="space-y-6">
+            {/* 홈택스 현황 */}
+            <section>
+              <HometaxSummaryCard />
+            </section>
+
             {/* 최근 거래 내역 */}
             <section>
               <RecentTransactionsCard />
