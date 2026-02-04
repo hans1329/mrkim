@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// 샌드박스 환경
-const CODEF_SANDBOX_URL = "https://sandbox.codef.io";
+// 베타(정식) 환경
+const CODEF_API_URL = "https://api.codef.io";
 const CODEF_TOKEN_URL = "https://oauth.codef.io/oauth/token";
 
 serve(async (req) => {
