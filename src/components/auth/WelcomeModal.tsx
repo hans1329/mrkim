@@ -10,10 +10,9 @@ interface WelcomeModalProps {
 
 export function WelcomeModal({ open, userName, onStart }: WelcomeModalProps) {
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onStart()}>
       <DialogContent 
         className="sm:max-w-md text-center border-0 bg-gradient-to-b from-primary to-primary/90"
-        onInteractOutside={(e) => e.preventDefault()}
       >
         <div className="flex flex-col items-center gap-6 py-6">
           {/* 축하 아이콘 */}

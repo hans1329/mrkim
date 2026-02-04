@@ -49,10 +49,9 @@ export function ConnectionSuccessModal({ open, type, onContinue }: ConnectionSuc
   const Icon = info.icon;
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onContinue()}>
       <DialogContent 
         className="w-[calc(100%-2rem)] max-w-sm border-0 bg-card rounded-xl p-0 overflow-hidden"
-        onInteractOutside={(e) => e.preventDefault()}
       >
         {/* 상단 그라데이션 영역 */}
         <div className={cn(
