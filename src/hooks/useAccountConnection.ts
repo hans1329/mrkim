@@ -50,12 +50,18 @@ export function useAccountConnection(): UseAccountConnectionReturn {
         },
       });
 
+      // 에러 메시지에서 + 기호를 공백으로 디코딩
+      const decodeErrorMessage = (msg: string) => 
+        msg ? decodeURIComponent(msg.replace(/\+/g, ' ')) : msg;
+
       // Supabase functions.invoke는 HTTP 에러 시에도 data를 반환할 수 있음
       const data = response.data;
       
       // 에러 체크: response.error가 있거나 data.success가 false인 경우
-      if (response.error && !data) {
-        throw new Error(response.error.message);
+      if (response.error || (data && !data.success)) {
+        const errorMsg = decodeErrorMessage(data?.error || response.error?.message || "은행 연결에 실패했습니다.");
+        toast.error(errorMsg);
+        return null;
       }
       
       if (data?.success && data?.connectedId) {
@@ -70,14 +76,13 @@ export function useAccountConnection(): UseAccountConnectionReturn {
         toast.success("은행 연결이 완료되었습니다!");
         return data.connectedId;
       } else {
-        // 에러 메시지 표시
-        const errorMessage = data?.error || "은행 연결에 실패했습니다.";
-        toast.error(errorMessage);
+        toast.error("은행 연결에 실패했습니다.");
         return null;
       }
     } catch (error) {
       console.error("Bank registration error:", error);
-      toast.error(error instanceof Error ? error.message : "은행 연결 중 오류가 발생했습니다.");
+      const errorMsg = error instanceof Error ? error.message : "은행 연결 중 오류가 발생했습니다.";
+      toast.error(errorMsg.replace(/\+/g, ' '));
       return null;
     } finally {
       setIsLoading(false);
