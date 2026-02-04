@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useOnboarding, type OnboardingStep } from "@/hooks/useOnboarding";
 import { CardConnectionFlow } from "@/components/onboarding/CardConnectionFlow";
+import { AccountConnectionFlow } from "@/components/onboarding/AccountConnectionFlow";
 import { BusinessNumberModal } from "@/components/onboarding/BusinessNumberModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -52,6 +53,7 @@ export default function Onboarding() {
   const { currentStep, connections, goToStep, connectService, completeOnboarding, resetOnboarding } = useOnboarding();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showCardFlow, setShowCardFlow] = useState(false);
+  const [showAccountFlow, setShowAccountFlow] = useState(false);
   const [connectionResult, setConnectionResult] = useState<any>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
   const [businessNumber, setBusinessNumber] = useState(""); // 설정에서 가져온 사업자등록번호
@@ -254,6 +256,27 @@ export default function Onboarding() {
     setShowCardFlow(false);
   };
 
+  const handleAccountConnect = async () => {
+    // 로그인 상태 체크
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("로그인이 필요합니다.");
+      navigate("/login");
+      return;
+    }
+    setShowAccountFlow(true);
+  };
+
+  const handleAccountFlowComplete = () => {
+    connectService("account");
+    setShowAccountFlow(false);
+    handleNext();
+  };
+
+  const handleAccountFlowBack = () => {
+    setShowAccountFlow(false);
+  };
+
   const handleComplete = () => {
     completeOnboarding();
     navigate("/");
@@ -367,19 +390,32 @@ export default function Onboarding() {
               />
             </motion.div>
           )}
-          {currentStep === "account" && (
+          {currentStep === "account" && !showAccountFlow && (
             <ConnectionStep
               title="계좌 연결"
               description="사업용 계좌를 연동하면 자금 흐름을 실시간으로 파악합니다."
               icon={Landmark}
               isConnected={connections.account}
               isConnecting={isConnecting}
-              onConnect={() => handleConnect("account")}
+              onConnect={handleAccountConnect}
               onNext={handleNext}
               onSkip={handleSkip}
               stepNumber={3}
               totalSteps={3}
             />
+          )}
+          {currentStep === "account" && showAccountFlow && (
+            <motion.div 
+              className="bg-card rounded-2xl p-6 shadow-sm border"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <AccountConnectionFlow 
+                onComplete={handleAccountFlowComplete}
+                onBack={handleAccountFlowBack}
+              />
+            </motion.div>
           )}
           {currentStep === "complete" && (
             <CompleteStep onComplete={handleComplete} connections={connections} />
