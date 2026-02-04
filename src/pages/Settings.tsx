@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -25,31 +27,60 @@ import {
   CheckCircle2,
   RefreshCw,
   Loader2,
+  Save,
+  Pencil,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useProfile } from "@/hooks/useProfile";
+import { toast } from "sonner";
 
 export default function Settings() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { connections, resetOnboarding } = useOnboarding();
   const { profile, loading, updating, updateProfile } = useProfile();
+  
+  // 사업장 정보 편집 상태
+  const [isEditing, setIsEditing] = useState(false);
+  const [businessName, setBusinessName] = useState("");
+  const [businessRegNumber, setBusinessRegNumber] = useState("");
+  const [businessType, setBusinessType] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 프로필 로드 시 초기값 설정
+  useEffect(() => {
+    if (profile) {
+      setBusinessName(profile.business_name || "");
+      setBusinessRegNumber(profile.business_registration_number || "");
+      setBusinessType(profile.business_type || "");
+    }
+  }, [profile]);
 
   // 업종 라벨 매핑
+  const businessTypes = [
+    { value: "restaurant", label: "요식업" },
+    { value: "retail", label: "소매업" },
+    { value: "service", label: "서비스업" },
+    { value: "manufacturing", label: "제조업" },
+    { value: "wholesale", label: "도매업" },
+    { value: "other", label: "기타" },
+  ];
+
   const getBusinessTypeLabel = (type: string | null) => {
-    const types: Record<string, string> = {
-      restaurant: "요식업",
-      retail: "소매업",
-      service: "서비스업",
-      manufacturing: "제조업",
-      wholesale: "도매업",
-      other: "기타",
-    };
-    return type ? types[type] || type : "미등록";
+    const found = businessTypes.find(t => t.value === type);
+    return found ? found.label : type || "미등록";
   };
 
-  // 사업자등록번호 포맷팅
+  // 사업자등록번호 포맷팅 (입력 시)
+  const formatBusinessRegNumberInput = (value: string) => {
+    const cleaned = value.replace(/\D/g, "").slice(0, 10);
+    if (cleaned.length <= 3) return cleaned;
+    if (cleaned.length <= 5) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 5)}-${cleaned.slice(5)}`;
+  };
+
+  // 사업자등록번호 표시용 포맷팅
   const formatBusinessRegNumber = (num: string | null) => {
     if (!num) return "미등록";
     const cleaned = num.replace(/\D/g, "");
@@ -59,10 +90,48 @@ export default function Settings() {
     return num;
   };
 
+  // 사업자등록번호 유효성 검사
+  const isValidBusinessRegNumber = (num: string) => {
+    const cleaned = num.replace(/\D/g, "");
+    return cleaned.length === 10;
+  };
+
+  // 저장 핸들러
+  const handleSave = async () => {
+    // 사업자등록번호 검증
+    if (businessRegNumber && !isValidBusinessRegNumber(businessRegNumber)) {
+      toast.error("사업자등록번호는 10자리 숫자여야 합니다.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateProfile({
+        business_name: businessName.trim() || null,
+        business_registration_number: businessRegNumber.replace(/\D/g, "") || null,
+        business_type: businessType || null,
+      });
+      toast.success("사업장 정보가 저장되었습니다.");
+      setIsEditing(false);
+    } catch (error) {
+      toast.error("저장에 실패했습니다.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 편집 취소
+  const handleCancel = () => {
+    setBusinessName(profile?.business_name || "");
+    setBusinessRegNumber(profile?.business_registration_number || "");
+    setBusinessType(profile?.business_type || "");
+    setIsEditing(false);
+  };
+
   return (
     <MainLayout title="설정" subtitle="앱 설정을 관리하세요" showBackButton>
       <div className="space-y-4">
-        {/* 사업장 정보 (읽기 전용 - 국세청 연동 데이터) */}
+        {/* 사업장 정보 (편집 가능) */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -70,15 +139,15 @@ export default function Settings() {
                 <Building2 className="h-4 w-4 text-muted-foreground" />
                 <CardTitle className="text-base">사업장 정보</CardTitle>
               </div>
-              {connections.hometax && (
+              {!isEditing && !loading && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   className="gap-1 text-xs"
-                  onClick={resetOnboarding}
+                  onClick={() => setIsEditing(true)}
                 >
-                  <RefreshCw className="h-3 w-3" />
-                  갱신
+                  <Pencil className="h-3 w-3" />
+                  수정
                 </Button>
               )}
             </div>
@@ -88,11 +157,79 @@ export default function Settings() {
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
-            ) : profile?.business_name ? (
+            ) : isEditing ? (
+              // 편집 모드
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="businessName" className="text-xs">사업장명</Label>
+                  <Input
+                    id="businessName"
+                    placeholder="예: 김비서 카페"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    maxLength={50}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="businessRegNumber" className="text-xs">사업자등록번호</Label>
+                  <Input
+                    id="businessRegNumber"
+                    placeholder="000-00-00000"
+                    value={formatBusinessRegNumberInput(businessRegNumber)}
+                    onChange={(e) => setBusinessRegNumber(e.target.value.replace(/\D/g, ""))}
+                    maxLength={12}
+                    className="font-mono"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    숫자 10자리를 입력하세요
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">업종</Label>
+                  <Select value={businessType} onValueChange={setBusinessType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="업종을 선택하세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {businessTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                  >
+                    취소
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    className="flex-1 gap-1"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Save className="h-3 w-3" />
+                    )}
+                    저장
+                  </Button>
+                </div>
+              </div>
+            ) : profile?.business_name || profile?.business_registration_number ? (
+              // 정보가 있을 때 표시
               <div className="space-y-3">
                 <div className="flex items-center justify-between py-2 border-b">
                   <span className="text-xs text-muted-foreground">사업장명</span>
-                  <span className="text-sm font-medium">{profile.business_name}</span>
+                  <span className="text-sm font-medium">{profile.business_name || "미등록"}</span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b">
                   <span className="text-xs text-muted-foreground">사업자등록번호</span>
@@ -106,24 +243,23 @@ export default function Settings() {
                     {getBusinessTypeLabel(profile.business_type)}
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground text-center pt-2">
-                  국세청 연동 데이터입니다. 정보가 다르다면 갱신해주세요.
-                </p>
               </div>
             ) : (
+              // 정보가 없을 때
               <div className="text-center py-4">
                 <Building2 className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
                 <p className="text-sm text-muted-foreground">사업장 정보가 없습니다</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  국세청(홈택스)을 연동하면 자동으로 불러옵니다
+                  수정 버튼을 눌러 정보를 입력하세요
                 </p>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="mt-3"
-                  onClick={resetOnboarding}
+                  className="mt-3 gap-1"
+                  onClick={() => setIsEditing(true)}
                 >
-                  국세청 연동하기
+                  <Pencil className="h-3 w-3" />
+                  정보 입력하기
                 </Button>
               </div>
             )}
