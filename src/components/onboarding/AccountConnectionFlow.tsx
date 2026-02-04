@@ -391,12 +391,12 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
                       )}>
                         <Wallet className="h-5 w-5" />
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{account.accountName || account.accountType}</p>
-                        <p className="text-xs text-muted-foreground">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{account.accountName || account.accountType}</p>
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5">
                           {account.accountNo}
                         </p>
-                        <p className="text-xs font-medium text-primary mt-0.5">
+                        <p className="text-xs font-medium text-primary mt-1">
                           {formatBalance(account.balance)}
                         </p>
                       </div>

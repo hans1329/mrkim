@@ -387,10 +387,13 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                       )}>
                         <CreditCard className="h-5 w-5" />
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{card.cardName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {card.cardNo} · {card.cardType}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{card.cardName}</p>
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                          {card.cardNo}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {card.cardType}
                         </p>
                       </div>
                       <div className={cn(
