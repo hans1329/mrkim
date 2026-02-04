@@ -118,7 +118,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
               <Button
                 variant="ghost"
                 className={cn(
-                  "w-full text-muted-foreground hover:text-foreground",
+                  "w-full text-muted-foreground hover:bg-primary hover:text-white",
                   collapsed ? "justify-center p-3" : "justify-start gap-3"
                 )}
                 onClick={() => navigate("/notifications")}
@@ -140,7 +140,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
               <Button
                 variant="ghost"
                 className={cn(
-                  "w-full text-muted-foreground hover:text-foreground",
+                  "w-full text-muted-foreground hover:bg-primary hover:text-white",
                   collapsed ? "justify-center p-3" : "justify-start gap-3"
                 )}
                 onClick={() => navigate("/settings")}
@@ -157,7 +157,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
               <Button
                 variant="ghost"
                 className={cn(
-                  "w-full text-muted-foreground hover:text-foreground",
+                  "w-full text-muted-foreground hover:bg-primary hover:text-white",
                   collapsed ? "justify-center p-3" : "justify-start gap-3"
                 )}
                 onClick={() => navigate("/help")}
@@ -173,7 +173,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           <Button
             variant="ghost"
             className={cn(
-              "w-full text-muted-foreground hover:text-foreground",
+              "w-full text-muted-foreground hover:bg-primary hover:text-white",
               collapsed ? "justify-center p-3" : "justify-start gap-3"
             )}
             onClick={() => setCollapsed(!collapsed)}
