@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// 베타(정식) 환경
-const CODEF_API_URL = "https://api.codef.io";
+// 데모(개발) 환경
+const CODEF_API_URL = "https://development.codef.io";
 const CODEF_TOKEN_URL = "https://oauth.codef.io/oauth/token";
 
 serve(async (req) => {

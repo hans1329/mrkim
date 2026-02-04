@@ -53,6 +53,7 @@ export default function Onboarding() {
   const [showCardFlow, setShowCardFlow] = useState(false);
   const [connectionResult, setConnectionResult] = useState<any>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+  const [businessNumber, setBusinessNumber] = useState(""); // 사업자등록번호 입력
   
   // 페이지 진입 시 DB에서 연결 상태 확인 후 로컬 상태에 반영
   useEffect(() => {
@@ -110,6 +111,66 @@ export default function Onboarding() {
       .eq("user_id", user.id);
   };
 
+  const handleHometaxConnect = async (inputBusinessNumber: string) => {
+    // 로그인 상태 체크
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("로그인이 필요합니다.");
+      navigate("/login");
+      return;
+    }
+
+    // 사업자등록번호 검증
+    const cleanedNumber = inputBusinessNumber.replace(/\D/g, "");
+    if (cleanedNumber.length !== 10) {
+      toast.error("사업자등록번호 10자리를 입력해주세요.");
+      return;
+    }
+
+    setIsConnecting(true);
+    setConnectionResult(null);
+    
+    try {
+      console.log("Calling codef-hometax API with:", cleanedNumber);
+      
+      const { data, error } = await supabase.functions.invoke("codef-hometax", {
+        body: { businessNumber: cleanedNumber },
+      });
+      
+      if (error) {
+        console.error("Codef API error:", error);
+        toast.error("홈택스 연동 실패: " + error.message);
+        setConnectionResult({ success: false, error: error.message });
+        return;
+      }
+      
+      console.log("Codef API response:", data);
+      setConnectionResult(data);
+      
+      if (data?.success) {
+        toast.success("홈택스 연동 성공!");
+        connectService("hometax");
+        
+        // 사업자 정보를 프로필에 저장
+        await supabase
+          .from("profiles")
+          .update({
+            business_registration_number: cleanedNumber,
+            hometax_connected: true,
+            hometax_connected_at: new Date().toISOString(),
+          })
+          .eq("user_id", user.id);
+      } else {
+        toast.error("홈택스 연동 실패: " + (data?.message || "알 수 없는 오류"));
+      }
+    } catch (err) {
+      console.error("Connection error:", err);
+      toast.error("연동 중 오류가 발생했습니다.");
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
   const handleConnect = async (service: "hometax" | "card" | "account") => {
     // 로그인 상태 체크
     const { data: { user } } = await supabase.auth.getUser();
@@ -123,38 +184,11 @@ export default function Onboarding() {
     setConnectionResult(null);
     
     try {
-      if (service === "hometax") {
-        // 실제 코드에프 홈택스 API 호출
-        console.log("Calling codef-hometax API...");
-        
-        const { data, error } = await supabase.functions.invoke("codef-hometax", {
-          body: { businessNumber: "1234567890" }, // 샌드박스 테스트용
-        });
-        
-        if (error) {
-          console.error("Codef API error:", error);
-          toast.error("홈택스 연동 실패: " + error.message);
-          setConnectionResult({ success: false, error: error.message });
-          return;
-        }
-        
-        console.log("Codef API response:", data);
-        setConnectionResult(data);
-        
-        if (data?.success) {
-          toast.success("홈택스 연동 성공! (샌드박스)");
-          connectService(service);
-          await saveConnectionToDb(service); // DB에 저장
-        } else {
-          toast.error("홈택스 연동 실패: " + (data?.message || "알 수 없는 오류"));
-        }
-      } else {
-        // 카드/계좌는 아직 모의 연결
-        await new Promise((r) => setTimeout(r, 1500));
-        connectService(service);
-        await saveConnectionToDb(service); // DB에 저장
-        toast.success(`${service === "card" ? "카드" : "계좌"} 연동 완료 (모의)`);
-      }
+      // 카드/계좌는 아직 모의 연결
+      await new Promise((r) => setTimeout(r, 1500));
+      connectService(service);
+      await saveConnectionToDb(service);
+      toast.success(`${service === "card" ? "카드" : "계좌"} 연동 완료 (모의)`);
     } catch (err) {
       console.error("Connection error:", err);
       toast.error("연동 중 오류가 발생했습니다.");
@@ -271,17 +305,14 @@ export default function Onboarding() {
             <WelcomeStep onNext={handleNext} />
           )}
           {currentStep === "hometax" && (
-            <ConnectionStep
-              title="국세청 연결"
-              description="홈택스 데이터를 연동하면 매출과 세금 현황을 자동으로 가져옵니다."
-              icon={Building2}
+            <HometaxStep
               isConnected={connections.hometax}
               isConnecting={isConnecting}
-              onConnect={() => handleConnect("hometax")}
+              businessNumber={businessNumber}
+              onBusinessNumberChange={setBusinessNumber}
+              onConnect={handleHometaxConnect}
               onNext={handleNext}
               onSkip={handleSkip}
-              stepNumber={1}
-              totalSteps={3}
               connectionResult={connectionResult}
             />
           )}
@@ -439,6 +470,197 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           시작하기
           <ArrowRight className="h-4 w-4" />
         </Button>
+      </motion.div>
+    </div>
+  );
+}
+
+// 사업자등록번호 포맷팅
+const formatBusinessNumber = (value: string) => {
+  const cleaned = value.replace(/\D/g, "").slice(0, 10);
+  if (cleaned.length <= 3) return cleaned;
+  if (cleaned.length <= 5) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 5)}-${cleaned.slice(5)}`;
+};
+
+// Hometax Step - 사업자등록번호 입력 전용
+function HometaxStep({
+  isConnected,
+  isConnecting,
+  businessNumber,
+  onBusinessNumberChange,
+  onConnect,
+  onNext,
+  onSkip,
+  connectionResult,
+}: {
+  isConnected: boolean;
+  isConnecting: boolean;
+  businessNumber: string;
+  onBusinessNumberChange: (value: string) => void;
+  onConnect: (businessNumber: string) => void;
+  onNext: () => void;
+  onSkip: () => void;
+  connectionResult?: any;
+}) {
+  const isValidNumber = businessNumber.replace(/\D/g, "").length === 10;
+
+  return (
+    <div className="space-y-6">
+      {/* Step indicator */}
+      <motion.div 
+        className="text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+      >
+        <span className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
+          1 / 3
+        </span>
+      </motion.div>
+
+      {/* Icon */}
+      <motion.div 
+        className="flex justify-center"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.15, duration: 0.4 }}
+      >
+        <div className={cn(
+          "h-20 w-20 rounded-2xl flex items-center justify-center transition-all duration-300",
+          isConnected 
+            ? "bg-green-500/10" 
+            : "bg-primary/10"
+        )}>
+          {isConnected ? (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              <CheckCircle2 className="h-10 w-10 text-green-500" />
+            </motion.div>
+          ) : (
+            <Building2 className="h-10 w-10 text-primary" />
+          )}
+        </div>
+      </motion.div>
+
+      {/* Text content */}
+      <motion.div 
+        className="text-center space-y-2"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+      >
+        <h2 className="text-xl font-bold tracking-tight text-foreground">국세청 연결</h2>
+        <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">
+          사업자등록번호를 입력하면 홈택스 데이터를 자동으로 연동합니다.
+        </p>
+      </motion.div>
+
+      {/* 사업자등록번호 입력 */}
+      {!isConnected && (
+        <motion.div 
+          className="space-y-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.4 }}
+        >
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">사업자등록번호</label>
+            <input
+              type="text"
+              placeholder="000-00-00000"
+              value={formatBusinessNumber(businessNumber)}
+              onChange={(e) => onBusinessNumberChange(e.target.value.replace(/\D/g, ""))}
+              className="w-full px-4 py-3 rounded-xl border bg-background text-center font-mono text-lg tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              maxLength={12}
+              disabled={isConnecting}
+            />
+            <p className="text-xs text-muted-foreground text-center">
+              10자리 숫자를 입력하세요
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* API Response Result */}
+      {connectionResult && (
+        <motion.div 
+          className="bg-muted/50 rounded-lg p-4 text-left"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <div className="text-xs font-medium text-muted-foreground mb-2">
+            🔗 코드에프 API 응답
+          </div>
+          {connectionResult.success ? (
+            <div className="space-y-1.5 text-sm">
+              <div className="bg-background rounded p-3 border">
+                <div className="font-mono text-xs text-muted-foreground">
+                  사업자번호: {connectionResult.data?.businessNumber}
+                </div>
+                <div className="text-foreground mt-1.5 font-medium">
+                  {connectionResult.data?.businessStatus?.replace(/\n/g, " ")}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  과세유형: {connectionResult.data?.taxationTypeDesc}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-destructive">
+              {connectionResult.error || connectionResult.message || "연동에 실패했습니다."}
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* Actions */}
+      <motion.div 
+        className="space-y-3"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.4 }}
+      >
+        {isConnected ? (
+          <Button onClick={onNext} size="lg" className="w-full gap-2 h-12">
+            다음으로
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        ) : (
+          <>
+            <Button 
+              onClick={() => onConnect(businessNumber)} 
+              size="lg" 
+              className="w-full gap-2 h-12"
+              disabled={isConnecting || !isValidNumber}
+            >
+              {isConnecting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  연동 중...
+                </>
+              ) : (
+                <>
+                  <Shield className="h-4 w-4" />
+                  연동하기
+                </>
+              )}
+            </Button>
+            <Button 
+              onClick={onSkip} 
+              variant="ghost" 
+              size="sm" 
+              className="w-full text-muted-foreground"
+              disabled={isConnecting}
+            >
+              나중에 하기
+            </Button>
+          </>
+        )}
       </motion.div>
     </div>
   );
