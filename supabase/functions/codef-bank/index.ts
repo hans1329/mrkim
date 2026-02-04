@@ -338,9 +338,9 @@ async function handleRegister(
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } else {
-    // 에러 메시지 디코딩 (+ -> 공백)
-    const rawErrorMessage = data.data?.errorList?.[0]?.message || result.message || "계정 등록 실패";
-    const errorMessage = decodeURIComponent(rawErrorMessage.replace(/\+/g, ' '));
+// 에러 코드를 사용자 친화적 메시지로 변환
+    const errorCode = data.data?.errorList?.[0]?.code || result.code;
+    const errorMessage = getUserFriendlyMessage(errorCode);
     
     return new Response(
       JSON.stringify({
@@ -501,4 +501,29 @@ function parseCodefResponse(text: string): any {
       return { raw: text };
     }
   }
+}
+
+// 에러 코드를 사용자 친화적 메시지로 변환
+function getUserFriendlyMessage(errorCode: string): string {
+  const errorMessages: Record<string, string> = {
+    // 인증 관련
+    "CF-12817": "인터넷뱅킹 비밀번호가 등록되지 않았어요. 해당 은행 앱에서 비밀번호를 먼저 등록해주세요.",
+    "CF-12800": "아이디 또는 비밀번호가 일치하지 않아요. 다시 확인해주세요.",
+    "CF-12801": "비밀번호가 일치하지 않아요. 다시 확인해주세요.",
+    "CF-12802": "아이디가 존재하지 않아요. 다시 확인해주세요.",
+    "CF-12803": "로그인 정보가 올바르지 않아요. 다시 확인해주세요.",
+    "CF-12811": "비밀번호 오류 횟수가 초과되었어요. 은행 앱에서 비밀번호를 재설정해주세요.",
+    "CF-12812": "계정이 잠겼어요. 은행 고객센터에 문의해주세요.",
+    
+    // 서비스 관련
+    "CF-12820": "현재 서비스 점검 중이에요. 잠시 후 다시 시도해주세요.",
+    "CF-12821": "은행 서버가 일시적으로 응답하지 않아요. 잠시 후 다시 시도해주세요.",
+    "CF-12830": "인터넷뱅킹 서비스에 가입되어 있지 않아요. 은행 앱에서 먼저 가입해주세요.",
+    
+    // 일반 에러
+    "CF-04000": "요청 처리 중 문제가 발생했어요. 입력 정보를 다시 확인해주세요.",
+    "CF-09999": "일시적인 오류가 발생했어요. 잠시 후 다시 시도해주세요.",
+  };
+
+  return errorMessages[errorCode] || "은행 연결 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.";
 }
