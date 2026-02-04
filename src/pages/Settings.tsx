@@ -345,7 +345,10 @@ export default function Settings() {
               variant="ghost" 
               size="sm" 
               className="w-full gap-2 text-muted-foreground"
-              onClick={resetOnboarding}
+              onClick={() => {
+                resetOnboarding();
+                navigate("/onboarding");
+              }}
             >
               <RefreshCw className="h-3 w-3" />
               온보딩 다시 시작
