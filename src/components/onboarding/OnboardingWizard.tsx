@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import type { OnboardingStep } from "@/hooks/useOnboarding";
 import { CardConnectionFlow } from "./CardConnectionFlow";
 import { AccountConnectionFlow } from "./AccountConnectionFlow";
+import { ConnectionSuccessModal } from "./ConnectionSuccessModal";
 
 interface OnboardingWizardProps {
   currentStep: OnboardingStep;
@@ -50,6 +51,7 @@ export function OnboardingWizard({
   const [isConnecting, setIsConnecting] = useState(false);
   const [showCardFlow, setShowCardFlow] = useState(false);
   const [showAccountFlow, setShowAccountFlow] = useState(false);
+  const [successModalType, setSuccessModalType] = useState<"hometax" | "card" | "account" | null>(null);
   const currentIdx = stepIndex(currentStep);
   const progress = ((currentIdx + 1) / steps.length) * 100;
 
@@ -59,6 +61,13 @@ export function OnboardingWizard({
     await new Promise((r) => setTimeout(r, 1500));
     onConnect(service);
     setIsConnecting(false);
+    // 연결 성공 모달 표시
+    setSuccessModalType(service);
+  };
+
+  const handleSuccessModalContinue = () => {
+    setSuccessModalType(null);
+    handleNext();
   };
 
   const handleNext = () => {
@@ -79,7 +88,8 @@ export function OnboardingWizard({
   const handleCardFlowComplete = () => {
     onConnect("card");
     setShowCardFlow(false);
-    handleNext();
+    // 연결 성공 모달 표시
+    setSuccessModalType("card");
   };
 
   const handleCardFlowBack = () => {
@@ -93,7 +103,8 @@ export function OnboardingWizard({
   const handleAccountFlowComplete = () => {
     onConnect("account");
     setShowAccountFlow(false);
-    handleNext();
+    // 연결 성공 모달 표시
+    setSuccessModalType("account");
   };
 
   const handleAccountFlowBack = () => {
@@ -101,9 +112,17 @@ export function OnboardingWizard({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex flex-col items-center justify-center p-4">
-      {/* Progress */}
-      <div className="w-full max-w-xs mb-6">
+    <>
+      {/* 연결 성공 모달 */}
+      <ConnectionSuccessModal
+        open={successModalType !== null}
+        type={successModalType}
+        onContinue={handleSuccessModalContinue}
+      />
+
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex flex-col items-center justify-center p-4">
+        {/* Progress */}
+        <div className="w-full max-w-xs mb-6">
         <Progress value={progress} className="h-1.5" />
         <div className="flex justify-between mt-2 px-1">
           {steps.map((step, idx) => (
@@ -191,7 +210,8 @@ export function OnboardingWizard({
           )}
         </motion.div>
       </AnimatePresence>
-    </div>
+      </div>
+    </>
   );
 }
 
