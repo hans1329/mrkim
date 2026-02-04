@@ -84,16 +84,16 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
     setStep("loading");
     
     try {
-      // 실제 Codef API 호출
-      const success = await registerCardAccount(
+      // 실제 Codef API 호출 - connectedId 반환
+      const newConnectedId = await registerCardAccount(
         selectedCompany,
         credentials.id,
         credentials.password
       );
       
-      if (success) {
-        // 카드 목록 조회
-        const cards = await getCards(selectedCompany);
+      if (newConnectedId) {
+        // 카드 목록 조회 - 반환된 connectedId 직접 전달
+        const cards = await getCards(selectedCompany, newConnectedId);
         setFetchedCards(cards);
         setStep("select-cards");
       } else {
