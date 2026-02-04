@@ -15,6 +15,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Building2,
   Bell,
   Shield,
@@ -341,20 +352,40 @@ export default function Settings() {
               )}
             </div>
             <Separator />
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full gap-2 text-muted-foreground"
-              onClick={async () => {
-                resetOnboarding();
-                await resetConnections();
-                toast.success("연동 상태가 초기화되었습니다");
-                navigate("/onboarding");
-              }}
-            >
-              <RefreshCw className="h-3 w-3" />
-              온보딩 다시 시작
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full gap-2 text-muted-foreground"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  온보딩 다시 시작
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>온보딩을 다시 시작하시겠습니까?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    모든 연동 상태(국세청, 카드, 계좌)가 초기화됩니다. 
+                    이 작업은 되돌릴 수 없으며, 연동을 다시 진행해야 합니다.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>취소</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      resetOnboarding();
+                      await resetConnections();
+                      toast.success("연동 상태가 초기화되었습니다");
+                      navigate("/onboarding");
+                    }}
+                  >
+                    초기화 및 다시 시작
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
 
