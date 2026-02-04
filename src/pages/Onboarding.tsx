@@ -37,11 +37,39 @@ export default function Onboarding() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [showCardFlow, setShowCardFlow] = useState(false);
   const [connectionResult, setConnectionResult] = useState<any>(null);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
   
-  // 페이지 진입 시 항상 첫 단계부터 시작하고 연결 상태도 리셋
+  // 페이지 진입 시 DB에서 연결 상태 확인 후 로컬 상태에 반영
   useEffect(() => {
-    resetOnboarding(); // localStorage 상태 완전 리셋
+    const loadConnectionStatus = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setIsLoadingStatus(false);
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("hometax_connected, card_connected, account_connected")
+          .eq("user_id", user.id)
+          .single();
+
+        if (profile) {
+          // DB 상태를 로컬 상태에 동기화
+          if (profile.hometax_connected) connectService("hometax");
+          if (profile.card_connected) connectService("card");
+          if (profile.account_connected) connectService("account");
+        }
+      } catch (err) {
+        console.error("Failed to load connection status:", err);
+      } finally {
+        setIsLoadingStatus(false);
+      }
+    };
+
     goToStep("welcome");
+    loadConnectionStatus();
   }, []);
   
   const currentIdx = stepIndex(currentStep);
