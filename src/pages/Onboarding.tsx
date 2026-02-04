@@ -159,7 +159,14 @@ export default function Onboarding() {
     handleNext();
   };
 
-  const handleCardConnect = () => {
+  const handleCardConnect = async () => {
+    // 로그인 상태 체크
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("로그인이 필요합니다.");
+      navigate("/login");
+      return;
+    }
     setShowCardFlow(true);
   };
 
