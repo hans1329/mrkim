@@ -175,14 +175,12 @@ export function ConnectionStatusBanner() {
                 {currentAlert.description}
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 shrink-0 -mt-1 -mr-1"
+            <button
+              className="h-6 w-6 shrink-0 rounded-full bg-foreground/20 flex items-center justify-center hover:bg-foreground/30 transition-colors"
               onClick={() => handleDismissAlert(currentAlert.id)}
             >
-              <X className="h-3.5 w-3.5" />
-            </Button>
+              <X className="h-3.5 w-3.5 text-white" />
+            </button>
           </div>
           <Button
             size="sm"
