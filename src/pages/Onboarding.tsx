@@ -45,6 +45,27 @@ export default function Onboarding() {
   
   const currentIdx = stepIndex(currentStep);
 
+  // DB에 연결 상태 저장
+  const saveConnectionToDb = async (service: "hometax" | "card" | "account") => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const columnMap = {
+      hometax: { connected: "hometax_connected", connectedAt: "hometax_connected_at" },
+      card: { connected: "card_connected", connectedAt: "card_connected_at" },
+      account: { connected: "account_connected", connectedAt: "account_connected_at" },
+    };
+
+    const columns = columnMap[service];
+    await supabase
+      .from("profiles")
+      .update({
+        [columns.connected]: true,
+        [columns.connectedAt]: new Date().toISOString(),
+      })
+      .eq("user_id", user.id);
+  };
+
   const handleConnect = async (service: "hometax" | "card" | "account") => {
     setIsConnecting(true);
     setConnectionResult(null);
@@ -71,6 +92,7 @@ export default function Onboarding() {
         if (data?.success) {
           toast.success("홈택스 연동 성공! (샌드박스)");
           connectService(service);
+          await saveConnectionToDb(service); // DB에 저장
         } else {
           toast.error("홈택스 연동 실패: " + (data?.message || "알 수 없는 오류"));
         }
@@ -78,6 +100,7 @@ export default function Onboarding() {
         // 카드/계좌는 아직 모의 연결
         await new Promise((r) => setTimeout(r, 1500));
         connectService(service);
+        await saveConnectionToDb(service); // DB에 저장
         toast.success(`${service === "card" ? "카드" : "계좌"} 연동 완료 (모의)`);
       }
     } catch (err) {
