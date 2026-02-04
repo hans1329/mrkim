@@ -468,14 +468,16 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
               </div>
 
               {fetchedCards.length > 0 && selectedCards.length > 0 && (
-                <div className="bg-muted/50 rounded-xl p-4 space-y-2">
+                <div className="bg-muted/50 rounded-xl p-4 space-y-3">
                   {fetchedCards
                     .filter((c) => selectedCards.includes(c.cardNo))
                     .map((card, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        <span>{card.cardName}</span>
-                        <span className="text-muted-foreground">({card.cardNo})</span>
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                        <div className="text-left">
+                          <p className="font-medium">{card.cardName}</p>
+                          <p className="text-muted-foreground font-mono text-xs mt-0.5">{card.cardNo}</p>
+                        </div>
                       </div>
                     ))}
                 </div>
