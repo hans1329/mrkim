@@ -608,34 +608,40 @@ function HometaxStep({
         </motion.div>
       )}
 
-      {/* API Response Result */}
+      {/* Connection Result */}
       {connectionResult && (
         <motion.div 
-          className="bg-muted/50 rounded-lg p-4 text-left"
+          className={cn(
+            "rounded-xl p-4 text-center",
+            connectionResult.success ? "bg-green-500/10" : "bg-destructive/10"
+          )}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
         >
-          <div className="text-xs font-medium text-muted-foreground mb-2">
-            🔗 코드에프 API 응답
-          </div>
           {connectionResult.success ? (
-            <div className="space-y-1.5 text-sm">
-              <div className="bg-background rounded p-3 border">
-                <div className="font-mono text-xs text-muted-foreground">
-                  사업자번호: {connectionResult.data?.businessNumber}
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 text-green-600">
+                <CheckCircle2 className="h-5 w-5" />
+                <span className="font-medium">사업자 정보 확인 완료!</span>
+              </div>
+              <div className="bg-background rounded-lg p-3 border space-y-1.5">
+                <div className="text-sm text-foreground font-medium">
+                  {connectionResult.data?.businessStatus?.replace(/\n/g, " ") || "사업자 정보가 정상적으로 확인되었습니다."}
                 </div>
-                <div className="text-foreground mt-1.5 font-medium">
-                  {connectionResult.data?.businessStatus?.replace(/\n/g, " ")}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  과세유형: {connectionResult.data?.taxationTypeDesc}
+                <div className="text-xs text-muted-foreground">
+                  {connectionResult.data?.taxationTypeDesc}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="text-sm text-destructive">
-              {connectionResult.error || connectionResult.message || "연동에 실패했습니다."}
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-destructive">
+                연동에 실패했습니다
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {connectionResult.error || connectionResult.message || "잠시 후 다시 시도해주세요."}
+              </div>
             </div>
           )}
         </motion.div>
