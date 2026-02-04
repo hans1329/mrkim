@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/hooks/useProfile";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface UrgentAlert {
   id: string;
@@ -28,9 +28,30 @@ const mockUrgentAlerts: UrgentAlert[] = [
 
 export function ConnectionStatusBanner() {
   const navigate = useNavigate();
-  const { profile, loading } = useProfile();
+  const { profile, loading, refetch } = useProfile();
   const [alerts] = useState<UrgentAlert[]>(mockUrgentAlerts);
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
+
+  // 페이지로 돌아올 때 프로필 다시 가져오기
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refetch();
+      }
+    };
+
+    const handleFocus = () => {
+      refetch();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [refetch]);
 
   // 프로필에서 실제 연동 상태 가져오기
   const connections = [
