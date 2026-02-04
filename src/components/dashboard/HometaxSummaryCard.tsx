@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { 
   Building2, 
   RefreshCw, 
@@ -14,7 +13,7 @@ import {
 import { useTaxInvoices } from "@/hooks/useTaxInvoices";
 import { useProfile } from "@/hooks/useProfile";
 import { cn } from "@/lib/utils";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 
@@ -43,10 +42,10 @@ export function HometaxSummaryCard() {
             <Skeleton className="h-8 w-20" />
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <Skeleton className="h-20 rounded-lg" />
-            <Skeleton className="h-20 rounded-lg" />
+            <Skeleton className="h-[72px] rounded-lg" />
+            <Skeleton className="h-[72px] rounded-lg" />
           </div>
           <Skeleton className="h-16 rounded-lg" />
         </CardContent>
@@ -65,18 +64,21 @@ export function HometaxSummaryCard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground mb-3">
+          <div className="text-center py-6">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+              <Building2 className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
               홈택스를 연동하면 세금계산서 현황을<br />
               자동으로 확인할 수 있어요
             </p>
             <Button 
               size="sm" 
               onClick={() => navigate("/onboarding")}
-              className="gap-1"
+              className="gap-1.5"
             >
               연동하기
-              <ArrowRight className="h-3 w-3" />
+              <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </div>
         </CardContent>
@@ -110,18 +112,18 @@ export function HometaxSummaryCard() {
             홈택스 현황
           </CardTitle>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={syncTaxInvoices}
             disabled={syncing}
-            className="h-8 gap-1 text-xs"
+            className="h-8 gap-1.5 text-xs"
           >
-            <RefreshCw className={cn("h-3 w-3", syncing && "animate-spin")} />
+            <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
             {syncing ? "동기화 중..." : "동기화"}
           </Button>
         </div>
         {lastSyncText && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
             <Clock className="h-3 w-3" />
             {lastSyncText} 업데이트
           </div>
@@ -129,18 +131,20 @@ export function HometaxSummaryCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         {!hasData ? (
-          <div className="text-center py-4">
-            <Receipt className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground mb-3">
+          <div className="text-center py-6">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+              <Receipt className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
               세금계산서 데이터가 없습니다
             </p>
             <Button 
               size="sm" 
               onClick={syncTaxInvoices}
               disabled={syncing}
-              className="gap-1"
+              className="gap-1.5"
             >
-              <RefreshCw className={cn("h-3 w-3", syncing && "animate-spin")} />
+              <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
               지금 동기화하기
             </Button>
           </div>
@@ -148,54 +152,66 @@ export function HometaxSummaryCard() {
           <>
             {/* 매출/매입 요약 */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-green-500/10 rounded-lg p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+              <div className="rounded-lg p-3 bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center">
+                    <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                  </div>
                   <span className="text-xs text-muted-foreground">매출</span>
-                  <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1">
-                    {syncStatus?.sales_count || 0}건
-                  </Badge>
                 </div>
                 <p className="text-lg font-bold text-green-600">
                   ₩{formatAmount(salesTotal)}
                 </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {syncStatus?.sales_count || 0}건
+                </p>
               </div>
-              <div className="bg-red-500/10 rounded-lg p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingDown className="h-3.5 w-3.5 text-red-600" />
+              <div className="rounded-lg p-3 bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center">
+                    <TrendingDown className="h-3.5 w-3.5 text-red-600" />
+                  </div>
                   <span className="text-xs text-muted-foreground">매입</span>
-                  <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1">
-                    {syncStatus?.purchase_count || 0}건
-                  </Badge>
                 </div>
                 <p className="text-lg font-bold text-red-600">
                   ₩{formatAmount(purchaseTotal)}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {syncStatus?.purchase_count || 0}건
                 </p>
               </div>
             </div>
 
             {/* 부가세 예상 */}
-            <div className={cn(
-              "rounded-lg p-3",
-              vatPayable >= 0 ? "bg-amber-500/10" : "bg-blue-500/10"
-            )}>
+            <div className="rounded-lg p-3 bg-muted/50">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">
-                    부가세 예상 {vatPayable >= 0 ? "납부액" : "환급액"}
-                  </p>
-                  <p className={cn(
-                    "text-xl font-bold",
-                    vatPayable >= 0 ? "text-amber-600" : "text-blue-600"
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-9 h-9 rounded-full flex items-center justify-center",
+                    vatPayable >= 0 ? "bg-amber-100" : "bg-blue-100"
                   )}>
-                    ₩{formatAmount(Math.abs(vatPayable))}
-                  </p>
+                    <Receipt className={cn(
+                      "h-4 w-4",
+                      vatPayable >= 0 ? "text-amber-600" : "text-blue-600"
+                    )} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      부가세 예상 {vatPayable >= 0 ? "납부액" : "환급액"}
+                    </p>
+                    <p className={cn(
+                      "text-xl font-bold",
+                      vatPayable >= 0 ? "text-amber-600" : "text-blue-600"
+                    )}>
+                      ₩{formatAmount(Math.abs(vatPayable))}
+                    </p>
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => navigate("/reports?tab=tax")}
-                  className="text-xs"
+                  className="text-xs h-8"
                 >
                   상세보기
                   <ArrowRight className="h-3 w-3 ml-1" />
