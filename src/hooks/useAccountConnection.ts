@@ -50,13 +50,15 @@ export function useAccountConnection(): UseAccountConnectionReturn {
         },
       });
 
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
+      // Supabase functions.invoke는 HTTP 에러 시에도 data를 반환할 수 있음
       const data = response.data;
       
-      if (data.success && data.connectedId) {
+      // 에러 체크: response.error가 있거나 data.success가 false인 경우
+      if (response.error && !data) {
+        throw new Error(response.error.message);
+      }
+      
+      if (data?.success && data?.connectedId) {
         setConnectedId(data.connectedId);
         
         // DB에 연결 상태 저장
@@ -68,7 +70,9 @@ export function useAccountConnection(): UseAccountConnectionReturn {
         toast.success("은행 연결이 완료되었습니다!");
         return data.connectedId;
       } else {
-        toast.error(data.error || "은행 연결에 실패했습니다.");
+        // 에러 메시지 표시
+        const errorMessage = data?.error || "은행 연결에 실패했습니다.";
+        toast.error(errorMessage);
         return null;
       }
     } catch (error) {
