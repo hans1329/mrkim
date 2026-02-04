@@ -96,6 +96,14 @@ export default function Onboarding() {
   };
 
   const handleConnect = async (service: "hometax" | "card" | "account") => {
+    // 로그인 상태 체크
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("로그인이 필요합니다.");
+      navigate("/login");
+      return;
+    }
+
     setIsConnecting(true);
     setConnectionResult(null);
     
