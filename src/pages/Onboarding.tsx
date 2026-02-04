@@ -342,7 +342,7 @@ export default function Onboarding() {
       {/* Content */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={currentStep}
+          key={`${currentStep}-${showCardFlow}-${showAccountFlow}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
