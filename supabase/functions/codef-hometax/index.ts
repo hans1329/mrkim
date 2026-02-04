@@ -50,27 +50,41 @@ serve(async (req) => {
     const { businessNumber } = await req.json();
 
     if (!businessNumber) {
-      // 샌드박스 테스트용 기본 사업자번호
-      console.log("No business number provided, using sandbox test number");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "사업자등록번호를 입력해주세요.",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // 테스트용 사업자번호 (샌드박스에서 응답하는 번호)
-    const testBusinessNumber = businessNumber || "1234567890";
+    const cleanedNumber = businessNumber.replace(/\D/g, "");
+    if (cleanedNumber.length !== 10) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "사업자등록번호는 10자리여야 합니다.",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // 1. 토큰 발급
     console.log("Getting access token...");
     const accessToken = await getAccessToken();
     console.log("Access token obtained");
 
-    // 2. 사업자 상태 조회
+    // 2. 사업자 상태 조회 - 올바른 파라미터 형식 사용
+    // reqIdentityList 배열 형태로 사업자번호 전달
     const requestBody = {
       organization: "0004", // 국세청
-      loginType: "3", // 사업자등록번호 조회
-      identity: testBusinessNumber,
-      inquiryBizNo: testBusinessNumber,
+      reqIdentityList: [
+        { reqIdentity: cleanedNumber }
+      ],
     };
 
-    console.log("Calling Hometax API with:", { businessNumber: testBusinessNumber });
+    console.log("Calling Hometax API with:", JSON.stringify(requestBody));
 
     const response = await fetch(`${CODEF_API_URL}${HOMETAX_BUSINESS_STATUS_PATH}`, {
       method: "POST",
@@ -98,23 +112,24 @@ serve(async (req) => {
     
     // 조회한 사업자번호와 일치하는 데이터 찾기
     const matchingData = businessDataArray.find(
-      (item: any) => item?.resCompanyIdentityNo === testBusinessNumber
+      (item: any) => item?.resCompanyIdentityNo === cleanedNumber
     ) || businessDataArray[0] || {};
+
+    const isSuccess = result.code === "CF-00000";
 
     return new Response(
       JSON.stringify({
-        success: result.code === "CF-00000",
-        message: result.message || "조회 완료",
+        success: isSuccess,
+        message: isSuccess ? "사업자 정보가 확인되었습니다." : (result.message || "조회에 실패했습니다."),
         code: result.code,
-        data: {
-          businessNumber: matchingData.resCompanyIdentityNo || testBusinessNumber,
+        data: isSuccess ? {
+          businessNumber: matchingData.resCompanyIdentityNo || cleanedNumber,
           businessStatus: matchingData.resBusinessStatus || "조회 결과 없음",
           taxationType: matchingData.resTaxationTypeCode || "-",
           taxationTypeDesc: getTaxationTypeDesc(matchingData.resTaxationTypeCode),
           closingDate: matchingData.resClosingDate || null,
           transferDate: matchingData.resTransferTaxTypeDate || null,
-        },
-        raw: data, // 디버깅용 원본 응답
+        } : null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -124,7 +139,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
