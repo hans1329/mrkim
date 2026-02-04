@@ -22,10 +22,12 @@ import {
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Search, TrendingUp, TrendingDown, Receipt, Sparkles, LinkIcon } from "lucide-react";
+import { Plus, Search, TrendingUp, TrendingDown, Receipt, Sparkles, LinkIcon, RefreshCw, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TransactionClassifier } from "@/components/transactions/TransactionClassifier";
 import { useTransactions, useTransactionStats, useAddTransaction, type TransactionInsert } from "@/hooks/useTransactions";
+import { useCardSync } from "@/hooks/useCardSync";
+import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
@@ -41,13 +43,54 @@ export default function Transactions() {
     source_name: "",
   });
 
-  const { data: transactions, isLoading } = useTransactions({
+  const { data: transactions, isLoading, refetch } = useTransactions({
     type: filter === "all" ? undefined : filter,
     searchTerm: searchTerm || undefined,
   });
 
   const { data: stats, isLoading: isStatsLoading } = useTransactionStats();
+  const { profile } = useProfile();
   const addTransaction = useAddTransaction();
+  const cardSync = useCardSync();
+
+  // 카드 동기화 (임시: 신한카드 고정, 추후 연동된 카드 목록에서 선택)
+  const handleCardSync = () => {
+    // TODO: 실제로는 저장된 connectedId와 카드사 정보를 사용
+    // 현재는 프로필의 card_connected 상태만 확인
+    if (!profile?.card_connected) {
+      toast.error("먼저 카드를 연동해주세요");
+      return;
+    }
+
+    // connectedId가 로컬스토리지에 저장되어 있다고 가정
+    const connectedId = localStorage.getItem("codef_connected_id");
+    const cardCompanyId = localStorage.getItem("codef_card_company") || "shinhan";
+    const cardCompanyName = localStorage.getItem("codef_card_company_name") || "신한카드";
+
+    if (!connectedId) {
+      toast.error("카드 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.");
+      return;
+    }
+
+    cardSync.mutate(
+      { connectedId, cardCompanyId, cardCompanyName },
+      {
+        onSuccess: (result) => {
+          if (result.synced > 0) {
+            toast.success(`${result.synced}건의 새 거래를 가져왔습니다`);
+          } else if (result.skipped > 0) {
+            toast.info("새로운 거래가 없습니다");
+          } else {
+            toast.info("가져올 거래가 없습니다");
+          }
+          refetch();
+        },
+        onError: (error) => {
+          toast.error(error.message || "동기화에 실패했습니다");
+        },
+      }
+    );
+  };
 
   const handleAddTransaction = () => {
     if (!newTransaction.description || !newTransaction.amount) {
@@ -83,6 +126,7 @@ export default function Transactions() {
   };
 
   const isEmpty = !isLoading && (!transactions || transactions.length === 0);
+  const isCardConnected = profile?.card_connected;
 
   return (
     <MainLayout title="매출/매입" subtitle="거래 내역을 관리하세요" showBackButton>
@@ -96,6 +140,41 @@ export default function Transactions() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-4">
+          {/* 카드 동기화 배너 */}
+          {isCardConnected && (
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="flex items-center justify-between p-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">카드 거래 동기화</p>
+                    <p className="text-xs text-muted-foreground">최근 3개월 거래 내역을 가져옵니다</p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleCardSync}
+                  disabled={cardSync.isPending}
+                  className="gap-1"
+                >
+                  {cardSync.isPending ? (
+                    <>
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      동기화 중...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-3 w-3" />
+                      동기화
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* 요약 카드 */}
           <div className="grid grid-cols-3 gap-2">
             <Card>
