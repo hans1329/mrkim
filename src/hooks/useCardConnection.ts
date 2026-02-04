@@ -51,11 +51,18 @@ export function useCardConnection(): UseCardConnectionReturn {
         },
       });
 
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
+      // Supabase 함수 오류가 있거나 응답 데이터에 에러가 있는 경우 처리
       const data = response.data;
+      
+      // 에러 메시지에서 + 기호를 공백으로 디코딩
+      const decodeErrorMessage = (msg: string) => 
+        msg ? decodeURIComponent(msg.replace(/\+/g, ' ')) : msg;
+      
+      if (response.error || (data && !data.success)) {
+        const errorMsg = decodeErrorMessage(data?.error || response.error?.message || "카드사 연결에 실패했습니다.");
+        toast.error(errorMsg);
+        return null;
+      }
       
       if (data.success && data.connectedId) {
         setConnectedId(data.connectedId);
@@ -69,12 +76,13 @@ export function useCardConnection(): UseCardConnectionReturn {
         toast.success("카드사 연결이 완료되었습니다!");
         return data.connectedId;
       } else {
-        toast.error(data.error || "카드사 연결에 실패했습니다.");
+        toast.error("카드사 연결에 실패했습니다.");
         return null;
       }
     } catch (error) {
       console.error("Card registration error:", error);
-      toast.error(error instanceof Error ? error.message : "카드사 연결 중 오류가 발생했습니다.");
+      const errorMsg = error instanceof Error ? error.message : "카드사 연결 중 오류가 발생했습니다.";
+      toast.error(errorMsg.replace(/\+/g, ' '));
       return null;
     } finally {
       setIsLoading(false);
