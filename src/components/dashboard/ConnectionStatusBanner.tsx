@@ -56,8 +56,8 @@ export function ConnectionStatusBanner() {
   // 프로필에서 실제 연동 상태 가져오기
   const connections = [
     { key: "hometax", label: "국세청", connected: profile?.hometax_connected ?? false },
-    { key: "account", label: "계좌", connected: profile?.account_connected ?? false },
     { key: "card", label: "카드", connected: profile?.card_connected ?? false },
+    { key: "account", label: "계좌", connected: profile?.account_connected ?? false },
   ];
   
   const connectedCount = connections.filter(c => c.connected).length;
