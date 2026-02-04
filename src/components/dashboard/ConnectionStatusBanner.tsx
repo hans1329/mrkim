@@ -1,15 +1,11 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle, X, ChevronRight, CheckCircle2, Clock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-
-interface ConnectionStatus {
-  hometax: boolean;
-  bank: boolean;
-  card: boolean;
-}
+import { useProfile } from "@/hooks/useProfile";
+import { useState } from "react";
 
 interface UrgentAlert {
   id: string;
@@ -18,13 +14,6 @@ interface UrgentAlert {
   actionLabel: string;
   onAction: () => void;
 }
-
-// Mock connection status - 실제로는 DB/Context에서 가져옴
-const mockConnectionStatus: ConnectionStatus = {
-  hometax: false,
-  bank: false,
-  card: false,
-};
 
 // Mock urgent alerts - 연동 완료 후 AI 엔진에서 생성
 const mockUrgentAlerts: UrgentAlert[] = [
@@ -39,15 +28,15 @@ const mockUrgentAlerts: UrgentAlert[] = [
 
 export function ConnectionStatusBanner() {
   const navigate = useNavigate();
-  const [connectionStatus] = useState<ConnectionStatus>(mockConnectionStatus);
+  const { profile, loading } = useProfile();
   const [alerts] = useState<UrgentAlert[]>(mockUrgentAlerts);
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
 
-  // 연동 상태 계산
+  // 프로필에서 실제 연동 상태 가져오기
   const connections = [
-    { key: "hometax", label: "국세청", connected: connectionStatus.hometax },
-    { key: "bank", label: "계좌", connected: connectionStatus.bank },
-    { key: "card", label: "카드", connected: connectionStatus.card },
+    { key: "hometax", label: "국세청", connected: profile?.hometax_connected ?? false },
+    { key: "account", label: "계좌", connected: profile?.account_connected ?? false },
+    { key: "card", label: "카드", connected: profile?.card_connected ?? false },
   ];
   
   const connectedCount = connections.filter(c => c.connected).length;
@@ -61,6 +50,26 @@ export function ConnectionStatusBanner() {
   const handleDismissAlert = (id: string) => {
     setDismissedAlerts(prev => [...prev, id]);
   };
+
+  // 로딩 중일 때 스켈레톤 표시
+  if (loading) {
+    return (
+      <div className="rounded-xl bg-muted/50 border p-4 mb-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3 w-8" />
+        </div>
+        <Skeleton className="h-3 w-48 mb-3" />
+        <div className="flex items-center gap-2 mb-3">
+          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-14 rounded-full" />
+          <Skeleton className="h-6 w-14 rounded-full" />
+        </div>
+        <Skeleton className="h-1.5 w-full mb-3" />
+        <Skeleton className="h-8 w-28" />
+      </div>
+    );
+  }
 
   // 연동이 완료되지 않은 경우: 연동 상태 배너
   if (!isFullyConnected) {
