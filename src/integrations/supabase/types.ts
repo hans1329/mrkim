@@ -437,6 +437,81 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          category_icon: string | null
+          classification_confidence: string | null
+          created_at: string
+          description: string
+          external_tx_id: string | null
+          id: string
+          is_manually_classified: boolean | null
+          memo: string | null
+          merchant_category: string | null
+          merchant_name: string | null
+          source_account: string | null
+          source_name: string | null
+          source_type: string
+          sub_category: string | null
+          synced_at: string | null
+          transaction_date: string
+          transaction_time: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          category_icon?: string | null
+          classification_confidence?: string | null
+          created_at?: string
+          description: string
+          external_tx_id?: string | null
+          id?: string
+          is_manually_classified?: boolean | null
+          memo?: string | null
+          merchant_category?: string | null
+          merchant_name?: string | null
+          source_account?: string | null
+          source_name?: string | null
+          source_type: string
+          sub_category?: string | null
+          synced_at?: string | null
+          transaction_date: string
+          transaction_time?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          category_icon?: string | null
+          classification_confidence?: string | null
+          created_at?: string
+          description?: string
+          external_tx_id?: string | null
+          id?: string
+          is_manually_classified?: boolean | null
+          memo?: string | null
+          merchant_category?: string | null
+          merchant_name?: string | null
+          source_account?: string | null
+          source_name?: string | null
+          source_type?: string
+          sub_category?: string | null
+          synced_at?: string | null
+          transaction_date?: string
+          transaction_time?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_feedback: {
         Row: {
           admin_notes: string | null
