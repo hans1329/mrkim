@@ -16,6 +16,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useOnboarding, type OnboardingStep } from "@/hooks/useOnboarding";
 import { CardConnectionFlow } from "@/components/onboarding/CardConnectionFlow";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
 const characterImg = "/images/icc-5.webp";
 
 const steps: { key: OnboardingStep; title: string; icon: typeof Building2 }[] = [
@@ -33,6 +36,7 @@ export default function Onboarding() {
   const { currentStep, connections, goToStep, connectService, completeOnboarding } = useOnboarding();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showCardFlow, setShowCardFlow] = useState(false);
+  const [connectionResult, setConnectionResult] = useState<any>(null);
   
   // 페이지 진입 시 항상 첫 단계부터 시작
   useEffect(() => {
@@ -43,9 +47,45 @@ export default function Onboarding() {
 
   const handleConnect = async (service: "hometax" | "card" | "account") => {
     setIsConnecting(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    connectService(service);
-    setIsConnecting(false);
+    setConnectionResult(null);
+    
+    try {
+      if (service === "hometax") {
+        // 실제 코드에프 홈택스 API 호출
+        console.log("Calling codef-hometax API...");
+        
+        const { data, error } = await supabase.functions.invoke("codef-hometax", {
+          body: { businessNumber: "1234567890" }, // 샌드박스 테스트용
+        });
+        
+        if (error) {
+          console.error("Codef API error:", error);
+          toast.error("홈택스 연동 실패: " + error.message);
+          setConnectionResult({ success: false, error: error.message });
+          return;
+        }
+        
+        console.log("Codef API response:", data);
+        setConnectionResult(data);
+        
+        if (data?.success) {
+          toast.success("홈택스 연동 성공! (샌드박스)");
+          connectService(service);
+        } else {
+          toast.error("홈택스 연동 실패: " + (data?.message || "알 수 없는 오류"));
+        }
+      } else {
+        // 카드/계좌는 아직 모의 연결
+        await new Promise((r) => setTimeout(r, 1500));
+        connectService(service);
+        toast.success(`${service === "card" ? "카드" : "계좌"} 연동 완료 (모의)`);
+      }
+    } catch (err) {
+      console.error("Connection error:", err);
+      toast.error("연동 중 오류가 발생했습니다.");
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   const handleNext = () => {
@@ -160,6 +200,7 @@ export default function Onboarding() {
               onSkip={handleSkip}
               stepNumber={1}
               totalSteps={3}
+              connectionResult={connectionResult}
             />
           )}
           {currentStep === "card" && !showCardFlow && (
@@ -330,6 +371,7 @@ function ConnectionStep({
   onSkip,
   stepNumber,
   totalSteps,
+  connectionResult,
 }: {
   title: string;
   description: string;
@@ -341,9 +383,10 @@ function ConnectionStep({
   onSkip: () => void;
   stepNumber: number;
   totalSteps: number;
+  connectionResult?: any;
 }) {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Step indicator */}
       <motion.div 
         className="text-center"
@@ -395,6 +438,38 @@ function ConnectionStep({
           {description}
         </p>
       </motion.div>
+
+      {/* API Response Result */}
+      {connectionResult && (
+        <motion.div 
+          className="bg-muted/50 rounded-lg p-4 text-left"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <div className="text-xs font-medium text-muted-foreground mb-2">
+            🔗 코드에프 API 응답 (샌드박스)
+          </div>
+          {connectionResult.success ? (
+            <div className="space-y-1.5 text-sm">
+              {connectionResult.raw?.data?.map((item: any, idx: number) => (
+                <div key={idx} className="bg-background rounded p-2 border">
+                  <div className="font-mono text-xs text-muted-foreground">
+                    사업자번호: {item.resCompanyIdentityNo}
+                  </div>
+                  <div className="text-foreground mt-1">
+                    {item.resBusinessStatus?.replace(/\n/g, " ")}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-destructive text-sm">
+              ❌ {connectionResult.error || connectionResult.message}
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Security note */}
       <motion.div 
