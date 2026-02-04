@@ -194,7 +194,7 @@ export function HometaxSummaryCard() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate("/reports?tab=expense")}
+                  onClick={() => navigate("/reports?tab=tax")}
                   className="text-xs"
                 >
                   상세보기
