@@ -38,7 +38,7 @@ import { toast } from "sonner";
 export default function Settings() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const { connections, resetOnboarding } = useOnboarding();
+  const { resetOnboarding } = useOnboarding();
   const { profile, loading, updating, updateProfile } = useProfile();
   
   // 사업장 정보 편집 상태
@@ -285,13 +285,13 @@ export default function Settings() {
                   <p className="text-xs text-muted-foreground">세금계산서, 매출 데이터</p>
                 </div>
               </div>
-              {connections.hometax ? (
+              {profile?.hometax_connected ? (
                 <span className="flex items-center gap-1 text-green-500 text-xs">
                   <CheckCircle2 className="h-3 w-3" />
                   연결됨
                 </span>
               ) : (
-                <Button variant="outline" size="sm" onClick={resetOnboarding}>
+                <Button variant="outline" size="sm" onClick={() => navigate("/onboarding")}>
                   연결
                 </Button>
               )}
@@ -307,13 +307,13 @@ export default function Settings() {
                   <p className="text-xs text-muted-foreground">지출 내역 자동 분류</p>
                 </div>
               </div>
-              {connections.card ? (
+              {profile?.card_connected ? (
                 <span className="flex items-center gap-1 text-green-500 text-xs">
                   <CheckCircle2 className="h-3 w-3" />
                   연결됨
                 </span>
               ) : (
-                <Button variant="outline" size="sm" onClick={resetOnboarding}>
+                <Button variant="outline" size="sm" onClick={() => navigate("/onboarding")}>
                   연결
                 </Button>
               )}
@@ -329,13 +329,13 @@ export default function Settings() {
                   <p className="text-xs text-muted-foreground">입출금 내역 실시간 확인</p>
                 </div>
               </div>
-              {connections.account ? (
+              {profile?.account_connected ? (
                 <span className="flex items-center gap-1 text-green-500 text-xs">
                   <CheckCircle2 className="h-3 w-3" />
                   연결됨
                 </span>
               ) : (
-                <Button variant="outline" size="sm" onClick={resetOnboarding}>
+                <Button variant="outline" size="sm" onClick={() => navigate("/onboarding")}>
                   연결
                 </Button>
               )}
