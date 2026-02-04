@@ -338,7 +338,10 @@ async function handleRegister(
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } else {
-    const errorMessage = data.data?.errorList?.[0]?.message || result.message || "계정 등록 실패";
+    // 에러 메시지 디코딩 (+ -> 공백)
+    const rawErrorMessage = data.data?.errorList?.[0]?.message || result.message || "계정 등록 실패";
+    const errorMessage = decodeURIComponent(rawErrorMessage.replace(/\+/g, ' '));
+    
     return new Response(
       JSON.stringify({
         success: false,
