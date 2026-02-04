@@ -67,7 +67,7 @@ export default function Onboarding() {
 
         const { data: profile } = await supabase
           .from("profiles")
-          .select("hometax_connected, card_connected, account_connected")
+          .select("hometax_connected, card_connected, account_connected, business_registration_number")
           .eq("user_id", user.id)
           .single();
 
@@ -76,6 +76,11 @@ export default function Onboarding() {
           if (profile.hometax_connected) connectService("hometax");
           if (profile.card_connected) connectService("card");
           if (profile.account_connected) connectService("account");
+          
+          // 저장된 사업자등록번호가 있으면 자동으로 채우기
+          if (profile.business_registration_number) {
+            setBusinessNumber(profile.business_registration_number);
+          }
         }
       } catch (err) {
         console.error("Failed to load connection status:", err);
