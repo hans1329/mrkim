@@ -55,6 +55,14 @@ export function useOnboarding() {
     }));
   };
 
+  // DB 기준으로 연동 상태를 동기화(기존 true 값을 false로도 되돌릴 수 있음)
+  const setConnections = (connections: OnboardingState["connections"]) => {
+    setState((prev) => ({
+      ...prev,
+      connections,
+    }));
+  };
+
   const completeOnboarding = () => {
     setState((prev) => ({
       ...prev,
@@ -74,6 +82,7 @@ export function useOnboarding() {
     isFirstVisit,
     goToStep,
     connectService,
+    setConnections,
     completeOnboarding,
     resetOnboarding,
   };

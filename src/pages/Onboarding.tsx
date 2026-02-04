@@ -50,7 +50,7 @@ const stepIndex = (step: OnboardingStep) => steps.findIndex((s) => s.key === ste
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { currentStep, connections, goToStep, connectService, completeOnboarding, resetOnboarding } = useOnboarding();
+  const { currentStep, connections, goToStep, connectService, setConnections, completeOnboarding, resetOnboarding } = useOnboarding();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showCardFlow, setShowCardFlow] = useState(false);
   const [showAccountFlow, setShowAccountFlow] = useState(false);
@@ -76,10 +76,12 @@ export default function Onboarding() {
           .single();
 
         if (profile) {
-          // DB 상태를 로컬 상태에 동기화
-          if (profile.hometax_connected) connectService("hometax");
-          if (profile.card_connected) connectService("card");
-          if (profile.account_connected) connectService("account");
+          // DB 상태를 로컬 상태에 동기화 (false도 반영)
+          setConnections({
+            hometax: !!profile.hometax_connected,
+            card: !!profile.card_connected,
+            account: !!profile.account_connected,
+          });
           
           // 저장된 사업자등록번호가 있으면 자동으로 채우기
           if (profile.business_registration_number) {
