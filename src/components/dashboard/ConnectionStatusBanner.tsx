@@ -16,20 +16,20 @@ interface UrgentAlert {
 }
 
 // Mock urgent alerts - 연동 완료 후 AI 엔진에서 생성
-const mockUrgentAlerts: UrgentAlert[] = [
+const createMockUrgentAlerts = (navigate: ReturnType<typeof useNavigate>): UrgentAlert[] => [
   {
     id: "1",
     title: "부가세 신고 마감 임박",
     description: "1월 25일까지 부가세 신고를 완료해야 합니다.",
     actionLabel: "확인하기",
-    onAction: () => {},
+    onAction: () => navigate("/reports?tab=expense"),
   },
 ];
 
 export function ConnectionStatusBanner() {
   const navigate = useNavigate();
   const { profile, loading, refetch } = useProfile();
-  const [alerts] = useState<UrgentAlert[]>(mockUrgentAlerts);
+  const [alerts] = useState<UrgentAlert[]>(() => createMockUrgentAlerts(navigate));
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
 
   // 페이지로 돌아올 때 프로필 다시 가져오기
