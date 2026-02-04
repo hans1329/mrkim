@@ -39,7 +39,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { resetOnboarding } = useOnboarding();
-  const { profile, loading, updating, updateProfile } = useProfile();
+  const { profile, loading, updating, updateProfile, resetConnections } = useProfile();
   
   // 사업장 정보 편집 상태
   const [isEditing, setIsEditing] = useState(false);
@@ -345,8 +345,10 @@ export default function Settings() {
               variant="ghost" 
               size="sm" 
               className="w-full gap-2 text-muted-foreground"
-              onClick={() => {
+              onClick={async () => {
                 resetOnboarding();
+                await resetConnections();
+                toast.success("연동 상태가 초기화되었습니다");
                 navigate("/onboarding");
               }}
             >
