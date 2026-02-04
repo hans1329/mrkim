@@ -33,13 +33,14 @@ const stepIndex = (step: OnboardingStep) => steps.findIndex((s) => s.key === ste
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { currentStep, connections, goToStep, connectService, completeOnboarding } = useOnboarding();
+  const { currentStep, connections, goToStep, connectService, completeOnboarding, resetOnboarding } = useOnboarding();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showCardFlow, setShowCardFlow] = useState(false);
   const [connectionResult, setConnectionResult] = useState<any>(null);
   
-  // 페이지 진입 시 항상 첫 단계부터 시작
+  // 페이지 진입 시 항상 첫 단계부터 시작하고 연결 상태도 리셋
   useEffect(() => {
+    resetOnboarding(); // localStorage 상태 완전 리셋
     goToStep("welcome");
   }, []);
   
