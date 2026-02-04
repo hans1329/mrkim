@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useOnboarding, type OnboardingStep } from "@/hooks/useOnboarding";
 import { CardConnectionFlow } from "@/components/onboarding/CardConnectionFlow";
+import { BusinessNumberModal } from "@/components/onboarding/BusinessNumberModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -53,7 +54,8 @@ export default function Onboarding() {
   const [showCardFlow, setShowCardFlow] = useState(false);
   const [connectionResult, setConnectionResult] = useState<any>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
-  const [businessNumber, setBusinessNumber] = useState(""); // 사업자등록번호 입력
+  const [businessNumber, setBusinessNumber] = useState(""); // 설정에서 가져온 사업자등록번호
+  const [showBusinessNumberModal, setShowBusinessNumberModal] = useState(false); // 사업자등록번호 입력 모달
   
   // 페이지 진입 시 DB에서 연결 상태 확인 후 로컬 상태에 반영
   useEffect(() => {
@@ -116,6 +118,25 @@ export default function Onboarding() {
       .eq("user_id", user.id);
   };
 
+  // 사업자등록번호가 설정되어 있는지 확인 후 연동 시작
+  const handleHometaxConnectClick = () => {
+    if (!businessNumber) {
+      // 설정에 사업자등록번호가 없으면 모달 띄우기
+      setShowBusinessNumberModal(true);
+    } else {
+      // 있으면 바로 연동 진행
+      handleHometaxConnect(businessNumber);
+    }
+  };
+
+  // 모달에서 저장 완료 후 콜백
+  const handleBusinessNumberSaved = (savedNumber: string) => {
+    setBusinessNumber(savedNumber);
+    setShowBusinessNumberModal(false);
+    // 저장 후 바로 연동 진행
+    handleHometaxConnect(savedNumber);
+  };
+
   const handleHometaxConnect = async (inputBusinessNumber: string) => {
     // 로그인 상태 체크
     const { data: { user } } = await supabase.auth.getUser();
@@ -156,11 +177,10 @@ export default function Onboarding() {
         toast.success("홈택스 연동 성공!");
         connectService("hometax");
         
-        // 사업자 정보를 프로필에 저장
+        // 연결 상태만 업데이트 (사업자번호는 이미 저장됨)
         await supabase
           .from("profiles")
           .update({
-            business_registration_number: cleanedNumber,
             hometax_connected: true,
             hometax_connected_at: new Date().toISOString(),
           })
@@ -314,8 +334,7 @@ export default function Onboarding() {
               isConnected={connections.hometax}
               isConnecting={isConnecting}
               businessNumber={businessNumber}
-              onBusinessNumberChange={setBusinessNumber}
-              onConnect={handleHometaxConnect}
+              onConnect={handleHometaxConnectClick}
               onNext={handleNext}
               onSkip={handleSkip}
               connectionResult={connectionResult}
@@ -367,6 +386,13 @@ export default function Onboarding() {
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* 사업자등록번호 입력 모달 */}
+      <BusinessNumberModal
+        open={showBusinessNumberModal}
+        onClose={() => setShowBusinessNumberModal(false)}
+        onSaved={handleBusinessNumberSaved}
+      />
     </div>
   );
 }
@@ -488,12 +514,11 @@ const formatBusinessNumber = (value: string) => {
   return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 5)}-${cleaned.slice(5)}`;
 };
 
-// Hometax Step - 사업자등록번호 입력 전용
+// Hometax Step - 설정에서 가져온 사업자등록번호 사용
 function HometaxStep({
   isConnected,
   isConnecting,
   businessNumber,
-  onBusinessNumberChange,
   onConnect,
   onNext,
   onSkip,
@@ -502,13 +527,12 @@ function HometaxStep({
   isConnected: boolean;
   isConnecting: boolean;
   businessNumber: string;
-  onBusinessNumberChange: (value: string) => void;
-  onConnect: (businessNumber: string) => void;
+  onConnect: () => void;
   onNext: () => void;
   onSkip: () => void;
   connectionResult?: any;
 }) {
-  const isValidNumber = businessNumber.replace(/\D/g, "").length === 10;
+  const hasBusinessNumber = businessNumber.replace(/\D/g, "").length === 10;
 
   return (
     <div className="space-y-6">
@@ -560,32 +584,26 @@ function HometaxStep({
       >
         <h2 className="text-xl font-bold tracking-tight text-foreground">국세청 연결</h2>
         <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">
-          사업자등록번호를 입력하면 홈택스 데이터를 자동으로 연동합니다.
+          {hasBusinessNumber 
+            ? "등록된 사업자등록번호로 홈택스 데이터를 연동합니다."
+            : "사업자등록번호를 입력하면 홈택스 데이터를 자동으로 연동합니다."
+          }
         </p>
       </motion.div>
 
-      {/* 사업자등록번호 입력 */}
-      {!isConnected && (
+      {/* 사업자등록번호 표시 (있을 경우) */}
+      {!isConnected && hasBusinessNumber && (
         <motion.div 
           className="space-y-3"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, duration: 0.4 }}
         >
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">사업자등록번호</label>
-            <input
-              type="text"
-              placeholder="000-00-00000"
-              value={formatBusinessNumber(businessNumber)}
-              onChange={(e) => onBusinessNumberChange(e.target.value.replace(/\D/g, ""))}
-              className="w-full px-4 py-3 rounded-xl border bg-background text-center font-mono text-lg tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              maxLength={12}
-              disabled={isConnecting}
-            />
-            <p className="text-xs text-muted-foreground text-center">
-              10자리 숫자를 입력하세요
-            </p>
+          <div className="bg-muted/50 rounded-xl p-4 text-center">
+            <div className="text-xs text-muted-foreground mb-1">사업자등록번호</div>
+            <div className="font-mono text-lg tracking-wider text-foreground">
+              {formatBusinessNumber(businessNumber)}
+            </div>
           </div>
         </motion.div>
       )}
@@ -638,10 +656,10 @@ function HometaxStep({
         ) : (
           <>
             <Button 
-              onClick={() => onConnect(businessNumber)} 
+              onClick={onConnect} 
               size="lg" 
               className="w-full gap-2 h-12"
-              disabled={isConnecting || !isValidNumber}
+              disabled={isConnecting}
             >
               {isConnecting ? (
                 <>
@@ -651,7 +669,7 @@ function HometaxStep({
               ) : (
                 <>
                   <Shield className="h-4 w-4" />
-                  연동하기
+                  {hasBusinessNumber ? "연동하기" : "사업자등록번호 입력"}
                 </>
               )}
             </Button>
