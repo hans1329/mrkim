@@ -17,9 +17,9 @@ interface UseCardConnectionReturn {
   isLoading: boolean;
   connectedId: string | null;
   cards: CardInfo[];
-  registerCardAccount: (cardCompanyId: string, loginId: string, password: string) => Promise<boolean>;
+  registerCardAccount: (cardCompanyId: string, loginId: string, password: string) => Promise<string | null>;
   addCardAccount: (cardCompanyId: string, loginId: string, password: string) => Promise<boolean>;
-  getCards: (cardCompanyId: string) => Promise<CardInfo[]>;
+  getCards: (cardCompanyId: string, overrideConnectedId?: string) => Promise<CardInfo[]>;
 }
 
 export function useCardConnection(): UseCardConnectionReturn {
@@ -28,18 +28,18 @@ export function useCardConnection(): UseCardConnectionReturn {
   const [cards, setCards] = useState<CardInfo[]>([]);
   const { updateProfile } = useProfile();
 
-  // 카드사 계정 등록 (ConnectedId 신규 발급)
+  // 카드사 계정 등록 (ConnectedId 신규 발급) - connectedId 반환
   const registerCardAccount = async (
     cardCompanyId: string, 
     loginId: string, 
     password: string
-  ): Promise<boolean> => {
+  ): Promise<string | null> => {
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error("로그인이 필요합니다.");
-        return false;
+        return null;
       }
 
       const response = await supabase.functions.invoke("codef-card", {
@@ -67,15 +67,15 @@ export function useCardConnection(): UseCardConnectionReturn {
         }, false);
         
         toast.success("카드사 연결이 완료되었습니다!");
-        return true;
+        return data.connectedId;
       } else {
         toast.error(data.error || "카드사 연결에 실패했습니다.");
-        return false;
+        return null;
       }
     } catch (error) {
       console.error("Card registration error:", error);
       toast.error(error instanceof Error ? error.message : "카드사 연결 중 오류가 발생했습니다.");
-      return false;
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -127,8 +127,10 @@ export function useCardConnection(): UseCardConnectionReturn {
   };
 
   // 보유 카드 목록 조회
-  const getCards = async (cardCompanyId: string): Promise<CardInfo[]> => {
-    if (!connectedId) {
+  const getCards = async (cardCompanyId: string, overrideConnectedId?: string): Promise<CardInfo[]> => {
+    const idToUse = overrideConnectedId || connectedId;
+    
+    if (!idToUse) {
       toast.error("먼저 카드사를 등록해주세요.");
       return [];
     }
@@ -138,7 +140,7 @@ export function useCardConnection(): UseCardConnectionReturn {
       const response = await supabase.functions.invoke("codef-card", {
         body: {
           action: "getCards",
-          connectedId,
+          connectedId: idToUse,
           cardCompanyId,
         },
       });
