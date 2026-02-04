@@ -69,7 +69,8 @@ export function TransactionClassifier() {
   };
 
   const expenseTransactions = transactions || [];
-  const unclassifiedCount = expenseTransactions.filter((t) => !t.category).length;
+  // 미분류 또는 기타비용이면서 수동 분류가 아닌 항목 카운트
+  const unclassifiedCount = expenseTransactions.filter((t) => (!t.category || t.category === "기타비용") && !t.is_manually_classified).length;
   const isEmpty = !isLoading && expenseTransactions.length === 0;
 
   return (

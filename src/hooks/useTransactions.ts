@@ -229,11 +229,12 @@ export function useClassifyTransactions() {
 
   return useMutation({
     mutationFn: async (transactionIds?: string[]) => {
-      // 미분류 거래 조회
+      // 미분류 또는 기타비용으로 분류된 거래 조회 (수동 분류 제외)
       let query = supabase
         .from("transactions")
         .select("id, description")
-        .is("category", null);
+        .or("category.is.null,category.eq.기타비용")
+        .neq("is_manually_classified", true);
 
       if (transactionIds?.length) {
         query = query.in("id", transactionIds);
