@@ -467,14 +467,16 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
               </div>
 
               {fetchedAccounts.length > 0 && selectedAccounts.length > 0 && (
-                <div className="bg-muted/50 rounded-xl p-4 space-y-2">
+                <div className="bg-muted/50 rounded-xl p-4 space-y-3">
                   {fetchedAccounts
                     .filter((a) => selectedAccounts.includes(a.accountNo))
                     .map((account, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        <span>{account.accountName || account.accountType}</span>
-                        <span className="text-muted-foreground">({account.accountNo})</span>
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                        <div className="text-left">
+                          <p className="font-medium">{account.accountName || account.accountType}</p>
+                          <p className="text-muted-foreground font-mono text-xs mt-0.5">{account.accountNo}</p>
+                        </div>
                       </div>
                     ))}
                 </div>
