@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 // 샌드박스 환경
-const CODEF_SANDBOX_URL = "https://development.codef.io";
+const CODEF_SANDBOX_URL = "https://sandbox.codef.io";
 const CODEF_TOKEN_URL = "https://oauth.codef.io/oauth/token";
 
 serve(async (req) => {
