@@ -277,6 +277,10 @@ serve(async (req) => {
     } else if (action === "getCards") {
       // 보유 카드 조회
       return await handleGetCards(accessToken, connectedId, cardCompanyId);
+    } else if (action === "getTransactions") {
+      // 승인 내역 조회
+      const { startDate, endDate, cardNo } = await req.json().catch(() => ({}));
+      return await handleGetTransactions(accessToken, connectedId, cardCompanyId, startDate, endDate, cardNo);
     } else {
       return new Response(
         JSON.stringify({ success: false, error: "알 수 없는 action입니다." }),
@@ -522,4 +526,118 @@ function parseCodefResponse(text: string): any {
       return { raw: text };
     }
   }
+}
+
+// 승인 내역 조회
+async function handleGetTransactions(
+  accessToken: string,
+  connectedId: string,
+  cardCompanyId: string,
+  startDate?: string,
+  endDate?: string,
+  cardNo?: string
+): Promise<Response> {
+  const organizationCode = CARD_ORGANIZATION_CODES[cardCompanyId];
+  if (!organizationCode) {
+    return new Response(
+      JSON.stringify({ success: false, error: "지원하지 않는 카드사입니다." }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // 기본값: 최근 3개월
+  const now = new Date();
+  const defaultEndDate = now.toISOString().slice(0, 10).replace(/-/g, "");
+  const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+  const defaultStartDate = threeMonthsAgo.toISOString().slice(0, 10).replace(/-/g, "");
+
+  const requestBody = {
+    connectedId,
+    organization: organizationCode,
+    startDate: startDate?.replace(/-/g, "") || defaultStartDate,
+    endDate: endDate?.replace(/-/g, "") || defaultEndDate,
+    orderBy: "0",  // 0: 최신순
+    inquiryType: "0",  // 0: 전체, 1: 신용, 2: 체크
+    cardNo: cardNo || "",
+    memberStoreInfoType: "0",  // 가맹점 정보 포함
+  };
+
+  console.log("Getting transactions for connectedId:", connectedId, "period:", requestBody.startDate, "~", requestBody.endDate);
+
+  const response = await fetch(`${CODEF_API_URL}/v1/kr/card/p/account/approval-list`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const responseText = await response.text();
+  console.log("Transactions response length:", responseText.length);
+
+  const data = parseCodefResponse(responseText);
+  const result = data.result || {};
+  const isSuccess = result.code === "CF-00000";
+
+  if (isSuccess) {
+    const rawTransactions = Array.isArray(data.data) ? data.data : (data.data?.resList || []);
+    
+    // 거래 데이터 정규화
+    const transactions = rawTransactions.map((tx: any) => ({
+      // 날짜/시간
+      transactionDate: formatDate(tx.resUsedDate),
+      transactionTime: tx.resUsedTime || null,
+      
+      // 금액
+      amount: parseInt(tx.resUsedAmount?.replace(/,/g, "") || "0", 10),
+      
+      // 가맹점 정보
+      merchantName: tx.resMemberStoreName || tx.resStoreName || "",
+      merchantCategory: tx.resMemberStoreType || "",
+      description: tx.resMemberStoreName || tx.resStoreName || tx.resNote || "카드 결제",
+      
+      // 카드 정보
+      cardNo: tx.resCardNo || "",
+      cardName: tx.resCardName || "",
+      
+      // 결제 상태
+      status: tx.resApprovalStatus || "approved",
+      approvalNo: tx.resApprovalNo || "",
+      
+      // 분할 납부
+      installment: tx.resInstallmentCnt || "0",
+      
+      // 원본 데이터 참조용
+      rawData: tx,
+    }));
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: `${transactions.length}건의 거래를 조회했습니다.`,
+        transactions,
+        period: {
+          startDate: requestBody.startDate,
+          endDate: requestBody.endDate,
+        },
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } else {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: result.message || "승인 내역 조회 실패",
+        code: result.code,
+      }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+}
+
+// 날짜 형식 변환 (YYYYMMDD -> YYYY-MM-DD)
+function formatDate(dateStr: string | undefined): string {
+  if (!dateStr || dateStr.length !== 8) return dateStr || "";
+  return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
 }
