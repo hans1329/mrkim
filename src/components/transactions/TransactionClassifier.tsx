@@ -22,8 +22,9 @@ export function TransactionClassifier() {
   const updateTransaction = useUpdateTransaction();
 
   const handleClassifyAll = async () => {
+    // 미분류 또는 기타비용이면서 수동 분류가 아닌 항목 필터링
     const unclassifiedIds = transactions
-      ?.filter((t) => !t.category)
+      ?.filter((t) => (!t.category || t.category === "기타비용") && !t.is_manually_classified)
       .map((t) => t.id);
 
     if (!unclassifiedIds?.length) {
