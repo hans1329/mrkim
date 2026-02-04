@@ -153,30 +153,30 @@ export default function Transactions() {
             </div>
           )}
 
-          {/* 요약 카드 - 더 컴팩트하게 */}
-          <div className="grid grid-cols-3 gap-1.5">
-            <div className="rounded-lg bg-card border p-2.5 text-center">
-              <p className="text-xs text-muted-foreground">매출</p>
+          {/* 요약 카드 */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-lg bg-card border p-3 text-center">
+              <p className="text-xs text-muted-foreground mb-1">매출</p>
               {isStatsLoading ? (
-                <Skeleton className="mx-auto mt-1 h-5 w-16" />
+                <Skeleton className="mx-auto h-5 w-full max-w-[80px]" />
               ) : (
-                <p className="mt-0.5 text-base font-bold text-green-600">{formatCurrency(stats?.totalIncome || 0)}</p>
+                <p className="text-sm font-bold text-green-600 truncate">{formatCurrency(stats?.totalIncome || 0)}</p>
               )}
             </div>
-            <div className="rounded-lg bg-card border p-2.5 text-center">
-              <p className="text-xs text-muted-foreground">지출</p>
+            <div className="rounded-lg bg-card border p-3 text-center">
+              <p className="text-xs text-muted-foreground mb-1">지출</p>
               {isStatsLoading ? (
-                <Skeleton className="mx-auto mt-1 h-5 w-16" />
+                <Skeleton className="mx-auto h-5 w-full max-w-[80px]" />
               ) : (
-                <p className="mt-0.5 text-base font-bold text-red-600">{formatCurrency(stats?.totalExpense || 0)}</p>
+                <p className="text-sm font-bold text-red-600 truncate">{formatCurrency(stats?.totalExpense || 0)}</p>
               )}
             </div>
-            <div className="rounded-lg bg-card border p-2.5 text-center">
-              <p className="text-xs text-muted-foreground">순이익</p>
+            <div className="rounded-lg bg-card border p-3 text-center">
+              <p className="text-xs text-muted-foreground mb-1">순이익</p>
               {isStatsLoading ? (
-                <Skeleton className="mx-auto mt-1 h-5 w-16" />
+                <Skeleton className="mx-auto h-5 w-full max-w-[80px]" />
               ) : (
-                <p className="mt-0.5 text-base font-bold text-primary">{formatCurrency(stats?.netProfit || 0)}</p>
+                <p className="text-sm font-bold text-primary truncate">{formatCurrency(stats?.netProfit || 0)}</p>
               )}
             </div>
           </div>
