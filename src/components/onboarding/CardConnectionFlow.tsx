@@ -92,6 +92,11 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
       );
       
       if (newConnectedId) {
+        // 로컬스토리지에 연동 정보 저장 (거래 동기화에서 사용)
+        localStorage.setItem("codef_connected_id", newConnectedId);
+        localStorage.setItem("codef_card_company", selectedCompany);
+        localStorage.setItem("codef_card_company_name", selectedCompanyData?.name || selectedCompany);
+        
         // 카드 목록 조회 - 반환된 connectedId 직접 전달
         const cards = await getCards(selectedCompany, newConnectedId);
         setFetchedCards(cards);
