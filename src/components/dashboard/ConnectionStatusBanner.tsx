@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/hooks/useProfile";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UrgentAlert {
   id: string;
@@ -26,7 +27,11 @@ const createMockUrgentAlerts = (navigate: ReturnType<typeof useNavigate>): Urgen
   },
 ];
 
-export function ConnectionStatusBanner() {
+interface ConnectionStatusBannerProps {
+  isLoggedOut?: boolean;
+}
+
+export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatusBannerProps) {
   const navigate = useNavigate();
   const { profile, loading, refetch } = useProfile();
   const [alerts] = useState<UrgentAlert[]>(() => createMockUrgentAlerts(navigate));
@@ -53,6 +58,16 @@ export function ConnectionStatusBanner() {
     };
   }, [refetch]);
 
+  // 연동 시작 버튼 핸들러 - 로그인 여부 확인
+  const handleStartConnection = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      navigate("/onboarding");
+    } else {
+      navigate("/login?redirect=/onboarding");
+    }
+  };
+
   // 프로필에서 실제 연동 상태 가져오기
   const connections = [
     { key: "hometax", label: "국세청", connected: profile?.hometax_connected ?? false },
@@ -71,6 +86,54 @@ export function ConnectionStatusBanner() {
   const handleDismissAlert = (id: string) => {
     setDismissedAlerts(prev => [...prev, id]);
   };
+
+  // 로그아웃 상태: 항상 연동 배너 표시 (목업 상태)
+  if (isLoggedOut) {
+    return (
+      <div className="rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 mb-4">
+        <div className="flex items-center gap-2 mb-1">
+          <h4 className="font-semibold text-sm">
+            데이터 연동을 완료해주세요
+          </h4>
+          <span className="text-xs text-muted-foreground">
+            0/{totalConnections}
+          </span>
+        </div>
+          
+        <p className="text-xs text-muted-foreground mb-3">
+          연동하면 김비서가 실시간으로 사업 현황을 분석해드려요
+        </p>
+
+        {/* 연동 상태 표시 - 모두 미연동 */}
+        <div className="flex items-center gap-2 mb-3">
+          {connections.map((conn) => (
+            <div
+              key={conn.key}
+              className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground"
+            >
+              <Clock className="h-3 w-3" />
+              {conn.label}
+            </div>
+          ))}
+        </div>
+
+        {/* 진행률 바 */}
+        <div className="mb-3">
+          <Progress value={0} className="h-1.5" />
+        </div>
+
+        <Button
+          size="sm"
+          className="h-8 text-xs gap-1"
+          onClick={handleStartConnection}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          연동 시작하기
+          <ChevronRight className="h-3 w-3" />
+        </Button>
+      </div>
+    );
+  }
 
   // 로딩 중일 때 스켈레톤 표시
   if (loading) {
@@ -139,7 +202,7 @@ export function ConnectionStatusBanner() {
         <Button
           size="sm"
           className="h-8 text-xs gap-1"
-          onClick={() => navigate("/onboarding")}
+          onClick={handleStartConnection}
         >
           <Sparkles className="h-3.5 w-3.5" />
           {connectedCount > 0 ? "이어서 연동하기" : "연동 시작하기"}

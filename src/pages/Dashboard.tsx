@@ -64,7 +64,7 @@ export default function Dashboard() {
     <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요">
       <div className="space-y-6">
         {/* 연동 상태 / 긴급 알림 배너 */}
-        <ConnectionStatusBanner />
+        <ConnectionStatusBanner isLoggedOut={isLoggedOut} />
 
         {/* AI 김비서 채팅 카드 */}
         <section>
