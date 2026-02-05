@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { TodaySummarySection } from "@/components/dashboard/TodaySummarySection";
 import { DepositCard } from "@/components/dashboard/DepositCard";
 import { AutoTransferCard } from "@/components/dashboard/AutoTransferCard";
 import { AlertCard } from "@/components/dashboard/AlertCard";
@@ -11,14 +12,11 @@ import { EmployeeSummaryCard } from "@/components/dashboard/EmployeeSummaryCard"
 import { TodayActionsCard } from "@/components/dashboard/TodayActionsCard";
 import { ConnectionStatusBanner } from "@/components/dashboard/ConnectionStatusBanner";
 import { HometaxSummaryCard } from "@/components/dashboard/HometaxSummaryCard";
-import {
-  getTodayStats,
+import {  
   mockDeposits,
   mockAutoTransfers,
   mockAlerts,
-  formatCurrency,
 } from "@/data/mockData";
-import { TrendingUp, TrendingDown, Wallet, PiggyBank } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProfile } from "@/hooks/useProfile";
@@ -27,7 +25,6 @@ import { useChat } from "@/contexts/ChatContext";
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { openChat } = useChat();
-  const stats = getTodayStats();
   const isMobile = useIsMobile();
   const { profile, loading } = useProfile();
   
@@ -56,38 +53,8 @@ export default function Dashboard() {
           <AIChatCard />
         </section>
 
-        {/* 오늘의 요약 - 전체 너비 한 줄 */}
-        <section>
-          <h2 className="mb-3 text-base font-semibold text-foreground">오늘의 요약</h2>
-          <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
-            <StatCard
-              title="오늘 매출"
-              value={formatCurrency(stats.income)}
-              icon={TrendingUp}
-              trend={{ value: 12.5, isPositive: true }}
-              variant="primary"
-            />
-            <StatCard
-              title="오늘 지출"
-              value={formatCurrency(stats.expense)}
-              icon={TrendingDown}
-              trend={{ value: 3.2, isPositive: false }}
-            />
-            <StatCard
-              title="순이익"
-              value={formatCurrency(stats.profit)}
-              subtitle={`카드 ${stats.cardRatio}%`}
-              icon={Wallet}
-              variant="success"
-            />
-            <StatCard
-              title="운영자금"
-              value="₩15.3M"
-              subtitle="가용 잔액"
-              icon={PiggyBank}
-            />
-          </div>
-        </section>
+         {/* 오늘의 요약 - 실데이터 연동 */}
+         <TodaySummarySection />
 
         {/* PC: 2칼럼 그리드 레이아웃 / Mobile: 1칼럼 */}
         <div className={isMobile ? "space-y-6" : "grid grid-cols-2 gap-6"}>
