@@ -22,7 +22,7 @@
    const navigate = useNavigate();
  
    return (
-     <Card className="border-dashed border-2 border-muted-foreground/20 bg-muted/30">
+     <Card className="border-dashed border-2 border-muted-foreground/20 bg-card">
        <CardHeader className="pb-4">
          <CardTitle className="text-base">데이터 연동이 필요해요</CardTitle>
        </CardHeader>
