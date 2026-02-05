@@ -1,8 +1,55 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PiggyBank } from "lucide-react";
+import { PiggyBank, TrendingUp } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
-// 예치금 기능은 아직 실데이터 연동 전 - 빈 상태 표시
-export function DepositCard() {
+interface DepositCardProps {
+  isLoggedOut?: boolean;
+}
+
+export function DepositCard({ isLoggedOut = false }: DepositCardProps) {
+  // 로그아웃 상태: 목업 예치금 현황 표시
+  if (isLoggedOut) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <PiggyBank className="h-4 w-4 text-primary" />
+            예치금 현황
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-primary">₩3,250,000</p>
+            <p className="text-xs text-muted-foreground">총 적립금</p>
+          </div>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">부가세 적립</span>
+                <span className="font-medium">₩2,600,000</span>
+              </div>
+              <Progress value={80} className="h-2" />
+              <p className="text-xs text-muted-foreground">목표 대비 80%</p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">급여 적립</span>
+                <span className="font-medium">₩650,000</span>
+              </div>
+              <Progress value={52} className="h-2" />
+              <p className="text-xs text-muted-foreground">목표 대비 52%</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-success/10">
+            <TrendingUp className="h-4 w-4 text-success" />
+            <span className="text-xs text-success">지난 달 대비 +₩450,000</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 로그인 상태: 준비 중 표시
   return (
     <Card>
       <CardHeader className="pb-3">
