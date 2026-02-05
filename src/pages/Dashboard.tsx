@@ -11,13 +11,9 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProfile } from "@/hooks/useProfile";
 import { useChat } from "@/contexts/ChatContext";
- 
+
 // 연동된 상태에서만 표시할 컴포넌트들
-import { DepositCard } from "@/components/dashboard/DepositCard";
-import { AutoTransferCard } from "@/components/dashboard/AutoTransferCard";
-import { AlertCard } from "@/components/dashboard/AlertCard";
 import { RecentTransactionsCard } from "@/components/dashboard/RecentTransactionsCard";
-import { EmployeeSummaryCard } from "@/components/dashboard/EmployeeSummaryCard";
 
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -79,8 +75,6 @@ export default function Dashboard() {
                </section>
              )}
 
-              {/* 예치금 현황 - 추후 실데이터 연동 예정 */}
-              {isTransactionConnected && <DepositCard />}
             </div>
 
             {/* 우측 칼럼 */}
@@ -98,19 +92,6 @@ export default function Dashboard() {
                   <RecentTransactionsCard />
                 </section>
               )}
-
-              {/* 직원 현황 - 추후 실데이터 연동 예정 */}
-              {isTransactionConnected && (
-                <section>
-                  <EmployeeSummaryCard />
-                </section>
-              )}
-
-              {/* 자동이체 현황 - 추후 실데이터 연동 예정 */}
-              {isTransactionConnected && <AutoTransferCard />}
-              
-              {/* 알림 - 추후 실데이터 연동 예정 */}
-              {isTransactionConnected && <AlertCard />}
            </div>
          </div>
        )}
