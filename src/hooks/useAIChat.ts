@@ -206,6 +206,8 @@ export function useAIChat() {
     setIsLoading(true);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       // 최근 10개 메시지만 전송 (컨텍스트 유지)
       const recentMessages = [...messages, userMessage].slice(-10).map(m => ({
         role: m.role,
@@ -223,6 +225,7 @@ export function useAIChat() {
           secretaryName,
           secretaryTone,
           secretaryGender,
+          userId: user?.id,
         }),
       });
 
