@@ -38,6 +38,7 @@ import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminPush from "./pages/admin/AdminPush";
 import AdminFeedback from "./pages/admin/AdminFeedback";
 import AdminApiUsage from "./pages/admin/AdminApiUsage";
+import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +83,7 @@ const App = () => (
                   <Route path="/admin/push" element={<AdminPush />} />
                   <Route path="/admin/feedback" element={<AdminFeedback />} />
                   <Route path="/admin/api-usage" element={<AdminApiUsage />} />
+                  <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

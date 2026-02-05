@@ -10,6 +10,7 @@ import { ServiceChatProvider } from "@/contexts/ServiceChatContext";
 import { ServiceChatPanel } from "@/components/chat/ServiceChatPanel";
 import { ServiceVoiceOverlay } from "@/components/chat/ServiceVoiceOverlay";
 import { FloatingServiceChatButton } from "@/components/chat/FloatingServiceChatButton";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 const logo = "/images/icc-3.webp";
 const logoWhite = "/images/icc-white.webp";
 const iccBlue = "/images/icc-blue.webp";
@@ -17,6 +18,8 @@ const icc = "/images/icc-5.webp";
 
 const PreLoginLandingContent = () => {
   const navigate = useNavigate();
+  const { isEnabled } = useSiteSettings();
+  const showAppDownload = isEnabled("show_app_download");
   
   const features = [{
     icon: Calculator,
@@ -406,78 +409,92 @@ const PreLoginLandingContent = () => {
         </div>
       </section>
 
-      {/* Wave Divider - Social Proof to App Download */}
-      <div className="relative -mb-1 bg-muted/30">
-        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-10 lg:h-14" preserveAspectRatio="none">
-          <path d="M0 0V50C100 65 200 75 300 70C400 65 500 50 600 45C700 40 800 45 900 55C1000 65 1100 80 1200 85C1300 90 1400 85 1440 80V0H0Z" className="fill-muted/30" />
-          <path d="M0 120L60 108C120 96 240 72 360 60C480 48 600 48 720 54C840 60 960 72 1080 78C1200 84 1320 84 1380 84L1440 84V120H0Z" className="fill-white dark:fill-card" />
-        </svg>
-      </div>
+      {/* Wave Divider - Social Proof to App Download (or to Final CTA if hidden) */}
+      {showAppDownload ? (
+        <>
+          <div className="relative -mb-1 bg-muted/30">
+            <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-10 lg:h-14" preserveAspectRatio="none">
+              <path d="M0 0V50C100 65 200 75 300 70C400 65 500 50 600 45C700 40 800 45 900 55C1000 65 1100 80 1200 85C1300 90 1400 85 1440 80V0H0Z" className="fill-muted/30" />
+              <path d="M0 120L60 108C120 96 240 72 360 60C480 48 600 48 720 54C840 60 960 72 1080 78C1200 84 1320 84 1380 84L1440 84V120H0Z" className="fill-white dark:fill-card" />
+            </svg>
+          </div>
 
-      {/* App Download Section */}
-      <section className="py-10 bg-white dark:bg-card">
-        <div className="max-w-xl mx-auto px-4">
-          <Card className="border-0 shadow-xl overflow-hidden bg-card/95 backdrop-blur">
-            <CardContent className="p-6">
-              <div className="flex flex-col sm:flex-row items-center gap-6">
-                {/* QR Code */}
-                <div className="flex-shrink-0 text-center">
-                  <div className="p-3 bg-background rounded-2xl shadow-inner">
-                    <img src={qrCode} alt="QR Code" className="w-24 h-24" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">QR 스캔</p>
-                </div>
-                
-                <div className="hidden sm:block w-px h-24 bg-border" />
-                
-                {/* Store Buttons */}
-                <div className="flex-1 space-y-3 text-center sm:text-left">
-                  <p className="font-semibold text-foreground">📲 앱으로 더 편리하게!</p>
-                  
-                  <div className="flex flex-col gap-2">
-                    <a href="#" className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 bg-foreground text-background rounded-xl hover:opacity-90 transition-opacity">
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z" />
-                      </svg>
-                      <div className="text-left">
-                        <div className="text-[9px] opacity-70 leading-none">Download on the</div>
-                        <div className="text-sm font-semibold leading-tight">App Store</div>
+          {/* App Download Section */}
+          <section className="py-10 bg-white dark:bg-card">
+            <div className="max-w-xl mx-auto px-4">
+              <Card className="border-0 shadow-xl overflow-hidden bg-card/95 backdrop-blur">
+                <CardContent className="p-6">
+                  <div className="flex flex-col sm:flex-row items-center gap-6">
+                    {/* QR Code */}
+                    <div className="flex-shrink-0 text-center">
+                      <div className="p-3 bg-background rounded-2xl shadow-inner">
+                        <img src={qrCode} alt="QR Code" className="w-24 h-24" />
                       </div>
-                    </a>
+                      <p className="text-xs text-muted-foreground mt-2">QR 스캔</p>
+                    </div>
+                    
+                    <div className="hidden sm:block w-px h-24 bg-border" />
+                    
+                    {/* Store Buttons */}
+                    <div className="flex-1 space-y-3 text-center sm:text-left">
+                      <p className="font-semibold text-foreground">📲 앱으로 더 편리하게!</p>
+                      
+                      <div className="flex flex-col gap-2">
+                        <a href="#" className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 bg-foreground text-background rounded-xl hover:opacity-90 transition-opacity">
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z" />
+                          </svg>
+                          <div className="text-left">
+                            <div className="text-[9px] opacity-70 leading-none">Download on the</div>
+                            <div className="text-sm font-semibold leading-tight">App Store</div>
+                          </div>
+                        </a>
 
-                    <a href="#" className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 bg-foreground text-background rounded-xl hover:opacity-90 transition-opacity">
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 9.99l-2.302 2.302-8.634-8.634z" />
-                      </svg>
-                      <div className="text-left">
-                        <div className="text-[9px] opacity-70 leading-none">GET IT ON</div>
-                        <div className="text-sm font-semibold leading-tight">Google Play</div>
+                        <a href="#" className="inline-flex items-center justify-center gap-2.5 px-4 py-2.5 bg-foreground text-background rounded-xl hover:opacity-90 transition-opacity">
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 9.99l-2.302 2.302-8.634-8.634z" />
+                          </svg>
+                          <div className="text-left">
+                            <div className="text-[9px] opacity-70 leading-none">GET IT ON</div>
+                            <div className="text-sm font-semibold leading-tight">Google Play</div>
+                          </div>
+                        </a>
                       </div>
-                    </a>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+
+          {/* Wave Divider - App Download to Final CTA */}
+          <div className="relative -mb-1 bg-white dark:bg-card">
+            <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-12 lg:h-16" preserveAspectRatio="none">
+              <path
+                d="M0 120V68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72V120H0Z"
+                className="fill-muted/30"
+              />
+              <path
+                d="M0 68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72"
+                fill="none"
+                className="stroke-border/40"
+                strokeWidth="1"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+          </div>
+        </>
+      ) : (
+        /* Wave Divider - Direct from Social Proof to Final CTA when App Download is hidden */
+        <div className="relative -mb-1 bg-muted/30">
+          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-12 lg:h-16" preserveAspectRatio="none">
+            <path
+              d="M0 120V68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72V120H0Z"
+              className="fill-muted/30"
+            />
+          </svg>
         </div>
-      </section>
-
-      {/* Wave Divider - App Download to Final CTA */}
-      <div className="relative -mb-1 bg-white dark:bg-card">
-        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-12 lg:h-16" preserveAspectRatio="none">
-          <path
-            d="M0 120V68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72V120H0Z"
-            className="fill-muted/30"
-          />
-          <path
-            d="M0 68C120 98 240 110 360 94C480 78 600 48 720 54C840 60 960 98 1080 98C1200 98 1320 82 1440 72"
-            fill="none"
-            className="stroke-border/40"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-      </div>
+      )}
 
       {/* Final CTA */}
       <section className="py-12 bg-muted/30">
