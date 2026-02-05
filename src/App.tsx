@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { VoiceProvider } from "@/contexts/VoiceContext";
+import { ConnectionProvider } from "@/contexts/ConnectionContext";
 import Index from "./pages/Index";
 import PreLoginLanding from "./pages/PreLoginLanding";
 import Login from "./pages/Login";
@@ -26,8 +27,8 @@ import Onboarding from "./pages/Onboarding";
 import DesignGuide from "./pages/DesignGuide";
 import Engine from "./pages/Engine";
 import NotFound from "./pages/NotFound";
- import PrivacyPolicy from "./pages/PrivacyPolicy";
- import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -47,44 +48,46 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <ChatProvider>
-            <VoiceProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/intro" element={<PreLoginLanding />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/transactions" element={<Transactions />} />
-                <Route path="/employees" element={<Employees />} />
-                <Route path="/funds" element={<Funds />} />
-                <Route path="/more" element={<More />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/financial-services" element={<FinancialServices />} />
-                <Route path="/pitchdeck" element={<PitchDeck />} />
-                <Route path="/landing" element={<Landing />} />
-                <Route path="/secretary-settings" element={<SecretarySettings />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/design" element={<DesignGuide />} />
-                <Route path="/engine" element={<Engine />} />
-                 <Route path="/privacy" element={<PrivacyPolicy />} />
-                 <Route path="/terms" element={<TermsOfService />} />
-                {/* Admin Routes */}
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/faq" element={<AdminFAQ />} />
-                <Route path="/admin/users" element={<AdminUsers />} />
-                <Route path="/admin/announcements" element={<AdminAnnouncements />} />
-                <Route path="/admin/push" element={<AdminPush />} />
-                <Route path="/admin/feedback" element={<AdminFeedback />} />
-                <Route path="/admin/api-usage" element={<AdminApiUsage />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </VoiceProvider>
-          </ChatProvider>
+          <ConnectionProvider>
+            <ChatProvider>
+              <VoiceProvider>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/intro" element={<PreLoginLanding />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/transactions" element={<Transactions />} />
+                  <Route path="/employees" element={<Employees />} />
+                  <Route path="/funds" element={<Funds />} />
+                  <Route path="/more" element={<More />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/financial-services" element={<FinancialServices />} />
+                  <Route path="/pitchdeck" element={<PitchDeck />} />
+                  <Route path="/landing" element={<Landing />} />
+                  <Route path="/secretary-settings" element={<SecretarySettings />} />
+                  <Route path="/onboarding" element={<Onboarding />} />
+                  <Route path="/design" element={<DesignGuide />} />
+                  <Route path="/engine" element={<Engine />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  {/* Admin Routes */}
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin/faq" element={<AdminFAQ />} />
+                  <Route path="/admin/users" element={<AdminUsers />} />
+                  <Route path="/admin/announcements" element={<AdminAnnouncements />} />
+                  <Route path="/admin/push" element={<AdminPush />} />
+                  <Route path="/admin/feedback" element={<AdminFeedback />} />
+                  <Route path="/admin/api-usage" element={<AdminApiUsage />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </VoiceProvider>
+            </ChatProvider>
+          </ConnectionProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
