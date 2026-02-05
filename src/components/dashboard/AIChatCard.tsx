@@ -5,10 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bot, Send, Sparkles, Mic, RotateCcw, Clock, Settings } from "lucide-react";
-import { getTodayStats, mockDeposits, mockAutoTransfers, mockEmployees, formatCurrency } from "@/data/mockData";
+import { formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
 import { useVoice } from "@/contexts/VoiceContext";
 import { useProfile } from "@/hooks/useProfile";
+import { supabase } from "@/integrations/supabase/client";
+
+interface RealTimeStats {
+  todayIncome: number;
+  todayExpense: number;
+  monthlyIncome: number;
+  monthlyExpense: number;
+  isLoading: boolean;
+}
 
 const quickPrompts = [
   "오늘 매출 얼마야?",
@@ -49,33 +58,6 @@ const getIncompleteSettingsMessages = (profile: any, secretaryName: string) => {
   return messages;
 };
 
-// 브리핑 메시지 생성
-const generateBriefingMessage = (): string => {
-  const stats = getTodayStats();
-  const vatDeposit = mockDeposits.find((d) => d.type === "vat");
-  const salaryDeposit = mockDeposits.find((d) => d.type === "salary");
-  const activeEmployees = mockEmployees.filter((e) => e.status === "재직");
-  
-  const parts = [
-    `오늘 매출 ${formatCurrency(stats.income)}, 순이익 ${formatCurrency(stats.profit)}입니다.`,
-  ];
-  
-  if (vatDeposit) {
-    parts.push(`부가세 ${formatCurrency(vatDeposit.amount)} 적립 중.`);
-  }
-  
-  if (salaryDeposit && salaryDeposit.dueDate) {
-    const dueDate = new Date(salaryDeposit.dueDate);
-    const today = new Date();
-    const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays > 0 && diffDays <= 7) {
-      parts.push(`급여일 D-${diffDays}.`);
-    }
-  }
-  
-  return parts.join(" ");
-};
-
 // 브리핑 시간인지 확인 (9시, 12시, 18시, 22시 기준 ±30분)
 const isBriefingTime = (): boolean => {
   const now = new Date();
@@ -91,40 +73,41 @@ const isBriefingTime = (): boolean => {
   });
 };
 
-// 간단한 응답 생성
-const generateQuickResponse = (input: string): string => {
-  const lowerInput = input.toLowerCase();
-  const stats = getTodayStats();
-
-  if (lowerInput.includes("매출") && (lowerInput.includes("오늘") || lowerInput.includes("얼마"))) {
-    return `오늘 총 매출은 ${formatCurrency(stats.income)}이며, 순이익은 ${formatCurrency(stats.profit)}입니다.`;
+// 실제 데이터 기반 브리핑 메시지 생성
+const generateRealBriefingMessage = (stats: RealTimeStats, profile: any): string => {
+  const { hometax_connected, card_connected, account_connected } = profile || {};
+  
+  // 연동이 하나도 안된 경우
+  if (!hometax_connected && !card_connected && !account_connected) {
+    return "데이터를 연동하면 실시간 경영 현황을 알려드릴게요.";
   }
-
-  if (lowerInput.includes("부가세") || lowerInput.includes("vat")) {
-    const vatDeposit = mockDeposits.find((d) => d.type === "vat");
-    if (vatDeposit) {
-      return `부가세 예치금 ${formatCurrency(vatDeposit.amount)} (납부일: ${vatDeposit.dueDate})`;
+  
+  // 오늘 데이터가 있는 경우
+  if (stats.todayIncome > 0 || stats.todayExpense > 0) {
+    const parts = [];
+    if (stats.todayIncome > 0) {
+      parts.push(`오늘 매출 ${formatCurrency(stats.todayIncome)}`);
     }
-  }
-
-  if (lowerInput.includes("급여") || lowerInput.includes("월급")) {
-    const salaryDeposit = mockDeposits.find((d) => d.type === "salary");
-    if (salaryDeposit) {
-      return `급여 적립금 ${formatCurrency(salaryDeposit.amount)} (지급일: ${salaryDeposit.dueDate})`;
+    if (stats.todayExpense > 0) {
+      parts.push(`지출 ${formatCurrency(stats.todayExpense)}`);
     }
+    return parts.join(", ") + "입니다.";
   }
-
-  if (lowerInput.includes("자동이체") || lowerInput.includes("예정")) {
-    const scheduled = mockAutoTransfers.filter((t) => t.status !== "completed");
-    return `예정된 자동이체 ${scheduled.length}건`;
+  
+  // 이번 달 데이터만 있는 경우
+  if (stats.monthlyIncome > 0 || stats.monthlyExpense > 0) {
+    const parts = [];
+    if (stats.monthlyIncome > 0) {
+      parts.push(`이번 달 매출 ${formatCurrency(stats.monthlyIncome)}`);
+    }
+    if (stats.monthlyExpense > 0) {
+      parts.push(`지출 ${formatCurrency(stats.monthlyExpense)}`);
+    }
+    return parts.join(", ") + "입니다.";
   }
-
-  if (lowerInput.includes("이번 달") || lowerInput.includes("요약")) {
-    const stats = getTodayStats();
-    return `이번 달 총 매출 ${formatCurrency(stats.income * 22)}, 예상 순이익 ${formatCurrency(stats.profit * 22)}입니다. 부가세와 급여 지급 일정을 확인해보세요.`;
-  }
-
-  return "자세한 내용은 김비서와 대화해보세요!";
+  
+  // 연동은 되어있지만 데이터가 없는 경우
+  return "아직 이번 달 거래 내역이 없어요. 거래가 발생하면 알려드릴게요!";
 };
 
 export function AIChatCard() {
@@ -136,10 +119,82 @@ export function AIChatCard() {
   const [response, setResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showBriefing, setShowBriefing] = useState(false);
+  const [realStats, setRealStats] = useState<RealTimeStats>({
+    todayIncome: 0,
+    todayExpense: 0,
+    monthlyIncome: 0,
+    monthlyExpense: 0,
+    isLoading: true,
+  });
   
   // 설정한 비서 이름과 아바타 사용 (로딩 중에는 undefined)
   const secretaryName = profileLoading ? undefined : (profile?.secretary_name || "김비서");
   const secretaryAvatarUrl = profileLoading ? undefined : ((profile as any)?.secretary_avatar_url || null);
+
+  // 실제 거래 데이터 불러오기
+  useEffect(() => {
+    const fetchRealStats = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setRealStats(prev => ({ ...prev, isLoading: false }));
+          return;
+        }
+
+        const today = new Date();
+        const todayStr = today.toISOString().split("T")[0];
+        const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
+
+        // 오늘 거래와 이번달 거래를 병렬로 조회
+        const [todayResult, monthlyResult] = await Promise.all([
+          supabase
+            .from("transactions")
+            .select("amount, type")
+            .eq("user_id", user.id)
+            .eq("transaction_date", todayStr),
+          supabase
+            .from("transactions")
+            .select("amount, type")
+            .eq("user_id", user.id)
+            .gte("transaction_date", monthStart)
+            .lte("transaction_date", todayStr),
+        ]);
+
+        // 오늘 통계
+        let todayIncome = 0;
+        let todayExpense = 0;
+        if (todayResult.data) {
+          todayResult.data.forEach((tx) => {
+            if (tx.type === "income") todayIncome += Number(tx.amount);
+            else if (tx.type === "expense") todayExpense += Number(tx.amount);
+          });
+        }
+
+        // 이번달 통계
+        let monthlyIncome = 0;
+        let monthlyExpense = 0;
+        if (monthlyResult.data) {
+          monthlyResult.data.forEach((tx) => {
+            if (tx.type === "income") monthlyIncome += Number(tx.amount);
+            else if (tx.type === "expense") monthlyExpense += Number(tx.amount);
+          });
+        }
+
+        setRealStats({
+          todayIncome,
+          todayExpense,
+          monthlyIncome,
+          monthlyExpense,
+          isLoading: false,
+        });
+      } catch (error) {
+        console.error("Failed to fetch real stats:", error);
+        setRealStats(prev => ({ ...prev, isLoading: false }));
+      }
+    };
+
+    fetchRealStats();
+  }, []);
   
   // 랜덤 플레이스홀더 선택 (미완료 설정 우선)
   const placeholder = useMemo(() => {
@@ -154,22 +209,54 @@ export function AIChatCard() {
     return defaultPlaceholders[Math.floor(Math.random() * defaultPlaceholders.length)];
   }, [profile, secretaryName]);
   
-  // 브리핑 메시지
-  const briefingMessage = useMemo(() => generateBriefingMessage(), []);
+  // 실제 데이터 기반 브리핑 메시지
+  const briefingMessage = useMemo(() => {
+    if (realStats.isLoading) return "";
+    return generateRealBriefingMessage(realStats, profile);
+  }, [realStats, profile]);
   
   // 브리핑 시간 체크
   useEffect(() => {
     const checkBriefing = () => {
-      if (isBriefingTime() && !response) {
+      if (isBriefingTime() && !response && !realStats.isLoading) {
         setShowBriefing(true);
       }
     };
     
     checkBriefing();
-    const interval = setInterval(checkBriefing, 60000); // 1분마다 체크
+    const interval = setInterval(checkBriefing, 60000);
     
     return () => clearInterval(interval);
-  }, [response]);
+  }, [response, realStats.isLoading]);
+
+  // 실제 데이터 기반 빠른 응답
+  const generateQuickResponse = (inputText: string): string => {
+    const lowerInput = inputText.toLowerCase();
+
+    if (lowerInput.includes("매출") && (lowerInput.includes("오늘") || lowerInput.includes("얼마"))) {
+      if (realStats.todayIncome > 0) {
+        return `오늘 총 매출은 ${formatCurrency(realStats.todayIncome)}입니다.`;
+      }
+      return "오늘은 아직 매출 기록이 없어요.";
+    }
+
+    if (lowerInput.includes("급여") || lowerInput.includes("월급")) {
+      return "급여 현황은 직원 관리 메뉴에서 확인할 수 있어요.";
+    }
+
+    if (lowerInput.includes("부가세") || lowerInput.includes("vat")) {
+      return "부가세 현황은 리포트 > 세금계산서 탭에서 확인할 수 있어요.";
+    }
+
+    if (lowerInput.includes("이번 달") || lowerInput.includes("요약")) {
+      if (realStats.monthlyIncome > 0 || realStats.monthlyExpense > 0) {
+        return `이번 달 매출 ${formatCurrency(realStats.monthlyIncome)}, 지출 ${formatCurrency(realStats.monthlyExpense)}입니다.`;
+      }
+      return "이번 달은 아직 거래 내역이 없어요.";
+    }
+
+    return `자세한 내용은 ${secretaryName}와 대화해보세요!`;
+  };
 
   const handleQuickAsk = async (question: string) => {
     setInput("");
@@ -284,7 +371,7 @@ export function AIChatCard() {
             onChange={(e) => setInput(e.target.value)}
             placeholder={placeholder}
             className="flex-1 bg-white/20 border-0 backdrop-blur-sm text-white placeholder:text-white/60 placeholder:text-xs focus-visible:ring-white/30"
-            disabled={isTyping || profileLoading}
+            disabled={isTyping || profileLoading || realStats.isLoading}
           />
           <Button 
             type="submit" 
