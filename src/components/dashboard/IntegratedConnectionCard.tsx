@@ -9,7 +9,6 @@
    Bell,
    ArrowRight,
    FileText,
-   Sparkles,
    CheckCircle2
  } from "lucide-react";
  
@@ -37,9 +36,11 @@ const benefits = [
          {/* 헤더 섹션 */}
          <div className="bg-primary/5 p-6 text-center space-y-2">
            <div className="flex justify-center">
-             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-               <Sparkles className="h-6 w-6 text-primary" />
-             </div>
+             <img 
+               src="/images/icc-5.webp" 
+               alt="김비서" 
+               className="h-16 w-16 object-contain opacity-90"
+             />
            </div>
            <h3 className="text-lg font-semibold">데이터를 연동하면</h3>
            <p className="text-sm text-muted-foreground">
@@ -49,7 +50,7 @@ const benefits = [
 
          {/* 기능 목록 섹션 */}
          <div className="p-6 space-y-5">
-           <div className="grid grid-cols-2 gap-3">
+           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
              {features.map((feature, index) => (
                <div 
                  key={index}
