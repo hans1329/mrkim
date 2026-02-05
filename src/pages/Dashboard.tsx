@@ -67,10 +67,12 @@ export default function Dashboard() {
         <div className={isMobile ? "space-y-6" : "grid grid-cols-2 gap-6"}>
           {/* 좌측 칼럼 */}
           <div className="space-y-6">
-            {/* 오늘의 할 일 */}
-            <section>
-              <TodayActionsCard />
-            </section>
+             {/* 오늘의 할 일 - 연동 시에만 표시 */}
+             {isConnected && (
+               <section>
+                 <TodayActionsCard />
+               </section>
+             )}
 
            {/* 주간 매출/지출 차트 - 카드/계좌 연동 시에만 표시 */}
            {isTransactionConnected && (
@@ -79,8 +81,11 @@ export default function Dashboard() {
              </section>
            )}
 
-           {/* 예치금 현황 - 연동 시에만 표시 */}
-           {isConnected && <DepositCard deposits={mockDeposits} />}
+             {/* 예치금 현황 - 연동 시에만 표시 */}
+             {isConnected && <DepositCard deposits={mockDeposits} />}
+             
+             {/* 미연동 시 좌측에도 통합 연동 카드 표시 (모바일) */}
+             {!isConnected && !loading && isMobile && <IntegratedConnectionCard />}
           </div>
 
           {/* 우측 칼럼 */}
@@ -113,7 +118,7 @@ export default function Dashboard() {
            {isConnected && <AlertCard alerts={mockAlerts} />}
            
            {/* 미연동 시 통합 연동 카드 표시 */}
-           {!isConnected && !loading && <IntegratedConnectionCard />}
+           {!isConnected && !loading && !isMobile && <IntegratedConnectionCard />}
           </div>
         </div>
       </div>
