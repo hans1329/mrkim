@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Clock, AlertTriangle, ChevronRight, MessageCircle, CalendarClock, Link2 } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, ChevronRight, MessageCircle, CalendarClock, Link2, TrendingUp, TrendingDown, FileText, Tags } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useChat } from "@/contexts/ChatContext";
 
 type ActionPriority = "urgent" | "warning" | "normal";
 type ActionStatus = "pending" | "completed" | "postponed";
@@ -18,6 +20,7 @@ interface ActionItem {
   priority: ActionPriority;
   dueText?: string;
   status: ActionStatus;
+  icon?: React.ElementType;
   actions: {
     primary: { label: string; action: () => void };
     secondary?: { label: string; action: () => void };
@@ -48,63 +51,32 @@ const priorityConfig = {
   },
 };
 
-// 연동 완료 후 표시할 할 일 목록 생성 함수 (추후 AI 엔진 연동)
-const createMockActionItems = (): ActionItem[] => [
-  {
-    id: "1",
-    title: "부가세 신고 준비",
-    description: "25일까지 신고 필요합니다. 매입세액 정리를 확인하세요.",
-    priority: "urgent",
-    dueText: "D-3",
-    status: "pending",
-    actions: {
-      primary: { label: "세무사에게 전달", action: () => {} },
-      secondary: { label: "확인 완료", action: () => {} },
-    },
-  },
-  {
-    id: "2",
-    title: "급여일 준비",
-    description: "4대보험료 변동 확인이 필요합니다. 신규 입사자 반영 여부를 체크하세요.",
-    priority: "warning",
-    dueText: "D-7",
-    status: "pending",
-    actions: {
-      primary: { label: "확인하기", action: () => {} },
-      secondary: { label: "다음에", action: () => {} },
-    },
-  },
-  {
-    id: "3",
-    title: "이번 달 매출 정상",
-    description: "전월 대비 12% 증가했습니다. 특별히 조치할 사항이 없습니다.",
-    priority: "normal",
-    status: "pending",
-    actions: {
-      primary: { label: "상세 보기", action: () => {} },
-    },
-  },
-];
-
 export function TodayActionsCard() {
   const navigate = useNavigate();
+  const { openChat } = useChat();
   const { profile, loading } = useProfile();
   const [items, setItems] = useState<ActionItem[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
   
   // 연동 상태 확인
   const isAnyConnected = profile?.hometax_connected || profile?.card_connected || profile?.account_connected;
   
-  // 프로필 로딩 완료 후 할 일 목록 설정
+  // 실데이터 기반 할 일 생성
   useEffect(() => {
-    if (!loading) {
+    const fetchActionItems = async () => {
+      if (loading) return;
+      
+      setDataLoading(true);
+      
+      // 미연동 시 연동 안내
       if (!isAnyConnected) {
-        // 미연동 시 보여줄 할 일
         setItems([{
           id: "connection",
           title: "김비서에게 데이터 연동하기",
           description: "국세청, 카드, 계좌를 연동하면 실시간으로 매출/지출을 분석해드려요.",
           priority: "urgent",
           status: "pending",
+          icon: Link2,
           actions: {
             primary: { 
               label: "연동 시작하기", 
@@ -112,11 +84,149 @@ export function TodayActionsCard() {
             },
           },
         }]);
-      } else {
-        // 연동 완료 시 규칙 기반 할 일 (추후 AI 엔진 연동)
-        setItems(createMockActionItems());
+        setDataLoading(false);
+        return;
       }
-    }
+      
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setDataLoading(false);
+          return;
+        }
+        
+        const actionItems: ActionItem[] = [];
+        const today = new Date();
+        const todayStr = today.toISOString().split("T")[0];
+        
+        // 1. 부가세 신고 일정 체크 (1월, 4월, 7월, 10월 25일)
+        const vatMonths = [1, 4, 7, 10];
+        const currentMonth = today.getMonth() + 1;
+        const currentDay = today.getDate();
+        
+        if (vatMonths.includes(currentMonth) && currentDay <= 25) {
+          const daysUntilDeadline = 25 - currentDay;
+          const priority: ActionPriority = daysUntilDeadline <= 3 ? "urgent" : daysUntilDeadline <= 7 ? "warning" : "normal";
+          
+          actionItems.push({
+            id: "vat",
+            title: "부가세 신고 준비",
+            description: `${currentMonth}월 25일까지 부가세 신고가 필요합니다. 매입/매출 세금계산서를 확인하세요.`,
+            priority,
+            dueText: daysUntilDeadline === 0 ? "오늘" : `D-${daysUntilDeadline}`,
+            status: "pending",
+            icon: FileText,
+            actions: {
+              primary: { label: "세금계산서 확인", action: () => navigate("/reports?tab=tax") },
+              secondary: { label: "확인 완료", action: () => {} },
+            },
+          });
+        }
+        
+        // 2. 이번 달 매출/지출 비교
+        const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
+        const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split("T")[0];
+        const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split("T")[0];
+        
+        const [thisMonthResult, lastMonthResult] = await Promise.all([
+          supabase
+            .from("transactions")
+            .select("amount, type")
+            .eq("user_id", user.id)
+            .gte("transaction_date", thisMonthStart)
+            .lte("transaction_date", todayStr),
+          supabase
+            .from("transactions")
+            .select("amount, type")
+            .eq("user_id", user.id)
+            .gte("transaction_date", lastMonthStart)
+            .lte("transaction_date", lastMonthEnd),
+        ]);
+        
+        const thisMonthIncome = (thisMonthResult.data || [])
+          .filter(t => t.type === "income")
+          .reduce((sum, t) => sum + Number(t.amount), 0);
+        const lastMonthIncome = (lastMonthResult.data || [])
+          .filter(t => t.type === "income")
+          .reduce((sum, t) => sum + Number(t.amount), 0);
+        
+        if (lastMonthIncome > 0 && thisMonthIncome > 0) {
+          const changePercent = Math.round(((thisMonthIncome - lastMonthIncome) / lastMonthIncome) * 100);
+          
+          if (changePercent >= 10) {
+            actionItems.push({
+              id: "sales-up",
+              title: "이번 달 매출 증가 🎉",
+              description: `전월 대비 ${changePercent}% 증가했습니다. 좋은 흐름을 유지하세요!`,
+              priority: "normal",
+              status: "pending",
+              icon: TrendingUp,
+              actions: {
+                primary: { label: "상세 보기", action: () => navigate("/reports?tab=sales") },
+              },
+            });
+          } else if (changePercent <= -10) {
+            actionItems.push({
+              id: "sales-down",
+              title: "매출 감소 주의",
+              description: `전월 대비 ${Math.abs(changePercent)}% 감소했습니다. 원인을 분석해보세요.`,
+              priority: "warning",
+              status: "pending",
+              icon: TrendingDown,
+              actions: {
+                primary: { label: "분석 보기", action: () => navigate("/reports?tab=sales") },
+                secondary: { label: "다음에", action: () => {} },
+              },
+            });
+          }
+        }
+        
+        // 3. 미분류 거래 확인
+        const { count: unclassifiedCount } = await supabase
+          .from("transactions")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .is("category", null);
+        
+        if (unclassifiedCount && unclassifiedCount > 0) {
+          actionItems.push({
+            id: "unclassified",
+            title: `미분류 거래 ${unclassifiedCount}건`,
+            description: "거래를 분류하면 더 정확한 리포트를 받을 수 있어요.",
+            priority: unclassifiedCount >= 10 ? "warning" : "normal",
+            status: "pending",
+            icon: Tags,
+            actions: {
+              primary: { label: "분류하기", action: () => navigate("/transactions") },
+              secondary: { label: "나중에", action: () => {} },
+            },
+          });
+        }
+        
+        // 4. 모든 할 일이 없으면 긍정 메시지
+        if (actionItems.length === 0) {
+          actionItems.push({
+            id: "all-good",
+            title: "오늘은 특별히 할 일이 없어요",
+            description: "모든 것이 순조롭습니다. 김비서가 계속 모니터링하고 있어요.",
+            priority: "normal",
+            status: "pending",
+            icon: CheckCircle2,
+            actions: {
+              primary: { label: "리포트 보기", action: () => navigate("/reports") },
+            },
+          });
+        }
+        
+        setItems(actionItems);
+      } catch (error) {
+        console.error("Error fetching action items:", error);
+      } finally {
+        setDataLoading(false);
+      }
+    };
+    
+    fetchActionItems();
   }, [loading, isAnyConnected, navigate]);
 
   const handleComplete = (id: string) => {
@@ -138,11 +248,13 @@ export function TodayActionsCard() {
   const pendingItems = items.filter(item => item.status === "pending");
   const completedCount = items.filter(item => item.status === "completed").length;
 
+  const isLoading = loading || dataLoading;
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          {loading ? (
+          {isLoading ? (
             <Skeleton className="h-5 w-24" />
           ) : (
             <>
@@ -159,7 +271,7 @@ export function TodayActionsCard() {
           )}
         </div>
       </CardHeader>
-      {loading ? (
+      {isLoading ? (
         <CardContent className="space-y-3 pt-0">
           <Skeleton className="h-24 w-full rounded-lg" />
           <Skeleton className="h-20 w-full rounded-lg" />
@@ -174,8 +286,8 @@ export function TodayActionsCard() {
           ) : (
             pendingItems.map((item) => {
               const config = priorityConfig[item.priority];
-              // 연동 항목은 Link2 아이콘 사용
-              const Icon = item.id === "connection" ? Link2 : config.icon;
+              // 커스텀 아이콘이 있으면 사용, 없으면 우선순위 기본 아이콘
+              const Icon = item.icon || config.icon;
 
               return (
                 <div
@@ -235,7 +347,10 @@ export function TodayActionsCard() {
           )}
 
           {/* 김비서에게 더 물어보기 */}
-          <button className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-2">
+          <button 
+            className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
+            onClick={() => openChat()}
+          >
             <MessageCircle className="h-3.5 w-3.5" />
             김비서에게 더 물어보기
             <ChevronRight className="h-3 w-3" />
