@@ -420,8 +420,13 @@ serve(async (req) => {
     // 3단계: 데이터 필요 여부 확인
     if (intentResult.requiresData) {
       const authHeader = req.headers.get("Authorization") || "";
-      const connectionStatus = await checkConnectionStatus(userId || "", authHeader);
+      
+      console.log("Checking connection status for userId:", userId);
+      const connectionStatus = await checkConnectionStatus(userId, authHeader);
+      console.log("Connection status result:", connectionStatus);
+      
       const missingSources = getMissingDataSources(intentResult.dataSources, connectionStatus);
+      console.log("Missing sources:", missingSources);
       
       if (missingSources.length > 0) {
         // 연동 필요 안내
