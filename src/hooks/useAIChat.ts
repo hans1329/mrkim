@@ -44,6 +44,11 @@ export function useAIChat() {
 
    // 연동 상태에 따른 동적 플레이스홀더 생성
    const getPlaceholderText = useCallback(() => {
+     // 첫 대화인 경우 (세션도 없고 메시지도 없음)
+     if (sessions.length === 0 && messages.length === 0 && !isLoadingSessions) {
+       return `${secretaryName}와 대화를 시작해보세요!`;
+     }
+
      if (!profile) return `${secretaryName}에게 명령하세요...`;
 
      const { hometax_connected, card_connected, account_connected, business_registration_number } = profile;
@@ -81,7 +86,7 @@ export function useAIChat() {
      }
 
      return `${secretaryName}에게 명령하세요...`;
-   }, [profile, secretaryName]);
+   }, [profile, secretaryName, sessions.length, messages.length, isLoadingSessions]);
 
   // 세션 목록 불러오기 (날짜별 그룹화)
   const loadSessions = useCallback(async () => {
