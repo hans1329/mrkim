@@ -80,7 +80,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
   };
 
   const handleLoginConfirm = () => {
-    setShowLoginDialog(false);
+    // AlertDialogAction이 자동으로 다이얼로그를 닫으므로 상태 변경 불필요
     navigate("/login?redirect=/onboarding");
   };
 
