@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingUp, TrendingDown, Receipt } from "lucide-react";
+import { TrendingUp, TrendingDown, Receipt, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCardSync } from "@/hooks/useCardSync";
+import { toast } from "sonner";
 
 interface Transaction {
   id: string;
@@ -19,35 +22,80 @@ interface Transaction {
 export function RecentTransactionsCard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const cardSync = useCardSync();
+
+  const fetchTransactions = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("id, description, amount, type, category, source_type, transaction_date")
+        .eq("user_id", user.id)
+        .order("transaction_date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setTransactions((data || []) as Transaction[]);
+    } catch (error) {
+      console.error("거래 내역 조회 실패:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setLoading(false);
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from("transactions")
-          .select("id, description, amount, type, category, source_type, transaction_date")
-          .eq("user_id", user.id)
-          .order("transaction_date", { ascending: false })
-          .order("created_at", { ascending: false })
-          .limit(5);
-
-        if (error) throw error;
-        setTransactions((data || []) as Transaction[]);
-      } catch (error) {
-        console.error("거래 내역 조회 실패:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchTransactions();
-  }, []);
+  }, [fetchTransactions]);
+
+  const handleSync = async () => {
+    const connectedId = localStorage.getItem("codef_connected_id");
+    const cardCompanyId = localStorage.getItem("codef_card_company");
+    const cardCompanyName = localStorage.getItem("codef_card_company_name");
+
+    if (!connectedId || !cardCompanyId) {
+      toast.error("연동된 카드 정보가 없습니다. 카드를 먼저 연결해주세요.");
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      const today = new Date();
+      const threeMonthsAgo = new Date(today);
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+      const startDate = threeMonthsAgo.toISOString().split("T")[0].replace(/-/g, "");
+      const endDate = today.toISOString().split("T")[0].replace(/-/g, "");
+
+      const result = await cardSync.mutateAsync({
+        connectedId,
+        cardCompanyId,
+        cardCompanyName: cardCompanyName || cardCompanyId,
+        startDate,
+        endDate,
+      });
+
+      if (result.synced > 0) {
+        toast.success(`${result.synced}건의 새 거래 내역을 동기화했습니다`);
+      } else {
+        toast.info("새로운 거래 내역이 없습니다");
+      }
+
+      // 데이터 새로고침
+      await fetchTransactions();
+    } catch (error) {
+      console.error("Sync error:", error);
+      toast.error("동기화 중 오류가 발생했습니다");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -97,8 +145,17 @@ export function RecentTransactionsCard() {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="text-base">최근 거래 내역</CardTitle>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={handleSync}
+          disabled={isSyncing}
+        >
+          <RefreshCw className={cn("h-4 w-4", isSyncing && "animate-spin")} />
+        </Button>
       </CardHeader>
       <CardContent className="space-y-3">
         {transactions.map((transaction) => (
