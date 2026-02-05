@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCardConnection } from "@/hooks/useCardConnection";
+import { useCardSync } from "@/hooks/useCardSync";
+import { toast } from "sonner";
 
 // 카드사 목록 (실제 Codef 지원 카드사)
 const CARD_COMPANIES = [
@@ -61,8 +63,11 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [fetchedCards, setFetchedCards] = useState<CardInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number } | null>(null);
 
   const { isLoading, registerCardAccount, getCards, connectedId } = useCardConnection();
+  const cardSync = useCardSync();
 
   const stepProgress: Record<FlowStep, number> = {
     "select-company": 25,
@@ -112,9 +117,47 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
     }
   };
 
-  const handleSelectCards = () => {
-    if (selectedCards.length === 0) return;
+  const handleSelectCards = async () => {
+    if (fetchedCards.length > 0 && selectedCards.length === 0) return;
+    
+    // 거래 내역 동기화 시작
+    setIsSyncing(true);
     setStep("complete");
+    
+    try {
+      const storedConnectedId = localStorage.getItem("codef_connected_id");
+      const storedCardCompany = localStorage.getItem("codef_card_company");
+      const storedCardCompanyName = localStorage.getItem("codef_card_company_name");
+      
+      if (storedConnectedId && storedCardCompany) {
+        // 최근 3개월 거래 내역 동기화
+        const today = new Date();
+        const threeMonthsAgo = new Date(today);
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        
+        const startDate = threeMonthsAgo.toISOString().split("T")[0].replace(/-/g, "");
+        const endDate = today.toISOString().split("T")[0].replace(/-/g, "");
+        
+        const result = await cardSync.mutateAsync({
+          connectedId: storedConnectedId,
+          cardCompanyId: storedCardCompany,
+          cardCompanyName: storedCardCompanyName || storedCardCompany,
+          startDate,
+          endDate,
+        });
+        
+        setSyncResult({ synced: result.synced, skipped: result.skipped });
+        
+        if (result.synced > 0) {
+          toast.success(`${result.synced}건의 거래 내역을 동기화했습니다`);
+        }
+      }
+    } catch (err) {
+      console.error("Card sync error:", err);
+      toast.error("거래 내역 동기화 중 오류가 발생했습니다. 나중에 다시 시도해주세요.");
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleComplete = () => {
@@ -456,18 +499,44 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
           {step === "complete" && (
             <div className="space-y-4 text-center">
               <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-green-500 mx-auto flex items-center justify-center">
-                  <CheckCircle2 className="h-8 w-8 text-white" />
-                </div>
+                {isSyncing ? (
+                  <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-green-500 mx-auto flex items-center justify-center">
+                    <CheckCircle2 className="h-8 w-8 text-white" />
+                  </div>
+                )}
               </div>
               <div>
-                <h3 className="text-lg font-bold">카드 연결 완료!</h3>
+                <h3 className="text-lg font-bold">
+                  {isSyncing ? "거래 내역 동기화 중..." : "카드 연결 완료!"}
+                </h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {selectedCompanyData?.name}가 연결되었습니다
+                  {isSyncing 
+                    ? "최근 3개월 거래 내역을 가져오고 있습니다"
+                    : `${selectedCompanyData?.name}가 연결되었습니다`}
                 </p>
               </div>
 
-              {fetchedCards.length > 0 && selectedCards.length > 0 && (
+              {/* 동기화 결과 표시 */}
+              {!isSyncing && syncResult && (
+                <div className="bg-primary/5 rounded-xl p-4 text-sm">
+                  <p className="font-medium text-primary">
+                    {syncResult.synced > 0 
+                      ? `✓ ${syncResult.synced}건의 거래 내역이 동기화되었습니다`
+                      : "새로 동기화할 거래 내역이 없습니다"}
+                  </p>
+                  {syncResult.skipped > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {syncResult.skipped}건은 이미 동기화됨
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {fetchedCards.length > 0 && selectedCards.length > 0 && !isSyncing && (
                 <div className="bg-muted/50 rounded-xl p-4 space-y-3">
                   {fetchedCards
                     .filter((c) => selectedCards.includes(c.cardNo))
@@ -484,12 +553,23 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
               )}
 
               <p className="text-xs text-muted-foreground">
-                지출 내역이 자동으로 분류되어 관리됩니다
+                {isSyncing 
+                  ? "잠시만 기다려주세요..."
+                  : "지출 내역이 자동으로 분류되어 관리됩니다"}
               </p>
 
-              <Button onClick={handleComplete} className="w-full">
-                다음 단계로
-                <ArrowRight className="h-4 w-4 ml-1" />
+              <Button onClick={handleComplete} disabled={isSyncing} className="w-full">
+                {isSyncing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    동기화 중...
+                  </>
+                ) : (
+                  <>
+                    다음 단계로
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </>
+                )}
               </Button>
             </div>
           )}
