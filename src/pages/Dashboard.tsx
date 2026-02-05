@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { TodaySummarySection } from "@/components/dashboard/TodaySummarySection";
 import { IntegratedConnectionCard } from "@/components/dashboard/IntegratedConnectionCard";
@@ -14,25 +14,24 @@ import { DepositCard } from "@/components/dashboard/DepositCard";
 import { RecentTransactionsCard } from "@/components/dashboard/RecentTransactionsCard";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useProfile } from "@/hooks/useProfile";
 import { useChat } from "@/contexts/ChatContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useConnection } from "@/contexts/ConnectionContext";
 
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { openChat } = useChat();
   const isMobile = useIsMobile();
-  const { profile, loading } = useProfile();
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   
-  // 로그인 상태 확인
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsLoggedIn(!!user);
-    };
-    checkAuth();
-  }, []);
+  // 중앙 집중화된 연동 상태 사용
+  const {
+    isLoggedOut,
+    isLoggedInButNotConnected,
+    isAnyConnected,
+    isTransactionConnected,
+    hometaxConnected,
+    profile,
+    profileLoading,
+  } = useConnection();
   
   // URL에 openChat=true가 있으면 채팅 열기
   useEffect(() => {
@@ -45,20 +44,8 @@ export default function Dashboard() {
   }, [searchParams, openChat, setSearchParams]);
   
   // 로딩 중이면 빈 문자열로 깜빡임 방지, 완료되면 닉네임 > 이름 > null 순서
-  const userName = loading ? "" : (profile?.nickname || profile?.name || null);
+  const userName = profileLoading ? "" : (profile?.nickname || profile?.name || null);
   const greeting = userName ? `안녕하세요, ${userName}님 👋` : "안녕하세요, 사장님 👋";
- 
-  // 연동 상태 확인 (하나라도 연동되어 있으면 true)
-  const isConnected = profile?.hometax_connected || profile?.card_connected || profile?.account_connected;
-   
-  // 거래 데이터 연동 상태 (카드 또는 계좌)
-  const isTransactionConnected = profile?.card_connected || profile?.account_connected;
-
-  // 로그아웃 상태: 전체 목업 UI 표시 (Sample 워터마크 포함)
-  const isLoggedOut = isLoggedIn === false;
-  
-  // 로그인 + 미연동 상태: 오늘의 요약 + 연동 카드만 표시
-  const isLoggedInButNotConnected = isLoggedIn === true && !isConnected && !loading;
 
   return (
     <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요">
@@ -123,7 +110,7 @@ export default function Dashboard() {
         {isLoggedInButNotConnected && <IntegratedConnectionCard />}
 
         {/* 연동 상태: 실데이터 기반 UI */}
-        {isConnected && (
+        {isAnyConnected && (
           <div className={isMobile ? "space-y-6" : "grid grid-cols-2 gap-6"}>
             {/* 좌측 칼럼 */}
             <div className="space-y-6">
@@ -143,7 +130,7 @@ export default function Dashboard() {
             {/* 우측 칼럼 */}
             <div className="space-y-6">
               {/* 홈택스 현황 - 홈택스 연동 시에만 표시 */}
-              {profile?.hometax_connected && (
+              {hometaxConnected && (
                 <section>
                   <HometaxSummaryCard />
                 </section>
