@@ -373,35 +373,3 @@ export function TodaySummarySection({ isLoggedOut = false }: TodaySummarySection
     </section>
   );
 }
-
-  // 실제 데이터 표시
-  return (
-    <section>
-      <h2 className="mb-3 text-base font-semibold text-foreground">오늘의 요약</h2>
-      <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
-        <RealStatCard
-          title="오늘 매출"
-          value={stats.todayIncome > 0 ? formatCurrency(stats.todayIncome) : "₩0"}
-          icon={TrendingUp}
-          variant="primary"
-        />
-        <RealStatCard
-          title="오늘 지출"
-          value={stats.todayExpense > 0 ? formatCurrency(stats.todayExpense) : "₩0"}
-          icon={TrendingDown}
-        />
-        <RealStatCard
-          title="이번 달 지출"
-          value={stats.monthlyExpense > 0 ? formatCurrency(stats.monthlyExpense) : "₩0"}
-          icon={Wallet}
-        />
-        <RealStatCard
-          title="이번 달 순이익"
-          value={formatCurrency(monthlyProfit)}
-          icon={PiggyBank}
-          variant="success"
-        />
-      </div>
-    </section>
-  );
-}
