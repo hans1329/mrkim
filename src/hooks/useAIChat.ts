@@ -206,7 +206,9 @@ export function useAIChat() {
     setIsLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      const accessToken = session?.access_token;
       
       // 최근 10개 메시지만 전송 (컨텍스트 유지)
       const recentMessages = [...messages, userMessage].slice(-10).map(m => ({
@@ -218,7 +220,9 @@ export function useAIChat() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          // Supabase Edge Functions + RLS 조회를 위해 사용자 JWT가 필요
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${accessToken ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           messages: recentMessages,
