@@ -26,6 +26,8 @@ import Onboarding from "./pages/Onboarding";
 import DesignGuide from "./pages/DesignGuide";
 import Engine from "./pages/Engine";
 import NotFound from "./pages/NotFound";
+ import PrivacyPolicy from "./pages/PrivacyPolicy";
+ import TermsOfService from "./pages/TermsOfService";
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -67,6 +69,8 @@ const App = () => (
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/design" element={<DesignGuide />} />
                 <Route path="/engine" element={<Engine />} />
+                 <Route path="/privacy" element={<PrivacyPolicy />} />
+                 <Route path="/terms" element={<TermsOfService />} />
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin" element={<AdminDashboard />} />

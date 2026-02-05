@@ -214,6 +214,23 @@ function LoginContent() {
 
       {/* 풋터 */}
       <footer className="py-6 text-center">
+         <div className="flex justify-center gap-4 mb-2">
+           <Button
+             variant="link"
+             className="text-primary-foreground/50 text-xs p-0 h-auto hover:text-primary-foreground/70"
+             onClick={() => navigate("/terms")}
+           >
+             서비스 이용약관
+           </Button>
+           <span className="text-primary-foreground/30">|</span>
+           <Button
+             variant="link"
+             className="text-primary-foreground/50 text-xs p-0 h-auto hover:text-primary-foreground/70"
+             onClick={() => navigate("/privacy")}
+           >
+             개인정보처리방침
+           </Button>
+         </div>
         <p className="text-primary-foreground/50 text-xs">
           © 2024 김비서. All rights reserved.
         </p>
