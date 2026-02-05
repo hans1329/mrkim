@@ -102,13 +102,13 @@ export default function Dashboard() {
            {/* 자동이체 현황 - 연동 시에만 표시 */}
            {isConnected && <AutoTransferCard transfers={mockAutoTransfers} />}
            
+           {/* 알림 - 연동 시에만 표시 */}
+           {isConnected && <AlertCard alerts={mockAlerts} />}
+           
            {/* 미연동 시 통합 연동 카드 표시 */}
            {!isConnected && !loading && <IntegratedConnectionCard />}
           </div>
         </div>
-
-       {/* 알림 - 연동 시에만 표시 */}
-       {isConnected && <AlertCard alerts={mockAlerts} />}
       </div>
     </MainLayout>
   );
