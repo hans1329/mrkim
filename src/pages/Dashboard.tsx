@@ -2,25 +2,26 @@ import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { TodaySummarySection } from "@/components/dashboard/TodaySummarySection";
-import { DepositCard } from "@/components/dashboard/DepositCard";
-import { AutoTransferCard } from "@/components/dashboard/AutoTransferCard";
-import { AlertCard } from "@/components/dashboard/AlertCard";
+ import { IntegratedConnectionCard } from "@/components/dashboard/IntegratedConnectionCard";
 import { AIChatCard } from "@/components/dashboard/AIChatCard";
 import { WeeklyChart } from "@/components/dashboard/WeeklyChart";
-import { RecentTransactionsCard } from "@/components/dashboard/RecentTransactionsCard";
-import { EmployeeSummaryCard } from "@/components/dashboard/EmployeeSummaryCard";
 import { TodayActionsCard } from "@/components/dashboard/TodayActionsCard";
 import { ConnectionStatusBanner } from "@/components/dashboard/ConnectionStatusBanner";
 import { HometaxSummaryCard } from "@/components/dashboard/HometaxSummaryCard";
 import {  
-  mockDeposits,
-  mockAutoTransfers,
-  mockAlerts,
-} from "@/data/mockData";
+ } from "@/data/mockData";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProfile } from "@/hooks/useProfile";
 import { useChat } from "@/contexts/ChatContext";
+ 
+ // 연동된 상태에서만 표시할 컴포넌트들을 lazy import
+ import { DepositCard } from "@/components/dashboard/DepositCard";
+ import { AutoTransferCard } from "@/components/dashboard/AutoTransferCard";
+ import { AlertCard } from "@/components/dashboard/AlertCard";
+ import { RecentTransactionsCard } from "@/components/dashboard/RecentTransactionsCard";
+ import { EmployeeSummaryCard } from "@/components/dashboard/EmployeeSummaryCard";
+ import { mockDeposits, mockAutoTransfers, mockAlerts } from "@/data/mockData";
 
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -41,6 +42,9 @@ export default function Dashboard() {
   // 로딩 중이면 빈 문자열로 깜빡임 방지, 완료되면 닉네임 > 이름 > null 순서
   const userName = loading ? "" : (profile?.nickname || profile?.name || null);
   const greeting = userName ? `안녕하세요, ${userName}님 👋` : "안녕하세요, 사장님 👋";
+ 
+   // 연동 상태 확인 (하나라도 연동되어 있으면 true)
+   const isConnected = profile?.hometax_connected || profile?.card_connected || profile?.account_connected;
 
   return (
     <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요">
@@ -70,8 +74,8 @@ export default function Dashboard() {
               <WeeklyChart />
             </section>
 
-            {/* 예치금 현황 */}
-            <DepositCard deposits={mockDeposits} />
+           {/* 예치금 현황 - 연동 시에만 표시 */}
+           {isConnected && <DepositCard deposits={mockDeposits} />}
           </div>
 
           {/* 우측 칼럼 */}
@@ -81,23 +85,30 @@ export default function Dashboard() {
               <HometaxSummaryCard />
             </section>
 
-            {/* 최근 거래 내역 */}
-            <section>
-              <RecentTransactionsCard />
-            </section>
+           {/* 최근 거래 내역 - 연동 시에만 표시 */}
+           {isConnected && (
+             <section>
+               <RecentTransactionsCard />
+             </section>
+           )}
 
-            {/* 직원 현황 */}
-            <section>
-              <EmployeeSummaryCard />
-            </section>
+           {/* 직원 현황 - 연동 시에만 표시 */}
+           {isConnected && (
+             <section>
+               <EmployeeSummaryCard />
+             </section>
+           )}
 
-            {/* 자동이체 현황 */}
-            <AutoTransferCard transfers={mockAutoTransfers} />
+           {/* 자동이체 현황 - 연동 시에만 표시 */}
+           {isConnected && <AutoTransferCard transfers={mockAutoTransfers} />}
+           
+           {/* 미연동 시 통합 연동 카드 표시 */}
+           {!isConnected && !loading && <IntegratedConnectionCard />}
           </div>
         </div>
 
-        {/* 알림 - 전체 너비 */}
-        <AlertCard alerts={mockAlerts} />
+       {/* 알림 - 연동 시에만 표시 */}
+       {isConnected && <AlertCard alerts={mockAlerts} />}
       </div>
     </MainLayout>
   );
