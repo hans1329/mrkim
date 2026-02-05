@@ -114,6 +114,15 @@ const classifyIntentTool = {
         rejection_reason: {
           type: "string",
           description: "out_of_scope일 경우 거절 사유"
+        },
+        time_period: {
+          type: "object",
+          properties: {
+            type: { type: "string", enum: ["today", "yesterday", "week", "month", "last_month", "quarter", "year", "custom"] },
+            start_date: { type: "string", description: "YYYY-MM-DD 형식" },
+            end_date: { type: "string", description: "YYYY-MM-DD 형식" }
+          },
+          description: "조회 기간 (예: 지난달, 이번 달, 오늘 등)"
         }
       },
       required: ["intent", "confidence", "requires_data", "data_sources"]
@@ -132,6 +141,11 @@ async function classifyIntent(
   requiresData: boolean;
   dataSources: string[];
   rejectionReason?: string;
+  timePeriod?: {
+    type: string;
+    startDate?: string;
+    endDate?: string;
+  };
 }> {
   const classificationPrompt = `사용자의 메시지를 분석하여 의도를 분류하세요.
 
@@ -152,6 +166,16 @@ async function classifyIntent(
 - self_introduction: 자기소개/인사 (예: "넌 누구야?", "안녕", "이름이 뭐야?", "뭐 할 수 있어?")
 - casual_chat: 일상적인 가벼운 대화 (예: "심심해", "오늘 기분 어때?", "힘들다", "수고했어")
 - out_of_scope: 완전히 부적절하거나 위험한 요청 (예: 불법 행위, 성인 콘텐츠, 악성 코드)
+
+time_period 분류 기준:
+- today: 오늘 (예: "오늘 매출", "오늘 얼마 썼어?")
+- yesterday: 어제 (예: "어제 매출", "어제 지출")
+- week: 이번 주 (예: "이번 주 매출", "금주 지출")
+- month: 이번 달 (예: "이번 달 매출", "이달 지출", 기간 미언급 시 기본값)
+- last_month: 지난달 (예: "지난달 매출", "저번 달 지출", "전월 현황")
+- quarter: 이번 분기 (예: "이번 분기 매출")
+- year: 올해 (예: "올해 매출", "연간 지출")
+- custom: 특정 날짜 범위 (예: "1월 15일부터 2월 15일까지")
 
 중요:
 - "넌 누구야?", "안녕", "뭐해?" 같은 인사/자기소개 질문은 self_introduction
@@ -202,7 +226,12 @@ requires_data가 false인 의도:
         confidence: args.confidence || 0.5,
         requiresData: args.requires_data ?? false,
         dataSources: args.data_sources || ["none"],
-        rejectionReason: args.rejection_reason
+        rejectionReason: args.rejection_reason,
+        timePeriod: args.time_period ? {
+          type: args.time_period.type || "month",
+          startDate: args.time_period.start_date,
+          endDate: args.time_period.end_date
+        } : undefined
       };
     }
 
@@ -318,17 +347,102 @@ interface TransactionSummary {
   incomeCount: number;
   topCategories: { category: string; amount: number; count: number }[];
   recentTransactions: { description: string; amount: number; date: string; category: string | null }[];
+  periodLabel: string;
+}
+
+function calculateDateRange(timePeriod?: { type: string; startDate?: string; endDate?: string }): {
+  startDate: string;
+  endDate: string;
+  label: string;
+} {
+  const now = new Date();
+  const periodType = timePeriod?.type || "month";
+
+  switch (periodType) {
+    case "today": {
+      const today = now.toISOString().split('T')[0];
+      return { startDate: today, endDate: today, label: "오늘" };
+    }
+    case "yesterday": {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yStr = yesterday.toISOString().split('T')[0];
+      return { startDate: yStr, endDate: yStr, label: "어제" };
+    }
+    case "week": {
+      const startOfWeek = new Date(now);
+      const day = startOfWeek.getDay();
+      const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Monday
+      startOfWeek.setDate(diff);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(endOfWeek.getDate() + 6);
+      return {
+        startDate: startOfWeek.toISOString().split('T')[0],
+        endDate: endOfWeek.toISOString().split('T')[0],
+        label: "이번 주"
+      };
+    }
+    case "last_month": {
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+      return {
+        startDate: lastMonth.toISOString().split('T')[0],
+        endDate: lastMonthEnd.toISOString().split('T')[0],
+        label: "지난달"
+      };
+    }
+    case "quarter": {
+      const q = Math.floor(now.getMonth() / 3);
+      const startOfQuarter = new Date(now.getFullYear(), q * 3, 1);
+      const endOfQuarter = new Date(now.getFullYear(), q * 3 + 3, 0);
+      return {
+        startDate: startOfQuarter.toISOString().split('T')[0],
+        endDate: endOfQuarter.toISOString().split('T')[0],
+        label: "이번 분기"
+      };
+    }
+    case "year": {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const endOfYear = new Date(now.getFullYear(), 11, 31);
+      return {
+        startDate: startOfYear.toISOString().split('T')[0],
+        endDate: endOfYear.toISOString().split('T')[0],
+        label: "올해"
+      };
+    }
+    case "custom": {
+      if (timePeriod?.startDate && timePeriod?.endDate) {
+        return {
+          startDate: timePeriod.startDate,
+          endDate: timePeriod.endDate,
+          label: `${timePeriod.startDate} ~ ${timePeriod.endDate}`
+        };
+      }
+      // fallback to this month
+    }
+    case "month":
+    default: {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return {
+        startDate: startOfMonth.toISOString().split('T')[0],
+        endDate: endOfMonth.toISOString().split('T')[0],
+        label: "이번 달"
+      };
+    }
+  }
 }
 
 async function fetchTransactionData(
   userId: string,
   authHeader: string,
-  intent: string
+  intent: string,
+  timePeriod?: { type: string; startDate?: string; endDate?: string }
 ): Promise<TransactionSummary | null> {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    
+
     if (!supabaseUrl || !supabaseAnonKey || !userId) {
       return null;
     }
@@ -337,23 +451,25 @@ async function fetchTransactionData(
       global: { headers: { Authorization: authHeader } }
     });
 
-    // 이번 달 데이터 조회
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    // 기간 계산
+    const { startDate, endDate, label: periodLabel } = calculateDateRange(timePeriod);
+
+    console.log(`Fetching transactions: ${startDate} ~ ${endDate} (${periodLabel})`);
 
     const { data: transactions, error } = await supabase
       .from("transactions")
       .select("id, amount, type, category, description, transaction_date")
       .eq("user_id", userId)
-      .gte("transaction_date", startOfMonth)
-      .lte("transaction_date", endOfMonth)
+      .gte("transaction_date", startDate)
+      .lte("transaction_date", endDate)
       .order("transaction_date", { ascending: false });
 
     if (error || !transactions) {
       console.error("Failed to fetch transactions:", error);
       return null;
     }
+
+    console.log(`Found ${transactions.length} transactions for period ${periodLabel}`);
 
     // 집계
     let totalExpense = 0;
@@ -399,7 +515,8 @@ async function fetchTransactionData(
       expenseCount,
       incomeCount,
       topCategories,
-      recentTransactions
+      recentTransactions,
+      periodLabel
     };
   } catch (error) {
     console.error("fetchTransactionData error:", error);
@@ -407,32 +524,39 @@ async function fetchTransactionData(
   }
 }
 
-function formatDataForPrompt(data: TransactionSummary, intent: string): string {
+function formatDataForPrompt(data: TransactionSummary, intent: string, periodLabel: string): string {
   const formatAmount = (n: number) => n.toLocaleString("ko-KR");
-  
-  let prompt = `\n\n## 📊 실시간 데이터 (이번 달 기준)\n`;
-  
+
+  let prompt = `\n\n## 📊 실시간 데이터 (${periodLabel} 기준)\n`;
+
   if (intent === "expense_inquiry" || intent === "daily_briefing") {
     prompt += `- **총 지출**: ${formatAmount(data.totalExpense)}원 (${data.expenseCount}건)\n`;
+    if (data.expenseCount === 0) {
+      prompt += `- 해당 기간에 지출 내역이 없습니다.\n`;
+    }
     prompt += `\n### 카테고리별 지출\n`;
     for (const cat of data.topCategories) {
       prompt += `- ${cat.category}: ${formatAmount(cat.amount)}원 (${cat.count}건)\n`;
     }
   }
-  
+
   if (intent === "sales_inquiry" || intent === "daily_briefing") {
     prompt += `- **총 수입**: ${formatAmount(data.totalIncome)}원 (${data.incomeCount}건)\n`;
+    if (data.incomeCount === 0) {
+      prompt += `- 해당 기간에 수입 내역이 없습니다.\n`;
+    }
   }
-  
+
   if (data.recentTransactions.length > 0) {
     prompt += `\n### 최근 거래\n`;
     for (const tx of data.recentTransactions) {
       prompt += `- ${tx.date}: ${tx.description} - ${formatAmount(tx.amount)}원 (${tx.category || "미분류"})\n`;
     }
   }
-  
+
   prompt += `\n위 데이터를 기반으로 사장님의 질문에 정확하게 답변하세요. 숫자는 실제 데이터입니다.`;
-  
+  prompt += `\n만약 데이터가 0건이면 해당 기간에 기록이 없다고 안내하세요. "연동이 필요합니다"라고 말하지 마세요.`;
+
   return prompt;
 }
 
@@ -583,18 +707,20 @@ serve(async (req) => {
       
       // 연동된 경우 실제 데이터 조회
       console.log("Fetching transaction data for intent:", intentResult.intent);
-      const transactionData = await fetchTransactionData(userId, authHeader, intentResult.intent);
-      
+      console.log("Time period from intent:", intentResult.timePeriod);
+      const transactionData = await fetchTransactionData(userId, authHeader, intentResult.intent, intentResult.timePeriod);
+
       if (transactionData) {
         console.log("Transaction data fetched:", {
           totalExpense: transactionData.totalExpense,
           totalIncome: transactionData.totalIncome,
-          expenseCount: transactionData.expenseCount
+          expenseCount: transactionData.expenseCount,
+          periodLabel: transactionData.periodLabel
         });
-        
+
         // 데이터가 있으면 AI 응답에 포함
-        const dataContext = formatDataForPrompt(transactionData, intentResult.intent);
-        
+        const dataContext = formatDataForPrompt(transactionData, intentResult.intent, transactionData.periodLabel);
+
         // 데이터를 포함한 시스템 프롬프트로 응답 생성
         const genderDesc = secretaryGender === "male" ? "남성" : "여성";
         const dataSystemPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.
@@ -605,6 +731,8 @@ ${toneInstructions[secretaryTone] || toneInstructions.polite}
 ## 중요 지침
 - 아래 제공된 실제 데이터를 기반으로 정확한 숫자를 사용해 답변하세요.
 - 데이터에 없는 정보는 추측하지 마세요.
+- 데이터가 0건이면 "해당 기간에 기록이 없습니다"라고 안내하세요.
+- "연동이 필요합니다" 또는 "데이터 연동"이라는 말을 하지 마세요 (이미 연동된 상태입니다).
 - 친근하고 간결하게 핵심을 전달하세요.
 - 필요시 개선 조언도 함께 제공하세요.
 ${dataContext}`;
