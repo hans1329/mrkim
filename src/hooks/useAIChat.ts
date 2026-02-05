@@ -42,6 +42,47 @@ export function useAIChat() {
   const secretaryGender = profile?.secretary_gender || "female";
   const secretaryAvatarUrl = (profile as any)?.secretary_avatar_url || null;
 
+   // 연동 상태에 따른 동적 플레이스홀더 생성
+   const getPlaceholderText = useCallback(() => {
+     if (!profile) return `${secretaryName}에게 명령하세요...`;
+
+     const { hometax_connected, card_connected, account_connected, business_registration_number } = profile;
+
+     // 사업자등록번호가 없는 경우
+     if (!business_registration_number) {
+       return "사업장 정보를 먼저 등록해주세요";
+     }
+
+     // 모든 연동이 완료된 경우
+     if (hometax_connected && card_connected && account_connected) {
+       return `${secretaryName}에게 무엇이든 물어보세요!`;
+     }
+
+     // 일부 연동만 된 경우
+     const connected = [];
+     const notConnected = [];
+
+     if (hometax_connected) connected.push("국세청");
+     else notConnected.push("국세청");
+
+     if (card_connected) connected.push("카드");
+     else notConnected.push("카드");
+
+     if (account_connected) connected.push("계좌");
+     else notConnected.push("계좌");
+
+     if (connected.length > 0 && notConnected.length > 0) {
+       return `${notConnected.join(", ")} 연동을 추가하면 더 정확해요`;
+     }
+
+     // 아무것도 연동되지 않은 경우
+     if (notConnected.length === 3) {
+       return "데이터 연동 후 실시간 현황을 알려드릴게요";
+     }
+
+     return `${secretaryName}에게 명령하세요...`;
+   }, [profile, secretaryName]);
+
   // 세션 목록 불러오기 (날짜별 그룹화)
   const loadSessions = useCallback(async () => {
     try {
@@ -330,5 +371,6 @@ export function useAIChat() {
     secretaryName,
     secretaryGender,
     secretaryAvatarUrl,
+     getPlaceholderText,
   };
 }
