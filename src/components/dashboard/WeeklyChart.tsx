@@ -197,12 +197,14 @@ export function WeeklyChart() {
             </BarChart>
           </ResponsiveContainer>
           
-          {/* 샘플 데이터 오버레이 */}
+          {/* 샘플 데이터 스탬프 */}
           {isSampleData && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="text-4xl font-bold text-muted-foreground/30 select-none">
-                샘플
-              </span>
+              <div className="rotate-[-15deg] border-[3px] border-dashed border-muted-foreground/25 rounded-xl px-6 py-2">
+                <span className="text-2xl font-bold tracking-widest text-muted-foreground/30 select-none uppercase">
+                  Sample
+                </span>
+              </div>
             </div>
           )}
         </div>
