@@ -112,14 +112,13 @@ export function HometaxSummaryCard() {
             홈택스 현황
           </CardTitle>
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
             onClick={syncTaxInvoices}
             disabled={syncing}
-            className="h-8 gap-1.5 text-xs"
           >
-            <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
-            {syncing ? "동기화 중..." : "동기화"}
+            <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
           </Button>
         </div>
         {lastSyncText && (
