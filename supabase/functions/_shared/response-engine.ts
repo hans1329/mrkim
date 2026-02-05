@@ -196,15 +196,32 @@ ${toneInstruction}
 
 // ============ 연동 상태 확인 ============
 
-export async function checkConnectionStatus(userId: string): Promise<ConnectionStatus> {
-  // TODO: 실제 연동 테이블에서 조회
-  // 현재는 모두 미연동 상태로 반환
-  return {
+export async function checkConnectionStatus(
+  userId: string,
+  supabaseUrl: string,
+  supabaseAnonKey: string,
+  authHeader: string
+): Promise<ConnectionStatus> {
+  const defaultStatus: ConnectionStatus = {
     hometax: false,
     card: false,
     bank: false,
     employee: false
   };
+
+  if (!userId || !supabaseUrl || !supabaseAnonKey) {
+    return defaultStatus;
+  }
+
+  try {
+    // Supabase client는 Deno 환경에서 import 필요하므로 동적으로 생성
+    // 호출하는 edge function에서 profile 데이터를 전달받는 방식으로 변경
+    // 이 함수는 이제 deprecated - edge function에서 직접 조회하도록 수정됨
+    return defaultStatus;
+  } catch (error) {
+    console.error("checkConnectionStatus error:", error);
+    return defaultStatus;
+  }
 }
 
 export function getMissingDataSources(

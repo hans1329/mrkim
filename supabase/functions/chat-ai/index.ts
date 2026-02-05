@@ -256,16 +256,28 @@ async function checkConnectionStatus(userId: string, authHeader: string): Promis
       global: { headers: { Authorization: authHeader } }
     });
 
+    console.log("Querying profile for userId:", userId);
+    console.log("Auth header present:", !!authHeader);
+
     const { data: profile, error } = await supabase
       .from("profiles")
       .select("hometax_connected, card_connected, account_connected")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error || !profile) {
       console.error("Failed to fetch profile:", error);
+      if (!profile) {
+        console.error("Profile not found for userId:", userId);
+      }
       return defaultStatus;
     }
+
+    console.log("Profile fetched successfully:", {
+      hometax: profile.hometax_connected,
+      card: profile.card_connected,
+      account: profile.account_connected
+    });
 
     return {
       hometax: profile.hometax_connected ?? false,
