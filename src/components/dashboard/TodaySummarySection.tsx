@@ -231,6 +231,8 @@ export function TodaySummarySection() {
   }, []);
 
   const todayProfit = stats.todayIncome - stats.todayExpense;
+  const monthlyProfit = stats.monthlyIncome - stats.monthlyExpense;
+  // 매출 또는 지출 중 하나라도 있으면 데이터 있음으로 판단
   const hasAnyData = stats.todayIncome > 0 || stats.todayExpense > 0 || stats.monthlyIncome > 0 || stats.monthlyExpense > 0;
 
   // 로딩 중
@@ -288,8 +290,8 @@ export function TodaySummarySection() {
         <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
           <EmptyStatCard title="오늘 매출" icon={TrendingUp} variant="primary" />
           <EmptyStatCard title="오늘 지출" icon={TrendingDown} />
-          <EmptyStatCard title="순이익" icon={Wallet} variant="success" />
-          <EmptyStatCard title="이번 달 매출" icon={PiggyBank} />
+          <EmptyStatCard title="이번 달 지출" icon={Wallet} />
+          <EmptyStatCard title="이번 달 순이익" icon={PiggyBank} variant="success" />
         </div>
         <p className="text-xs text-muted-foreground text-center mt-3">
           아직 이번 달 거래 내역이 없어요. 거래가 발생하면 자동으로 업데이트돼요!
@@ -315,17 +317,15 @@ export function TodaySummarySection() {
           icon={TrendingDown}
         />
         <RealStatCard
-          title="순이익"
-          value={formatCurrency(todayProfit)}
-          subtitle={stats.todayIncome > 0 ? `마진 ${Math.round((todayProfit / stats.todayIncome) * 100)}%` : undefined}
+          title="이번 달 지출"
+          value={stats.monthlyExpense > 0 ? formatCurrency(stats.monthlyExpense) : "₩0"}
           icon={Wallet}
-          variant="success"
         />
         <RealStatCard
-          title="이번 달 매출"
-          value={stats.monthlyIncome > 0 ? formatCurrency(stats.monthlyIncome) : "₩0"}
-          subtitle={stats.monthlyExpense > 0 ? `지출 ${formatCurrency(stats.monthlyExpense)}` : undefined}
+          title="이번 달 순이익"
+          value={formatCurrency(monthlyProfit)}
           icon={PiggyBank}
+          variant="success"
         />
       </div>
     </section>
