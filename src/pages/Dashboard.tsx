@@ -77,7 +77,7 @@ export default function Dashboard() {
           <div className={isMobile ? "space-y-6" : "grid grid-cols-2 gap-6"}>
             <div className="space-y-6">
               <section>
-                <TodayActionsCard />
+                <TodayActionsCard isLoggedOut />
               </section>
               <section>
                 <WeeklyChart />
@@ -85,7 +85,7 @@ export default function Dashboard() {
             </div>
             <div className="space-y-6">
               <section>
-                <HometaxSummaryCard />
+                <HometaxSummaryCard isLoggedOut />
               </section>
               <section>
                 <RecentTransactionsCard />

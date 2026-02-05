@@ -17,7 +17,11 @@ import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 
-export function HometaxSummaryCard() {
+interface HometaxSummaryCardProps {
+  isLoggedOut?: boolean;
+}
+
+export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardProps) {
   const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
   const { 
@@ -31,6 +35,66 @@ export function HometaxSummaryCard() {
   } = useTaxInvoices();
 
   const isConnected = profile?.hometax_connected;
+
+  // 로그아웃 상태: 목업 데이터 표시
+  if (isLoggedOut) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              홈택스 현황
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {/* 매출/매입 요약 목업 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg p-3 bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center">
+                  <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                </div>
+                <span className="text-xs text-muted-foreground">매출</span>
+              </div>
+              <p className="text-lg font-bold text-green-600">₩2.5억</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">42건</p>
+            </div>
+            <div className="rounded-lg p-3 bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center">
+                  <TrendingDown className="h-3.5 w-3.5 text-red-600" />
+                </div>
+                <span className="text-xs text-muted-foreground">매입</span>
+              </div>
+              <p className="text-lg font-bold text-red-600">₩1.2억</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">28건</p>
+            </div>
+          </div>
+
+          {/* 부가세 예상 목업 */}
+          <div className="rounded-lg p-3 bg-muted/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Receipt className="h-4 w-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">부가세 예상 납부액</p>
+                  <p className="text-xl font-bold text-amber-600">₩1,300만</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" className="text-xs h-8">
+                상세보기
+                <ArrowRight className="h-3 w-3 ml-1" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // 로딩 상태
   if (loading || profileLoading) {

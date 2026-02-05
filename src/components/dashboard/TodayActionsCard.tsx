@@ -51,7 +51,11 @@ const priorityConfig = {
   },
 };
 
-export function TodayActionsCard() {
+interface TodayActionsCardProps {
+  isLoggedOut?: boolean;
+}
+
+export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps) {
   const navigate = useNavigate();
   const { openChat } = useChat();
   const { profile, loading } = useProfile();
@@ -64,6 +68,39 @@ export function TodayActionsCard() {
   // 실데이터 기반 할 일 생성
   useEffect(() => {
     const fetchActionItems = async () => {
+      // 로그아웃 상태: 목업 할 일 표시
+      if (isLoggedOut) {
+        setItems([
+          {
+            id: "vat-mock",
+            title: "부가세 신고 준비",
+            description: "1월 25일까지 부가세 신고가 필요합니다. 매입/매출 세금계산서를 확인하세요.",
+            priority: "warning",
+            dueText: "D-7",
+            status: "pending",
+            icon: FileText,
+            actions: {
+              primary: { label: "세금계산서 확인", action: () => {} },
+              secondary: { label: "확인 완료", action: () => {} },
+            },
+          },
+          {
+            id: "unclassified-mock",
+            title: "미분류 거래 12건",
+            description: "거래를 분류하면 더 정확한 리포트를 받을 수 있어요.",
+            priority: "normal",
+            status: "pending",
+            icon: Tags,
+            actions: {
+              primary: { label: "분류하기", action: () => {} },
+              secondary: { label: "나중에", action: () => {} },
+            },
+          },
+        ]);
+        setDataLoading(false);
+        return;
+      }
+
       if (loading) return;
       
       setDataLoading(true);
@@ -228,7 +265,7 @@ export function TodayActionsCard() {
     };
     
     fetchActionItems();
-  }, [loading, isAnyConnected, navigate]);
+  }, [loading, isAnyConnected, navigate, isLoggedOut]);
 
   const handleComplete = (id: string) => {
     setItems(prev => 
