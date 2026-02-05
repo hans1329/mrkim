@@ -7,10 +7,12 @@
    Users, 
    ArrowRightLeft, 
    Bell,
-   ArrowRight 
+   ArrowRight,
+   FileText
  } from "lucide-react";
  
  const features = [
+   { icon: FileText, label: "홈택스 현황", description: "세금계산서 자동 수집" },
    { icon: CreditCard, label: "최근 거래 내역", description: "카드/계좌 거래 자동 수집" },
    { icon: Wallet, label: "예치금 현황", description: "세금 예치금 관리" },
    { icon: Users, label: "직원 현황", description: "급여 및 4대보험 관리" },
