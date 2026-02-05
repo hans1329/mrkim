@@ -75,6 +75,7 @@ export function TodayActionsCard() {
           title: "김비서에게 데이터 연동하기",
           description: "국세청, 카드, 계좌를 연동하면 실시간으로 매출/지출을 분석해드려요.",
           priority: "urgent",
+          dueText: "D-0",
           status: "pending",
           icon: Link2,
           actions: {
@@ -306,7 +307,7 @@ export function TodayActionsCard() {
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm">{item.title}</span>
                         {item.dueText && (
-                          <Badge className={cn("text-[10px] px-1.5 py-0", config.badge)}>
+                          <Badge className={cn("text-[10px] px-1.5 py-0", item.id === "connection" ? "bg-primary text-primary-foreground" : config.badge)}>
                             {item.dueText}
                           </Badge>
                         )}
