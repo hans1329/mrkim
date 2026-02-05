@@ -1,27 +1,23 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { StatCard } from "@/components/dashboard/StatCard";
 import { TodaySummarySection } from "@/components/dashboard/TodaySummarySection";
- import { IntegratedConnectionCard } from "@/components/dashboard/IntegratedConnectionCard";
+import { IntegratedConnectionCard } from "@/components/dashboard/IntegratedConnectionCard";
 import { AIChatCard } from "@/components/dashboard/AIChatCard";
 import { WeeklyChart } from "@/components/dashboard/WeeklyChart";
 import { TodayActionsCard } from "@/components/dashboard/TodayActionsCard";
 import { ConnectionStatusBanner } from "@/components/dashboard/ConnectionStatusBanner";
 import { HometaxSummaryCard } from "@/components/dashboard/HometaxSummaryCard";
-import {  
- } from "@/data/mockData";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProfile } from "@/hooks/useProfile";
 import { useChat } from "@/contexts/ChatContext";
  
- // 연동된 상태에서만 표시할 컴포넌트들을 lazy import
- import { DepositCard } from "@/components/dashboard/DepositCard";
- import { AutoTransferCard } from "@/components/dashboard/AutoTransferCard";
- import { AlertCard } from "@/components/dashboard/AlertCard";
- import { RecentTransactionsCard } from "@/components/dashboard/RecentTransactionsCard";
- import { EmployeeSummaryCard } from "@/components/dashboard/EmployeeSummaryCard";
- import { mockDeposits, mockAutoTransfers, mockAlerts } from "@/data/mockData";
+// 연동된 상태에서만 표시할 컴포넌트들
+import { DepositCard } from "@/components/dashboard/DepositCard";
+import { AutoTransferCard } from "@/components/dashboard/AutoTransferCard";
+import { AlertCard } from "@/components/dashboard/AlertCard";
+import { RecentTransactionsCard } from "@/components/dashboard/RecentTransactionsCard";
+import { EmployeeSummaryCard } from "@/components/dashboard/EmployeeSummaryCard";
 
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -83,38 +79,38 @@ export default function Dashboard() {
                </section>
              )}
 
-             {/* 예치금 현황 - 추후 실데이터 연동 예정 (현재 샘플) */}
-             {isTransactionConnected && <DepositCard deposits={mockDeposits} />}
-           </div>
+              {/* 예치금 현황 - 추후 실데이터 연동 예정 */}
+              {isTransactionConnected && <DepositCard />}
+            </div>
 
-           {/* 우측 칼럼 */}
-           <div className="space-y-6">
-             {/* 홈택스 현황 - 홈택스 연동 시에만 표시 */}
-             {profile?.hometax_connected && (
-               <section>
-                 <HometaxSummaryCard />
-               </section>
-             )}
+            {/* 우측 칼럼 */}
+            <div className="space-y-6">
+              {/* 홈택스 현황 - 홈택스 연동 시에만 표시 */}
+              {profile?.hometax_connected && (
+                <section>
+                  <HometaxSummaryCard />
+                </section>
+              )}
 
-             {/* 최근 거래 내역 - 카드/계좌 연동 시에만 표시 */}
-             {isTransactionConnected && (
-               <section>
-                 <RecentTransactionsCard />
-               </section>
-             )}
+              {/* 최근 거래 내역 - 카드/계좌 연동 시에만 표시 */}
+              {isTransactionConnected && (
+                <section>
+                  <RecentTransactionsCard />
+                </section>
+              )}
 
-             {/* 직원 현황 - 추후 실데이터 연동 예정 (현재 샘플) */}
-             {isTransactionConnected && (
-               <section>
-                 <EmployeeSummaryCard />
-               </section>
-             )}
+              {/* 직원 현황 - 추후 실데이터 연동 예정 */}
+              {isTransactionConnected && (
+                <section>
+                  <EmployeeSummaryCard />
+                </section>
+              )}
 
-             {/* 자동이체 현황 - 추후 실데이터 연동 예정 (현재 샘플) */}
-             {isTransactionConnected && <AutoTransferCard transfers={mockAutoTransfers} />}
-             
-             {/* 알림 - 추후 실데이터 연동 예정 (현재 샘플) */}
-             {isTransactionConnected && <AlertCard alerts={mockAlerts} />}
+              {/* 자동이체 현황 - 추후 실데이터 연동 예정 */}
+              {isTransactionConnected && <AutoTransferCard />}
+              
+              {/* 알림 - 추후 실데이터 연동 예정 */}
+              {isTransactionConnected && <AlertCard />}
            </div>
          </div>
        )}

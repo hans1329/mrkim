@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatNumber } from "@/data/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BarChart3 } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -21,43 +22,17 @@ interface WeeklyDataItem {
   지출: number;
 }
 
-// 샘플 데이터 생성
-const getSampleData = (): WeeklyDataItem[] => {
-  const days = ['월', '화', '수', '목', '금', '토', '일'];
-  return days.map((day) => ({
-    name: day,
-    매출: Math.floor(Math.random() * 1500000) + 500000,
-    지출: Math.floor(Math.random() * 500000) + 200000,
-  }));
-};
-
 export function WeeklyChart() {
-  const { profile } = useProfile();
+  const { profile, loading: profileLoading } = useProfile();
   const [weeklyData, setWeeklyData] = useState<WeeklyDataItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSampleData, setIsSampleData] = useState(false);
-
-  // 연동 상태 확인
-  const isConnected = profile?.account_connected || profile?.card_connected || profile?.hometax_connected;
-
-  // 샘플 데이터는 컴포넌트 마운트 시 한 번만 생성
-  const sampleData = useMemo(() => getSampleData(), []);
+  const [hasData, setHasData] = useState(false);
 
   useEffect(() => {
     const fetchWeeklyData = async () => {
-      if (!isConnected) {
-        // 미연동 시 샘플 데이터 사용
-        setWeeklyData(sampleData);
-        setIsSampleData(true);
-        setLoading(false);
-        return;
-      }
-
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          setWeeklyData(sampleData);
-          setIsSampleData(true);
           setLoading(false);
           return;
         }
@@ -75,9 +50,7 @@ export function WeeklyChart() {
           .lte('transaction_date', today.toISOString().split('T')[0]);
 
         if (!transactions || transactions.length === 0) {
-          // 데이터 없으면 샘플 표시
-          setWeeklyData(sampleData);
-          setIsSampleData(true);
+          setHasData(false);
           setLoading(false);
           return;
         }
@@ -116,20 +89,19 @@ export function WeeklyChart() {
         }));
 
         setWeeklyData(chartData);
-        setIsSampleData(false);
+        setHasData(true);
       } catch (error) {
         console.error('주간 데이터 조회 실패:', error);
-        setWeeklyData(sampleData);
-        setIsSampleData(true);
+        setHasData(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchWeeklyData();
-  }, [isConnected, sampleData]);
+  }, []);
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <Card className="col-span-full">
         <CardHeader className="pb-3">
@@ -137,6 +109,30 @@ export function WeeklyChart() {
         </CardHeader>
         <CardContent>
           <Skeleton className="h-[300px] w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 데이터가 없는 경우 빈 상태 표시
+  if (!hasData) {
+    return (
+      <Card className="col-span-full">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">주간 매출/지출 현황</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[200px] flex flex-col items-center justify-center text-center">
+            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+              <BarChart3 className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium text-muted-foreground">
+              아직 거래 내역이 없어요
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              카드나 계좌를 연동하면 주간 현황을 확인할 수 있어요
+            </p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -196,17 +192,6 @@ export function WeeklyChart() {
               />
             </BarChart>
           </ResponsiveContainer>
-          
-          {/* 샘플 데이터 스탬프 */}
-          {isSampleData && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="rotate-[-15deg] border-[3px] border-dashed border-muted-foreground/25 rounded-xl px-6 py-2">
-                <span className="text-2xl font-bold tracking-widest text-muted-foreground/30 select-none uppercase">
-                  Sample
-                </span>
-              </div>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

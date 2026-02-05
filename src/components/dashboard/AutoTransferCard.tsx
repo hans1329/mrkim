@@ -1,68 +1,25 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { AutoTransfer, formatCurrency } from "@/data/mockData";
-import { Clock, CheckCircle, AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowRightLeft } from "lucide-react";
 
-interface AutoTransferCardProps {
-  transfers: AutoTransfer[];
-}
-
-const statusConfig = {
-  pending: {
-    label: "대기 중",
-    icon: AlertCircle,
-    variant: "outline" as const,
-  },
-  scheduled: {
-    label: "예정",
-    icon: Clock,
-    variant: "secondary" as const,
-  },
-  completed: {
-    label: "완료",
-    icon: CheckCircle,
-    variant: "default" as const,
-  },
-};
-
-export function AutoTransferCard({ transfers }: AutoTransferCardProps) {
+// 자동이체 기능은 아직 실데이터 연동 전 - 빈 상태 표시
+export function AutoTransferCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base">자동이체 현황</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {transfers.map((transfer) => {
-          const config = statusConfig[transfer.status];
-          const StatusIcon = config.icon;
-
-          return (
-            <div
-              key={transfer.id}
-              className={cn(
-                "flex flex-col gap-2 rounded-lg border p-3 transition-colors",
-                transfer.status === "completed" && "bg-muted/50 opacity-70"
-              )}
-            >
-              {/* 상단: 이름, 상태 뱃지 */}
-              <div className="flex items-center justify-between">
-                <p className="font-medium text-sm">{transfer.name}</p>
-                <Badge variant={config.variant} className="gap-1 text-xs">
-                  <StatusIcon className="h-3 w-3" />
-                  {config.label}
-                </Badge>
-              </div>
-              {/* 하단: 수신자, 조건, 금액 */}
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  {transfer.recipient} · {transfer.condition}
-                </p>
-                <p className="font-semibold text-sm">{formatCurrency(transfer.amount)}</p>
-              </div>
-            </div>
-          );
-        })}
+      <CardContent>
+        <div className="py-6 flex flex-col items-center justify-center text-center">
+          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+            <ArrowRightLeft className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-medium text-muted-foreground">
+            자동이체 기능 준비 중
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            부가세 적립, 급여 이체 자동화가 곧 추가됩니다
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
