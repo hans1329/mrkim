@@ -126,6 +126,7 @@ export function AIChatCard() {
     monthlyExpense: 0,
     isLoading: true,
   });
+   const [hasConversationHistory, setHasConversationHistory] = useState<boolean | null>(null);
   
   // 설정한 비서 이름과 아바타 사용 (로딩 중에는 undefined)
   const secretaryName = profileLoading ? undefined : (profile?.secretary_name || "김비서");
@@ -138,6 +139,7 @@ export function AIChatCard() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           setRealStats(prev => ({ ...prev, isLoading: false }));
+           setHasConversationHistory(false);
           return;
         }
 
@@ -145,8 +147,8 @@ export function AIChatCard() {
         const todayStr = today.toISOString().split("T")[0];
         const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
 
-        // 오늘 거래와 이번달 거래를 병렬로 조회
-        const [todayResult, monthlyResult] = await Promise.all([
+         // 오늘 거래, 이번달 거래, 대화 기록을 병렬로 조회
+         const [todayResult, monthlyResult, chatResult] = await Promise.all([
           supabase
             .from("transactions")
             .select("amount, type")
@@ -158,6 +160,11 @@ export function AIChatCard() {
             .eq("user_id", user.id)
             .gte("transaction_date", monthStart)
             .lte("transaction_date", todayStr),
+           supabase
+             .from("chat_messages")
+             .select("id")
+             .eq("user_id", user.id)
+             .limit(1),
         ]);
 
         // 오늘 통계
@@ -180,6 +187,9 @@ export function AIChatCard() {
           });
         }
 
+         // 대화 기록 존재 여부
+         setHasConversationHistory((chatResult.data?.length ?? 0) > 0);
+
         setRealStats({
           todayIncome,
           todayExpense,
@@ -190,6 +200,7 @@ export function AIChatCard() {
       } catch (error) {
         console.error("Failed to fetch real stats:", error);
         setRealStats(prev => ({ ...prev, isLoading: false }));
+         setHasConversationHistory(false);
       }
     };
 
@@ -198,6 +209,11 @@ export function AIChatCard() {
   
   // 랜덤 플레이스홀더 선택 (미완료 설정 우선)
   const placeholder = useMemo(() => {
+     // 첫 대화인 경우 우선 표시
+     if (hasConversationHistory === false) {
+       return `${secretaryName || "김비서"}와 대화를 시작해보세요!`;
+     }
+
     const incompleteMessages = getIncompleteSettingsMessages(profile, secretaryName || "김비서");
     
     // 미완료 설정이 있으면 그 중 랜덤 선택
@@ -207,7 +223,7 @@ export function AIChatCard() {
     
     // 없으면 일반 플레이스홀더 중 랜덤 선택
     return defaultPlaceholders[Math.floor(Math.random() * defaultPlaceholders.length)];
-  }, [profile, secretaryName]);
+   }, [profile, secretaryName, hasConversationHistory]);
   
   // 실제 데이터 기반 브리핑 메시지
   const briefingMessage = useMemo(() => {
