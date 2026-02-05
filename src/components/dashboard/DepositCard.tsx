@@ -1,66 +1,25 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Deposit, formatCurrency } from "@/data/mockData";
-import { Wallet, Receipt, ShieldAlert } from "lucide-react";
+import { PiggyBank } from "lucide-react";
 
-interface DepositCardProps {
-  deposits: Deposit[];
-}
-
-const depositIcons = {
-  vat: Receipt,
-  salary: Wallet,
-  emergency: ShieldAlert,
-};
-
-const depositLabels = {
-  vat: "부가세",
-  salary: "급여",
-  emergency: "비상금",
-};
-
-export function DepositCard({ deposits }: DepositCardProps) {
+// 예치금 기능은 아직 실데이터 연동 전 - 빈 상태 표시
+export function DepositCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base">예치금 현황</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {deposits.map((deposit) => {
-          const Icon = depositIcons[deposit.type];
-          const progress = deposit.targetAmount
-            ? Math.round((deposit.amount / deposit.targetAmount) * 100)
-            : 100;
-
-          return (
-            <div key={deposit.id} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{deposit.name}</p>
-                    {deposit.dueDate && (
-                      <p className="text-xs text-muted-foreground">
-                        {deposit.dueDate} 납부 예정
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold">{formatCurrency(deposit.amount)}</p>
-                  {deposit.targetAmount && (
-                    <p className="text-xs text-muted-foreground">
-                      / {formatCurrency(deposit.targetAmount)}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <Progress value={progress} className="h-2" />
-            </div>
-          );
-        })}
+      <CardContent>
+        <div className="py-6 flex flex-col items-center justify-center text-center">
+          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+            <PiggyBank className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-medium text-muted-foreground">
+            예치금 기능 준비 중
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            부가세, 급여 등 자동 적립 기능이 곧 추가됩니다
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
