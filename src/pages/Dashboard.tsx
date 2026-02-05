@@ -45,6 +45,9 @@ export default function Dashboard() {
  
    // 연동 상태 확인 (하나라도 연동되어 있으면 true)
    const isConnected = profile?.hometax_connected || profile?.card_connected || profile?.account_connected;
+   
+   // 거래 데이터 연동 상태 (카드 또는 계좌)
+   const isTransactionConnected = profile?.card_connected || profile?.account_connected;
 
   return (
     <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요">
@@ -69,10 +72,12 @@ export default function Dashboard() {
               <TodayActionsCard />
             </section>
 
-            {/* 주간 매출/지출 차트 */}
-            <section>
-              <WeeklyChart />
-            </section>
+           {/* 주간 매출/지출 차트 - 카드/계좌 연동 시에만 표시 */}
+           {isTransactionConnected && (
+             <section>
+               <WeeklyChart />
+             </section>
+           )}
 
            {/* 예치금 현황 - 연동 시에만 표시 */}
            {isConnected && <DepositCard deposits={mockDeposits} />}
