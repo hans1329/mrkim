@@ -142,7 +142,7 @@ export function ConnectionStatusBanner() {
           onClick={() => navigate("/onboarding")}
         >
           <Sparkles className="h-3.5 w-3.5" />
-          연동 시작하기
+          {connectedCount > 0 ? "이어서 연동하기" : "연동 시작하기"}
           <ChevronRight className="h-3 w-3" />
         </Button>
       </div>
