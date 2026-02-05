@@ -115,9 +115,6 @@ export default function Dashboard() {
              
              {/* 알림 - 추후 실데이터 연동 예정 (현재 샘플) */}
              {isTransactionConnected && <AlertCard alerts={mockAlerts} />}
-             
-             {/* 카드/계좌 미연동 시 연동 유도 카드 */}
-             {!isTransactionConnected && <IntegratedConnectionCard />}
            </div>
          </div>
        )}
