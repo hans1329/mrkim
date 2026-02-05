@@ -154,7 +154,11 @@ function SkeletonStatCard() {
   );
 }
 
-export function TodaySummarySection() {
+interface TodaySummarySectionProps {
+  isLoggedOut?: boolean;
+}
+
+export function TodaySummarySection({ isLoggedOut = false }: TodaySummarySectionProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { profile, loading: profileLoading } = useProfile();
@@ -173,6 +177,12 @@ export function TodaySummarySection() {
   // 실제 거래 데이터 불러오기
   useEffect(() => {
     const fetchStats = async () => {
+      // 로그아웃 상태면 로딩 종료
+      if (isLoggedOut) {
+        setStats(prev => ({ ...prev, isLoading: false }));
+        return;
+      }
+
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -228,12 +238,44 @@ export function TodaySummarySection() {
     };
 
     fetchStats();
-  }, []);
+  }, [isLoggedOut]);
 
-  const todayProfit = stats.todayIncome - stats.todayExpense;
   const monthlyProfit = stats.monthlyIncome - stats.monthlyExpense;
   // 매출 또는 지출 중 하나라도 있으면 데이터 있음으로 판단
   const hasAnyData = stats.todayIncome > 0 || stats.todayExpense > 0 || stats.monthlyIncome > 0 || stats.monthlyExpense > 0;
+
+  // 로그아웃 상태: 목업 데이터 표시
+  if (isLoggedOut) {
+    return (
+      <section>
+        <h2 className="mb-3 text-base font-semibold text-foreground">오늘의 요약</h2>
+        <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
+          <RealStatCard
+            title="오늘 매출"
+            value={formatCurrency(1250000)}
+            icon={TrendingUp}
+            variant="primary"
+          />
+          <RealStatCard
+            title="오늘 지출"
+            value={formatCurrency(320000)}
+            icon={TrendingDown}
+          />
+          <RealStatCard
+            title="이번 달 지출"
+            value={formatCurrency(4850000)}
+            icon={Wallet}
+          />
+          <RealStatCard
+            title="이번 달 순이익"
+            value={formatCurrency(8750000)}
+            icon={PiggyBank}
+            variant="success"
+          />
+        </div>
+      </section>
+    );
+  }
 
   // 로딩 중
   if (isAllLoading) {
@@ -250,7 +292,7 @@ export function TodaySummarySection() {
     );
   }
 
-  // 연동이 안 된 경우 - 연동 유도 UI
+  // 로그인 + 미연동: 연동 유도 UI
   if (!isAnyConnected) {
     return (
       <section>
@@ -299,6 +341,38 @@ export function TodaySummarySection() {
       </section>
     );
   }
+
+  // 실제 데이터 표시
+  return (
+    <section>
+      <h2 className="mb-3 text-base font-semibold text-foreground">오늘의 요약</h2>
+      <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
+        <RealStatCard
+          title="오늘 매출"
+          value={stats.todayIncome > 0 ? formatCurrency(stats.todayIncome) : "₩0"}
+          icon={TrendingUp}
+          variant="primary"
+        />
+        <RealStatCard
+          title="오늘 지출"
+          value={stats.todayExpense > 0 ? formatCurrency(stats.todayExpense) : "₩0"}
+          icon={TrendingDown}
+        />
+        <RealStatCard
+          title="이번 달 지출"
+          value={stats.monthlyExpense > 0 ? formatCurrency(stats.monthlyExpense) : "₩0"}
+          icon={Wallet}
+        />
+        <RealStatCard
+          title="이번 달 순이익"
+          value={formatCurrency(monthlyProfit)}
+          icon={PiggyBank}
+          variant="success"
+        />
+      </div>
+    </section>
+  );
+}
 
   // 실제 데이터 표시
   return (
