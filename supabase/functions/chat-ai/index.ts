@@ -297,6 +297,133 @@ function getMissingDataSources(
   return missing;
 }
 
+// ============ 데이터 조회 함수들 ============
+
+interface TransactionSummary {
+  totalExpense: number;
+  totalIncome: number;
+  expenseCount: number;
+  incomeCount: number;
+  topCategories: { category: string; amount: number; count: number }[];
+  recentTransactions: { description: string; amount: number; date: string; category: string | null }[];
+}
+
+async function fetchTransactionData(
+  userId: string,
+  authHeader: string,
+  intent: string
+): Promise<TransactionSummary | null> {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    
+    if (!supabaseUrl || !supabaseAnonKey || !userId) {
+      return null;
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // 이번 달 데이터 조회
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+    const { data: transactions, error } = await supabase
+      .from("transactions")
+      .select("id, amount, type, category, description, transaction_date")
+      .eq("user_id", userId)
+      .gte("transaction_date", startOfMonth)
+      .lte("transaction_date", endOfMonth)
+      .order("transaction_date", { ascending: false });
+
+    if (error || !transactions) {
+      console.error("Failed to fetch transactions:", error);
+      return null;
+    }
+
+    // 집계
+    let totalExpense = 0;
+    let totalIncome = 0;
+    let expenseCount = 0;
+    let incomeCount = 0;
+    const categoryMap = new Map<string, { amount: number; count: number }>();
+
+    for (const tx of transactions) {
+      if (tx.type === "expense") {
+        totalExpense += tx.amount;
+        expenseCount++;
+      } else if (tx.type === "income") {
+        totalIncome += tx.amount;
+        incomeCount++;
+      }
+
+      const cat = tx.category || "미분류";
+      const existing = categoryMap.get(cat) || { amount: 0, count: 0 };
+      categoryMap.set(cat, {
+        amount: existing.amount + tx.amount,
+        count: existing.count + 1
+      });
+    }
+
+    // 카테고리별 정렬
+    const topCategories = Array.from(categoryMap.entries())
+      .map(([category, data]) => ({ category, ...data }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
+
+    // 최근 거래 5건
+    const recentTransactions = transactions.slice(0, 5).map(tx => ({
+      description: tx.description,
+      amount: tx.amount,
+      date: tx.transaction_date,
+      category: tx.category
+    }));
+
+    return {
+      totalExpense,
+      totalIncome,
+      expenseCount,
+      incomeCount,
+      topCategories,
+      recentTransactions
+    };
+  } catch (error) {
+    console.error("fetchTransactionData error:", error);
+    return null;
+  }
+}
+
+function formatDataForPrompt(data: TransactionSummary, intent: string): string {
+  const formatAmount = (n: number) => n.toLocaleString("ko-KR");
+  
+  let prompt = `\n\n## 📊 실시간 데이터 (이번 달 기준)\n`;
+  
+  if (intent === "expense_inquiry" || intent === "daily_briefing") {
+    prompt += `- **총 지출**: ${formatAmount(data.totalExpense)}원 (${data.expenseCount}건)\n`;
+    prompt += `\n### 카테고리별 지출\n`;
+    for (const cat of data.topCategories) {
+      prompt += `- ${cat.category}: ${formatAmount(cat.amount)}원 (${cat.count}건)\n`;
+    }
+  }
+  
+  if (intent === "sales_inquiry" || intent === "daily_briefing") {
+    prompt += `- **총 수입**: ${formatAmount(data.totalIncome)}원 (${data.incomeCount}건)\n`;
+  }
+  
+  if (data.recentTransactions.length > 0) {
+    prompt += `\n### 최근 거래\n`;
+    for (const tx of data.recentTransactions) {
+      prompt += `- ${tx.date}: ${tx.description} - ${formatAmount(tx.amount)}원 (${tx.category || "미분류"})\n`;
+    }
+  }
+  
+  prompt += `\n위 데이터를 기반으로 사장님의 질문에 정확하게 답변하세요. 숫자는 실제 데이터입니다.`;
+  
+  return prompt;
+}
+
 // ============ 응답 생성 ============
 
 function buildConnectionRequiredResponse(
@@ -442,7 +569,41 @@ serve(async (req) => {
         );
       }
       
-      // TODO: 연동된 경우 실제 데이터 조회 로직 추가
+      // 연동된 경우 실제 데이터 조회
+      console.log("Fetching transaction data for intent:", intentResult.intent);
+      const transactionData = await fetchTransactionData(userId, authHeader, intentResult.intent);
+      
+      if (transactionData) {
+        console.log("Transaction data fetched:", {
+          totalExpense: transactionData.totalExpense,
+          totalIncome: transactionData.totalIncome,
+          expenseCount: transactionData.expenseCount
+        });
+        
+        // 데이터가 있으면 AI 응답에 포함
+        const dataContext = formatDataForPrompt(transactionData, intentResult.intent);
+        
+        // 데이터를 포함한 시스템 프롬프트로 응답 생성
+        const genderDesc = secretaryGender === "male" ? "남성" : "여성";
+        const dataSystemPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.
+성별: ${genderDesc}
+
+${toneInstructions[secretaryTone] || toneInstructions.polite}
+
+## 중요 지침
+- 아래 제공된 실제 데이터를 기반으로 정확한 숫자를 사용해 답변하세요.
+- 데이터에 없는 정보는 추측하지 마세요.
+- 친근하고 간결하게 핵심을 전달하세요.
+- 필요시 개선 조언도 함께 제공하세요.
+${dataContext}`;
+
+        const aiResponse = await generateAIResponse(messages, dataSystemPrompt, secretaryName, GEMINI_API_KEY);
+        
+        return new Response(
+          JSON.stringify({ response: aiResponse, intent: intentResult, hasData: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // 4단계: 일반 AI 응답 생성
