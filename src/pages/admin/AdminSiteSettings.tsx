@@ -1,0 +1,122 @@
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { toast } from "sonner";
+import { Settings, Smartphone, Eye, EyeOff } from "lucide-react";
+
+export default function AdminSiteSettings() {
+  const { settings, isLoading, updateSetting } = useSiteSettings();
+
+  const handleToggle = async (key: string, currentEnabled: boolean) => {
+    try {
+      await updateSetting.mutateAsync({
+        key,
+        value: { enabled: !currentEnabled },
+      });
+      toast.success("설정이 저장되었습니다");
+    } catch (error) {
+      toast.error("설정 저장에 실패했습니다");
+    }
+  };
+
+  const settingsList = [
+    {
+      key: "show_app_download",
+      icon: Smartphone,
+      title: "앱 다운로드 섹션",
+      description: "인트로 페이지(/intro)에 앱 다운로드 섹션을 표시합니다",
+    },
+  ];
+
+  return (
+    <AdminLayout title="사이트 설정">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Settings className="h-6 w-6" />
+            사이트 설정
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            인트로 페이지 및 공개 화면의 표시 설정을 관리합니다
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>표시 설정</CardTitle>
+            <CardDescription>
+              각 섹션의 표시 여부를 설정할 수 있습니다
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {isLoading ? (
+              <div className="space-y-4">
+                {[1, 2].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="space-y-2">
+                      <Skeleton className="h-5 w-32" />
+                      <Skeleton className="h-4 w-48" />
+                    </div>
+                    <Skeleton className="h-6 w-11" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {settingsList.map((item) => {
+                  const setting = settings?.find(s => s.key === item.key);
+                  const isEnabled = (setting?.value as { enabled?: boolean })?.enabled ?? true;
+                  
+                  return (
+                    <div
+                      key={item.key}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <item.icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <Label htmlFor={item.key} className="text-base font-medium cursor-pointer">
+                            {item.title}
+                          </Label>
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            {item.description}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          {isEnabled ? (
+                            <>
+                              <Eye className="h-3.5 w-3.5" />
+                              표시
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff className="h-3.5 w-3.5" />
+                              숨김
+                            </>
+                          )}
+                        </span>
+                        <Switch
+                          id={item.key}
+                          checked={isEnabled}
+                          onCheckedChange={() => handleToggle(item.key, isEnabled)}
+                          disabled={updateSetting.isPending}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
+  );
+}

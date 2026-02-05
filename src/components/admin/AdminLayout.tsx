@@ -12,7 +12,8 @@ import {
   Megaphone,
   Bell,
   HelpCircle,
-  Activity
+  Activity,
+  Settings
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +49,7 @@ const menuGroups = [
     label: "시스템",
     items: [
       { path: "/admin/api-usage", label: "API 사용량", icon: Activity },
+      { path: "/admin/site-settings", label: "사이트 설정", icon: Settings },
     ],
   },
 ];
