@@ -48,6 +48,7 @@ export function AIChatPanel() {
     loadMessagesByDate,
     secretaryName,
     secretaryAvatarUrl,
+     getPlaceholderText,
   } = useAIChat();
   const [input, setInput] = useState("");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -350,7 +351,7 @@ export function AIChatPanel() {
               <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={`${secretaryName}에게 명령하세요...`}
+                   placeholder={getPlaceholderText()}
                   className="flex-1 text-sm placeholder:text-xs"
                   disabled={isLoading}
                 />
