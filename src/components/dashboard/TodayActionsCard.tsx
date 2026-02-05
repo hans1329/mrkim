@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useProfile } from "@/hooks/useProfile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Clock, AlertTriangle, ChevronRight, MessageCircle, CalendarClock } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, ChevronRight, MessageCircle, CalendarClock, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type ActionPriority = "urgent" | "warning" | "normal";
 type ActionStatus = "pending" | "completed" | "postponed";
@@ -45,8 +48,8 @@ const priorityConfig = {
   },
 };
 
-// Mock action items - 실제로는 AI 엔진에서 생성
-const mockActionItems: ActionItem[] = [
+// 연동 완료 후 표시할 할 일 목록 생성 함수 (추후 AI 엔진 연동)
+const createMockActionItems = (): ActionItem[] => [
   {
     id: "1",
     title: "부가세 신고 준비",
@@ -84,7 +87,37 @@ const mockActionItems: ActionItem[] = [
 ];
 
 export function TodayActionsCard() {
-  const [items, setItems] = useState<ActionItem[]>(mockActionItems);
+  const navigate = useNavigate();
+  const { profile, loading } = useProfile();
+  const [items, setItems] = useState<ActionItem[]>([]);
+  
+  // 연동 상태 확인
+  const isAnyConnected = profile?.hometax_connected || profile?.card_connected || profile?.account_connected;
+  
+  // 프로필 로딩 완료 후 할 일 목록 설정
+  useEffect(() => {
+    if (!loading) {
+      if (!isAnyConnected) {
+        // 미연동 시 보여줄 할 일
+        setItems([{
+          id: "connection",
+          title: "김비서에게 데이터 연동하기",
+          description: "국세청, 카드, 계좌를 연동하면 실시간으로 매출/지출을 분석해드려요.",
+          priority: "urgent",
+          status: "pending",
+          actions: {
+            primary: { 
+              label: "연동 시작하기", 
+              action: () => navigate("/onboarding") 
+            },
+          },
+        }]);
+      } else {
+        // 연동 완료 시 규칙 기반 할 일 (추후 AI 엔진 연동)
+        setItems(createMockActionItems());
+      }
+    }
+  }, [loading, isAnyConnected, navigate]);
 
   const handleComplete = (id: string) => {
     setItems(prev => 
@@ -109,87 +142,106 @@ export function TodayActionsCard() {
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <CalendarClock className="h-4 w-4 text-primary" />
-            오늘의 할 일
-          </CardTitle>
-          {completedCount > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              {completedCount}/{items.length} 완료
-            </Badge>
+          {loading ? (
+            <Skeleton className="h-5 w-24" />
+          ) : (
+            <>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CalendarClock className="h-4 w-4 text-primary" />
+                오늘의 할 일
+              </CardTitle>
+              {completedCount > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {completedCount}/{items.length} 완료
+                </Badge>
+              )}
+            </>
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 pt-0">
-        {pendingItems.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-success" />
-            <p className="text-sm">모든 할 일을 완료했습니다! 🎉</p>
-          </div>
-        ) : (
-          pendingItems.map((item) => {
-            const config = priorityConfig[item.priority];
-            const Icon = config.icon;
+      {loading ? (
+        <CardContent className="space-y-3 pt-0">
+          <Skeleton className="h-24 w-full rounded-lg" />
+          <Skeleton className="h-20 w-full rounded-lg" />
+        </CardContent>
+      ) : (
+        <CardContent className="space-y-3 pt-0">
+          {pendingItems.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-success" />
+              <p className="text-sm">모든 할 일을 완료했습니다! 🎉</p>
+            </div>
+          ) : (
+            pendingItems.map((item) => {
+              const config = priorityConfig[item.priority];
+              // 연동 항목은 Link2 아이콘 사용
+              const Icon = item.id === "connection" ? Link2 : config.icon;
 
-            return (
-              <div
-                key={item.id}
-                className={cn(
-                  "rounded-lg border p-3 transition-all",
-                  config.bg,
-                  config.border
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={cn("mt-0.5 shrink-0", config.color)}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{item.title}</span>
-                      {item.dueText && (
-                        <Badge className={cn("text-[10px] px-1.5 py-0", config.badge)}>
-                          {item.dueText}
-                        </Badge>
-                      )}
+              return (
+                <div
+                  key={item.id}
+                  className={cn(
+                    "rounded-lg border p-3 transition-all",
+                    item.id === "connection" ? "bg-primary/5 border-primary/30" : config.bg,
+                    item.id === "connection" ? "" : config.border
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={cn("mt-0.5 shrink-0", item.id === "connection" ? "text-primary" : config.color)}>
+                      <Icon className="h-4 w-4" />
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {item.description}
-                    </p>
-                    <div className="flex items-center gap-2 pt-1">
-                      <Button
-                        size="sm"
-                        variant={item.priority === "urgent" ? "default" : "outline"}
-                        className="h-7 text-xs px-3"
-                        onClick={() => handleComplete(item.id)}
-                      >
-                        {item.actions.primary.label}
-                      </Button>
-                      {item.actions.secondary && (
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{item.title}</span>
+                        {item.dueText && (
+                          <Badge className={cn("text-[10px] px-1.5 py-0", config.badge)}>
+                            {item.dueText}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {item.description}
+                      </p>
+                      <div className="flex items-center gap-2 pt-1">
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant={item.priority === "urgent" ? "default" : "outline"}
                           className="h-7 text-xs px-3"
-                          onClick={() => handlePostpone(item.id)}
+                          onClick={() => {
+                            item.actions.primary.action();
+                            if (item.id !== "connection") {
+                              handleComplete(item.id);
+                            }
+                          }}
                         >
-                          {item.actions.secondary.label}
+                          {item.actions.primary.label}
                         </Button>
-                      )}
+                        {item.actions.secondary && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs px-3"
+                            onClick={() => handlePostpone(item.id)}
+                          >
+                            {item.actions.secondary.label}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })
-        )}
+              );
+            })
+          )}
 
-        {/* 김비서에게 더 물어보기 */}
-        <button className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-2">
-          <MessageCircle className="h-3.5 w-3.5" />
-          김비서에게 더 물어보기
-          <ChevronRight className="h-3 w-3" />
-        </button>
-      </CardContent>
+          {/* 김비서에게 더 물어보기 */}
+          <button className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-2">
+            <MessageCircle className="h-3.5 w-3.5" />
+            김비서에게 더 물어보기
+            <ChevronRight className="h-3 w-3" />
+          </button>
+        </CardContent>
+      )}
     </Card>
   );
 }
