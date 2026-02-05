@@ -3,6 +3,16 @@ import { AlertTriangle, X, ChevronRight, CheckCircle2, Clock, Sparkles } from "l
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/hooks/useProfile";
 import { useState, useEffect } from "react";
@@ -36,6 +46,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
   const { profile, loading, refetch } = useProfile();
   const [alerts] = useState<UrgentAlert[]>(() => createMockUrgentAlerts(navigate));
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   // 페이지로 돌아올 때 프로필 다시 가져오기
   useEffect(() => {
@@ -64,8 +75,13 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
     if (user) {
       navigate("/onboarding");
     } else {
-      navigate("/login?redirect=/onboarding");
+      setShowLoginDialog(true);
     }
+  };
+
+  const handleLoginConfirm = () => {
+    setShowLoginDialog(false);
+    navigate("/login?redirect=/onboarding");
   };
 
   // 프로필에서 실제 연동 상태 가져오기
@@ -131,6 +147,25 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
           연동 시작하기
           <ChevronRight className="h-3 w-3" />
         </Button>
+
+        {/* 로그인 필요 다이얼로그 */}
+        <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
+              <AlertDialogDescription>
+                데이터 연동을 위해 먼저 로그인해주세요.
+                로그인 후 연동 화면으로 이동합니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction onClick={handleLoginConfirm}>
+                로그인하기
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
