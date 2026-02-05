@@ -63,64 +63,55 @@ export default function Dashboard() {
          {/* 오늘의 요약 - 실데이터 연동 */}
          <TodaySummarySection />
 
-        {/* PC: 2칼럼 그리드 레이아웃 / Mobile: 1칼럼 */}
-        <div className={isMobile ? "space-y-6" : "grid grid-cols-2 gap-6"}>
-          {/* 좌측 칼럼 */}
-          <div className="space-y-6">
-             {/* 오늘의 할 일 - 연동 시에만 표시 */}
-             {isConnected && (
+       {/* 미연동 시 통합 연동 카드 (전체 너비) */}
+       {!isConnected && !loading && <IntegratedConnectionCard />}
+
+       {/* 연동 시 PC: 2칼럼 그리드 레이아웃 / Mobile: 1칼럼 */}
+       {isConnected && (
+         <div className={isMobile ? "space-y-6" : "grid grid-cols-2 gap-6"}>
+           {/* 좌측 칼럼 */}
+           <div className="space-y-6">
+             {/* 오늘의 할 일 */}
+             <section>
+               <TodayActionsCard />
+             </section>
+
+             {/* 주간 매출/지출 차트 - 카드/계좌 연동 시에만 표시 */}
+             {isTransactionConnected && (
                <section>
-                 <TodayActionsCard />
+                 <WeeklyChart />
                </section>
              )}
 
-           {/* 주간 매출/지출 차트 - 카드/계좌 연동 시에만 표시 */}
-           {isTransactionConnected && (
-             <section>
-               <WeeklyChart />
-             </section>
-           )}
+             {/* 예치금 현황 */}
+             <DepositCard deposits={mockDeposits} />
+           </div>
 
-             {/* 예치금 현황 - 연동 시에만 표시 */}
-             {isConnected && <DepositCard deposits={mockDeposits} />}
-             
-             {/* 미연동 시 좌측에도 통합 연동 카드 표시 (모바일) */}
-             {!isConnected && !loading && isMobile && <IntegratedConnectionCard />}
-          </div>
-
-          {/* 우측 칼럼 */}
-          <div className="space-y-6">
-           {/* 홈택스 현황 - 연동 시에만 표시 */}
-           {isConnected && (
+           {/* 우측 칼럼 */}
+           <div className="space-y-6">
+             {/* 홈택스 현황 */}
              <section>
                <HometaxSummaryCard />
              </section>
-           )}
 
-           {/* 최근 거래 내역 - 연동 시에만 표시 */}
-           {isConnected && (
+             {/* 최근 거래 내역 */}
              <section>
                <RecentTransactionsCard />
              </section>
-           )}
 
-           {/* 직원 현황 - 연동 시에만 표시 */}
-           {isConnected && (
+             {/* 직원 현황 */}
              <section>
                <EmployeeSummaryCard />
              </section>
-           )}
 
-           {/* 자동이체 현황 - 연동 시에만 표시 */}
-           {isConnected && <AutoTransferCard transfers={mockAutoTransfers} />}
-           
-           {/* 알림 - 연동 시에만 표시 */}
-           {isConnected && <AlertCard alerts={mockAlerts} />}
-           
-           {/* 미연동 시 통합 연동 카드 표시 */}
-           {!isConnected && !loading && !isMobile && <IntegratedConnectionCard />}
-          </div>
-        </div>
+             {/* 자동이체 현황 */}
+             <AutoTransferCard transfers={mockAutoTransfers} />
+             
+             {/* 알림 */}
+             <AlertCard alerts={mockAlerts} />
+           </div>
+         </div>
+       )}
       </div>
     </MainLayout>
   );
