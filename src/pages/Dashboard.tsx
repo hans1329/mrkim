@@ -83,32 +83,41 @@ export default function Dashboard() {
                </section>
              )}
 
-             {/* 예치금 현황 */}
-             <DepositCard deposits={mockDeposits} />
+             {/* 예치금 현황 - 추후 실데이터 연동 예정 (현재 샘플) */}
+             {isTransactionConnected && <DepositCard deposits={mockDeposits} />}
            </div>
 
            {/* 우측 칼럼 */}
            <div className="space-y-6">
-             {/* 홈택스 현황 */}
-             <section>
-               <HometaxSummaryCard />
-             </section>
+             {/* 홈택스 현황 - 홈택스 연동 시에만 표시 */}
+             {profile?.hometax_connected && (
+               <section>
+                 <HometaxSummaryCard />
+               </section>
+             )}
 
-             {/* 최근 거래 내역 */}
-             <section>
-               <RecentTransactionsCard />
-             </section>
+             {/* 최근 거래 내역 - 카드/계좌 연동 시에만 표시 */}
+             {isTransactionConnected && (
+               <section>
+                 <RecentTransactionsCard />
+               </section>
+             )}
 
-             {/* 직원 현황 */}
-             <section>
-               <EmployeeSummaryCard />
-             </section>
+             {/* 직원 현황 - 추후 실데이터 연동 예정 (현재 샘플) */}
+             {isTransactionConnected && (
+               <section>
+                 <EmployeeSummaryCard />
+               </section>
+             )}
 
-             {/* 자동이체 현황 */}
-             <AutoTransferCard transfers={mockAutoTransfers} />
+             {/* 자동이체 현황 - 추후 실데이터 연동 예정 (현재 샘플) */}
+             {isTransactionConnected && <AutoTransferCard transfers={mockAutoTransfers} />}
              
-             {/* 알림 */}
-             <AlertCard alerts={mockAlerts} />
+             {/* 알림 - 추후 실데이터 연동 예정 (현재 샘플) */}
+             {isTransactionConnected && <AlertCard alerts={mockAlerts} />}
+             
+             {/* 카드/계좌 미연동 시 연동 유도 카드 */}
+             {!isTransactionConnected && <IntegratedConnectionCard />}
            </div>
          </div>
        )}
