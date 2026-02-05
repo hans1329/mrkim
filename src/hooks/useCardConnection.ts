@@ -51,16 +51,23 @@ export function useCardConnection(): UseCardConnectionReturn {
         },
       });
 
-      // Supabase 함수 오류가 있거나 응답 데이터에 에러가 있는 경우 처리
-      const data = response.data;
-      
       // 에러 메시지에서 + 기호를 공백으로 디코딩
       const decodeErrorMessage = (msg: string) => 
         msg ? decodeURIComponent(msg.replace(/\+/g, ' ')) : msg;
+
+      // response.data는 400 에러여도 항상 존재할 수 있음
+      const data = response.data;
       
-      if (response.error || (data && !data.success)) {
-        const errorMsg = decodeErrorMessage(data?.error || response.error?.message || "카드사 연결에 실패했습니다.");
+      // API 에러 응답 처리 (400 등 HTTP 에러도 data에 에러 정보가 있음)
+      if (data && !data.success) {
+        const errorMsg = decodeErrorMessage(data.error || "카드사 연결에 실패했습니다.");
         toast.error(errorMsg);
+        return null;
+      }
+      
+      // Supabase 함수 자체 오류 (네트워크 에러 등)
+      if (response.error && !data) {
+        toast.error("카드사 연결에 실패했습니다. 다시 시도해주세요.");
         return null;
       }
       
