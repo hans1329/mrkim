@@ -80,10 +80,12 @@ export default function Dashboard() {
 
           {/* 우측 칼럼 */}
           <div className="space-y-6">
-            {/* 홈택스 현황 */}
-            <section>
-              <HometaxSummaryCard />
-            </section>
+           {/* 홈택스 현황 - 연동 시에만 표시 */}
+           {isConnected && (
+             <section>
+               <HometaxSummaryCard />
+             </section>
+           )}
 
            {/* 최근 거래 내역 - 연동 시에만 표시 */}
            {isConnected && (
