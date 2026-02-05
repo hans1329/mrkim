@@ -68,7 +68,7 @@ const benefits = [
            </div>
 
            {/* 혜택 목록 */}
-           <div className="space-y-2 pt-2">
+           <div className="flex flex-col md:flex-row md:justify-between gap-2 pt-2">
              {benefits.map((benefit, index) => (
                <div key={index} className="flex items-center gap-2 text-sm">
                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
