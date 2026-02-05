@@ -232,15 +232,51 @@ interface ConnectionStatus {
   employee: boolean;
 }
 
-async function checkConnectionStatus(userId: string): Promise<ConnectionStatus> {
-  // TODO: 실제 연동 테이블에서 조회
-  // 현재는 모두 미연동 상태로 반환
-  return {
+async function checkConnectionStatus(userId: string, authHeader: string): Promise<ConnectionStatus> {
+  // 기본값: 모두 미연동
+  const defaultStatus: ConnectionStatus = {
     hometax: false,
     card: false,
     bank: false,
     employee: false
   };
+
+  if (!userId) return defaultStatus;
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("Missing Supabase credentials");
+      return defaultStatus;
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("hometax_connected, card_connected, account_connected")
+      .eq("user_id", userId)
+      .single();
+
+    if (error || !profile) {
+      console.error("Failed to fetch profile:", error);
+      return defaultStatus;
+    }
+
+    return {
+      hometax: profile.hometax_connected ?? false,
+      card: profile.card_connected ?? false,
+      bank: profile.account_connected ?? false,
+      employee: false // TODO: 직원 테이블 연동 시 구현
+    };
+  } catch (error) {
+    console.error("checkConnectionStatus error:", error);
+    return defaultStatus;
+  }
 }
 
 function getMissingDataSources(
@@ -383,7 +419,8 @@ serve(async (req) => {
 
     // 3단계: 데이터 필요 여부 확인
     if (intentResult.requiresData) {
-      const connectionStatus = await checkConnectionStatus(userId || "");
+      const authHeader = req.headers.get("Authorization") || "";
+      const connectionStatus = await checkConnectionStatus(userId || "", authHeader);
       const missingSources = getMissingDataSources(intentResult.dataSources, connectionStatus);
       
       if (missingSources.length > 0) {
