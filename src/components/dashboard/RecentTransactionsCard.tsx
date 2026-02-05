@@ -66,19 +66,11 @@ export function RecentTransactionsCard() {
 
     setIsSyncing(true);
     try {
-      const today = new Date();
-      const fifteenDaysAgo = new Date(today);
-      fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
-
-      const startDate = fifteenDaysAgo.toISOString().split("T")[0].replace(/-/g, "");
-      const endDate = today.toISOString().split("T")[0].replace(/-/g, "");
-
       const result = await cardSync.mutateAsync({
         connectedId,
         cardCompanyId,
         cardCompanyName: cardCompanyName || cardCompanyId,
-        startDate,
-        endDate,
+        // startDate/endDate 생략 시 hook에서 자동으로 마지막 동기화 시점 이후 데이터 조회
       });
 
       if (result.synced > 0) {

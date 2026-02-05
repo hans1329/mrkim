@@ -32,15 +32,51 @@ export function useCardSync() {
       cardCompanyName,
       startDate,
       endDate,
+      isInitialSync = false,
     }: {
       connectedId: string;
       cardCompanyId: string;
       cardCompanyName: string;
       startDate?: string;
       endDate?: string;
+      isInitialSync?: boolean;
     }): Promise<SyncResult> => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("로그인이 필요합니다");
+
+      const today = new Date();
+      let effectiveStartDate = startDate;
+      let effectiveEndDate = endDate || today.toISOString().split("T")[0].replace(/-/g, "");
+
+      // startDate가 없으면 마지막 동기화 시점 조회
+      if (!effectiveStartDate) {
+        if (isInitialSync) {
+          // 최초 연동: 3개월치 데이터
+          const threeMonthsAgo = new Date(today);
+          threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+          effectiveStartDate = threeMonthsAgo.toISOString().split("T")[0].replace(/-/g, "");
+        } else {
+          // 갱신: 마지막 동기화 시점 이후
+          const { data: lastSync } = await supabase
+            .from("transactions")
+            .select("synced_at")
+            .eq("user_id", userData.user.id)
+            .eq("source_type", "card")
+            .order("synced_at", { ascending: false })
+            .limit(1)
+            .single();
+
+          if (lastSync?.synced_at) {
+            const lastSyncDate = new Date(lastSync.synced_at);
+            effectiveStartDate = lastSyncDate.toISOString().split("T")[0].replace(/-/g, "");
+          } else {
+            // 동기화 기록이 없으면 15일 전부터
+            const fifteenDaysAgo = new Date(today);
+            fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+            effectiveStartDate = fifteenDaysAgo.toISOString().split("T")[0].replace(/-/g, "");
+          }
+        }
+      }
 
       // 1. 코드에프에서 거래 내역 조회
       const { data: response, error: fetchError } = await supabase.functions.invoke(
@@ -50,8 +86,8 @@ export function useCardSync() {
             action: "getTransactions",
             connectedId,
             cardCompanyId,
-            startDate,
-            endDate,
+            startDate: effectiveStartDate,
+            endDate: effectiveEndDate,
           },
         }
       );
