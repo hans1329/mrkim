@@ -120,10 +120,10 @@ export function WeeklyChart() {
     setIsSyncing(true);
     try {
       const today = new Date();
-      const threeMonthsAgo = new Date(today);
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      const fifteenDaysAgo = new Date(today);
+      fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
 
-      const startDate = threeMonthsAgo.toISOString().split("T")[0].replace(/-/g, "");
+      const startDate = fifteenDaysAgo.toISOString().split("T")[0].replace(/-/g, "");
       const endDate = today.toISOString().split("T")[0].replace(/-/g, "");
 
       const result = await cardSync.mutateAsync({
