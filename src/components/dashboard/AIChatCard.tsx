@@ -234,7 +234,8 @@ export function AIChatCard() {
   // 브리핑 시간 체크
   useEffect(() => {
     const checkBriefing = () => {
-      if (isBriefingTime() && !response && !realStats.isLoading) {
+       // 첫 대화 사용자에게는 브리핑 표시하지 않음
+       if (isBriefingTime() && !response && !realStats.isLoading && hasConversationHistory === true) {
         setShowBriefing(true);
       }
     };
@@ -243,7 +244,7 @@ export function AIChatCard() {
     const interval = setInterval(checkBriefing, 60000);
     
     return () => clearInterval(interval);
-  }, [response, realStats.isLoading]);
+   }, [response, realStats.isLoading, hasConversationHistory]);
 
   // 실제 데이터 기반 빠른 응답
   const generateQuickResponse = (inputText: string): string => {
