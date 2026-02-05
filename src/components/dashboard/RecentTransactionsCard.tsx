@@ -149,9 +149,8 @@ export function RecentTransactionsCard() {
     );
   }
 
-  // 로그인 상태에서만 목업 데이터에 Sample 워터마크 표시
-  // 로그아웃 상태에서는 워터마크 없이 기존 UI 그대로 표시
-  const showSampleWatermark = isLoggedIn && !hasRealData;
+  // 로그아웃 상태에서만 Sample 워터마크 표시
+  const showSampleWatermark = isLoggedIn === false;
 
   return (
     <Card>
