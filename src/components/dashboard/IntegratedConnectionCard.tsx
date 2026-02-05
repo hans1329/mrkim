@@ -50,18 +50,18 @@ const benefits = [
 
          {/* 기능 목록 섹션 */}
          <div className="p-6 space-y-5">
-           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
              {features.map((feature, index) => (
                <div 
                  key={index}
-                 className="flex items-center gap-3 p-3 rounded-xl bg-muted/50"
+                 className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 min-h-[60px]"
                >
                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                    <feature.icon className="h-4 w-4 text-primary" />
                  </div>
-                 <div className="flex-1 min-w-0">
-                   <p className="text-sm font-medium truncate">{feature.label}</p>
-                   <p className="text-xs text-muted-foreground truncate">{feature.description}</p>
+                 <div className="flex-1">
+                   <p className="text-sm font-medium">{feature.label}</p>
+                   <p className="text-xs text-muted-foreground">{feature.description}</p>
                  </div>
                </div>
              ))}
