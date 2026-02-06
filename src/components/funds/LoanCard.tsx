@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   Dialog,
   DialogContent,
@@ -41,9 +42,14 @@ const mockLoanInfo: LoanInfo = {
 };
 
 export function LoanCard() {
+  const { isEnabled, isLoading } = useSiteSettings();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loanAmount, setLoanAmount] = useState<number[]>([10000000]);
   const [loanPeriod, setLoanPeriod] = useState<number[]>([3]);
+
+  // 관리자가 비활성화한 경우 렌더링하지 않음
+  if (isLoading) return null;
+  if (!isEnabled("loan_card_visible")) return null;
 
   const remainingLimit = mockLoanInfo.availableLimit - mockLoanInfo.usedAmount;
   const usagePercent = Math.round((mockLoanInfo.usedAmount / mockLoanInfo.availableLimit) * 100);

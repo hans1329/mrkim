@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { toast } from "sonner";
-import { Settings, Smartphone, Eye, EyeOff } from "lucide-react";
+import { Settings, Smartphone, Eye, EyeOff, Banknote } from "lucide-react";
 
 export default function AdminSiteSettings() {
   const { settings, isLoading, updateSetting } = useSiteSettings();
@@ -28,6 +28,12 @@ export default function AdminSiteSettings() {
       icon: Smartphone,
       title: "앱 다운로드 섹션",
       description: "인트로 페이지(/intro)에 앱 다운로드 섹션을 표시합니다",
+    },
+    {
+      key: "loan_card_visible",
+      icon: Banknote,
+      title: "급할 때 빌리기 카드",
+      description: "자금관리 페이지에 대출 신청 카드를 표시합니다",
     },
   ];
 
