@@ -45,6 +45,7 @@ export function useVoiceAgent() {
 
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const abortRef = useRef(false);
 
   const secretaryName = profile?.secretary_name || "김비서";
@@ -68,14 +69,22 @@ export function useVoiceAgent() {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
-      const src = audioRef.current.src;
-      audioRef.current.src = "";
-      if (src.startsWith("blob:")) URL.revokeObjectURL(src);
       audioRef.current = null;
     }
   }, []);
 
-  // TTS 재생
+  // AudioContext 초기화 (사용자 제스처에서 호출)
+  const ensureAudioContext = useCallback(() => {
+    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioContextRef.current.state === "suspended") {
+      audioContextRef.current.resume();
+    }
+    return audioContextRef.current;
+  }, []);
+
+  // TTS 재생 (AudioContext 사용으로 autoplay 차단 우회)
   const speakText = useCallback(async (text: string): Promise<void> => {
     if (abortRef.current) return;
 
@@ -106,27 +115,37 @@ export function useVoiceAgent() {
 
       if (abortRef.current) return;
 
-      // base64 → 재생
-      const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
+      // base64 → ArrayBuffer → AudioContext로 재생 (autoplay 차단 우회)
+      const ctx = ensureAudioContext();
+      const binaryString = atob(data.audioContent);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      const audioBuffer = await ctx.decodeAudioData(bytes.buffer);
+      const source = ctx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(ctx.destination);
 
       await new Promise<void>((resolve, reject) => {
-        audio.onended = () => resolve();
-        audio.onerror = () => reject(new Error("Audio playback failed"));
-        audio.play().catch(reject);
+        source.onended = () => resolve();
+        try {
+          source.start(0);
+        } catch (e) {
+          reject(e);
+        }
       });
     } catch (error) {
       if (!abortRef.current) {
         console.error("TTS error:", error);
       }
     } finally {
-      audioRef.current = null;
       if (!abortRef.current) {
         setStatus("idle");
       }
     }
-  }, [secretaryGender, secretaryTone]);
+  }, [secretaryGender, secretaryTone, ensureAudioContext]);
 
   // chat-ai 호출
   const queryAI = useCallback(async (userText: string): Promise<string> => {
@@ -295,6 +314,9 @@ export function useVoiceAgent() {
     setMessages([]);
     setLastError(null);
 
+    // 사용자 제스처 시점에 AudioContext 초기화 (autoplay 정책 우회 핵심)
+    ensureAudioContext();
+
     try {
       // 마이크 권한 확인
       await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -318,13 +340,17 @@ export function useVoiceAgent() {
     if (!abortRef.current) {
       startListening();
     }
-  }, [status, permissionDenied, secretaryName, speakText, startListening]);
+  }, [status, permissionDenied, secretaryName, speakText, startListening, ensureAudioContext]);
 
   // 세션 종료
   const endSession = useCallback(() => {
     abortRef.current = true;
     stopRecognition();
     stopAudio();
+    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
     setStatus("idle");
     setMessages([]);
   }, [stopRecognition, stopAudio]);
@@ -341,6 +367,9 @@ export function useVoiceAgent() {
       abortRef.current = true;
       stopRecognition();
       stopAudio();
+      if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+        audioContextRef.current.close().catch(() => {});
+      }
     };
   }, [stopRecognition, stopAudio]);
 
