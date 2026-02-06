@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
 import {
   LineChart,
@@ -12,29 +13,132 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { TrendingDown, Utensils, Users, Building, MoreHorizontal } from "lucide-react";
+import { TrendingDown } from "lucide-react";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useMemo } from "react";
+import { format, subMonths, startOfMonth, parseISO } from "date-fns";
 
-const monthlyData = [
-  { name: "1월", 지출: 32000000 },
-  { name: "2월", 지출: 35000000 },
-  { name: "3월", 지출: 33000000 },
-  { name: "4월", 지출: 38000000 },
-  { name: "5월", 지출: 36000000 },
-  { name: "6월", 지출: 41000000 },
-];
-
-const categoryData = [
-  { name: "식자재", value: 45, amount: 96750000, color: "hsl(var(--chart-1))", icon: Utensils },
-  { name: "인건비", value: 30, amount: 64500000, color: "hsl(var(--chart-2))", icon: Users },
-  { name: "관리비", value: 15, amount: 32250000, color: "hsl(var(--chart-3))", icon: Building },
-  { name: "기타", value: 10, amount: 21500000, color: "hsl(var(--chart-4))", icon: MoreHorizontal },
+const CHART_COLORS = [
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
 ];
 
 export function ExpenseAnalysisTab() {
-  const totalExpense = monthlyData.reduce((sum, d) => sum + d.지출, 0);
-  const avgMonthly = Math.round(totalExpense / monthlyData.length);
-  const maxMonth = monthlyData.reduce((max, d) => d.지출 > max.지출 ? d : max);
-  const minMonth = monthlyData.reduce((min, d) => d.지출 < min.지출 ? d : min);
+  // 최근 6개월 지출 데이터 조회
+  const sixMonthsAgo = format(startOfMonth(subMonths(new Date(), 5)), "yyyy-MM-dd");
+  const { data: transactions, isLoading } = useTransactions({
+    type: "expense",
+    startDate: sixMonthsAgo,
+  });
+
+  // 월별 및 카테고리별 데이터 집계
+  const { monthlyData, categoryData, stats } = useMemo(() => {
+    if (!transactions?.length) {
+      return {
+        monthlyData: [],
+        categoryData: [],
+        stats: { totalExpense: 0, avgMonthly: 0, maxMonth: null, minMonth: null },
+      };
+    }
+
+    // 월별 집계
+    const monthlyMap = new Map<string, number>();
+    
+    // 최근 6개월 초기화
+    for (let i = 5; i >= 0; i--) {
+      const monthDate = subMonths(new Date(), i);
+      const monthKey = format(monthDate, "M월");
+      monthlyMap.set(monthKey, 0);
+    }
+
+    // 카테고리별 집계
+    const categoryMap = new Map<string, { amount: number; icon: string }>();
+
+    transactions.forEach((tx) => {
+      const date = parseISO(tx.transaction_date);
+      const monthKey = format(date, "M월");
+
+      const current = monthlyMap.get(monthKey) || 0;
+      monthlyMap.set(monthKey, current + tx.amount);
+
+      const category = tx.category || "미분류";
+      const catData = categoryMap.get(category) || { amount: 0, icon: tx.category_icon || "📋" };
+      catData.amount += tx.amount;
+      categoryMap.set(category, catData);
+    });
+
+    const monthlyData = Array.from(monthlyMap.entries()).map(([name, 지출]) => ({
+      name,
+      지출,
+    }));
+
+    const totalExpense = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+
+    // 카테고리 데이터 (상위 5개 + 기타)
+    const sortedCategories = Array.from(categoryMap.entries())
+      .map(([name, data]) => ({
+        name,
+        amount: data.amount,
+        icon: data.icon,
+        value: Math.round((data.amount / totalExpense) * 100),
+      }))
+      .sort((a, b) => b.amount - a.amount);
+
+    let categoryData = sortedCategories.slice(0, 5).map((cat, index) => ({
+      ...cat,
+      color: CHART_COLORS[index % CHART_COLORS.length],
+    }));
+
+    // 나머지 합산
+    if (sortedCategories.length > 5) {
+      const otherAmount = sortedCategories.slice(5).reduce((sum, c) => sum + c.amount, 0);
+      categoryData.push({
+        name: "기타",
+        amount: otherAmount,
+        icon: "📦",
+        value: Math.round((otherAmount / totalExpense) * 100),
+        color: "hsl(var(--muted-foreground))",
+      });
+    }
+
+    const maxMonth = monthlyData.reduce((max, d) => (d.지출 > (max?.지출 || 0) ? d : max), monthlyData[0]);
+    const minMonth = monthlyData.reduce(
+      (min, d) => (d.지출 > 0 && d.지출 < (min?.지출 || Infinity) ? d : min),
+      monthlyData.find((m) => m.지출 > 0) || monthlyData[0]
+    );
+
+    const monthCount = monthlyData.filter((m) => m.지출 > 0).length || 1;
+
+    return {
+      monthlyData,
+      categoryData,
+      stats: {
+        totalExpense,
+        avgMonthly: Math.round(totalExpense / monthCount),
+        maxMonth,
+        minMonth,
+      },
+    };
+  }, [transactions]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <Skeleton className="h-[250px]" />
+        <Skeleton className="h-[350px]" />
+      </div>
+    );
+  }
+
+  const hasData = transactions && transactions.length > 0;
 
   return (
     <div className="space-y-4">
@@ -46,7 +150,7 @@ export function ExpenseAnalysisTab() {
               <TrendingDown className="h-4 w-4 text-destructive" />
               <span className="text-xs text-muted-foreground">총 지출</span>
             </div>
-            <p className="mt-1 text-lg font-bold">{formatCurrency(totalExpense)}</p>
+            <p className="mt-1 text-lg font-bold">{formatCurrency(stats.totalExpense)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -54,7 +158,7 @@ export function ExpenseAnalysisTab() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">월 평균</span>
             </div>
-            <p className="mt-1 text-lg font-bold">{formatCurrency(avgMonthly)}</p>
+            <p className="mt-1 text-lg font-bold">{formatCurrency(stats.avgMonthly)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -62,8 +166,10 @@ export function ExpenseAnalysisTab() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">최대 지출월</span>
             </div>
-            <p className="mt-1 text-lg font-bold">{maxMonth.name}</p>
-            <p className="text-xs text-muted-foreground">{formatCurrency(maxMonth.지출)}</p>
+            <p className="mt-1 text-lg font-bold">{stats.maxMonth?.name || "-"}</p>
+            <p className="text-xs text-muted-foreground">
+              {stats.maxMonth ? formatCurrency(stats.maxMonth.지출) : "-"}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -71,8 +177,10 @@ export function ExpenseAnalysisTab() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">최소 지출월</span>
             </div>
-            <p className="mt-1 text-lg font-bold">{minMonth.name}</p>
-            <p className="text-xs text-muted-foreground">{formatCurrency(minMonth.지출)}</p>
+            <p className="mt-1 text-lg font-bold">{stats.minMonth?.name || "-"}</p>
+            <p className="text-xs text-muted-foreground">
+              {stats.minMonth ? formatCurrency(stats.minMonth.지출) : "-"}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -83,43 +191,49 @@ export function ExpenseAnalysisTab() {
           <CardTitle className="text-base">월별 지출 추이</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                />
-                <YAxis
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                  tickFormatter={(value) => `${Math.round(value / 1000000)}M`}
-                />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="rounded-lg border bg-card p-2 shadow-md text-xs">
-                          <p className="mb-1 font-medium">{label}</p>
-                          <p style={{ color: payload[0].color }}>
-                            지출: {formatCurrency(payload[0].value as number)}
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="지출"
-                  stroke="hsl(var(--chart-3))"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {hasData ? (
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                  />
+                  <YAxis
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                    tickFormatter={(value) => `${Math.round(value / 1000000)}M`}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="rounded-lg border bg-card p-2 shadow-md text-xs">
+                            <p className="mb-1 font-medium">{label}</p>
+                            <p style={{ color: payload[0].color }}>
+                              지출: {formatCurrency(payload[0].value as number)}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="지출"
+                    stroke="hsl(var(--chart-3))"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
+              지출 데이터가 없습니다
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -129,59 +243,69 @@ export function ExpenseAnalysisTab() {
           <CardTitle className="text-base">지출 카테고리</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[180px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="rounded-lg border bg-card p-2 shadow-md text-xs">
-                          <p className="font-medium">{data.name}</p>
-                          <p>{formatCurrency(data.amount)} ({data.value}%)</p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          
-          {/* 카테고리 상세 */}
-          <div className="mt-4 space-y-2">
-            {categoryData.map((item) => (
-              <div key={item.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <item.icon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{item.name}</span>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium">{formatCurrency(item.amount)}</p>
-                  <p className="text-xs text-muted-foreground">{item.value}%</p>
-                </div>
+          {hasData && categoryData.length > 0 ? (
+            <>
+              <div className="h-[180px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="amount"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="rounded-lg border bg-card p-2 shadow-md text-xs">
+                              <p className="font-medium">{data.name}</p>
+                              <p>
+                                {formatCurrency(data.amount)} ({data.value}%)
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
+
+              {/* 카테고리 상세 */}
+              <div className="mt-4 space-y-2">
+                {categoryData.map((item) => (
+                  <div key={item.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-base">{item.icon}</span>
+                      <span className="text-sm">{item.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{formatCurrency(item.amount)}</p>
+                      <p className="text-xs text-muted-foreground">{item.value}%</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="h-[180px] flex items-center justify-center text-muted-foreground text-sm">
+              지출 데이터가 없습니다
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
