@@ -175,36 +175,36 @@ export default function Transactions() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-3 mt-0">
-          {/* 동기화 배너 - 카드/계좌 */}
+          {/* 동기화 배너 - 카드/계좌 한 행 */}
           {(isCardConnected || isAccountConnected) && (
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
               {isCardConnected && (
                 <div className="flex items-center justify-between rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
-                  <p className="text-sm font-medium">💳 카드 거래</p>
+                  <p className="text-xs font-medium">💳 카드</p>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={handleCardSync}
                     disabled={cardSync.isPending}
-                    className="h-7 px-2 gap-1 text-primary hover:text-primary hover:bg-primary/10"
+                    className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10"
                   >
-                    <RefreshCw className={cn("h-3.5 w-3.5", cardSync.isPending && "animate-spin")} />
-                    {cardSync.isPending ? "동기화 중" : "동기화"}
+                    <RefreshCw className={cn("h-3 w-3", cardSync.isPending && "animate-spin")} />
+                    {cardSync.isPending ? "..." : "동기화"}
                   </Button>
                 </div>
               )}
               {isAccountConnected && (
                 <div className="flex items-center justify-between rounded-lg bg-green-500/5 border border-green-500/20 px-3 py-2">
-                  <p className="text-sm font-medium">🏦 은행 계좌</p>
+                  <p className="text-xs font-medium">🏦 계좌</p>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={handleBankSync}
                     disabled={bankSync.isPending}
-                    className="h-7 px-2 gap-1 text-green-600 hover:text-green-600 hover:bg-green-500/10"
+                    className="h-6 px-2 gap-1 text-xs text-green-600 hover:text-green-600 hover:bg-green-500/10"
                   >
-                    <RefreshCw className={cn("h-3.5 w-3.5", bankSync.isPending && "animate-spin")} />
-                    {bankSync.isPending ? "동기화 중" : "동기화"}
+                    <RefreshCw className={cn("h-3 w-3", bankSync.isPending && "animate-spin")} />
+                    {bankSync.isPending ? "..." : "동기화"}
                   </Button>
                 </div>
               )}
