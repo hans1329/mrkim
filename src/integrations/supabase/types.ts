@@ -545,6 +545,45 @@ export type Database = {
         }
         Relationships: []
       }
+      savings_accounts: {
+        Row: {
+          amount: number
+          bank_name: string | null
+          created_at: string
+          id: string
+          interest_rate: number
+          is_active: boolean
+          name: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          interest_rate?: number
+          is_active?: boolean
+          name: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          interest_rate?: number
+          is_active?: boolean
+          name?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       service_faq: {
         Row: {
           answer: string
