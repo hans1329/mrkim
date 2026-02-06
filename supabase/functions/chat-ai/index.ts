@@ -57,17 +57,37 @@ async function callGemini(apiKey: string, contents: any[], options?: { tools?: a
   if (options?.tools) body.tools = options.tools;
   if (options?.toolConfig) body.toolConfig = options.toolConfig;
 
-  const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const MAX_RETRIES = 3;
+  let lastError: any = null;
 
-  if (!response.ok) {
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      const delayMs = Math.min(1000 * Math.pow(2, attempt) + Math.random() * 500, 8000);
+      console.log(`Retry attempt ${attempt}/${MAX_RETRIES}, waiting ${Math.round(delayMs)}ms...`);
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (response.ok) {
+      return response.json();
+    }
+
     const errorText = await response.text();
-    throw { status: response.status, body: errorText };
+    lastError = { status: response.status, body: errorText };
+
+    // Only retry on 429 (rate limit) or 503 (service unavailable)
+    if (response.status !== 429 && response.status !== 503) {
+      throw lastError;
+    }
+    console.warn(`Gemini API returned ${response.status}, attempt ${attempt + 1}/${MAX_RETRIES}`);
   }
-  return response.json();
+
+  throw lastError;
 }
 
 // ============ 연동 상태 확인 ============
