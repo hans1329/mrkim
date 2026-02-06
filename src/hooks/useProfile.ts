@@ -165,8 +165,11 @@ export function useProfile() {
   useEffect(() => {
     fetchProfile();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      fetchProfile();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      // SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED 등 중요한 이벤트에서만 refetch
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        fetchProfile();
+      }
     });
 
     return () => subscription.unsubscribe();
