@@ -1,5 +1,5 @@
 import { useConversation } from "@elevenlabs/react";
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
@@ -22,6 +22,17 @@ export function useElevenLabsConversation() {
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryGender = profile?.secretary_gender || "female";
   const secretaryTone = profile?.secretary_tone || "professional";
+
+  // Stable refs for clientTools callback (avoids recreating useConversation)
+  const secretaryNameRef = useRef(secretaryName);
+  const secretaryToneRef = useRef(secretaryTone);
+  const secretaryGenderRef = useRef(secretaryGender);
+
+  useEffect(() => {
+    secretaryNameRef.current = secretaryName;
+    secretaryToneRef.current = secretaryTone;
+    secretaryGenderRef.current = secretaryGender;
+  }, [secretaryName, secretaryTone, secretaryGender]);
 
   const systemPrompt = useMemo(() => {
     const genderDescription = secretaryGender === "male"
@@ -47,6 +58,13 @@ export function useElevenLabsConversation() {
 - 사업 운영 조언을 제공합니다
 - 일상적인 대화도 자연스럽게 응대합니다
 - 자기소개 시 "${secretaryName}입니다"라고 말합니다
+
+## 데이터 조회 (중요!)
+- 매출, 지출, 세금, 급여, 브리핑 등 구체적인 사업 데이터가 필요한 질문을 받으면 반드시 query_business 도구를 호출하세요
+- 도구의 question 파라미터에 사용자의 질문을 그대로 전달하세요
+- 도구가 반환한 답변 내용을 자연스러운 구어체로 읽어주세요
+- 마크다운 기호(**, ##, - 등)는 제거하고 자연스러운 말로 바꿔 전달하세요
+- "오늘 매출 얼마야?", "이번 달 지출 현황", "브리핑 해줘" 같은 질문에 반드시 도구를 사용하세요
 
 ## 제한
 - 민감한 금융 결정은 전문가 상담을 권유합니다
@@ -77,6 +95,38 @@ export function useElevenLabsConversation() {
       },
     };
   }, [firstMessage, systemPrompt, voiceId]);
+
+  // Client Tool: chat-ai 엔진을 통해 비즈니스 데이터 조회
+  const clientTools = useMemo(() => ({
+    query_business: async (params: { question: string }) => {
+      try {
+        console.log("[VoiceClientTool] query_business called:", params.question);
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userId = sessionData?.session?.user?.id;
+
+        const { data, error } = await supabase.functions.invoke("chat-ai", {
+          body: {
+            messages: [{ role: "user", content: params.question }],
+            secretaryName: secretaryNameRef.current,
+            secretaryTone: secretaryToneRef.current,
+            secretaryGender: secretaryGenderRef.current,
+            userId,
+          },
+        });
+
+        if (error || !data?.response) {
+          console.error("[VoiceClientTool] query_business error:", error);
+          return "죄송합니다, 데이터를 조회하지 못했습니다. 잠시 후 다시 시도해주세요.";
+        }
+
+        console.log("[VoiceClientTool] query_business response:", data.response.substring(0, 100));
+        return data.response;
+      } catch (err) {
+        console.error("[VoiceClientTool] query_business exception:", err);
+        return "데이터 조회 중 오류가 발생했습니다.";
+      }
+    },
+  }), []);
 
   const formatDisconnectDetails = useCallback((details: any) => {
     if (!details) return "";
@@ -171,8 +221,9 @@ export function useElevenLabsConversation() {
     setIsConnecting(false);
   }, []);
 
-  // ElevenLabs useConversation 훅 - 안정적인 콜백 참조 사용
+  // ElevenLabs useConversation 훅 - clientTools + 안정적인 콜백 참조 사용
   const conversation = useConversation({
+    clientTools,
     onConnect: handleConnect,
     onDisconnect: handleDisconnect,
     onMessage: handleMessage,
