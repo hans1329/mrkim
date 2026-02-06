@@ -146,8 +146,20 @@ serve(async (req) => {
              null;
     };
 
+    // 업종 정보 추출 시도
+    const extractBusinessType = (item: any): string | null => {
+      if (!item) return null;
+      return item.resBusinessType ||
+             item.resBusinessCategory ||
+             item.resIndustryType ||
+             item.businessType ||
+             item.industryType ||
+             null;
+    };
+
     const isSuccess = result.code === "CF-00000";
     const businessName = extractBusinessName(matchingData);
+    const businessType = extractBusinessType(matchingData);
 
     return new Response(
       JSON.stringify({
@@ -166,6 +178,7 @@ serve(async (req) => {
               taxationType: matchingData.resTaxationTypeCode || "-",
               taxationTypeDesc: getTaxationTypeDesc(matchingData.resTaxationTypeCode),
               businessName: businessName,
+              businessType: businessType,
               closingDate: matchingData.resClosingDate || null,
               transferDate: matchingData.resTransferTaxTypeDate || null,
             }
