@@ -234,7 +234,7 @@ serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
-    const { messages, secretaryName = "김비서", secretaryTone = "polite", secretaryGender = "female", userId } = await req.json();
+    const { messages, secretaryName = "김비서", secretaryTone = "polite", secretaryGender = "female", userId, voiceMode = false } = await req.json();
     if (!messages || messages.length === 0) throw new Error("Messages array is required");
 
     const toneMap: Record<string, string> = {
@@ -245,14 +245,27 @@ serve(async (req) => {
     const genderDesc = secretaryGender === "male" ? "남성" : "여성";
     const toneInst = toneMap[secretaryTone] || toneMap.polite;
 
+    const voiceModeInstructions = voiceMode ? `
+
+## 🔊 음성 모드 (매우 중요!)
+지금은 사용자가 음성으로 대화 중입니다. 반드시 아래 규칙을 따르세요:
+- **구어체**로 말하듯 자연스럽게 답변하세요. 문어체/보고서 형식 금지.
+- 마크다운 기호(#, *, -, 번호 목록) 절대 사용 금지.
+- 이모지 사용 금지.
+- 숫자는 "삼백이십만원" 같이 한글로 읽기 쉽게 표현하세요.
+- 핵심만 짧게 2~3문장으로 답변하세요.
+- "사장님~" 같은 호칭을 자연스럽게 사용하세요.
+- 예시: "사장님, 이번 달 지출은 약 삼백이십만원이에요. 지난달보다 좀 늘었는데, 식비 쪽에서 좀 많이 나간 것 같아요."` : "";
+
     const systemPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.
 성별: ${genderDesc}
 
 ${toneInst}
+${voiceModeInstructions}
 
 ## 성격
 - 따뜻하고 친근한 비서, 사장님을 진심으로 응원
-- 가끔 이모지를 적절히 사용, 딱딱하게 거절하지 않음
+- 가끔 이모지를 적절히 사용, 딱딱하게 거절하지 않음${voiceMode ? "\n- (음성 모드: 이모지 대신 말투로 감정 표현)" : ""}
 
 ## 도구 호출 규칙 (매우 중요!)
 반드시 process_message 도구를 호출하세요.
@@ -275,7 +288,7 @@ ${toneInst}
 - 일상대화: "심심해", "힘들다"
 - 일반 조언: "세금 신고 언제야?", "사업 어떻게 해?"
 - 서비스 안내: "뭘 할 수 있어?"
-- response_text에 마크다운 형식의 전체 응답을 작성
+- response_text에 ${voiceMode ? "구어체로 짧은" : "마크다운 형식의"} 전체 응답을 작성
 
 ## 주의사항
 - 가짜 숫자를 절대 만들지 마세요
@@ -346,7 +359,8 @@ ${toneInst}
     if (txData) {
       console.log("Data found:", { expense: txData.totalExpense, income: txData.totalIncome, count: txData.expenseCount, period: txData.periodLabel });
       const dataContext = formatDataForPrompt(txData, txData.periodLabel);
-      const dataPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- 0건이면 "기록이 없습니다" 안내\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${dataContext}`;
+      const voiceDataInst = voiceMode ? "\n- 구어체로 짧게 2~3문장으로 핵심만 답변\n- 마크다운/이모지 사용 금지\n- 숫자는 읽기 쉽게 한글로 표현" : "";
+      const dataPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- 0건이면 "기록이 없습니다" 안내\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${dataContext}`;
 
       const dataResult = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: dataPrompt }] },

@@ -6,15 +6,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// 한국어 음성 ID 목록 (ElevenLabs 기본 제공)
+// 한국어 네이티브 음성 ID
 const KOREAN_VOICES = {
   female: {
-    default: "XrExE9yKIg1WjnnlVkGX", // Matilda - 친절한 여성
-    friendly: "EXAVITQu4vr4xnSDxMaL", // Sarah - 친근한 여성
+    default: "uyVNoMrnUku1dZyVEXwD",  // 한국어 여성 네이티브
+    friendly: "uyVNoMrnUku1dZyVEXwD",
   },
   male: {
-    default: "JBFqnCBsd6RMkjVDRZzb", // George - 신뢰감 있는 남성
-    friendly: "TX3LPaxmHKxFdv7VOQHJ", // Liam - 친근한 남성
+    default: "ZJCNdZEjYwkOElxugmW2",  // 한국어 남성 네이티브
+    friendly: "ZJCNdZEjYwkOElxugmW2",
   }
 };
 
@@ -58,10 +58,11 @@ serve(async (req) => {
           text,
           model_id: "eleven_multilingual_v2",
           voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0.3,
+            stability: 0.35,
+            similarity_boost: 0.8,
+            style: 0.45,
             use_speaker_boost: true,
+            speed: 1.05,
           },
         }),
       }
