@@ -238,7 +238,7 @@ serve(async (req) => {
       );
     }
 
-    const { action, bankId, loginId, password, connectedId } = await req.json();
+    const { action, bankId, loginId, password, connectedId, accountNo, startDate, endDate } = await req.json();
 
     const publicKey = Deno.env.get("CODEF_PUBLIC_KEY");
     if (!publicKey) {
@@ -255,6 +255,8 @@ serve(async (req) => {
       return await handleAddAccount(accessToken, publicKey, connectedId, bankId, loginId, password);
     } else if (action === "getAccounts") {
       return await handleGetAccounts(accessToken, connectedId, bankId);
+    } else if (action === "getTransactions") {
+      return await handleGetTransactions(accessToken, connectedId, bankId, accountNo, startDate, endDate);
     } else {
       return new Response(
         JSON.stringify({ success: false, error: "알 수 없는 action입니다." }),
@@ -488,6 +490,106 @@ async function handleGetAccounts(
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
+}
+
+// 거래 내역 조회
+async function handleGetTransactions(
+  accessToken: string,
+  connectedId: string,
+  bankId: string,
+  accountNo: string,
+  startDate: string,
+  endDate: string
+): Promise<Response> {
+  const organizationCode = BANK_ORGANIZATION_CODES[bankId];
+  if (!organizationCode) {
+    return new Response(
+      JSON.stringify({ success: false, error: "지원하지 않는 은행입니다." }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  if (!accountNo) {
+    return new Response(
+      JSON.stringify({ success: false, error: "계좌번호가 필요합니다." }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const requestBody = {
+    connectedId,
+    organization: organizationCode,
+    account: accountNo,
+    startDate: startDate || getDefaultStartDate(),
+    endDate: endDate || getDefaultEndDate(),
+    orderBy: "0", // 0: 최신순, 1: 과거순
+    inquiryType: "1", // 조회구분 (1: 전체, 2: 입금, 3: 출금)
+  };
+
+  console.log("Getting transactions for account:", accountNo, "from:", startDate, "to:", endDate);
+
+  const response = await fetch(`${CODEF_API_URL}/v1/kr/bank/p/account/transaction-list`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const responseText = await response.text();
+  console.log("Transaction list response:", responseText.substring(0, 500));
+
+  const data = parseCodefResponse(responseText);
+  const result = data.result || {};
+  const isSuccess = result.code === "CF-00000";
+
+  if (isSuccess) {
+    const rawTransactions = data.data?.resTrHistoryList || [];
+    
+    // 거래 데이터 정규화
+    const transactions = rawTransactions.map((tx: any) => ({
+      transactionDate: tx.resAccountTrDate || "",
+      transactionTime: tx.resAccountTrTime || null,
+      amount: Math.abs(parseInt(tx.resAccountOut || tx.resAccountIn || "0", 10)),
+      type: tx.resAccountOut && parseInt(tx.resAccountOut, 10) > 0 ? "expense" : "income",
+      description: tx.resAccountDesc || "",
+      balance: tx.resAfterTranBalance || "0",
+      transactionId: tx.resAccountTrSeq || `${tx.resAccountTrDate}_${tx.resAccountTrTime}_${Math.random().toString(36).substr(2, 9)}`,
+      memo: tx.resAccountMemo || "",
+    }));
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "거래 내역을 조회했습니다.",
+        transactions,
+        totalCount: transactions.length,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } else {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: result.message || "거래 내역 조회 실패",
+        code: result.code,
+      }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+}
+
+// 기본 시작 날짜 (3개월 전)
+function getDefaultStartDate(): string {
+  const date = new Date();
+  date.setMonth(date.getMonth() - 3);
+  return date.toISOString().split("T")[0].replace(/-/g, "");
+}
+
+// 기본 종료 날짜 (오늘)
+function getDefaultEndDate(): string {
+  return new Date().toISOString().split("T")[0].replace(/-/g, "");
 }
 
 function parseCodefResponse(text: string): any {
