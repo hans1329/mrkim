@@ -320,7 +320,7 @@ export function AIChatPanel() {
                     key={cmd}
                     variant="outline"
                     size="sm"
-                    className="shrink-0 text-xs text-muted-foreground border-border/50 hover:text-foreground"
+                    className="shrink-0 text-xs text-muted-foreground border-border/50 hover:bg-primary hover:text-primary-foreground hover:border-primary"
                     onClick={() => handleQuickCommand(cmd)}
                   >
                     {cmd}
