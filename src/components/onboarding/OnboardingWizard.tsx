@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import type { OnboardingStep } from "@/hooks/useOnboarding";
 import { CardConnectionFlow } from "./CardConnectionFlow";
 import { AccountConnectionFlow } from "./AccountConnectionFlow";
+import { HometaxConnectionFlow } from "./HometaxConnectionFlow";
 import { ConnectionSuccessModal } from "./ConnectionSuccessModal";
 
 interface OnboardingWizardProps {
@@ -48,21 +49,25 @@ export function OnboardingWizard({
   onConnect,
   onComplete,
 }: OnboardingWizardProps) {
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [showHometaxFlow, setShowHometaxFlow] = useState(false);
   const [showCardFlow, setShowCardFlow] = useState(false);
   const [showAccountFlow, setShowAccountFlow] = useState(false);
   const [successModalType, setSuccessModalType] = useState<"hometax" | "card" | "account" | null>(null);
   const currentIdx = stepIndex(currentStep);
   const progress = ((currentIdx + 1) / steps.length) * 100;
 
-  const handleConnect = async (service: "hometax" | "card" | "account") => {
-    setIsConnecting(true);
-    // 시뮬레이션: 실제로는 Codef API 연동
-    await new Promise((r) => setTimeout(r, 1500));
-    onConnect(service);
-    setIsConnecting(false);
-    // 연결 성공 모달 표시
-    setSuccessModalType(service);
+  const handleHometaxConnect = () => {
+    setShowHometaxFlow(true);
+  };
+
+  const handleHometaxFlowComplete = () => {
+    onConnect("hometax");
+    setShowHometaxFlow(false);
+    setSuccessModalType("hometax");
+  };
+
+  const handleHometaxFlowBack = () => {
+    setShowHometaxFlow(false);
   };
 
   const handleSuccessModalContinue = () => {
@@ -153,17 +158,24 @@ export function OnboardingWizard({
           {currentStep === "welcome" && (
             <WelcomeStep onNext={handleNext} />
           )}
-          {currentStep === "hometax" && (
+          {currentStep === "hometax" && !showHometaxFlow && (
             <ConnectionStep
               title="국세청 연결"
               description="홈택스 데이터를 연동하면 매출, 세금계산서, 부가세 현황을 자동으로 가져옵니다."
               icon={Building2}
               isConnected={connections.hometax}
-              isConnecting={isConnecting}
-              onConnect={() => handleConnect("hometax")}
+              onConnect={handleHometaxConnect}
               onNext={handleNext}
               onSkip={handleSkip}
             />
+          )}
+          {currentStep === "hometax" && showHometaxFlow && (
+            <div className="bg-card rounded-3xl p-6 shadow-xl">
+              <HometaxConnectionFlow 
+                onComplete={handleHometaxFlowComplete}
+                onBack={handleHometaxFlowBack}
+              />
+            </div>
           )}
           {currentStep === "card" && !showCardFlow && (
             <ConnectionStep
@@ -171,7 +183,6 @@ export function OnboardingWizard({
               description="법인/사업자 카드를 연동하면 지출 내역이 자동 분류되고 비용 관리가 쉬워집니다."
               icon={CreditCard}
               isConnected={connections.card}
-              isConnecting={isConnecting}
               onConnect={handleCardConnect}
               onNext={handleNext}
               onSkip={handleSkip}
@@ -191,7 +202,6 @@ export function OnboardingWizard({
               description="사업용 계좌를 연동하면 입출금 내역을 실시간으로 확인하고 자금 흐름을 파악할 수 있습니다."
               icon={Landmark}
               isConnected={connections.account}
-              isConnecting={isConnecting}
               onConnect={handleAccountConnect}
               onNext={handleNext}
               onSkip={handleSkip}
@@ -263,7 +273,6 @@ function ConnectionStep({
   description,
   icon: Icon,
   isConnected,
-  isConnecting,
   onConnect,
   onNext,
   onSkip,
@@ -272,7 +281,6 @@ function ConnectionStep({
   description: string;
   icon: typeof Building2;
   isConnected: boolean;
-  isConnecting: boolean;
   onConnect: () => void;
   onNext: () => void;
   onSkip: () => void;
@@ -314,25 +322,14 @@ function ConnectionStep({
             onClick={onConnect} 
             size="lg" 
             className="w-full gap-2"
-            disabled={isConnecting}
           >
-            {isConnecting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                연결 중...
-              </>
-            ) : (
-              <>
-                연결하기
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
+            연결하기
+            <ArrowRight className="h-4 w-4" />
           </Button>
           <Button 
             variant="ghost" 
             onClick={onSkip} 
             className="w-full text-muted-foreground"
-            disabled={isConnecting}
           >
             나중에 하기
           </Button>

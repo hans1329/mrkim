@@ -118,6 +118,12 @@ serve(async (req) => {
 
     const data = parseMaybeEncodedJson(responseText);
 
+    // 응답 구조 로깅 (디버깅용)
+    console.log("Parsed response keys:", Object.keys(data));
+    if (data.data) {
+      console.log("data.data structure:", Array.isArray(data.data) ? "array" : typeof data.data);
+    }
+
     // 응답 파싱 - data가 배열인 경우 처리
     const result = data.result || {};
     const businessDataArray = Array.isArray(data.data) ? data.data : [data.data];
@@ -127,7 +133,21 @@ serve(async (req) => {
       (item: any) => item?.resCompanyIdentityNo === cleanedNumber
     ) || businessDataArray[0] || {};
 
+    // 사업장명 추출 시도 (다양한 필드명 체크)
+    const extractBusinessName = (item: any): string | null => {
+      if (!item) return null;
+      // CODEF에서 사용할 수 있는 다양한 필드명
+      return item.resCompanyNm || 
+             item.resCompanyName || 
+             item.resBusinessName ||
+             item.resTradeName ||
+             item.companyName ||
+             item.businessName ||
+             null;
+    };
+
     const isSuccess = result.code === "CF-00000";
+    const businessName = extractBusinessName(matchingData);
 
     return new Response(
       JSON.stringify({
@@ -145,10 +165,15 @@ serve(async (req) => {
               businessStatus: matchingData.resBusinessStatus || "조회 결과 없음",
               taxationType: matchingData.resTaxationTypeCode || "-",
               taxationTypeDesc: getTaxationTypeDesc(matchingData.resTaxationTypeCode),
+              businessName: businessName,
               closingDate: matchingData.resClosingDate || null,
               transferDate: matchingData.resTransferTaxTypeDate || null,
             }
           : null,
+        // 디버깅용: 원본 응답 필드 (개발 환경에서만)
+        _debug: {
+          availableFields: Object.keys(matchingData || {}),
+        },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
