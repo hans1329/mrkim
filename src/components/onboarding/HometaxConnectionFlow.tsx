@@ -25,6 +25,7 @@ interface BusinessInfo {
   taxationType: string;
   taxationTypeDesc: string;
   businessName?: string;
+  businessType?: string;
 }
 
 export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionFlowProps) {
@@ -68,6 +69,7 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
         taxationType: data.data.taxationType,
         taxationTypeDesc: data.data.taxationTypeDesc,
         businessName: data.data.businessName,
+        businessType: data.data.businessType,
       });
       setStep("confirmed");
 
@@ -89,12 +91,13 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
         return;
       }
 
-      // 프로필 업데이트 - 사업자번호, 사업장명, 연결상태
+      // 프로필 업데이트 - 사업자번호, 사업장명, 업종, 연결상태
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
           business_registration_number: businessInfo.businessNumber,
           business_name: businessInfo.businessName || null,
+          business_type: businessInfo.businessType || null,
           hometax_connected: true,
           hometax_connected_at: new Date().toISOString(),
         })
@@ -215,6 +218,9 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
               value={formatBusinessNumber(businessInfo.businessNumber)} 
             />
             <InfoRow label="사업자 상태" value={businessInfo.businessStatus} />
+            {businessInfo.businessType && (
+              <InfoRow label="업종" value={businessInfo.businessType} />
+            )}
             <InfoRow label="과세유형" value={businessInfo.taxationTypeDesc} />
           </div>
 
