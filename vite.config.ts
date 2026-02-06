@@ -16,8 +16,11 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // @elevenlabs/react 등 외부 패키지의 React 중복 인스턴스 강제 통합
+      react: path.resolve(__dirname, "./node_modules/react"),
+      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
+      "react/jsx-runtime": path.resolve(__dirname, "./node_modules/react/jsx-runtime"),
     },
-    // React 중복 인스턴스 방지
     dedupe: ["react", "react-dom", "react/jsx-runtime"],
   },
 }));
