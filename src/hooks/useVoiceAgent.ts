@@ -155,6 +155,7 @@ export function useVoiceAgent() {
         secretaryTone,
         secretaryGender,
         userId,
+        voiceMode: true,
       }),
     });
 
