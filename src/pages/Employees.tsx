@@ -214,15 +214,17 @@ export default function Employees() {
                 <div className="space-y-2">
                   <Label>월급여</Label>
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     placeholder="0"
-                    value={newEmployee.monthly_salary || ""}
-                    onChange={(e) =>
+                    value={newEmployee.monthly_salary ? newEmployee.monthly_salary.toLocaleString() : ""}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d]/g, "");
                       setNewEmployee({
                         ...newEmployee,
-                        monthly_salary: e.target.value ? parseInt(e.target.value) : undefined,
-                      })
-                    }
+                        monthly_salary: value ? parseInt(value) : undefined,
+                      });
+                    }}
                   />
                 </div>
               </div>
