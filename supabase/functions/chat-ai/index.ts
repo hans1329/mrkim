@@ -84,7 +84,7 @@ async function checkConnectionStatus(userId: string, authHeader: string): Promis
     const sb = createClient(url, key, { global: { headers: { Authorization: authHeader } } });
     const { data, error } = await sb.from("profiles").select("hometax_connected, card_connected, account_connected").eq("user_id", userId).maybeSingle();
     if (error || !data) return def;
-    return { hometax: data.hometax_connected ?? false, card: data.card_connected ?? false, bank: data.account_connected ?? false, employee: false };
+    return { hometax: data.hometax_connected ?? false, card: data.card_connected ?? false, bank: data.account_connected ?? false, employee: true };
   } catch { return def; }
 }
 
@@ -170,7 +170,7 @@ const processMessageTool = {
         data_sources: {
           type: "array",
           items: { type: "string", enum: ["card", "bank", "hometax", "employee"] },
-          description: "needs_data가 true일 때 필요한 데이터 소스 목록"
+          description: "needs_data가 true일 때 필요한 데이터 소스. 매출/지출 → card,bank. 세금 → hometax. 급여 → employee. 매출/지출에 employee를 넣지 마세요."
         },
         time_period: {
           type: "object",
@@ -241,6 +241,14 @@ ${toneInst}
 - "매출 얼마야?", "지출 현황", "세금 얼마?", "급여 현황", "브리핑 해줘", "지난달 지출" 등
 - 구체적인 금액/숫자가 필요한 모든 질문
 - response_text는 빈 문자열("")로 설정
+
+### data_sources 선택 가이드 (반드시 준수!):
+- 매출/수입 질문 → ["card", "bank"]
+- 지출/비용 질문 → ["card", "bank"]
+- 세금/부가세 질문 → ["hometax"]
+- 브리핑/전체 현황 → ["card", "bank", "hometax"]
+- 급여 관련 → ["employee"]
+- ⚠️ 매출/지출 질문에 "employee"를 포함하지 마세요!
 
 ### needs_data = false (직접 응답):
 - 인사: "안녕", "넌 누구야?"
