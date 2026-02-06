@@ -170,42 +170,49 @@ function formatDataForPrompt(data: TransactionSummary, periodLabel: string): str
   return p;
 }
 
-// ============ Tool Calling 스키마 (ANY 모드 - 항상 호출) ============
+// ============ 키워드 기반 의도 분류 (AI 호출 없음) ============
 
-const processMessageTool = {
-  functionDeclarations: [{
-    name: "process_message",
-    description: "사용자 메시지를 처리합니다. 데이터 조회가 필요하면 needs_data=true로, 아니면 response_text에 응답을 포함합니다.",
-    parameters: {
-      type: "object",
-      properties: {
-        needs_data: {
-          type: "boolean",
-          description: "실제 거래/매출/지출 데이터 조회가 필요한지. 인사, 일상대화, 일반 조언은 false. 매출/지출/세금/급여/브리핑 질문은 true."
-        },
-        response_text: {
-          type: "string",
-          description: "needs_data가 false일 때 사용자에게 보낼 응답 텍스트. 마크다운 형식. needs_data가 true이면 빈 문자열."
-        },
-        data_sources: {
-          type: "array",
-          items: { type: "string", enum: ["card", "bank", "hometax", "employee"] },
-          description: "needs_data가 true일 때 필요한 데이터 소스. 매출/지출 → card,bank. 세금 → hometax. 급여 → employee. 매출/지출에 employee를 넣지 마세요."
-        },
-        time_period: {
-          type: "object",
-          properties: {
-            type: { type: "string", enum: ["today", "yesterday", "week", "month", "last_month", "quarter", "year", "custom"] },
-            start_date: { type: "string" },
-            end_date: { type: "string" }
-          },
-          description: "needs_data가 true일 때 조회 기간"
-        }
-      },
-      required: ["needs_data", "response_text"]
-    }
-  }]
-};
+interface ClassifiedIntent {
+  needsData: boolean;
+  dataSources: string[];
+  timePeriod?: { type: string; startDate?: string; endDate?: string };
+}
+
+function classifyByKeyword(text: string): ClassifiedIntent {
+  const t = text.toLowerCase().trim();
+
+  // 기간 감지
+  let timePeriod: { type: string } | undefined;
+  if (/오늘/.test(t)) timePeriod = { type: "today" };
+  else if (/어제/.test(t)) timePeriod = { type: "yesterday" };
+  else if (/이번\s*주|금주/.test(t)) timePeriod = { type: "week" };
+  else if (/지난\s*달|저번\s*달|전월/.test(t)) timePeriod = { type: "last_month" };
+  else if (/이번\s*달|이달|당월/.test(t)) timePeriod = { type: "month" };
+  else if (/분기/.test(t)) timePeriod = { type: "quarter" };
+  else if (/올해|금년/.test(t)) timePeriod = { type: "year" };
+
+  // 데이터 질문 감지
+  const salesExpensePattern = /매출|수입|수익|지출|비용|결제|소비|얼마|현황|내역|카드.*사용|총액|합계|브리핑|요약|정리/;
+  const taxPattern = /세금|부가세|종소세|종합소득|세무|신고|납부|홈택스/;
+  const employeePattern = /급여|월급|임금|직원.*급|인건비|4대.*보험/;
+
+  if (taxPattern.test(t)) {
+    return { needsData: true, dataSources: ["hometax"], timePeriod };
+  }
+  if (employeePattern.test(t)) {
+    return { needsData: true, dataSources: ["employee"], timePeriod };
+  }
+  if (salesExpensePattern.test(t)) {
+    return { needsData: true, dataSources: ["card", "bank"], timePeriod };
+  }
+
+  // 기간 키워드가 있으면 데이터 질문으로 간주
+  if (timePeriod && /얼마|얼만큼|어때|어떻게|알려|보여|확인/.test(t)) {
+    return { needsData: true, dataSources: ["card", "bank"], timePeriod };
+  }
+
+  return { needsData: false, dataSources: [] };
+}
 
 // ============ 연동/범위 외 응답 ============
 
@@ -254,45 +261,7 @@ serve(async (req) => {
 - 이모지 사용 금지.
 - 숫자는 "삼백이십만원" 같이 한글로 읽기 쉽게 표현하세요.
 - 핵심만 짧게 2~3문장으로 답변하세요.
-- "사장님~" 같은 호칭을 자연스럽게 사용하세요.
-- 예시: "사장님, 이번 달 지출은 약 삼백이십만원이에요. 지난달보다 좀 늘었는데, 식비 쪽에서 좀 많이 나간 것 같아요."` : "";
-
-    const systemPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.
-성별: ${genderDesc}
-
-${toneInst}
-${voiceModeInstructions}
-
-## 성격
-- 따뜻하고 친근한 비서, 사장님을 진심으로 응원
-- 가끔 이모지를 적절히 사용, 딱딱하게 거절하지 않음${voiceMode ? "\n- (음성 모드: 이모지 대신 말투로 감정 표현)" : ""}
-
-## 도구 호출 규칙 (매우 중요!)
-반드시 process_message 도구를 호출하세요.
-
-### needs_data = true (데이터 조회 필요):
-- "매출 얼마야?", "지출 현황", "세금 얼마?", "급여 현황", "브리핑 해줘", "지난달 지출" 등
-- 구체적인 금액/숫자가 필요한 모든 질문
-- response_text는 빈 문자열("")로 설정
-
-### data_sources 선택 가이드 (반드시 준수!):
-- 매출/수입 질문 → ["card", "bank"]
-- 지출/비용 질문 → ["card", "bank"]
-- 세금/부가세 질문 → ["hometax"]
-- 브리핑/전체 현황 → ["card", "bank", "hometax"]
-- 급여 관련 → ["employee"]
-- ⚠️ 매출/지출 질문에 "employee"를 포함하지 마세요!
-
-### needs_data = false (직접 응답):
-- 인사: "안녕", "넌 누구야?"
-- 일상대화: "심심해", "힘들다"
-- 일반 조언: "세금 신고 언제야?", "사업 어떻게 해?"
-- 서비스 안내: "뭘 할 수 있어?"
-- response_text에 ${voiceMode ? "구어체로 짧은" : "마크다운 형식의"} 전체 응답을 작성
-
-## 주의사항
-- 가짜 숫자를 절대 만들지 마세요
-- 불법/위험 요청만 정중히 거절`;
+- "사장님~" 같은 호칭을 자연스럽게 사용하세요.` : "";
 
     const geminiMessages = messages.map((msg: any) => ({
       role: msg.role === "assistant" ? "model" : "user",
@@ -302,49 +271,42 @@ ${voiceModeInstructions}
     const lastMsg = messages.filter((m: any) => m.role === "user").pop()?.content || "";
     console.log("Processing message:", lastMsg.substring(0, 50));
 
-    // ━━━ 1단계: ANY 모드 Tool Calling (항상 1회, 확실하게 분류) ━━━
-    const result = await callGemini(
-      GEMINI_API_KEY,
-      [
+    // ━━━ 키워드 기반 의도 분류 (AI 호출 없음, 즉시 완료) ━━━
+    const classified = classifyByKeyword(lastMsg);
+    console.log("Keyword classification:", { needsData: classified.needsData, sources: classified.dataSources, period: classified.timePeriod?.type });
+
+    // ━━━ Case 1: 데이터 불필요 → 단일 Gemini 호출 (Tool Calling 없이) ━━━
+    if (!classified.needsData) {
+      const systemPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.
+성별: ${genderDesc}
+
+${toneInst}
+${voiceModeInstructions}
+
+## 성격
+- 따뜻하고 친근한 비서, 사장님을 진심으로 응원
+- 가끔 이모지를 적절히 사용, 딱딱하게 거절하지 않음${voiceMode ? "\n- (음성 모드: 이모지 대신 말투로 감정 표현)" : ""}
+
+## 주의사항
+- 가짜 숫자를 절대 만들지 마세요. 데이터가 필요하면 "확인해볼게요"라고 안내
+- 불법/위험 요청만 정중히 거절
+- ${voiceMode ? "구어체로 짧은" : "마크다운 형식의"} 응답을 작성`;
+
+      const result = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: systemPrompt }] },
-        { role: "model", parts: [{ text: `네, 알겠습니다. 모든 메시지에 process_message 도구를 호출하겠습니다.` }] },
+        { role: "model", parts: [{ text: "네, 알겠습니다." }] },
         ...geminiMessages,
-      ],
-      {
-        tools: [processMessageTool],
-        toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: ["process_message"] } }
-      }
-    );
+      ]);
 
-    const fnCall = result.candidates?.[0]?.content?.parts?.[0]?.functionCall;
-    if (!fnCall || fnCall.name !== "process_message") {
-      // Tool calling 실패 → 텍스트 폴백
-      const fallbackText = result.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
-      console.log("Tool calling failed, using text fallback");
-      return new Response(JSON.stringify({ response: fallbackText }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "무엇을 도와드릴까요?";
+      console.log("Direct response (1 API call, no tool calling)");
+      return new Response(JSON.stringify({ response }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const args = fnCall.args || {};
-    const needsData = args.needs_data ?? false;
-    const responseText = args.response_text || "";
-
-    // ━━━ Case 1: 데이터 불필요 → response_text를 바로 반환 (1회 호출 완료!) ━━━
-    if (!needsData) {
-      console.log("Direct response via tool (1 API call)");
-      return new Response(
-        JSON.stringify({ response: responseText || "무엇을 도와드릴까요?", intent: null }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // ━━━ Case 2: 데이터 필요 → 연동 확인 + 데이터 조회 + 2번째 호출 ━━━
-    const dataSources: string[] = args.data_sources || [];
-    const timePeriod = args.time_period ? { type: args.time_period.type || "month", startDate: args.time_period.start_date, endDate: args.time_period.end_date } : undefined;
-    console.log("Data needed:", { dataSources, timePeriod });
-
+    // ━━━ Case 2: 데이터 필요 → 연동 확인 + 데이터 조회 + 단일 Gemini 호출 ━━━
     const authHeader = req.headers.get("Authorization") || "";
     const connStatus = await checkConnectionStatus(userId, authHeader);
-    const missing = getMissingDataSources(dataSources, connStatus);
+    const missing = getMissingDataSources(classified.dataSources, connStatus);
 
     if (missing.length > 0) {
       return new Response(
@@ -354,33 +316,34 @@ ${voiceModeInstructions}
     }
 
     // 데이터 조회
-    const txData = await fetchTransactionData(userId, authHeader, timePeriod);
+    const txData = await fetchTransactionData(userId, authHeader, classified.timePeriod);
+    const voiceDataInst = voiceMode ? "\n- 구어체로 짧게 2~3문장으로 핵심만 답변\n- 마크다운/이모지 사용 금지\n- 숫자는 읽기 쉽게 한글로 표현" : "";
 
     if (txData) {
       console.log("Data found:", { expense: txData.totalExpense, income: txData.totalIncome, count: txData.expenseCount, period: txData.periodLabel });
       const dataContext = formatDataForPrompt(txData, txData.periodLabel);
-      const voiceDataInst = voiceMode ? "\n- 구어체로 짧게 2~3문장으로 핵심만 답변\n- 마크다운/이모지 사용 금지\n- 숫자는 읽기 쉽게 한글로 표현" : "";
       const dataPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- 0건이면 "기록이 없습니다" 안내\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${dataContext}`;
 
-      const dataResult = await callGemini(GEMINI_API_KEY, [
+      const result = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: dataPrompt }] },
-        { role: "model", parts: [{ text: `네, 실제 데이터를 기반으로 정확하게 답변하겠습니다.` }] },
+        { role: "model", parts: [{ text: "네, 실제 데이터를 기반으로 정확하게 답변하겠습니다." }] },
         ...geminiMessages,
       ]);
 
-      const dataResponse = dataResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
-      console.log("Data response generated (2 API calls total)");
-      return new Response(JSON.stringify({ response: dataResponse, hasData: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
+      console.log("Data response (1 API call total)");
+      return new Response(JSON.stringify({ response, hasData: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // 데이터 조회 실패
-    const fbResult = await callGemini(GEMINI_API_KEY, [
-      { role: "user", parts: [{ text: systemPrompt + "\n\n참고: 데이터를 조회했으나 해당 기간에 기록이 없습니다." }] },
-      { role: "model", parts: [{ text: `네, 알겠습니다.` }] },
+    // 데이터 없음
+    const noDataPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}\n\n참고: 데이터를 조회했으나 해당 기간에 기록이 없습니다. 사용자에게 친절하게 안내하세요.${voiceDataInst}`;
+    const result = await callGemini(GEMINI_API_KEY, [
+      { role: "user", parts: [{ text: noDataPrompt }] },
+      { role: "model", parts: [{ text: "네, 알겠습니다." }] },
       ...geminiMessages,
     ]);
-    const fbResponse = fbResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
-    return new Response(JSON.stringify({ response: fbResponse }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
+    return new Response(JSON.stringify({ response }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (error: any) {
     console.error("=== Gemini Error ===", error?.status, error?.body);
