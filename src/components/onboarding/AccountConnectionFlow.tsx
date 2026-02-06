@@ -17,10 +17,12 @@ import {
   Smartphone,
   Lock,
   AlertCircle,
-  Wallet
+  Wallet,
+  RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAccountConnection } from "@/hooks/useAccountConnection";
+import { useBankSync } from "@/hooks/useBankSync";
 
 // 은행 목록
 const BANKS = [
@@ -35,7 +37,7 @@ const BANKS = [
   { id: "kbank", name: "케이뱅크", color: "bg-pink-500" },
 ];
 
-type FlowStep = "select-bank" | "auth" | "loading" | "select-accounts" | "complete";
+type FlowStep = "select-bank" | "auth" | "loading" | "select-accounts" | "syncing" | "complete";
 
 interface AccountConnectionFlowProps {
   onComplete: () => void;
@@ -61,14 +63,18 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [fetchedAccounts, setFetchedAccounts] = useState<AccountInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [syncProgress, setSyncProgress] = useState<{ synced: number; total: number }>({ synced: 0, total: 0 });
+  const [currentConnectedId, setCurrentConnectedId] = useState<string | null>(null);
 
   const { isLoading, registerBankAccount, getAccounts } = useAccountConnection();
+  const bankSync = useBankSync();
 
   const stepProgress: Record<FlowStep, number> = {
-    "select-bank": 25,
-    "auth": 50,
-    "loading": 75,
-    "select-accounts": 85,
+    "select-bank": 20,
+    "auth": 40,
+    "loading": 55,
+    "select-accounts": 70,
+    "syncing": 85,
     "complete": 100,
   };
 
@@ -91,6 +97,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
       );
       
       if (newConnectedId) {
+        setCurrentConnectedId(newConnectedId);
         const accounts = await getAccounts(selectedBank, newConnectedId);
         setFetchedAccounts(accounts);
         setStep("select-accounts");
@@ -105,8 +112,36 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
     }
   };
 
-  const handleSelectAccounts = () => {
-    if (selectedAccounts.length === 0) return;
+  // 계좌 선택 후 거래 내역 자동 동기화
+  const handleSelectAccounts = async () => {
+    if (selectedAccounts.length === 0 || !currentConnectedId || !selectedBank) {
+      setStep("complete");
+      return;
+    }
+    
+    setStep("syncing");
+    setSyncProgress({ synced: 0, total: selectedAccounts.length });
+    
+    const bankName = selectedBankData?.name || "은행";
+    
+    // 선택된 각 계좌에 대해 거래 내역 동기화
+    for (let i = 0; i < selectedAccounts.length; i++) {
+      const accountNo = selectedAccounts[i];
+      try {
+        await bankSync.mutateAsync({
+          connectedId: currentConnectedId,
+          bankId: selectedBank,
+          bankName,
+          accountNo,
+          isInitialSync: true,
+        });
+        setSyncProgress({ synced: i + 1, total: selectedAccounts.length });
+      } catch (err) {
+        console.error(`Failed to sync account ${accountNo}:`, err);
+        // 일부 계좌 동기화 실패해도 계속 진행
+      }
+    }
+    
     setStep("complete");
   };
 
@@ -128,10 +163,11 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
       <div className="space-y-2">
         <Progress value={stepProgress[step]} className="h-1.5" />
         <div className="flex justify-between text-[10px] text-muted-foreground">
-          <span>은행 선택</span>
+          <span>은행</span>
           <span>로그인</span>
-          <span>연결 중</span>
-          <span>계좌 선택</span>
+          <span>연결</span>
+          <span>계좌</span>
+          <span>동기화</span>
           <span>완료</span>
         </div>
       </div>
@@ -451,7 +487,36 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
             </div>
           )}
 
-          {/* Step 5: 완료 */}
+          {/* Step 5: 동기화 중 */}
+          {step === "syncing" && (
+            <div className="space-y-4 text-center py-8">
+              <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto flex items-center justify-center">
+                <RefreshCw className="h-8 w-8 text-primary animate-spin" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">거래 내역 동기화 중</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {selectedBankData?.name} 거래 내역을 가져오고 있습니다...
+                </p>
+              </div>
+              {syncProgress.total > 1 && (
+                <div className="space-y-2">
+                  <Progress 
+                    value={(syncProgress.synced / syncProgress.total) * 100} 
+                    className="h-2" 
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {syncProgress.synced} / {syncProgress.total} 계좌 완료
+                  </p>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                최대 1분까지 소요될 수 있습니다
+              </p>
+            </div>
+          )}
+
+          {/* Step 6: 완료 */}
           {step === "complete" && (
             <div className="space-y-4 text-center">
               <div className="relative">
