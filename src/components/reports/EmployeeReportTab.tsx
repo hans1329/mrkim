@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
 import {
   BarChart,
@@ -9,31 +10,93 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Users, DollarSign, Clock, TrendingUp, Shield, ShieldOff } from "lucide-react";
+import { Users, DollarSign, Shield, ShieldOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-const employeeSalaryData = [
-  { name: "이영희", position: "주방장", salary: 4000000, insurance: true },
-  { name: "김민수", position: "매니저", salary: 3500000, insurance: true },
-  { name: "박서준", position: "서빙", salary: 2400000, insurance: true },
-  { name: "최지우", position: "알바", salary: 1200000, insurance: false },
-  { name: "정하늘", position: "알바", salary: 960000, insurance: false },
-];
-
-const monthlyLaborCost = [
-  { name: "1월", 인건비: 9900000 },
-  { name: "2월", 인건비: 10200000 },
-  { name: "3월", 인건비: 9900000 },
-  { name: "4월", 인건비: 11060000 },
-  { name: "5월", 인건비: 10800000 },
-  { name: "6월", 인건비: 12060000 },
-];
+import { useEmployees, type Employee } from "@/hooks/useEmployees";
+import { useMemo } from "react";
+import { format, subMonths } from "date-fns";
 
 export function EmployeeReportTab() {
-  const totalSalary = employeeSalaryData.reduce((sum, e) => sum + e.salary, 0);
-  const insuredCount = employeeSalaryData.filter(e => e.insurance).length;
-  const uninsuredCount = employeeSalaryData.filter(e => !e.insurance).length;
-  const avgSalary = Math.round(totalSalary / employeeSalaryData.length);
+  const { data: employees, isLoading } = useEmployees();
+
+  // 직원 데이터 집계
+  const { employeeSalaryData, stats, monthlyLaborCost } = useMemo(() => {
+    if (!employees?.length) {
+      return {
+        employeeSalaryData: [],
+        stats: { totalSalary: 0, insuredCount: 0, uninsuredCount: 0, avgSalary: 0 },
+        monthlyLaborCost: [],
+      };
+    }
+
+    // 재직중인 직원만 필터링
+    const activeEmployees = employees.filter((e) => e.status === "재직");
+
+    // 급여 데이터 (정규직: 월급, 알바: 시급 * 주간시간 * 4주 추정)
+    const employeeSalaryData = activeEmployees
+      .map((emp) => {
+        let salary = emp.monthly_salary || 0;
+        if (emp.employee_type === "알바" && emp.hourly_rate && emp.weekly_hours) {
+          salary = Math.round(emp.hourly_rate * emp.weekly_hours * 4);
+        }
+
+        const hasAllInsurance =
+          emp.insurance_national_pension &&
+          emp.insurance_health &&
+          emp.insurance_employment &&
+          emp.insurance_industrial;
+
+        return {
+          id: emp.id,
+          name: emp.name,
+          position: emp.position || emp.employee_type,
+          salary,
+          insurance: hasAllInsurance,
+          employeeType: emp.employee_type,
+        };
+      })
+      .sort((a, b) => b.salary - a.salary);
+
+    const totalSalary = employeeSalaryData.reduce((sum, e) => sum + e.salary, 0);
+    const insuredCount = employeeSalaryData.filter((e) => e.insurance).length;
+    const uninsuredCount = employeeSalaryData.filter((e) => !e.insurance).length;
+    const avgSalary = employeeSalaryData.length > 0 ? Math.round(totalSalary / employeeSalaryData.length) : 0;
+
+    // 월별 인건비 추이 (최근 6개월 - 현재 인건비 기준 시뮬레이션)
+    // 실제로는 급여 지급 내역 테이블이 필요하지만, 현재는 현재 인건비 기반으로 표시
+    const monthlyLaborCost = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthDate = subMonths(new Date(), i);
+      const monthKey = format(monthDate, "M월");
+      // 현재 인건비를 기준으로 표시 (실제 급여 내역 없음)
+      monthlyLaborCost.push({
+        name: monthKey,
+        인건비: totalSalary,
+      });
+    }
+
+    return {
+      employeeSalaryData,
+      stats: { totalSalary, insuredCount, uninsuredCount, avgSalary },
+      monthlyLaborCost,
+    };
+  }, [employees]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <Skeleton className="h-[250px]" />
+        <Skeleton className="h-[300px]" />
+      </div>
+    );
+  }
+
+  const hasData = employeeSalaryData.length > 0;
 
   return (
     <div className="space-y-4">
@@ -54,7 +117,7 @@ export function EmployeeReportTab() {
               <DollarSign className="h-4 w-4 text-chart-1" />
               <span className="text-xs text-muted-foreground">월 인건비</span>
             </div>
-            <p className="mt-1 text-lg font-bold">{formatCurrency(totalSalary)}</p>
+            <p className="mt-1 text-lg font-bold">{formatCurrency(stats.totalSalary)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -63,7 +126,7 @@ export function EmployeeReportTab() {
               <Shield className="h-4 w-4 text-success" />
               <span className="text-xs text-muted-foreground">4대보험 가입</span>
             </div>
-            <p className="mt-1 text-lg font-bold">{insuredCount}명</p>
+            <p className="mt-1 text-lg font-bold">{stats.insuredCount}명</p>
           </CardContent>
         </Card>
         <Card>
@@ -72,7 +135,7 @@ export function EmployeeReportTab() {
               <ShieldOff className="h-4 w-4 text-warning" />
               <span className="text-xs text-muted-foreground">미가입 (단기)</span>
             </div>
-            <p className="mt-1 text-lg font-bold">{uninsuredCount}명</p>
+            <p className="mt-1 text-lg font-bold">{stats.uninsuredCount}명</p>
           </CardContent>
         </Card>
       </div>
@@ -83,41 +146,47 @@ export function EmployeeReportTab() {
           <CardTitle className="text-base">월별 인건비 추이</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyLaborCost}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                />
-                <YAxis
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                  tickFormatter={(value) => `${Math.round(value / 1000000)}M`}
-                />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="rounded-lg border bg-card p-2 shadow-md text-xs">
-                          <p className="mb-1 font-medium">{label}</p>
-                          <p style={{ color: payload[0].color }}>
-                            인건비: {formatCurrency(payload[0].value as number)}
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Bar
-                  dataKey="인건비"
-                  fill="hsl(var(--chart-2))"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {hasData ? (
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyLaborCost}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                  />
+                  <YAxis
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                    tickFormatter={(value) => `${Math.round(value / 1000000)}M`}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="rounded-lg border bg-card p-2 shadow-md text-xs">
+                            <p className="mb-1 font-medium">{label}</p>
+                            <p style={{ color: payload[0].color }}>
+                              인건비: {formatCurrency(payload[0].value as number)}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar
+                    dataKey="인건비"
+                    fill="hsl(var(--chart-2))"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
+              직원 데이터가 없습니다
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -127,33 +196,39 @@ export function EmployeeReportTab() {
           <CardTitle className="text-base">직원별 급여 현황</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {employeeSalaryData.map((employee) => (
-            <div
-              key={employee.name}
-              className="flex items-center justify-between rounded-lg border p-3"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                  <span className="text-sm font-medium">
-                    {employee.name.slice(0, 1)}
-                  </span>
+          {hasData ? (
+            employeeSalaryData.map((employee) => (
+              <div
+                key={employee.id}
+                className="flex items-center justify-between rounded-lg border p-3"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                    <span className="text-sm font-medium">
+                      {employee.name.slice(0, 1)}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium">{employee.name}</p>
+                    <p className="text-xs text-muted-foreground">{employee.position}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium">{employee.name}</p>
-                  <p className="text-xs text-muted-foreground">{employee.position}</p>
+                <div className="text-right">
+                  <p className="font-medium">{formatCurrency(employee.salary)}</p>
+                  <Badge
+                    variant={employee.insurance ? "default" : "secondary"}
+                    className="text-[10px]"
+                  >
+                    {employee.insurance ? "4대보험" : "미가입"}
+                  </Badge>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-medium">{formatCurrency(employee.salary)}</p>
-                <Badge
-                  variant={employee.insurance ? "default" : "secondary"}
-                  className="text-[10px]"
-                >
-                  {employee.insurance ? "4대보험" : "미가입"}
-                </Badge>
-              </div>
+            ))
+          ) : (
+            <div className="py-8 text-center text-muted-foreground text-sm">
+              등록된 직원이 없습니다
             </div>
-          ))}
+          )}
         </CardContent>
       </Card>
     </div>
