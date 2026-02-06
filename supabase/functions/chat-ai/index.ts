@@ -776,15 +776,24 @@ ${toneInstructions[secretaryTone] || toneInstructions.polite}
     );
 
   } catch (error: any) {
+    // Gemini API 에러 상세 로깅
+    console.error("=== Gemini API Error Detail ===");
+    console.error("Status:", error?.status);
+    console.error("Raw body:", error?.body);
+    console.error("Error type:", typeof error);
+    console.error("Error keys:", error ? Object.keys(error) : "null");
+
     // 429 에러 특별 처리
     if (error?.status === 429) {
       const errorJson = safeJsonParse(error.body || "");
+      console.error("Parsed 429 JSON:", JSON.stringify(errorJson, null, 2));
       const { message, retryAfterSeconds } = buildGemini429Message(errorJson);
       return new Response(
         JSON.stringify({
           error: message,
           code: "GEMINI_RATE_LIMIT",
           retry_after_seconds: retryAfterSeconds,
+          _raw_gemini_error: errorJson, // 디버깅용 원본 에러 포함
         }),
         {
           status: 429,
