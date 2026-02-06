@@ -173,6 +173,78 @@ export type Database = {
         }
         Relationships: []
       }
+      employees: {
+        Row: {
+          created_at: string
+          department: string | null
+          employee_type: Database["public"]["Enums"]["employee_type"]
+          end_date: string | null
+          external_id: string | null
+          hourly_rate: number | null
+          id: string
+          insurance_employment: boolean | null
+          insurance_health: boolean | null
+          insurance_industrial: boolean | null
+          insurance_national_pension: boolean | null
+          memo: string | null
+          monthly_salary: number | null
+          name: string
+          position: string | null
+          source: string
+          start_date: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          weekly_hours: number | null
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          employee_type?: Database["public"]["Enums"]["employee_type"]
+          end_date?: string | null
+          external_id?: string | null
+          hourly_rate?: number | null
+          id?: string
+          insurance_employment?: boolean | null
+          insurance_health?: boolean | null
+          insurance_industrial?: boolean | null
+          insurance_national_pension?: boolean | null
+          memo?: string | null
+          monthly_salary?: number | null
+          name: string
+          position?: string | null
+          source?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          weekly_hours?: number | null
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          employee_type?: Database["public"]["Enums"]["employee_type"]
+          end_date?: string | null
+          external_id?: string | null
+          hourly_rate?: number | null
+          id?: string
+          insurance_employment?: boolean | null
+          insurance_health?: boolean | null
+          insurance_industrial?: boolean | null
+          insurance_national_pension?: boolean | null
+          memo?: string | null
+          monthly_salary?: number | null
+          name?: string
+          position?: string | null
+          source?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          weekly_hours?: number | null
+        }
+        Relationships: []
+      }
       hometax_sync_status: {
         Row: {
           created_at: string
@@ -620,6 +692,7 @@ export type Database = {
     }
     Enums: {
       app_role: "owner" | "manager" | "employee" | "admin"
+      employee_type: "정규직" | "계약직" | "알바"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -748,6 +821,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["owner", "manager", "employee", "admin"],
+      employee_type: ["정규직", "계약직", "알바"],
     },
   },
 } as const
