@@ -1,12 +1,16 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Profile, useProfile } from "@/hooks/useProfile";
+import { Profile, useProfileQuery } from "@/hooks/useProfileQuery";
+import { toast } from "sonner";
 
 /**
  * 연동 상태 중앙 관리 Context
  * 
  * 로그인 상태와 데이터 연동 상태를 한 곳에서 관리하여
  * 대시보드, 채팅, 온보딩 등 모든 곳에서 일관된 상태를 제공합니다.
+ * 
+ * React Query로 캐싱하여 중복 API 호출을 방지합니다.
  */
 
 export type AuthStatus = "loading" | "logged_out" | "logged_in";
@@ -45,16 +49,18 @@ export interface ConnectionState {
 const ConnectionContext = createContext<ConnectionState | undefined>(undefined);
 
 export function ConnectionProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [authStatus, setAuthStatus] = useState<AuthStatus>("loading");
   const [userId, setUserId] = useState<string | null>(null);
   
+  // React Query 기반 프로필 조회 (캐싱 적용)
   const { 
     profile, 
     loading: profileLoading, 
-    refetch, 
-    updateProfile, 
-    resetConnections 
-  } = useProfile();
+    refetch,
+    updateProfileCache,
+    invalidateProfile,
+  } = useProfileQuery();
 
   // 인증 상태 확인
   const checkAuth = useCallback(async () => {
@@ -81,14 +87,96 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         setAuthStatus("logged_in");
         setUserId(session.user.id);
+        // 로그인 시 프로필 캐시 무효화
+        if (event === 'SIGNED_IN') {
+          invalidateProfile();
+        }
       } else {
         setAuthStatus("logged_out");
         setUserId(null);
+        // 로그아웃 시 프로필 캐시 클리어
+        if (event === 'SIGNED_OUT') {
+          queryClient.setQueryData(["profile"], null);
+        }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [checkAuth]);
+  }, [checkAuth, invalidateProfile, queryClient]);
+
+  // 프로필 업데이트 함수
+  const updateProfile = useCallback(async (updates: Partial<Profile>, showToast = true): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("로그인이 필요합니다");
+
+      const dbUpdates = { ...updates } as Record<string, unknown>;
+      
+      const { error } = await supabase
+        .from("profiles")
+        .update(dbUpdates)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      
+      // 로컬 캐시 즉시 업데이트
+      updateProfileCache(updates);
+      
+      if (showToast) {
+        toast.success("프로필이 저장되었습니다");
+      }
+      return true;
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("프로필 저장에 실패했습니다");
+      return false;
+    }
+  }, [updateProfileCache]);
+
+  // 연동 상태 전체 초기화
+  const resetConnections = useCallback(async (): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("로그인이 필요합니다");
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          hometax_connected: false,
+          hometax_connected_at: null,
+          card_connected: false,
+          card_connected_at: null,
+          account_connected: false,
+          account_connected_at: null,
+        })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      
+      // 캐시 업데이트
+      updateProfileCache({
+        hometax_connected: false,
+        hometax_connected_at: null,
+        card_connected: false,
+        card_connected_at: null,
+        account_connected: false,
+        account_connected_at: null,
+      });
+
+      // 로컬스토리지의 codef 정보도 삭제
+      localStorage.removeItem("codef_connected_id");
+      localStorage.removeItem("codef_card_company");
+      localStorage.removeItem("codef_card_company_name");
+      localStorage.removeItem("codef_bank_connected_id");
+      localStorage.removeItem("codef_bank_code");
+      localStorage.removeItem("codef_bank_name");
+
+      return true;
+    } catch (error) {
+      console.error("Error resetting connections:", error);
+      return false;
+    }
+  }, [updateProfileCache]);
 
   // 파생 상태 계산
   const isLoggedIn = authStatus === "logged_in";

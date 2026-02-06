@@ -14,8 +14,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { useProfile } from "@/hooks/useProfile";
-import { useState, useEffect } from "react";
+import { useConnection } from "@/contexts/ConnectionContext";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface UrgentAlert {
@@ -43,31 +43,13 @@ interface ConnectionStatusBannerProps {
 
 export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatusBannerProps) {
   const navigate = useNavigate();
-  const { profile, loading, refetch } = useProfile();
+  // ConnectionContext에서 캐시된 프로필 사용 (중복 API 호출 방지)
+  const { profile, profileLoading: loading } = useConnection();
   const [alerts] = useState<UrgentAlert[]>(() => createMockUrgentAlerts(navigate));
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
 
-  // 페이지로 돌아올 때 프로필 다시 가져오기
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        refetch();
-      }
-    };
-
-    const handleFocus = () => {
-      refetch();
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, [refetch]);
+  // React Query가 캐싱과 refetch를 자동 관리하므로 별도의 visibility/focus 핸들러 불필요
 
   // 연동 시작 버튼 핸들러 - 로그인 여부 확인
   const handleStartConnection = async () => {

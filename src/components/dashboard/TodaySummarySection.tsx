@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, Wallet, PiggyBank, Link2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { useProfile } from "@/hooks/useProfile";
+import { useConnection } from "@/contexts/ConnectionContext";
 import { formatCurrency } from "@/data/mockData";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -161,7 +161,8 @@ interface TodaySummarySectionProps {
 export function TodaySummarySection({ isLoggedOut = false }: TodaySummarySectionProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { profile, loading: profileLoading } = useProfile();
+  // ConnectionContext에서 캐시된 프로필 사용 (중복 API 호출 방지)
+  const { profile, profileLoading } = useConnection();
   const [stats, setStats] = useState<SummaryStats>({
     todayIncome: 0,
     todayExpense: 0,
