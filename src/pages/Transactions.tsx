@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { TransactionClassifier } from "@/components/transactions/TransactionClassifier";
 import { useTransactions, useTransactionStats, useAddTransaction, type TransactionInsert } from "@/hooks/useTransactions";
 import { useCardSync } from "@/hooks/useCardSync";
+import { useBankSync } from "@/hooks/useBankSync";
 import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -52,6 +53,7 @@ export default function Transactions() {
   const { profile } = useProfile();
   const addTransaction = useAddTransaction();
   const cardSync = useCardSync();
+  const bankSync = useBankSync();
 
   const handleCardSync = () => {
     if (!profile?.card_connected) {
@@ -70,6 +72,42 @@ export default function Transactions() {
 
     cardSync.mutate(
       { connectedId, cardCompanyId, cardCompanyName },
+      {
+        onSuccess: (result) => {
+          if (result.synced > 0) {
+            toast.success(`${result.synced}건의 새 거래를 가져왔습니다`);
+          } else if (result.skipped > 0) {
+            toast.info("새로운 거래가 없습니다");
+          } else {
+            toast.info("가져올 거래가 없습니다");
+          }
+          refetch();
+        },
+        onError: (error) => {
+          toast.error(error.message || "동기화에 실패했습니다");
+        },
+      }
+    );
+  };
+
+  const handleBankSync = () => {
+    if (!profile?.account_connected) {
+      toast.error("먼저 은행 계좌를 연동해주세요");
+      return;
+    }
+
+    const connectedId = localStorage.getItem("codef_bank_connected_id");
+    const bankId = localStorage.getItem("codef_bank_id") || "shinhan";
+    const bankName = localStorage.getItem("codef_bank_name") || "신한은행";
+    const accountNo = localStorage.getItem("codef_bank_account_no") || "";
+
+    if (!connectedId) {
+      toast.error("은행 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.");
+      return;
+    }
+
+    bankSync.mutate(
+      { connectedId, bankId, bankName, accountNo },
       {
         onSuccess: (result) => {
           if (result.synced > 0) {
@@ -123,6 +161,7 @@ export default function Transactions() {
 
   const isEmpty = !isLoading && (!transactions || transactions.length === 0);
   const isCardConnected = profile?.card_connected;
+  const isAccountConnected = profile?.account_connected;
 
   return (
     <MainLayout title="매출/매입" subtitle="거래 내역을 관리하세요" showBackButton>
@@ -136,20 +175,39 @@ export default function Transactions() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-3 mt-0">
-          {/* 카드 동기화 배너 - 컴팩트 */}
-          {isCardConnected && (
-            <div className="flex items-center justify-between rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
-              <p className="text-sm font-medium">카드 거래 동기화</p>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleCardSync}
-                disabled={cardSync.isPending}
-                className="h-7 px-2 gap-1 text-primary hover:text-primary hover:bg-primary/10"
-              >
-                <RefreshCw className={cn("h-3.5 w-3.5", cardSync.isPending && "animate-spin")} />
-                {cardSync.isPending ? "동기화 중" : "동기화"}
-              </Button>
+          {/* 동기화 배너 - 카드/계좌 */}
+          {(isCardConnected || isAccountConnected) && (
+            <div className="space-y-2">
+              {isCardConnected && (
+                <div className="flex items-center justify-between rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
+                  <p className="text-sm font-medium">💳 카드 거래</p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCardSync}
+                    disabled={cardSync.isPending}
+                    className="h-7 px-2 gap-1 text-primary hover:text-primary hover:bg-primary/10"
+                  >
+                    <RefreshCw className={cn("h-3.5 w-3.5", cardSync.isPending && "animate-spin")} />
+                    {cardSync.isPending ? "동기화 중" : "동기화"}
+                  </Button>
+                </div>
+              )}
+              {isAccountConnected && (
+                <div className="flex items-center justify-between rounded-lg bg-green-500/5 border border-green-500/20 px-3 py-2">
+                  <p className="text-sm font-medium">🏦 은행 계좌</p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleBankSync}
+                    disabled={bankSync.isPending}
+                    className="h-7 px-2 gap-1 text-green-600 hover:text-green-600 hover:bg-green-500/10"
+                  >
+                    <RefreshCw className={cn("h-3.5 w-3.5", bankSync.isPending && "animate-spin")} />
+                    {bankSync.isPending ? "동기화 중" : "동기화"}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
