@@ -2,10 +2,23 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+export type DepositType = 
+  | "vat"           // 부가세
+  | "salary"        // 급여
+  | "emergency"     // 비상금
+  | "corporate_tax" // 법인세/소득세
+  | "insurance"     // 4대보험
+  | "rent"          // 임대료/월세
+  | "loan"          // 대출 상환
+  | "utility"       // 공과금
+  | "inventory"     // 재고/원자재
+  | "marketing"     // 마케팅/광고
+  | "maintenance";  // 시설 유지보수
+
 export interface Deposit {
   id: string;
   user_id: string;
-  type: "vat" | "salary" | "emergency";
+  type: DepositType;
   name: string;
   amount: number;
   target_amount: number | null;
@@ -31,7 +44,7 @@ export interface AutoTransfer {
 }
 
 export interface NewDeposit {
-  type: "vat" | "salary" | "emergency";
+  type: DepositType;
   name: string;
   target_amount?: number;
   due_date?: string;

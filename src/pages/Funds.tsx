@@ -35,18 +35,48 @@ import {
   Settings,
   Trash2,
   Sparkles,
+  Building2,
+  HeartPulse,
+  Home,
+  CreditCard,
+  Zap,
+  Package,
+  Megaphone,
+  Wrench,
 } from "lucide-react";
 import { InvestmentCard } from "@/components/funds/InvestmentCard";
 import { LoanCard } from "@/components/funds/LoanCard";
 import { FundsConnectionPrompt } from "@/components/funds/FundsConnectionPrompt";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDeposits, useAutoTransfers, type Deposit, type AutoTransfer } from "@/hooks/useFunds";
+import { useDeposits, useAutoTransfers, type Deposit, type AutoTransfer, type DepositType } from "@/hooks/useFunds";
 
-const depositIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+const depositIcons: Record<DepositType, React.ComponentType<{ className?: string }>> = {
   vat: Receipt,
   salary: Wallet,
   emergency: ShieldAlert,
+  corporate_tax: Building2,
+  insurance: HeartPulse,
+  rent: Home,
+  loan: CreditCard,
+  utility: Zap,
+  inventory: Package,
+  marketing: Megaphone,
+  maintenance: Wrench,
+};
+
+const depositTypeLabels: Record<DepositType, string> = {
+  vat: "부가세",
+  salary: "급여",
+  emergency: "비상금",
+  corporate_tax: "법인세/소득세",
+  insurance: "4대보험",
+  rent: "임대료/월세",
+  loan: "대출 상환",
+  utility: "공과금",
+  inventory: "재고/원자재",
+  marketing: "마케팅/광고",
+  maintenance: "시설 유지보수",
 };
 
 const statusConfig = {
@@ -67,7 +97,7 @@ export default function Funds() {
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
 
   const [newDeposit, setNewDeposit] = useState({
-    type: "emergency" as "vat" | "salary" | "emergency",
+    type: "emergency" as DepositType,
     name: "",
     targetAmount: "",
   });
@@ -154,7 +184,7 @@ export default function Funds() {
                     <Label>유형</Label>
                     <Select
                       value={newDeposit.type}
-                      onValueChange={(value: "vat" | "salary" | "emergency") =>
+                      onValueChange={(value: DepositType) =>
                         setNewDeposit({ ...newDeposit, type: value })
                       }
                     >
@@ -162,9 +192,11 @@ export default function Funds() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="vat">부가세</SelectItem>
-                        <SelectItem value="salary">급여</SelectItem>
-                        <SelectItem value="emergency">비상금</SelectItem>
+                        {(Object.keys(depositTypeLabels) as DepositType[]).map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {depositTypeLabels[type]}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -396,7 +428,7 @@ export default function Funds() {
                   <Label>유형</Label>
                   <Select
                     value={newDeposit.type}
-                    onValueChange={(value: "vat" | "salary" | "emergency") =>
+                    onValueChange={(value: DepositType) =>
                       setNewDeposit({ ...newDeposit, type: value })
                     }
                   >
@@ -404,9 +436,11 @@ export default function Funds() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="vat">부가세</SelectItem>
-                      <SelectItem value="salary">급여</SelectItem>
-                      <SelectItem value="emergency">비상금</SelectItem>
+                      {(Object.keys(depositTypeLabels) as DepositType[]).map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {depositTypeLabels[type]}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
