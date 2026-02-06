@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PiggyBank, Landmark, Shield, Plus, TrendingUp } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
 import { useSavingsAccounts, SavingsAccountType } from "@/hooks/useSavingsAccounts";
-import { Button } from "@/components/ui/button";
+import { AddSavingsAccountDialog } from "./AddSavingsAccountDialog";
 
 interface InvestmentCardProps {
   isLoggedOut?: boolean;
@@ -162,10 +162,7 @@ export function InvestmentCard({ isLoggedOut = false }: InvestmentCardProps) {
             <p className="text-xs text-muted-foreground mb-4">
               파킹통장, 적금, 예금 계좌를 등록하고<br />이자 수익을 관리해보세요
             </p>
-            <Button size="sm" variant="outline" className="gap-1">
-              <Plus className="h-4 w-4" />
-              저축 계좌 추가
-            </Button>
+            <AddSavingsAccountDialog />
           </div>
         </CardContent>
       </Card>
@@ -181,9 +178,14 @@ export function InvestmentCard({ isLoggedOut = false }: InvestmentCardProps) {
             <PiggyBank className="h-4 w-4 text-success" />
             남는 돈 굴리기
           </CardTitle>
-          <Badge variant="outline" className="text-success border-success/30 bg-success/10">
-            안전하게 이자 받기
-          </Badge>
+          <AddSavingsAccountDialog
+            trigger={
+              <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <Plus className="h-3.5 w-3.5" />
+                추가
+              </button>
+            }
+          />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
