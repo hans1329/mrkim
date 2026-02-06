@@ -44,8 +44,7 @@ export function useVoiceAgent() {
   const [lastError, setLastError] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
   const abortRef = useRef(false);
 
   const secretaryName = profile?.secretary_name || "김비서";
@@ -66,25 +65,27 @@ export function useVoiceAgent() {
 
   // 오디오 정리
   const stopAudio = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
+    if (audioElRef.current) {
+      audioElRef.current.pause();
+      audioElRef.current.currentTime = 0;
     }
   }, []);
 
-  // AudioContext 초기화 (사용자 제스처에서 호출)
-  const ensureAudioContext = useCallback(() => {
-    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+  // 사용자 제스처 시점에 Audio 엘리먼트 프라이밍 (autoplay 정책 우회)
+  const primeAudio = useCallback(() => {
+    if (!audioElRef.current) {
+      audioElRef.current = new Audio();
     }
-    if (audioContextRef.current.state === "suspended") {
-      audioContextRef.current.resume();
-    }
-    return audioContextRef.current;
+    // 무음 재생으로 unlock (사용자 클릭 컨텍스트에서 호출)
+    const el = audioElRef.current;
+    el.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+    el.play().then(() => {
+      el.pause();
+      el.currentTime = 0;
+    }).catch(() => {});
   }, []);
 
-  // TTS 재생 (AudioContext 사용으로 autoplay 차단 우회)
+  // TTS 재생 (프라이밍된 Audio 엘리먼트 재사용 → 시스템 볼륨 따름)
   const speakText = useCallback(async (text: string): Promise<void> => {
     if (abortRef.current) return;
 
@@ -115,26 +116,15 @@ export function useVoiceAgent() {
 
       if (abortRef.current) return;
 
-      // base64 → ArrayBuffer → AudioContext로 재생 (autoplay 차단 우회)
-      const ctx = ensureAudioContext();
-      const binaryString = atob(data.audioContent);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-
-      const audioBuffer = await ctx.decodeAudioData(bytes.buffer);
-      const source = ctx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(ctx.destination);
+      // 프라이밍된 Audio 엘리먼트에 새 src 설정 후 재생
+      const el = audioElRef.current || new Audio();
+      audioElRef.current = el;
+      el.src = `data:audio/mpeg;base64,${data.audioContent}`;
 
       await new Promise<void>((resolve, reject) => {
-        source.onended = () => resolve();
-        try {
-          source.start(0);
-        } catch (e) {
-          reject(e);
-        }
+        el.onended = () => resolve();
+        el.onerror = () => reject(new Error("Audio playback failed"));
+        el.play().catch(reject);
       });
     } catch (error) {
       if (!abortRef.current) {
@@ -145,7 +135,7 @@ export function useVoiceAgent() {
         setStatus("idle");
       }
     }
-  }, [secretaryGender, secretaryTone, ensureAudioContext]);
+  }, [secretaryGender, secretaryTone]);
 
   // chat-ai 호출
   const queryAI = useCallback(async (userText: string): Promise<string> => {
@@ -314,8 +304,8 @@ export function useVoiceAgent() {
     setMessages([]);
     setLastError(null);
 
-    // 사용자 제스처 시점에 AudioContext 초기화 (autoplay 정책 우회 핵심)
-    ensureAudioContext();
+    // 사용자 제스처 시점에 Audio 엘리먼트 프라이밍 (autoplay 정책 우회 핵심)
+    primeAudio();
 
     try {
       // 마이크 권한 확인
@@ -340,16 +330,16 @@ export function useVoiceAgent() {
     if (!abortRef.current) {
       startListening();
     }
-  }, [status, permissionDenied, secretaryName, speakText, startListening, ensureAudioContext]);
+  }, [status, permissionDenied, secretaryName, speakText, startListening, primeAudio]);
 
   // 세션 종료
   const endSession = useCallback(() => {
     abortRef.current = true;
     stopRecognition();
     stopAudio();
-    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
-      audioContextRef.current.close().catch(() => {});
-      audioContextRef.current = null;
+    if (audioElRef.current) {
+      audioElRef.current.src = "";
+      audioElRef.current = null;
     }
     setStatus("idle");
     setMessages([]);
@@ -367,8 +357,9 @@ export function useVoiceAgent() {
       abortRef.current = true;
       stopRecognition();
       stopAudio();
-      if (audioContextRef.current && audioContextRef.current.state !== "closed") {
-        audioContextRef.current.close().catch(() => {});
+      if (audioElRef.current) {
+        audioElRef.current.src = "";
+        audioElRef.current = null;
       }
     };
   }, [stopRecognition, stopAudio]);
