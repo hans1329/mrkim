@@ -60,7 +60,16 @@ export function useProfile() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        // 에러 로깅만 하고 토스트는 표시하지 않음 (네트워크 문제 등 일시적 오류일 수 있음)
+        console.error("Error fetching profile:", error);
+        // 이미 프로필이 있다면 유지, 없으면 null
+        if (!profile) {
+          setProfile(null);
+        }
+        return;
+      }
+      
       if (data) {
         setProfile(transformDbProfile(data as Record<string, unknown>));
       } else {
@@ -68,7 +77,7 @@ export function useProfile() {
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
-      toast.error("프로필을 불러오는데 실패했습니다");
+      // catch 블록에서도 토스트 제거 - 페이지 로딩 시 불필요한 에러 메시지 방지
     } finally {
       setLoading(false);
     }
