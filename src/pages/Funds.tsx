@@ -128,147 +128,6 @@ export default function Funds() {
     );
   }
 
-  // 예치금 다이얼로그 컴포넌트
-  const DepositDialog = () => (
-    <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Plus className="mr-1 h-4 w-4" />
-          추가
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>새 예치금 설정</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>유형</Label>
-            <Select
-              value={newDeposit.type}
-              onValueChange={(value: "vat" | "salary" | "emergency") =>
-                setNewDeposit({ ...newDeposit, type: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="vat">부가세</SelectItem>
-                <SelectItem value="salary">급여</SelectItem>
-                <SelectItem value="emergency">비상금</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>이름</Label>
-            <Input
-              placeholder="예: 1분기 부가세"
-              value={newDeposit.name}
-              onChange={(e) => setNewDeposit({ ...newDeposit, name: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>목표 금액</Label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder="0"
-              value={newDeposit.targetAmount ? parseInt(newDeposit.targetAmount).toLocaleString() : ""}
-              onChange={(e) => {
-                const value = e.target.value.replace(/[^\d]/g, "");
-                setNewDeposit({ ...newDeposit, targetAmount: value });
-              }}
-            />
-          </div>
-          <Button 
-            onClick={handleAddDeposit} 
-            className="w-full"
-            disabled={addDeposit.isPending}
-          >
-            {addDeposit.isPending ? "추가 중..." : "추가하기"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-
-  // 자동이체 다이얼로그 컴포넌트
-  const TransferDialog = () => (
-    <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Plus className="mr-1 h-4 w-4" />
-          추가
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>새 자동이체 규칙</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>이름</Label>
-            <Input
-              placeholder="예: 거래처 대금"
-              value={newTransfer.name}
-              onChange={(e) => setNewTransfer({ ...newTransfer, name: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>금액</Label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder="0"
-              value={newTransfer.amount ? parseInt(newTransfer.amount).toLocaleString() : ""}
-              onChange={(e) => {
-                const value = e.target.value.replace(/[^\d]/g, "");
-                setNewTransfer({ ...newTransfer, amount: value });
-              }}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>수취인</Label>
-            <Input
-              placeholder="예: A상사"
-              value={newTransfer.recipient}
-              onChange={(e) =>
-                setNewTransfer({ ...newTransfer, recipient: e.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>조건</Label>
-            <Select
-              value={newTransfer.condition}
-              onValueChange={(value) =>
-                setNewTransfer({ ...newTransfer, condition: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="조건 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="매월 말일">매월 말일</SelectItem>
-                <SelectItem value="매월 5일">매월 5일</SelectItem>
-                <SelectItem value="납품 완료 시">납품 완료 시</SelectItem>
-                <SelectItem value="수동 실행">수동 실행</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button 
-            onClick={handleAddTransfer} 
-            className="w-full"
-            disabled={addTransfer.isPending}
-          >
-            {addTransfer.isPending ? "추가 중..." : "추가하기"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-
   // 계좌 미연동 시 연동 유도 카드 + 규칙 미리 설정 가능
   if (!accountConnected) {
     return (
@@ -279,7 +138,67 @@ export default function Funds() {
           {/* 예치금 현황 */}
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">예치금 현황</h2>
-            <DepositDialog />
+            <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="mr-1 h-4 w-4" />
+                  추가
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>새 예치금 설정</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>유형</Label>
+                    <Select
+                      value={newDeposit.type}
+                      onValueChange={(value: "vat" | "salary" | "emergency") =>
+                        setNewDeposit({ ...newDeposit, type: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="vat">부가세</SelectItem>
+                        <SelectItem value="salary">급여</SelectItem>
+                        <SelectItem value="emergency">비상금</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>이름</Label>
+                    <Input
+                      placeholder="예: 1분기 부가세"
+                      value={newDeposit.name}
+                      onChange={(e) => setNewDeposit({ ...newDeposit, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>목표 금액</Label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={newDeposit.targetAmount ? parseInt(newDeposit.targetAmount).toLocaleString() : ""}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^\d]/g, "");
+                        setNewDeposit({ ...newDeposit, targetAmount: value });
+                      }}
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleAddDeposit} 
+                    className="w-full"
+                    disabled={addDeposit.isPending}
+                  >
+                    {addDeposit.isPending ? "추가 중..." : "추가하기"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {deposits.length === 0 ? (
@@ -320,7 +239,78 @@ export default function Funds() {
           {/* 자동이체 규칙 */}
           <div className="flex items-center justify-between pt-2">
             <h2 className="font-semibold">자동이체 규칙</h2>
-            <TransferDialog />
+            <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="mr-1 h-4 w-4" />
+                  추가
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>새 자동이체 규칙</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>이름</Label>
+                    <Input
+                      placeholder="예: 거래처 대금"
+                      value={newTransfer.name}
+                      onChange={(e) => setNewTransfer({ ...newTransfer, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>금액</Label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={newTransfer.amount ? parseInt(newTransfer.amount).toLocaleString() : ""}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^\d]/g, "");
+                        setNewTransfer({ ...newTransfer, amount: value });
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>수취인</Label>
+                    <Input
+                      placeholder="예: A상사"
+                      value={newTransfer.recipient}
+                      onChange={(e) =>
+                        setNewTransfer({ ...newTransfer, recipient: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>조건</Label>
+                    <Select
+                      value={newTransfer.condition}
+                      onValueChange={(value) =>
+                        setNewTransfer({ ...newTransfer, condition: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="조건 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="매월 말일">매월 말일</SelectItem>
+                        <SelectItem value="매월 5일">매월 5일</SelectItem>
+                        <SelectItem value="납품 완료 시">납품 완료 시</SelectItem>
+                        <SelectItem value="수동 실행">수동 실행</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button 
+                    onClick={handleAddTransfer} 
+                    className="w-full"
+                    disabled={addTransfer.isPending}
+                  >
+                    {addTransfer.isPending ? "추가 중..." : "추가하기"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {autoTransfers.length === 0 ? (
@@ -390,7 +380,67 @@ export default function Funds() {
         {/* 예치금 현황 */}
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">예치금 현황</h2>
-          <DepositDialog />
+          <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Plus className="mr-1 h-4 w-4" />
+                추가
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>새 예치금 설정</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>유형</Label>
+                  <Select
+                    value={newDeposit.type}
+                    onValueChange={(value: "vat" | "salary" | "emergency") =>
+                      setNewDeposit({ ...newDeposit, type: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vat">부가세</SelectItem>
+                      <SelectItem value="salary">급여</SelectItem>
+                      <SelectItem value="emergency">비상금</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>이름</Label>
+                  <Input
+                    placeholder="예: 1분기 부가세"
+                    value={newDeposit.name}
+                    onChange={(e) => setNewDeposit({ ...newDeposit, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>목표 금액</Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={newDeposit.targetAmount ? parseInt(newDeposit.targetAmount).toLocaleString() : ""}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d]/g, "");
+                      setNewDeposit({ ...newDeposit, targetAmount: value });
+                    }}
+                  />
+                </div>
+                <Button 
+                  onClick={handleAddDeposit} 
+                  className="w-full"
+                  disabled={addDeposit.isPending}
+                >
+                  {addDeposit.isPending ? "추가 중..." : "추가하기"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {deposits.length === 0 ? (
@@ -443,7 +493,78 @@ export default function Funds() {
         {/* 자동이체 규칙 */}
         <div className="flex items-center justify-between pt-2">
           <h2 className="font-semibold">자동이체 규칙</h2>
-          <TransferDialog />
+          <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Plus className="mr-1 h-4 w-4" />
+                추가
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>새 자동이체 규칙</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>이름</Label>
+                  <Input
+                    placeholder="예: 거래처 대금"
+                    value={newTransfer.name}
+                    onChange={(e) => setNewTransfer({ ...newTransfer, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>금액</Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={newTransfer.amount ? parseInt(newTransfer.amount).toLocaleString() : ""}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d]/g, "");
+                      setNewTransfer({ ...newTransfer, amount: value });
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>수취인</Label>
+                  <Input
+                    placeholder="예: A상사"
+                    value={newTransfer.recipient}
+                    onChange={(e) =>
+                      setNewTransfer({ ...newTransfer, recipient: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>조건</Label>
+                  <Select
+                    value={newTransfer.condition}
+                    onValueChange={(value) =>
+                      setNewTransfer({ ...newTransfer, condition: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="조건 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="매월 말일">매월 말일</SelectItem>
+                      <SelectItem value="매월 5일">매월 5일</SelectItem>
+                      <SelectItem value="납품 완료 시">납품 완료 시</SelectItem>
+                      <SelectItem value="수동 실행">수동 실행</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={handleAddTransfer} 
+                  className="w-full"
+                  disabled={addTransfer.isPending}
+                >
+                  {addTransfer.isPending ? "추가 중..." : "추가하기"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {autoTransfers.length === 0 ? (
