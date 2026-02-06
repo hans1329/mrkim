@@ -95,6 +95,51 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_transfers: {
+        Row: {
+          amount: number
+          condition: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_executed_at: string | null
+          name: string
+          next_execution_at: string | null
+          recipient: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          condition?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_executed_at?: string | null
+          name: string
+          next_execution_at?: string | null
+          recipient: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          condition?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_executed_at?: string | null
+          name?: string
+          next_execution_at?: string | null
+          recipient?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -168,6 +213,45 @@ export type Database = {
           hyphen_consent_at?: string | null
           id?: string
           is_active?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      deposits: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string | null
+          id: string
+          is_active: boolean
+          name: string
+          target_amount: number | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          target_amount?: number | null
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          target_amount?: number | null
+          type?: string
           updated_at?: string
           user_id?: string
         }
