@@ -44,6 +44,9 @@ import {
 } from "lucide-react";
 import { InvestmentCard } from "@/components/funds/InvestmentCard";
 import { LoanCard } from "@/components/funds/LoanCard";
+import { FundsConnectionPrompt } from "@/components/funds/FundsConnectionPrompt";
+import { useConnection } from "@/contexts/ConnectionContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const depositIcons = {
   vat: Receipt,
@@ -53,6 +56,7 @@ const depositIcons = {
 
 export default function Funds() {
   const navigate = useNavigate();
+  const { accountConnected, profileLoading } = useConnection();
   const [deposits, setDeposits] = useState<Deposit[]>(mockDeposits);
   const [autoTransfers, setAutoTransfers] = useState<AutoTransfer[]>(mockAutoTransfers);
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
@@ -116,6 +120,244 @@ export default function Funds() {
     completed: { label: "완료", icon: CheckCircle, color: "text-success" },
   };
 
+  // 로딩 중 스켈레톤
+  if (profileLoading) {
+    return (
+      <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요" showBackButton>
+        <div className="space-y-4">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-48 w-full" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // 계좌 미연동 시 연동 유도 카드만 표시 (예치금/자동이체 규칙은 미리 설정 가능)
+  if (!accountConnected) {
+    return (
+      <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요" showBackButton>
+        <div className="space-y-4">
+          {/* 연동 유도 카드 */}
+          <FundsConnectionPrompt />
+
+          {/* 예치금 현황 - 미리 설정 가능 */}
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">예치금 현황</h2>
+            <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="mr-1 h-4 w-4" />
+                  추가
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>새 예치금 설정</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>유형</Label>
+                    <Select
+                      value={newDeposit.type}
+                      onValueChange={(value: "vat" | "salary" | "emergency") =>
+                        setNewDeposit({ ...newDeposit, type: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="vat">부가세</SelectItem>
+                        <SelectItem value="salary">급여</SelectItem>
+                        <SelectItem value="emergency">비상금</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>이름</Label>
+                    <Input
+                      placeholder="예: 1분기 부가세"
+                      value={newDeposit.name}
+                      onChange={(e) => setNewDeposit({ ...newDeposit, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>목표 금액</Label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={newDeposit.targetAmount}
+                      onChange={(e) =>
+                        setNewDeposit({ ...newDeposit, targetAmount: e.target.value })
+                      }
+                    />
+                  </div>
+                  <Button onClick={handleAddDeposit} className="w-full">
+                    추가하기
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {deposits.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-8 text-center text-muted-foreground">
+                <p className="text-sm">아직 설정된 예치금이 없어요</p>
+                <p className="text-xs mt-1">계좌 연동 전에 미리 규칙을 설정해두세요</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {deposits.map((deposit) => {
+                const Icon = depositIcons[deposit.type];
+                return (
+                  <Card key={deposit.id} className="opacity-70">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{deposit.name}</p>
+                            <p className="text-xs text-muted-foreground">연동 후 활성화</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-muted-foreground">
+                          대기 중
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 자동이체 규칙 - 미리 설정 가능 */}
+          <div className="flex items-center justify-between pt-2">
+            <h2 className="font-semibold">자동이체 규칙</h2>
+            <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="mr-1 h-4 w-4" />
+                  추가
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>새 자동이체 규칙</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>이름</Label>
+                    <Input
+                      placeholder="예: 거래처 대금"
+                      value={newTransfer.name}
+                      onChange={(e) => setNewTransfer({ ...newTransfer, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>금액</Label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={newTransfer.amount}
+                      onChange={(e) => setNewTransfer({ ...newTransfer, amount: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>수취인</Label>
+                    <Input
+                      placeholder="예: A상사"
+                      value={newTransfer.recipient}
+                      onChange={(e) =>
+                        setNewTransfer({ ...newTransfer, recipient: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>조건</Label>
+                    <Select
+                      value={newTransfer.condition}
+                      onValueChange={(value) =>
+                        setNewTransfer({ ...newTransfer, condition: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="조건 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="매월 말일">매월 말일</SelectItem>
+                        <SelectItem value="매월 5일">매월 5일</SelectItem>
+                        <SelectItem value="납품 완료 시">납품 완료 시</SelectItem>
+                        <SelectItem value="수동 실행">수동 실행</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleAddTransfer} className="w-full">
+                    추가하기
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {autoTransfers.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-8 text-center text-muted-foreground">
+                <p className="text-sm">아직 설정된 자동이체 규칙이 없어요</p>
+                <p className="text-xs mt-1">계좌 연동 전에 미리 규칙을 설정해두세요</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="divide-y p-0">
+                {autoTransfers.map((transfer) => (
+                  <div key={transfer.id} className="flex items-center justify-between p-4 opacity-70">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{transfer.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {transfer.recipient} · {transfer.condition}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <p className="text-sm font-semibold">{formatCurrency(transfer.amount)}</p>
+                        <Badge variant="outline" className="text-muted-foreground">
+                          연동 대기
+                        </Badge>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDeleteTransfer(transfer.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // 계좌 연동 완료 시 전체 기능 표시
   return (
     <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요" showBackButton>
       <div className="space-y-4">
