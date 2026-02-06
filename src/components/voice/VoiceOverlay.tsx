@@ -4,7 +4,7 @@ import { X, Mic, MicOff, Sparkles, MessageCircle, Loader2, AlertCircle } from "l
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/contexts/VoiceContext";
 import { useChat } from "@/contexts/ChatContext";
-import { useElevenLabsConversation } from "@/hooks/useElevenLabsConversation";
+import { useVoiceAgent } from "@/hooks/useVoiceAgent";
 import { useProfile } from "@/hooks/useProfile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -17,27 +17,27 @@ export function VoiceOverlay() {
   const {
     status,
     isSpeaking,
-    isConnecting,
+    isListening,
+    isProcessing,
+    isActive,
     messages,
     permissionDenied,
     lastError,
     startSession,
     endSession,
     resetPermission,
-  } = useElevenLabsConversation();
+  } = useVoiceAgent();
 
   const secretaryName = profile?.secretary_name || "김비서";
-  const isConnected = status === "connected";
 
-  // 오버레이가 닫힐 때만 세션 종료 (열릴 때는 무시)
+  // 오버레이가 닫힐 때 세션 종료
   const wasOpenRef = useRef(isOpen);
   useEffect(() => {
-    // 이전에 열려있다가 닫히는 경우에만 세션 종료
-    if (wasOpenRef.current && !isOpen && status === "connected") {
+    if (wasOpenRef.current && !isOpen && isActive) {
       endSession();
     }
     wasOpenRef.current = isOpen;
-  }, [isOpen, status, endSession]);
+  }, [isOpen, isActive, endSession]);
 
   // 메시지 스크롤
   useEffect(() => {
@@ -45,7 +45,7 @@ export function VoiceOverlay() {
   }, [messages]);
 
   const handleClose = () => {
-    if (isConnected) {
+    if (isActive) {
       endSession();
     }
     resetPermission();
@@ -63,24 +63,22 @@ export function VoiceOverlay() {
   };
 
   const handleMicClick = () => {
-    console.log("Mic clicked, isConnected:", isConnected, "isConnecting:", isConnecting);
-    if (isConnecting) return;
+    if (isProcessing || isSpeaking) return;
     
-    if (isConnected) {
-      console.log("Ending session...");
+    if (isActive) {
       endSession();
     } else {
-      console.log("Starting session...");
       startSession();
     }
   };
 
   const getStatusText = () => {
     if (permissionDenied) return "마이크 권한이 필요합니다";
-    if (isConnecting) return "연결 중...";
-    if (!isConnected) return "버튼을 눌러 시작하세요";
+    if (isProcessing) return "답변을 준비하고 있어요...";
     if (isSpeaking) return `${secretaryName}가 말하고 있어요...`;
-    return "듣고 있어요...";
+    if (isListening) return "듣고 있어요...";
+    if (!isActive) return "버튼을 눌러 시작하세요";
+    return "준비 중...";
   };
 
   return (
@@ -111,9 +109,9 @@ export function VoiceOverlay() {
         </Button>
       </div>
 
-      {/* Main Content - 화면 중앙에 마이크 버튼 */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 relative">
-        {/* 메시지가 있을 때만 상단에 메시지 영역 표시 */}
+        {/* 메시지 영역 */}
         {messages.length > 0 && (
           <div className="absolute top-0 left-0 right-0 max-h-[40%] overflow-hidden">
             <ScrollArea className="h-full px-4">
@@ -157,15 +155,16 @@ export function VoiceOverlay() {
           </div>
         ) : (
           <>
-            {/* 음성 시각화 - 마이크 버튼 */}
+            {/* 마이크 버튼 */}
             <div className="relative mb-6">
-              {/* 펄스 애니메이션 */}
-              {isConnected && !isSpeaking && (
+              {/* 펄스 애니메이션 - 듣는 중 */}
+              {isListening && (
                 <>
                   <div className="absolute inset-0 rounded-full bg-white/20 animate-ping" style={{ animationDuration: '1.5s' }} />
                   <div className="absolute inset-[-20px] rounded-full bg-white/10 animate-pulse" />
                 </>
               )}
+              {/* 펄스 애니메이션 - 말하는 중 */}
               {isSpeaking && (
                 <>
                   <div className="absolute inset-[-10px] rounded-full bg-white/15 animate-pulse" />
@@ -173,27 +172,26 @@ export function VoiceOverlay() {
                 </>
               )}
               
-              {/* 클릭 가능한 마이크 버튼 */}
               <button
                 onClick={handleMicClick}
-                disabled={isConnecting}
+                disabled={isProcessing || isSpeaking}
                 className={cn(
                   "relative z-10 flex h-28 w-28 items-center justify-center rounded-full transition-all duration-300 cursor-pointer",
-                  isConnecting
+                  isProcessing || isSpeaking
                     ? "bg-white/30 text-white cursor-wait"
-                    : isConnected && !isSpeaking
+                    : isListening
                     ? "bg-white text-primary scale-110 shadow-2xl hover:scale-105 active:scale-100"
-                    : isConnected && isSpeaking
+                    : isActive
                     ? "bg-white/30 text-white hover:bg-white/40 active:bg-white/50"
                     : "bg-white/20 text-white hover:bg-white/30 hover:scale-105 active:scale-100"
                 )}
               >
-                {isConnecting ? (
+                {isProcessing ? (
                   <Loader2 className="h-12 w-12 animate-spin" />
-                ) : isConnected && !isSpeaking ? (
-                  <Mic className="h-12 w-12" />
                 ) : isSpeaking ? (
                   <Sparkles className="h-12 w-12 animate-pulse" />
+                ) : isListening ? (
+                  <Mic className="h-12 w-12" />
                 ) : (
                   <Mic className="h-12 w-12" />
                 )}
@@ -203,14 +201,14 @@ export function VoiceOverlay() {
             {/* 상태 텍스트 */}
             <p className="text-white/80 text-sm mb-2">{getStatusText()}</p>
 
-            {lastError && !isConnected && (
+            {lastError && !isActive && (
               <p className="text-white/60 text-xs text-center max-w-xs mb-2">
                 {lastError}
               </p>
             )}
 
             {/* 음파 애니메이션 (듣는 중) */}
-            {isConnected && !isSpeaking && (
+            {isListening && (
               <div className="flex items-center gap-1 h-6">
                 {[...Array(5)].map((_, i) => (
                   <div
@@ -226,8 +224,8 @@ export function VoiceOverlay() {
               </div>
             )}
 
-            {/* 연결된 상태에서 종료 안내 */}
-            {isConnected && (
+            {/* 활성 상태에서 종료 안내 */}
+            {isActive && !isProcessing && !isSpeaking && (
               <p className="text-white/50 text-xs mt-4">
                 마이크를 다시 누르면 종료됩니다
               </p>
