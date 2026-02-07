@@ -65,12 +65,10 @@ export function useVoiceAgent() {
     onPartialTranscript: (data) => {
       // 부분 인식 중 → 화면에 실시간 표시
       if (data.text && sessionActiveRef.current) {
-        setLastMessage({ role: "user", text: data.text, timestamp: new Date() });
-        
-        // 인터럽트: TTS 재생 중에 사용자가 말하기 시작하면 즉시 중단
-        if (status === "speaking" || audioElRef.current?.paused === false) {
-          console.log("[Interrupt] User speaking during TTS, stopping audio");
-          interruptTTS();
+        // TTS 재생 중이 아닐 때만 UI 업데이트 (에코 방지)
+        const isTTSPlaying = audioElRef.current && !audioElRef.current.paused;
+        if (!isTTSPlaying) {
+          setLastMessage({ role: "user", text: data.text, timestamp: new Date() });
         }
       }
     },
@@ -78,6 +76,14 @@ export function useVoiceAgent() {
       // 최종 인식 완료 → AI 파이프라인 시작
       if (data.text && sessionActiveRef.current) {
         console.log("[Scribe] Committed:", data.text);
+        
+        // 인터럽트: TTS 재생 중에 확정된 사용자 발화 감지 시 TTS 중단
+        const isTTSPlaying = audioElRef.current && !audioElRef.current.paused;
+        if (isTTSPlaying && data.text.length >= 2) {
+          console.log("[Interrupt] User committed speech during TTS, stopping audio");
+          interruptTTS();
+        }
+        
         handleCommittedTranscript(data.text);
       }
     },
