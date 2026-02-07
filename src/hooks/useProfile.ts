@@ -16,6 +16,7 @@ export interface Profile {
   secretary_phone_verified: boolean;
   // 김비서 설정
   secretary_name: string | null;
+  secretary_avatar_url: string | null;
   secretary_gender: string | null;
   secretary_tone: string | null;
   briefing_frequency: string | null;

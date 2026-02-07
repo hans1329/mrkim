@@ -130,7 +130,7 @@ export function AIChatCard() {
   
   // 설정한 비서 이름과 아바타 사용 (로딩 중에는 undefined)
   const secretaryName = profileLoading ? undefined : (profile?.secretary_name || "김비서");
-  const secretaryAvatarUrl = profileLoading ? undefined : ((profile as any)?.secretary_avatar_url || null);
+  const secretaryAvatarUrl = profileLoading ? undefined : (profile?.secretary_avatar_url || null);
 
   // 실제 거래 데이터 불러오기
   useEffect(() => {

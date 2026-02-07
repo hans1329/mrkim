@@ -77,7 +77,7 @@ export default function SecretarySettings() {
       setSecretaryGender(profile.secretary_gender || "female");
       setSpeakingStyle(profile.secretary_tone || "friendly");
       setBriefingFrequency(profile.briefing_frequency || "daily");
-      setSecretaryAvatarUrl((profile as any).secretary_avatar_url || null);
+      setSecretaryAvatarUrl(profile.secretary_avatar_url || null);
       
       if (profile.priority_metrics && Array.isArray(profile.priority_metrics)) {
         setSelectedMetrics(profile.priority_metrics);
@@ -172,7 +172,7 @@ export default function SecretarySettings() {
       briefing_frequency: briefingFrequency,
       priority_metrics: selectedMetrics,
       secretary_avatar_url: secretaryAvatarUrl,
-    } as any, false);
+    }, false);
     
     console.log("Save result:", success);
     
