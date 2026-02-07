@@ -145,14 +145,9 @@ export function useVoiceAgent() {
     }).catch(() => {});
   }, []);
 
-  const base64ToBlobUrl = useCallback((base64: string, mime = "audio/mpeg"): string => {
-    const byteChars = atob(base64);
-    const byteArray = new Uint8Array(byteChars.length);
-    for (let i = 0; i < byteChars.length; i++) {
-      byteArray[i] = byteChars.charCodeAt(i);
-    }
-    const blob = new Blob([byteArray], { type: mime });
-    return URL.createObjectURL(blob);
+  // data URI 방식으로 변경 (atob 디코딩은 바이너리 오디오 손상 가능)
+  const toAudioSrc = useCallback((base64: string): string => {
+    return `data:audio/mpeg;base64,${base64}`;
   }, []);
 
   // --- TTS 재생 (인터럽트 지원) ---
@@ -164,7 +159,6 @@ export function useVoiceAgent() {
 
     setStatus("speaking");
 
-    let blobUrl: string | null = null;
     let interrupted = false;
 
     try {
@@ -189,11 +183,14 @@ export function useVoiceAgent() {
 
       if (abortRef.current) return false;
 
-      blobUrl = base64ToBlobUrl(data.audioContent);
+      // data URI 방식 사용 (브라우저가 base64를 네이티브 디코딩)
+      const audioSrc = toAudioSrc(data.audioContent);
 
-      const el = audioElRef.current || new Audio();
-      audioElRef.current = el;
-      el.src = blobUrl;
+      if (!audioElRef.current) {
+        audioElRef.current = new Audio();
+      }
+      const el = audioElRef.current;
+      el.src = audioSrc;
 
       await new Promise<void>((resolve, reject) => {
         el.onended = () => resolve();
@@ -212,16 +209,13 @@ export function useVoiceAgent() {
         console.error("TTS error:", error);
       }
     } finally {
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
-      }
       if (!abortRef.current && !interrupted) {
         setStatus("listening");
       }
     }
 
     return interrupted;
-  }, [secretaryGender, secretaryTone, base64ToBlobUrl]);
+  }, [secretaryGender, secretaryTone, toAudioSrc]);
 
   // --- chat-ai 호출 ---
   const queryAI = useCallback(async (userText: string): Promise<string> => {
