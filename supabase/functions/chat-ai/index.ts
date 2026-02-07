@@ -159,6 +159,59 @@ async function fetchTransactionData(userId: string, authHeader: string, timePeri
   } catch (e) { console.error("fetchTransactionData error:", e); return null; }
 }
 
+// ============ 직원 급여 데이터 조회 ============
+
+interface EmployeeSalarySummary {
+  totalMonthlySalary: number;
+  employees: { name: string; type: string; salary: number; position: string | null }[];
+  activeCount: number;
+  periodLabel: string;
+}
+
+async function fetchEmployeeSalaryData(userId: string, authHeader: string, periodLabel: string): Promise<EmployeeSalarySummary | null> {
+  try {
+    const url = Deno.env.get("SUPABASE_URL"), key = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!url || !key || !userId) return null;
+    const sb = createClient(url, key, { global: { headers: { Authorization: authHeader } } });
+    const { data: emps, error } = await sb.from("employees")
+      .select("name, employee_type, monthly_salary, hourly_rate, weekly_hours, position, status")
+      .eq("user_id", userId)
+      .eq("status", "재직");
+    if (error || !emps) return null;
+    console.log(`Found ${emps.length} active employees`);
+
+    let totalMonthlySalary = 0;
+    const employees: EmployeeSalarySummary["employees"] = [];
+    for (const emp of emps) {
+      let salary = 0;
+      if (emp.monthly_salary) {
+        salary = emp.monthly_salary;
+      } else if (emp.hourly_rate && emp.weekly_hours) {
+        // 시급 × 주당 근무시간 × 약 4.345주 (월 환산)
+        salary = Math.round(emp.hourly_rate * emp.weekly_hours * 4.345);
+      }
+      totalMonthlySalary += salary;
+      employees.push({ name: emp.name, type: emp.employee_type, salary, position: emp.position });
+    }
+    return { totalMonthlySalary, employees, activeCount: emps.length, periodLabel };
+  } catch (e) { console.error("fetchEmployeeSalaryData error:", e); return null; }
+}
+
+function formatEmployeeDataForPrompt(data: EmployeeSalarySummary): string {
+  const f = (n: number) => n.toLocaleString("ko-KR");
+  let p = `\n\n## 📊 직원 급여 현황 (${data.periodLabel})\n`;
+  p += `- **재직 중인 직원 수**: ${data.activeCount}명\n`;
+  p += `- **이번 달 예상 총 급여**: ${f(data.totalMonthlySalary)}원\n`;
+  if (data.employees.length > 0) {
+    p += `\n### 직원별 급여\n`;
+    for (const emp of data.employees) {
+      p += `- ${emp.name} (${emp.type}${emp.position ? `, ${emp.position}` : ""}): ${f(emp.salary)}원/월\n`;
+    }
+  }
+  p += `\n위 데이터는 현재 재직 중인 직원의 급여 정보입니다. 이 달에 **지급 예정인 금액**으로 안내하세요. 과거형("지출된", "사용된")이 아닌 미래/현재형("지급 예정", "나가야 할")으로 표현하세요.`;
+  return p;
+}
+
 function formatDataForPrompt(data: TransactionSummary, periodLabel: string): string {
   const f = (n: number) => n.toLocaleString("ko-KR");
   let p = `\n\n## 📊 실시간 데이터 (${periodLabel} 기준)\n`;
@@ -315,9 +368,44 @@ ${voiceModeInstructions}
       );
     }
 
-    // 데이터 조회
-    const txData = await fetchTransactionData(userId, authHeader, classified.timePeriod);
+    // 데이터 조회 (직원 급여 vs 거래내역 분기)
     const voiceDataInst = voiceMode ? "\n- 구어체로 짧게 2~3문장으로 핵심만 답변\n- 마크다운/이모지 사용 금지\n- 숫자는 읽기 쉽게 한글로 표현" : "";
+    const isEmployeeQuery = classified.dataSources.includes("employee");
+
+    if (isEmployeeQuery) {
+      // ━━━ 직원 급여 조회 ━━━
+      const periodLabel = classified.timePeriod?.type === "last_month" ? "지난달" : "이번 달";
+      const empData = await fetchEmployeeSalaryData(userId, authHeader, periodLabel);
+
+      if (empData && empData.activeCount > 0) {
+        console.log("Employee data found:", { count: empData.activeCount, totalSalary: empData.totalMonthlySalary });
+        const dataContext = formatEmployeeDataForPrompt(empData);
+        const dataPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}\n\n## 중요\n- 아래 실제 직원 급여 데이터를 기반으로 정확한 숫자로 답변\n- 급여는 "지급 예정" 또는 "나가야 할 금액"으로 표현 (과거형 금지)\n- 데이터에 없는 정보는 추측 금지\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${dataContext}`;
+
+        const result = await callGemini(GEMINI_API_KEY, [
+          { role: "user", parts: [{ text: dataPrompt }] },
+          { role: "model", parts: [{ text: "네, 직원 급여 데이터를 기반으로 정확하게 답변하겠습니다." }] },
+          ...geminiMessages,
+        ]);
+
+        const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
+        console.log("Employee salary response (1 API call)");
+        return new Response(JSON.stringify({ response, hasData: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // 직원 데이터 없음
+      const noEmpPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}\n\n참고: 등록된 재직 직원이 없습니다. 사용자에게 "현재 등록된 직원이 없어서 급여 정보를 확인할 수 없습니다. 직원 관리 메뉴에서 직원을 등록해주세요."라고 친절하게 안내하세요.${voiceDataInst}`;
+      const result = await callGemini(GEMINI_API_KEY, [
+        { role: "user", parts: [{ text: noEmpPrompt }] },
+        { role: "model", parts: [{ text: "네, 알겠습니다." }] },
+        ...geminiMessages,
+      ]);
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
+      return new Response(JSON.stringify({ response }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ━━━ 거래내역 조회 ━━━
+    const txData = await fetchTransactionData(userId, authHeader, classified.timePeriod);
 
     if (txData) {
       console.log("Data found:", { expense: txData.totalExpense, income: txData.totalIncome, count: txData.expenseCount, period: txData.periodLabel });
