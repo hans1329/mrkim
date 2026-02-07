@@ -19,7 +19,9 @@ export interface ChatSession {
   preview: string;
 }
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-ai`;
+const SUPABASE_URL = "https://kuxpsfxkumbfuqsvcucx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1eHBzZnhrdW1iZnVxc3ZjdWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwMTMwMDcsImV4cCI6MjA4NTU4OTAwN30.Ow_rO5MmbE-6fRYQ-E5Bxbd_0zXr70qURQAgqIGGm5s";
+const CHAT_URL = `${SUPABASE_URL}/functions/v1/chat-ai`;
 
 function getDateLabel(date: Date): string {
   if (isToday(date)) return "오늘";
@@ -267,8 +269,8 @@ export function useAIChat() {
         headers: {
           "Content-Type": "application/json",
           // Supabase Edge Functions + RLS 조회를 위해 사용자 JWT가 필요
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${accessToken ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${accessToken ?? SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
           messages: recentMessages,

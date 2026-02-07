@@ -6,13 +6,11 @@ import { useVoice } from "@/contexts/VoiceContext";
 import { useChat } from "@/contexts/ChatContext";
 import { useVoiceAgent } from "@/hooks/useVoiceAgent";
 import { useProfile } from "@/hooks/useProfile";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function VoiceOverlay() {
   const { isOpen, closeVoice } = useVoice();
   const { openChat } = useChat();
   const { profile } = useProfile();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const {
     status,
@@ -20,7 +18,7 @@ export function VoiceOverlay() {
     isListening,
     isProcessing,
     isActive,
-    messages,
+    lastMessage,
     permissionDenied,
     lastError,
     startSession,
@@ -39,10 +37,7 @@ export function VoiceOverlay() {
     wasOpenRef.current = isOpen;
   }, [isOpen, isActive, endSession]);
 
-  // 메시지 스크롤
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // (removed: no longer need message scroll)
 
   const handleClose = () => {
     if (isActive) {
@@ -111,27 +106,19 @@ export function VoiceOverlay() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 relative">
-        {/* 메시지 영역 */}
-        {messages.length > 0 && (
-          <div className="absolute top-0 left-0 right-0 max-h-[40%] overflow-hidden">
-            <ScrollArea className="h-full px-4">
-              <div className="space-y-3 py-4">
-                {messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={cn(
-                      "max-w-[85%] rounded-2xl px-4 py-3 animate-fade-in",
-                      msg.role === "user"
-                        ? "ml-auto bg-white text-primary"
-                        : "mr-auto bg-white/20 text-white"
-                    )}
-                  >
-                    <p className="text-sm">{msg.text}</p>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
+        {/* 마지막 메시지 (가운데 표시) */}
+        {lastMessage && !permissionDenied && (
+          <div className="absolute top-8 left-4 right-4 flex justify-center">
+            <div
+              className={cn(
+                "max-w-[85%] rounded-2xl px-5 py-3 animate-fade-in",
+                lastMessage.role === "user"
+                  ? "bg-white text-primary"
+                  : "bg-white/20 text-white backdrop-blur-sm"
+              )}
+            >
+              <p className="text-sm leading-relaxed">{lastMessage.text}</p>
+            </div>
           </div>
         )}
 

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
+
 import { toast } from "sonner";
 
 interface VoiceMessage {
@@ -22,8 +23,10 @@ interface SpeechRecognitionErrorEvent {
   message?: string;
 }
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-ai`;
-const TTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`;
+const SUPABASE_URL = "https://kuxpsfxkumbfuqsvcucx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1eHBzZnhrdW1iZnVxc3ZjdWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwMTMwMDcsImV4cCI6MjA4NTU4OTAwN30.Ow_rO5MmbE-6fRYQ-E5Bxbd_0zXr70qURQAgqIGGm5s";
+const CHAT_URL = `${SUPABASE_URL}/functions/v1/chat-ai`;
+const TTS_URL = `${SUPABASE_URL}/functions/v1/elevenlabs-tts`;
 
 // 마크다운/이모지 제거 (TTS 최적화)
 function cleanForTTS(text: string): string {
@@ -39,17 +42,33 @@ function cleanForTTS(text: string): string {
 export function useVoiceAgent() {
   const { profile } = useProfile();
   const [status, setStatus] = useState<VoiceStatus>("idle");
-  const [messages, setMessages] = useState<VoiceMessage[]>([]);
+  const [lastMessage, setLastMessage] = useState<VoiceMessage | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
   const abortRef = useRef(false);
+  const messagesContextRef = useRef<VoiceMessage[]>([]);
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
   const secretaryGender = profile?.secretary_gender || "female";
+
+  // DB에 메시지 저장
+  const saveMessageToDB = useCallback(async (role: "user" | "assistant", content: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase.from("chat_messages").insert({
+        user_id: user.id,
+        role,
+        content,
+      });
+    } catch (error) {
+      console.error("Failed to save voice message:", error);
+    }
+  }, []);
 
   // 음성 인식 정리
   const stopRecognition = useCallback(() => {
@@ -112,8 +131,8 @@ export function useVoiceAgent() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
           text: cleaned,
@@ -163,7 +182,7 @@ export function useVoiceAgent() {
     const userId = session?.user?.id;
 
     // 최근 메시지 컨텍스트 (현재 세션 내)
-    const recentContext = messages.slice(-6).map(m => ({
+    const recentContext = messagesContextRef.current.slice(-6).map(m => ({
       role: m.role === "agent" ? "assistant" : "user",
       content: m.text,
     }));
@@ -174,8 +193,8 @@ export function useVoiceAgent() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        Authorization: `Bearer ${accessToken ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${accessToken ?? SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
         messages: recentContext,
@@ -194,18 +213,17 @@ export function useVoiceAgent() {
 
     const data = await response.json();
     return data.response || "죄송합니다, 응답을 생성하지 못했습니다.";
-  }, [messages, secretaryName, secretaryTone, secretaryGender]);
+  }, [secretaryName, secretaryTone, secretaryGender]);
 
   // 음성 인식 → AI → TTS 파이프라인
   const processVoiceInput = useCallback(async (transcript: string) => {
     if (abortRef.current || !transcript.trim()) return;
 
-    // 사용자 메시지 추가
-    setMessages(prev => [...prev, {
-      role: "user",
-      text: transcript,
-      timestamp: new Date(),
-    }]);
+    // 사용자 메시지 추가 (UI: 마지막 메시지만, 컨텍스트: ref에 누적, DB: 저장)
+    const userMsg: VoiceMessage = { role: "user", text: transcript, timestamp: new Date() };
+    messagesContextRef.current = [...messagesContextRef.current, userMsg];
+    setLastMessage(userMsg);
+    saveMessageToDB("user", transcript);
 
     setStatus("processing");
 
@@ -215,11 +233,10 @@ export function useVoiceAgent() {
       if (abortRef.current) return;
 
       // AI 응답 메시지 추가
-      setMessages(prev => [...prev, {
-        role: "agent",
-        text: aiResponse,
-        timestamp: new Date(),
-      }]);
+      const agentMsg: VoiceMessage = { role: "agent", text: aiResponse, timestamp: new Date() };
+      messagesContextRef.current = [...messagesContextRef.current, agentMsg];
+      setLastMessage(agentMsg);
+      saveMessageToDB("assistant", aiResponse);
 
       // TTS로 응답 읽기
       await speakText(aiResponse);
@@ -233,16 +250,15 @@ export function useVoiceAgent() {
         console.error("Voice pipeline error:", error);
         setLastError(error?.message || "오류가 발생했습니다.");
 
-        setMessages(prev => [...prev, {
-          role: "agent",
-          text: "죄송합니다, 일시적인 오류가 발생했습니다.",
-          timestamp: new Date(),
-        }]);
+        const errorMsg: VoiceMessage = { role: "agent", text: "죄송합니다, 일시적인 오류가 발생했습니다.", timestamp: new Date() };
+        messagesContextRef.current = [...messagesContextRef.current, errorMsg];
+        setLastMessage(errorMsg);
+        saveMessageToDB("assistant", errorMsg.text);
 
         setStatus("idle");
       }
     }
-  }, [queryAI, speakText]);
+  }, [queryAI, speakText, saveMessageToDB]);
 
   // 음성 인식 시작
   const startListening = useCallback(() => {
@@ -320,7 +336,8 @@ export function useVoiceAgent() {
     if (status !== "idle" || permissionDenied) return;
 
     abortRef.current = false;
-    setMessages([]);
+    messagesContextRef.current = [];
+    setLastMessage(null);
     setLastError(null);
 
     // 사용자 제스처 시점에 Audio 엘리먼트 프라이밍 (autoplay 정책 우회 핵심)
@@ -335,13 +352,11 @@ export function useVoiceAgent() {
       return;
     }
 
-    // 인사 메시지 추가
+    // 인사 메시지 추가 (인사말은 DB에 저장하지 않음)
     const greeting = `안녕하세요, ${secretaryName}입니다. 무엇을 도와드릴까요?`;
-    setMessages([{
-      role: "agent",
-      text: greeting,
-      timestamp: new Date(),
-    }]);
+    const greetingMsg: VoiceMessage = { role: "agent", text: greeting, timestamp: new Date() };
+    messagesContextRef.current = [greetingMsg];
+    setLastMessage(greetingMsg);
 
     // 인사말 TTS 재생 후 듣기 시작
     await speakText(greeting);
@@ -361,7 +376,8 @@ export function useVoiceAgent() {
       audioElRef.current = null;
     }
     setStatus("idle");
-    setMessages([]);
+    setLastMessage(null);
+    messagesContextRef.current = [];
   }, [stopRecognition, stopAudio]);
 
   // 권한 리셋
@@ -389,7 +405,7 @@ export function useVoiceAgent() {
     isListening: status === "listening",
     isProcessing: status === "processing",
     isActive: status !== "idle",
-    messages,
+    lastMessage,
     permissionDenied,
     lastError,
     startSession,
