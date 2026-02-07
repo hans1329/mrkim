@@ -28,7 +28,7 @@ export function FloatingServiceChatButton() {
     <Button
       onClick={openVoice}
       className={cn(
-        "fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:scale-105 transition-all z-40 bg-white hover:bg-white/90 p-0 animate-bounce-subtle overflow-hidden ring-2 ring-white",
+        "fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:scale-105 transition-all z-40 bg-primary hover:bg-primary/90 p-0 animate-bounce-subtle overflow-hidden ring-2 ring-white",
         isHidden ? "opacity-0 pointer-events-none scale-90" : "opacity-100"
       )}
       size="icon"
@@ -36,7 +36,12 @@ export function FloatingServiceChatButton() {
       <img
         src={imgSrc}
         alt="김비서"
-        className="h-full w-full rounded-full object-cover"
+        className={cn(
+          "rounded-full",
+          avatarUrl
+            ? "h-full w-full object-cover"
+            : "h-10 w-10 object-contain"
+        )}
         loading="eager"
         decoding="async"
       />

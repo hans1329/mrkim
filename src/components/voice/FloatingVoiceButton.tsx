@@ -34,7 +34,7 @@ export function FloatingVoiceButton() {
       onClick={openVoice}
       size="lg"
       className={cn(
-        "h-16 w-16 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-white hover:bg-white/90 p-0 animate-bounce-subtle overflow-hidden ring-2 ring-white",
+        "h-16 w-16 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-primary hover:bg-primary/90 p-0 animate-bounce-subtle overflow-hidden ring-2 ring-white",
         isMobile
           ? "absolute bottom-20 right-4"
           : "fixed bottom-6 right-6"
@@ -43,7 +43,12 @@ export function FloatingVoiceButton() {
       <img
         src={imgSrc}
         alt="김비서"
-        className="h-full w-full rounded-full object-cover"
+        className={cn(
+          "rounded-full",
+          avatarUrl
+            ? "h-full w-full object-cover"
+            : "h-10 w-10 object-contain"
+        )}
         loading="eager"
         decoding="async"
       />
