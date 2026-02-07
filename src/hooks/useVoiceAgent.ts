@@ -28,6 +28,16 @@ function cleanForTTS(text: string): string {
     .trim();
 }
 
+/** 한국어 받침 여부 확인 (마지막 글자가 받침이 있는지) */
+function hasBatchim(str: string): boolean {
+  const lastChar = str[str.length - 1];
+  if (!lastChar) return false;
+  const code = lastChar.charCodeAt(0);
+  // 한글 유니코드 범위 체크
+  if (code < 0xAC00 || code > 0xD7A3) return false;
+  return (code - 0xAC00) % 28 !== 0;
+}
+
 export function useVoiceAgent() {
   const { profile } = useProfile();
   const [status, setStatus] = useState<VoiceStatus>("idle");
@@ -369,11 +379,12 @@ export function useVoiceAgent() {
     greetingAudio.preload = "auto";
     console.log("[Session] Audio element created (gesture context)");
 
-    // 말투에 맞는 인사말 생성
+    // 말투에 맞는 인사말 생성 (받침 여부에 따라 조사 변경)
+    const nameHasBatchim = hasBatchim(secretaryName);
     const greetingByTone: Record<string, string> = {
       polite: `안녕하세요, ${secretaryName}입니다. 무엇을 도와드리겠습니까?`,
-      friendly: `안녕하세요~ ${secretaryName}이에요! 무엇을 도와드릴까요?`,
-      cute: `안녕하세용~ ${secretaryName}이에용! 무엇을 도와드릴까용? ✨`,
+      friendly: `안녕하세요~ ${secretaryName}${nameHasBatchim ? "이에요" : "예요"}! 무엇을 도와드릴까요?`,
+      cute: `안녕하세용~ ${secretaryName}${nameHasBatchim ? "이에용" : "에용"}! 무엇을 도와드릴까용? ✨`,
     };
     const greeting = greetingByTone[secretaryTone] || greetingByTone.polite;
     const greetingMsg: VoiceMessage = { role: "agent", text: greeting, timestamp: new Date() };
