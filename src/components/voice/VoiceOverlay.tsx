@@ -18,6 +18,7 @@ export function VoiceOverlay() {
     isListening,
     isProcessing,
     isActive,
+    isTTSPreparing,
     lastMessage,
     permissionDenied,
     lastError,
@@ -70,6 +71,7 @@ export function VoiceOverlay() {
   const getStatusText = () => {
     if (permissionDenied) return "마이크 권한이 필요합니다";
     if (isProcessing) return "답변을 준비하고 있어요...";
+    if (isSpeaking && isTTSPreparing) return "음성을 준비하고 있어요...";
     if (isSpeaking) return `${secretaryName}가 말하고 있어요...`;
     if (isListening) return "듣고 있어요...";
     if (!isActive) return "버튼을 눌러 시작하세요";
@@ -135,12 +137,16 @@ export function VoiceOverlay() {
                   <div className="absolute inset-[-20px] rounded-full bg-white/10 animate-pulse" />
                 </>
               )}
-              {/* 펄스 애니메이션 - 말하는 중 */}
-              {isSpeaking && (
+              {/* 펄스 애니메이션 - 말하는 중 (TTS 준비 중에는 다른 애니메이션) */}
+              {isSpeaking && !isTTSPreparing && (
                 <>
                   <div className="absolute inset-[-10px] rounded-full bg-white/15 animate-pulse" />
                   <div className="absolute inset-[-25px] rounded-full bg-white/10 animate-pulse" style={{ animationDelay: '0.2s' }} />
                 </>
+              )}
+              {/* TTS 준비 중 애니메이션 - 점진적 로딩 효과 */}
+              {isSpeaking && isTTSPreparing && (
+                <div className="absolute inset-[-15px] rounded-full border-2 border-white/30 border-t-white/80 animate-spin" style={{ animationDuration: '1.2s' }} />
               )}
               
               <button
@@ -159,6 +165,8 @@ export function VoiceOverlay() {
               >
                 {isProcessing ? (
                   <Loader2 className="h-12 w-12 animate-spin" />
+                ) : isSpeaking && isTTSPreparing ? (
+                  <Loader2 className="h-12 w-12 animate-spin opacity-70" />
                 ) : isSpeaking ? (
                   <Sparkles className="h-12 w-12 animate-pulse" />
                 ) : isListening ? (

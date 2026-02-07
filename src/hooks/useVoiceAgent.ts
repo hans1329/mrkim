@@ -34,6 +34,7 @@ export function useVoiceAgent() {
   const [lastMessage, setLastMessage] = useState<VoiceMessage | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [isTTSPreparing, setIsTTSPreparing] = useState(false);
 
   const abortRef = useRef(false);
   const messagesContextRef = useRef<VoiceMessage[]>([]);
@@ -121,6 +122,7 @@ export function useVoiceAgent() {
     if (!cleaned || abortRef.current) return false;
 
     setStatus("speaking");
+    setIsTTSPreparing(true);
 
     try {
       console.log("[TTS] Fetching for:", cleaned.substring(0, 30) + "...");
@@ -145,7 +147,8 @@ export function useVoiceAgent() {
       console.log("[TTS] Received:", audioBlob.size, "bytes");
       if (abortRef.current) return false;
 
-      // 재생 시작 시 텍스트 표시 콜백 호출
+      // TTS 준비 완료, 재생 시작
+      setIsTTSPreparing(false);
       onPlayStart?.();
 
       const { interrupted } = await playAudioBlob(audioBlob);
@@ -158,6 +161,7 @@ export function useVoiceAgent() {
     } catch (error) {
       if (!abortRef.current) {
         console.error("[TTS] ❌ Error:", error);
+        setIsTTSPreparing(false);
         // TTS 실패 시에도 텍스트는 표시
         onPlayStart?.();
         setStatus("listening");
@@ -376,6 +380,8 @@ export function useVoiceAgent() {
     const cleanedGreeting = cleanForTTS(greeting);
 
     // 1. TTS 인사말 fetch
+    setStatus("speaking");
+    setIsTTSPreparing(true);
     console.log("[Session] 1. Fetching greeting TTS...");
     let greetingAudioBlob: Blob | null = null;
     try {
@@ -406,7 +412,7 @@ export function useVoiceAgent() {
     messagesContextRef.current = [greetingMsg];
 
     if (greetingAudioBlob) {
-      setStatus("speaking");
+      setIsTTSPreparing(false);
       console.log("[Session] 2. Playing greeting (pre-created audio)...");
 
       // 재생 시작 시점에 인사말 텍스트 표시
@@ -428,6 +434,7 @@ export function useVoiceAgent() {
       }
     } else {
       // TTS 실패 시 바로 Scribe 연결
+      setIsTTSPreparing(false);
       setStatus("listening");
       const scribeOk = await connectScribe();
       if (!scribeOk) {
@@ -469,6 +476,7 @@ export function useVoiceAgent() {
 
     setStatus("idle");
     setLastMessage(null);
+    setIsTTSPreparing(false);
     messagesContextRef.current = [];
   }, [disconnectScribe]);
 
@@ -502,6 +510,7 @@ export function useVoiceAgent() {
     isListening: status === "listening",
     isProcessing: status === "processing",
     isActive: status !== "idle",
+    isTTSPreparing,
     lastMessage,
     permissionDenied,
     lastError,
