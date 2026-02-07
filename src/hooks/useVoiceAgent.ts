@@ -309,8 +309,9 @@ export function useVoiceAgent() {
           console.log("[Scribe] Committed:", data.text);
 
           // 인터럽트: TTS 재생 중 확정된 사용자 발화 시 TTS 중단
-          if (currentAudioRef.current && data.text.length >= 2) {
-            console.log("[Interrupt] User speech during TTS");
+          // 배경 소음(TV 등) 오인식 방지를 위해 5글자 이상의 의미있는 발화만 인터럽트 처리
+          if (currentAudioRef.current && data.text.trim().length >= 5) {
+            console.log("[Interrupt] User speech during TTS:", data.text);
             interruptTTS();
           }
 
