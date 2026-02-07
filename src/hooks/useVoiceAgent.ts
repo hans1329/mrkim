@@ -85,7 +85,18 @@ export function useVoiceAgent() {
     }).catch(() => {});
   }, []);
 
-  // TTS 재생 (프라이밍된 Audio 엘리먼트 재사용 → 시스템 볼륨 따름)
+  // base64 → Blob URL 변환 (모바일에서 시스템 볼륨 준수를 위해 data URL 대신 사용)
+  const base64ToBlobUrl = useCallback((base64: string, mime = "audio/mpeg"): string => {
+    const byteChars = atob(base64);
+    const byteArray = new Uint8Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) {
+      byteArray[i] = byteChars.charCodeAt(i);
+    }
+    const blob = new Blob([byteArray], { type: mime });
+    return URL.createObjectURL(blob);
+  }, []);
+
+  // TTS 재생 (프라이밍된 Audio 엘리먼트 재사용 + Blob URL → 시스템 볼륨 따름)
   const speakText = useCallback(async (text: string): Promise<void> => {
     if (abortRef.current) return;
 
@@ -93,6 +104,8 @@ export function useVoiceAgent() {
     if (!cleaned) return;
 
     setStatus("speaking");
+
+    let blobUrl: string | null = null;
 
     try {
       const response = await fetch(TTS_URL, {
@@ -116,10 +129,12 @@ export function useVoiceAgent() {
 
       if (abortRef.current) return;
 
-      // 프라이밍된 Audio 엘리먼트에 새 src 설정 후 재생
+      // Blob URL 생성 (data URL과 달리 모바일 브라우저가 미디어 콘텐츠로 인식 → 시스템 볼륨 적용)
+      blobUrl = base64ToBlobUrl(data.audioContent);
+
       const el = audioElRef.current || new Audio();
       audioElRef.current = el;
-      el.src = `data:audio/mpeg;base64,${data.audioContent}`;
+      el.src = blobUrl;
 
       await new Promise<void>((resolve, reject) => {
         el.onended = () => resolve();
@@ -131,11 +146,15 @@ export function useVoiceAgent() {
         console.error("TTS error:", error);
       }
     } finally {
+      // Blob URL 메모리 해제
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
       if (!abortRef.current) {
         setStatus("idle");
       }
     }
-  }, [secretaryGender, secretaryTone]);
+  }, [secretaryGender, secretaryTone, base64ToBlobUrl]);
 
   // chat-ai 호출
   const queryAI = useCallback(async (userText: string): Promise<string> => {
