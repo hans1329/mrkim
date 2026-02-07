@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useProfile } from "./useProfile";
+import { useProfileQuery } from "./useProfileQuery";
 import { toast } from "sonner";
 import { format, isToday, isYesterday, startOfDay } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -30,7 +30,7 @@ function getDateLabel(date: Date): string {
 }
 
 export function useAIChat() {
-  const { profile } = useProfile();
+  const { profile } = useProfileQuery();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
