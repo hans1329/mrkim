@@ -49,11 +49,13 @@ export function useVoiceAgent() {
   const secretaryGender = profile?.secretary_gender || "female";
 
   // --- HTMLAudioElement 기반 TTS 재생 ---
+  // audioEl이 이미 생성된 경우 해당 엘리먼트에 src를 설정하여 재생
   const playAudioBlob = useCallback(
-    (audioBlob: Blob): Promise<{ interrupted: boolean }> => {
+    (audioBlob: Blob, preCreatedAudio?: HTMLAudioElement): Promise<{ interrupted: boolean }> => {
       return new Promise((resolve) => {
         const url = URL.createObjectURL(audioBlob);
-        const audio = new Audio(url);
+        const audio = preCreatedAudio || new Audio();
+        audio.src = url;
         currentAudioRef.current = audio;
 
         audio.onended = () => {
@@ -347,11 +349,17 @@ export function useVoiceAgent() {
     setLastMessage(null);
     setLastError(null);
 
+    // ★ 핵심: 유저 제스처 컨텍스트 내에서 즉시 Audio 객체 생성
+    // 이렇게 해야 브라우저 자동재생 제한을 우회할 수 있음
+    const greetingAudio = new Audio();
+    greetingAudio.preload = "auto";
+    console.log("[Session] Audio element created (gesture context)");
+
     const greeting = `안녕하세요, ${secretaryName}입니다. 무엇을 도와드릴까요?`;
     const greetingMsg: VoiceMessage = { role: "agent", text: greeting, timestamp: new Date() };
     const cleanedGreeting = cleanForTTS(greeting);
 
-    // ★ 1. TTS 인사말 fetch (유저 제스처 직후 즉시)
+    // 1. TTS 인사말 fetch
     console.log("[Session] 1. Fetching greeting TTS...");
     let greetingAudioBlob: Blob | null = null;
     try {
@@ -378,15 +386,15 @@ export function useVoiceAgent() {
 
     if (abortRef.current) return;
 
-    // ★ 2. 인사말 재생 + Scribe 연결 병렬
+    // 2. 인사말 재생(미리 생성한 Audio 사용) + Scribe 연결 병렬
     messagesContextRef.current = [greetingMsg];
     setLastMessage(greetingMsg);
 
     if (greetingAudioBlob) {
       setStatus("speaking");
-      console.log("[Session] 2. Playing greeting...");
+      console.log("[Session] 2. Playing greeting (pre-created audio)...");
 
-      const playPromise = playAudioBlob(greetingAudioBlob);
+      const playPromise = playAudioBlob(greetingAudioBlob, greetingAudio);
       const scribePromise = connectScribe();
 
       const { interrupted } = await playPromise;
