@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -74,19 +73,16 @@ serve(async (req) => {
       throw new Error(`ElevenLabs TTS error: ${response.status}`);
     }
 
-    // 오디오 바이너리를 base64로 인코딩
+    // raw 바이너리 오디오를 직접 반환 (base64 인코딩 제거)
     const audioBuffer = await response.arrayBuffer();
-    const audioBase64 = base64Encode(audioBuffer);
 
-    return new Response(
-      JSON.stringify({ 
-        audioContent: audioBase64,
-        contentType: "audio/mpeg"
-      }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
+    return new Response(audioBuffer, { 
+      headers: { 
+        ...corsHeaders, 
+        "Content-Type": "audio/mpeg",
+        "Cache-Control": "no-cache",
+      } 
+    });
   } catch (error: unknown) {
     console.error("TTS error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
