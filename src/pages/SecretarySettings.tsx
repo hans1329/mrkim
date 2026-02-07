@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProfile } from "@/hooks/useProfile";
+import { useProfileQuery } from "@/hooks/useProfileQuery";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { resizeAndCompressImage } from "@/lib/imageUtils";
@@ -60,6 +61,7 @@ export default function SecretarySettings() {
   const [searchParams] = useSearchParams();
   const fromChat = searchParams.get("from") === "chat";
   const { profile, loading, updating, updateProfile } = useProfile();
+  const { updateProfileCache } = useProfileQuery();
   
   const [speakingStyle, setSpeakingStyle] = useState("friendly");
   const [briefingFrequency, setBriefingFrequency] = useState("daily");
@@ -177,6 +179,15 @@ export default function SecretarySettings() {
     console.log("Save result:", success);
     
     if (success) {
+      // React Query 캐시도 즉시 갱신 (페이지 이동 시 플로팅 버튼 깜빡임 방지)
+      updateProfileCache({
+        secretary_name: secretaryName,
+        secretary_gender: secretaryGender,
+        secretary_tone: speakingStyle,
+        briefing_frequency: briefingFrequency,
+        priority_metrics: selectedMetrics,
+        secretary_avatar_url: secretaryAvatarUrl,
+      });
       toast.success(`${secretaryName} 설정이 저장되었습니다`);
       // 채팅에서 왔으면 채팅 열린 상태로 돌아가기
       if (fromChat) {

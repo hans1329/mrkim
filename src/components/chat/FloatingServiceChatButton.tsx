@@ -1,14 +1,14 @@
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useServiceChat } from "@/contexts/ServiceChatContext";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfileQuery } from "@/hooks/useProfileQuery";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_ICON = "/images/icc-5.webp";
 
 export function FloatingServiceChatButton() {
   const { isVoiceOpen, isChatOpen, openVoice } = useServiceChat();
-  const { profile } = useProfile();
+  const { profile, loading } = useProfileQuery();
 
   const avatarUrl = profile?.secretary_avatar_url || null;
   const imgSrc = avatarUrl || DEFAULT_ICON;
