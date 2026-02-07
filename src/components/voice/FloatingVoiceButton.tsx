@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useVoice } from "@/contexts/VoiceContext";
 import { useChat } from "@/contexts/ChatContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfileQuery } from "@/hooks/useProfileQuery";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_ICON = "/images/icc-5.webp";
@@ -12,7 +12,7 @@ export function FloatingVoiceButton() {
   const { isOpen: isVoiceOpen, openVoice } = useVoice();
   const { isOpen: isChatOpen } = useChat();
   const isMobile = useIsMobile();
-  const { profile } = useProfile();
+  const { profile, loading } = useProfileQuery();
 
   const avatarUrl = profile?.secretary_avatar_url || null;
   const imgSrc = avatarUrl || DEFAULT_ICON;
