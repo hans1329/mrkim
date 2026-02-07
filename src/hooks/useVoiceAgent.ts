@@ -133,16 +133,23 @@ export function useVoiceAgent() {
     }
   }, []);
 
-  const primeAudio = useCallback(() => {
+  // 유저 제스처 시점에 AudioContext 잠금 해제 (모바일 autoplay 정책 대응)
+  const unlockAudio = useCallback(() => {
+    // AudioContext 잠금 해제
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (AudioCtx) {
+      const ctx = new AudioCtx();
+      ctx.resume().then(() => ctx.close()).catch(() => {});
+    }
+
+    // HTMLAudioElement 생성 및 프라이밍
     if (!audioElRef.current) {
       audioElRef.current = new Audio();
     }
     const el = audioElRef.current;
     el.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
-    el.play().then(() => {
-      el.pause();
-      el.currentTime = 0;
-    }).catch(() => {});
+    // play → pause 하지 않고 play만 (pause하면 제스처 소실)
+    el.play().catch(() => {});
   }, []);
 
   // --- TTS 재생 (인터럽트 지원, raw binary blob 방식) ---
@@ -334,10 +341,31 @@ export function useVoiceAgent() {
     setLastMessage(null);
     setLastError(null);
 
-    primeAudio();
+    // 1. 유저 제스처 직후: AudioContext + Audio 잠금 해제
+    unlockAudio();
+
+    // 2. 인사 메시지 준비 & TTS 프리페치 (비동기, await 안 함)
+    const greeting = `안녕하세요, ${secretaryName}입니다. 무엇을 도와드릴까요?`;
+    const greetingMsg: VoiceMessage = { role: "agent", text: greeting, timestamp: new Date() };
+    const cleanedGreeting = cleanForTTS(greeting);
+
+    // TTS fetch를 유저 제스처 직후 즉시 시작 (가장 빠른 타이밍)
+    const ttsFetchPromise = fetch(TTS_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        text: cleanedGreeting,
+        gender: secretaryGender,
+        tone: secretaryTone === "friendly" ? "friendly" : "default",
+      }),
+    });
 
     try {
-      // 마이크 권한 확인
+      // 3. 마이크 권한 확인
       await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
       setPermissionDenied(true);
@@ -345,7 +373,7 @@ export function useVoiceAgent() {
       return;
     }
 
-    // Scribe 토큰 발급 & 연결
+    // 4. Scribe 토큰 발급 & 연결 (TTS fetch와 병렬 실행됨)
     try {
       const { data, error } = await supabase.functions.invoke("elevenlabs-scribe-token");
       
@@ -363,16 +391,52 @@ export function useVoiceAgent() {
     }
 
     setStatus("listening");
-
-    // 인사 메시지
-    const greeting = `안녕하세요, ${secretaryName}입니다. 무엇을 도와드릴까요?`;
-    const greetingMsg: VoiceMessage = { role: "agent", text: greeting, timestamp: new Date() };
     messagesContextRef.current = [greetingMsg];
     setLastMessage(greetingMsg);
 
-    // 인사말 TTS 재생 (Scribe는 이미 연결되어 듣고 있으므로 인터럽트 가능)
-    await speakText(greeting);
-  }, [status, permissionDenied, secretaryName, speakText, primeAudio, scribe]);
+    // 5. TTS 응답 수신 & 즉시 재생 (이미 프리페치 시작함)
+    try {
+      const ttsResponse = await ttsFetchPromise;
+      if (!ttsResponse.ok) throw new Error(`TTS error: ${ttsResponse.status}`);
+      if (abortRef.current) return;
+
+      const audioBlob = await ttsResponse.blob();
+      const blobUrl = URL.createObjectURL(audioBlob);
+
+      if (!audioElRef.current) {
+        audioElRef.current = new Audio();
+      }
+      const el = audioElRef.current;
+      el.src = blobUrl;
+      setStatus("speaking");
+
+      await new Promise<void>((resolve) => {
+        el.onended = () => resolve();
+        el.onpause = () => {
+          if (el.currentTime < el.duration - 0.1) resolve();
+        };
+        el.onerror = () => {
+          console.error("Greeting audio playback error");
+          resolve();
+        };
+        el.play().catch((err) => {
+          console.error("Greeting play() rejected:", err);
+          resolve();
+        });
+      });
+
+      URL.revokeObjectURL(blobUrl);
+
+      if (!abortRef.current) {
+        setStatus("listening");
+      }
+    } catch (error) {
+      console.error("Greeting TTS error:", error);
+      if (!abortRef.current) {
+        setStatus("listening");
+      }
+    }
+  }, [status, permissionDenied, secretaryName, secretaryGender, secretaryTone, unlockAudio, scribe]);
 
   // --- 세션 종료 ---
   const endSession = useCallback(() => {
