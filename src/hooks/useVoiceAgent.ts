@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
-import { useScribe, CommitStrategy } from "@elevenlabs/react";
+import { Scribe, CommitStrategy, RealtimeEvents } from "@elevenlabs/client";
+import type { RealtimeConnection, PartialTranscriptMessage, CommittedTranscriptMessage } from "@elevenlabs/client";
 import { toast } from "sonner";
 
 export interface VoiceMessage {
@@ -17,7 +18,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const CHAT_URL = `${SUPABASE_URL}/functions/v1/chat-ai`;
 const TTS_URL = `${SUPABASE_URL}/functions/v1/elevenlabs-tts`;
 
-// 마크다운/이모지 제거 (TTS 최적화)
 function cleanForTTS(text: string): string {
   return text
     .replace(/#{1,6}\s?/g, "")
@@ -40,8 +40,9 @@ export function useVoiceAgent() {
   const processingRef = useRef(false);
   const pendingTranscriptRef = useRef<string>("");
   const sessionActiveRef = useRef(false);
-  // 현재 재생 중인 Audio 엘리먼트
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  // ScribeRealtime 연결을 ref로 관리 (React 훅 아님!)
+  const scribeConnectionRef = useRef<RealtimeConnection | null>(null);
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
@@ -81,7 +82,7 @@ export function useVoiceAgent() {
     []
   );
 
-  // --- TTS 인터럽트 (현재 재생 중단) ---
+  // --- TTS 인터럽트 ---
   const interruptTTS = useCallback(() => {
     const audio = currentAudioRef.current;
     if (audio) {
@@ -94,55 +95,6 @@ export function useVoiceAgent() {
       setStatus("listening");
     }
   }, [status]);
-
-  // --- ElevenLabs Scribe (실시간 STT) ---
-  const scribe = useScribe({
-    modelId: "scribe_v2_realtime",
-    commitStrategy: CommitStrategy.VAD,
-    languageCode: "kor",
-    microphone: {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
-    },
-    onConnect: () => {
-      console.log("[Scribe] ✅ Connected and listening");
-    },
-    onDisconnect: () => {
-      console.log("[Scribe] Disconnected");
-    },
-    onPartialTranscript: (data) => {
-      if (data.text && sessionActiveRef.current) {
-        // TTS 재생 중이 아닐 때만 UI 업데이트 (에코 방지)
-        if (!currentAudioRef.current) {
-          setLastMessage({ role: "user", text: data.text, timestamp: new Date() });
-        }
-      }
-    },
-    onCommittedTranscript: (data) => {
-      if (data.text && sessionActiveRef.current) {
-        console.log("[Scribe] Committed:", data.text);
-
-        // 인터럽트: TTS 재생 중 확정된 사용자 발화 시 TTS 중단
-        if (currentAudioRef.current && data.text.length >= 2) {
-          console.log("[Interrupt] User speech during TTS, stopping audio");
-          interruptTTS();
-        }
-
-        handleCommittedTranscript(data.text);
-      }
-    },
-    onError: (error) => {
-      console.error("[Scribe] ❌ Error:", error);
-      if (!abortRef.current) {
-        setLastError("음성 인식 오류가 발생했습니다.");
-      }
-    },
-    onAuthError: () => {
-      console.error("[Scribe] ❌ Auth error");
-      setLastError("음성 인식 인증에 실패했습니다.");
-    },
-  });
 
   // --- DB 저장 ---
   const saveMessageToDB = useCallback(async (role: "user" | "assistant", content: string) => {
@@ -186,7 +138,7 @@ export function useVoiceAgent() {
       if (abortRef.current) return false;
 
       const audioBlob = await response.blob();
-      console.log("[TTS] Received:", audioBlob.size, "bytes, type:", audioBlob.type);
+      console.log("[TTS] Received:", audioBlob.size, "bytes");
       if (abortRef.current) return false;
 
       const { interrupted } = await playAudioBlob(audioBlob);
@@ -302,6 +254,85 @@ export function useVoiceAgent() {
     }
   }, [queryAI, fetchAndPlayTTS, saveMessageToDB]);
 
+  // --- Scribe 연결 (vanilla client, React 훅 없음) ---
+  const connectScribe = useCallback(async (): Promise<boolean> => {
+    try {
+      console.log("[Scribe] Fetching token...");
+      const { data, error } = await supabase.functions.invoke("elevenlabs-scribe-token");
+      if (error || !data?.token) {
+        console.error("[Scribe] Token error:", error, data);
+        throw new Error("Scribe 토큰을 받지 못했습니다.");
+      }
+
+      console.log("[Scribe] Connecting with token...");
+      const connection = Scribe.connect({
+        token: data.token,
+        modelId: "scribe_v2_realtime",
+        commitStrategy: CommitStrategy.VAD,
+        languageCode: "kor",
+        microphone: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      scribeConnectionRef.current = connection;
+
+      // 이벤트 등록
+      connection.on(RealtimeEvents.OPEN, () => {
+        console.log("[Scribe] ✅ Connected and listening");
+      });
+
+      connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data: PartialTranscriptMessage) => {
+        if (data.text && sessionActiveRef.current) {
+          // TTS 재생 중이 아닐 때만 UI 업데이트
+          if (!currentAudioRef.current) {
+            setLastMessage({ role: "user", text: data.text, timestamp: new Date() });
+          }
+        }
+      });
+
+      connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data: CommittedTranscriptMessage) => {
+        if (data.text && sessionActiveRef.current) {
+          console.log("[Scribe] Committed:", data.text);
+
+          // 인터럽트: TTS 재생 중 확정된 사용자 발화 시 TTS 중단
+          if (currentAudioRef.current && data.text.length >= 2) {
+            console.log("[Interrupt] User speech during TTS");
+            interruptTTS();
+          }
+
+          handleCommittedTranscript(data.text);
+        }
+      });
+
+      connection.on(RealtimeEvents.ERROR, (error: any) => {
+        console.error("[Scribe] ❌ Error:", error);
+        if (!abortRef.current) {
+          setLastError("음성 인식 오류가 발생했습니다.");
+        }
+      });
+
+      connection.on(RealtimeEvents.AUTH_ERROR, () => {
+        console.error("[Scribe] ❌ Auth error");
+        setLastError("음성 인식 인증에 실패했습니다.");
+      });
+
+      connection.on(RealtimeEvents.CLOSE, () => {
+        console.log("[Scribe] Connection closed");
+        scribeConnectionRef.current = null;
+      });
+
+      return true;
+    } catch (err: any) {
+      console.error("[Scribe] ❌ Connection error:", err);
+      setLastError("음성 인식 연결에 실패했습니다.");
+      toast.error("음성 인식 연결에 실패했습니다.");
+      return false;
+    }
+  }, [interruptTTS, handleCommittedTranscript]);
+
   // --- 세션 시작 ---
   const startSession = useCallback(async () => {
     if (status !== "idle" || permissionDenied) return;
@@ -347,7 +378,7 @@ export function useVoiceAgent() {
 
     if (abortRef.current) return;
 
-    // ★ 2. 인사말 재생 (Scribe 연결 전에 먼저!)
+    // ★ 2. 인사말 재생 + Scribe 연결 병렬
     messagesContextRef.current = [greetingMsg];
     setLastMessage(greetingMsg);
 
@@ -355,53 +386,41 @@ export function useVoiceAgent() {
       setStatus("speaking");
       console.log("[Session] 2. Playing greeting...");
 
-      // 인사말 재생과 Scribe 연결을 병렬로 시작
       const playPromise = playAudioBlob(greetingAudioBlob);
-      const scribePromise = (async () => {
-        try {
-          console.log("[Session] 3. Fetching Scribe token...");
-          const { data, error } = await supabase.functions.invoke("elevenlabs-scribe-token");
-          if (error || !data?.token) {
-            console.error("[Session] Scribe token error:", error, data);
-            throw new Error("Scribe 토큰을 받지 못했습니다.");
-          }
-          console.log("[Session] Scribe token received, connecting...");
-          await scribe.connect({ token: data.token });
-          console.log("[Session] ✅ Scribe connected");
-        } catch (err: any) {
-          console.error("[Session] ❌ Scribe error:", err);
-          setLastError("음성 인식 연결에 실패했습니다.");
-          toast.error("음성 인식 연결에 실패했습니다.");
-        }
-      })();
+      const scribePromise = connectScribe();
 
-      // 인사말 재생 완료 대기
       const { interrupted } = await playPromise;
-      console.log("[Session] Greeting done, interrupted:", interrupted);
+      const scribeOk = await scribePromise;
 
-      // Scribe 연결 완료 대기
-      await scribePromise;
+      console.log("[Session] Greeting done, interrupted:", interrupted, "scribe:", scribeOk);
 
       if (!abortRef.current && !interrupted) {
-        setStatus("listening");
+        setStatus(scribeOk ? "listening" : "idle");
+        if (!scribeOk) {
+          sessionActiveRef.current = false;
+        }
       }
     } else {
       // TTS 실패 시 바로 Scribe 연결
       setStatus("listening");
-      try {
-        const { data, error } = await supabase.functions.invoke("elevenlabs-scribe-token");
-        if (error || !data?.token) throw new Error("Scribe 토큰을 받지 못했습니다.");
-        await scribe.connect({ token: data.token });
-        console.log("[Session] ✅ Scribe connected (no greeting)");
-      } catch (err: any) {
-        console.error("[Session] ❌ Scribe error:", err);
-        setLastError("음성 인식 연결에 실패했습니다.");
-        toast.error("음성 인식 연결에 실패했습니다.");
+      const scribeOk = await connectScribe();
+      if (!scribeOk) {
         sessionActiveRef.current = false;
         setStatus("idle");
       }
     }
-  }, [status, permissionDenied, secretaryName, secretaryGender, secretaryTone, scribe, playAudioBlob]);
+  }, [status, permissionDenied, secretaryName, secretaryGender, secretaryTone, playAudioBlob, connectScribe]);
+
+  // --- Scribe 연결 해제 ---
+  const disconnectScribe = useCallback(() => {
+    const conn = scribeConnectionRef.current;
+    if (conn) {
+      try {
+        conn.close();
+      } catch {}
+      scribeConnectionRef.current = null;
+    }
+  }, []);
 
   // --- 세션 종료 ---
   const endSession = useCallback(() => {
@@ -411,7 +430,7 @@ export function useVoiceAgent() {
     processingRef.current = false;
     pendingTranscriptRef.current = "";
 
-    // 현재 재생 중인 오디오 중단
+    // 오디오 중단
     const audio = currentAudioRef.current;
     if (audio) {
       audio.pause();
@@ -420,14 +439,12 @@ export function useVoiceAgent() {
     }
 
     // Scribe 연결 해제
-    if (scribe.isConnected) {
-      scribe.disconnect();
-    }
+    disconnectScribe();
 
     setStatus("idle");
     setLastMessage(null);
     messagesContextRef.current = [];
-  }, [scribe]);
+  }, [disconnectScribe]);
 
   // --- 권한 리셋 ---
   const resetPermission = useCallback(() => {
@@ -445,11 +462,13 @@ export function useVoiceAgent() {
         audio.pause();
         currentAudioRef.current = null;
       }
-      if (scribe.isConnected) {
-        scribe.disconnect();
+      const conn = scribeConnectionRef.current;
+      if (conn) {
+        try { conn.close(); } catch {}
+        scribeConnectionRef.current = null;
       }
     };
-  }, [scribe]);
+  }, []);
 
   return {
     status,
@@ -458,7 +477,6 @@ export function useVoiceAgent() {
     isProcessing: status === "processing",
     isActive: status !== "idle",
     lastMessage,
-    partialTranscript: scribe.partialTranscript,
     permissionDenied,
     lastError,
     startSession,
