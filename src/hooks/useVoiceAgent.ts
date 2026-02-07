@@ -28,6 +28,62 @@ function cleanForTTS(text: string): string {
     .trim();
 }
 
+// --- Web Audio API 기반 TTS 재생 헬퍼 ---
+// HTMLAudioElement 대신 AudioContext를 사용하여 Scribe 마이크 스트림과의 충돌을 방지
+async function playAudioWithWebAudio(
+  audioData: ArrayBuffer,
+  abortSignal: TTSAbortSignal,
+): Promise<{ interrupted: boolean }> {
+  const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+  const ctx = new AudioCtx();
+  
+  try {
+    await ctx.resume();
+    const audioBuffer = await ctx.decodeAudioData(audioData);
+    
+    if (abortSignal.aborted) {
+      await ctx.close();
+      return { interrupted: false };
+    }
+
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(ctx.destination);
+    
+    return new Promise<{ interrupted: boolean }>((resolve) => {
+      const cleanup = () => {
+        try { source.stop(); } catch {}
+        ctx.close().catch(() => {});
+      };
+
+      // 외부에서 중단할 수 있도록 abort 콜백 등록
+      abortSignal.onAbort = () => {
+        cleanup();
+        resolve({ interrupted: true });
+      };
+
+      source.onended = () => {
+        if (!abortSignal.aborted) {
+          ctx.close().catch(() => {});
+          resolve({ interrupted: false });
+        }
+      };
+
+      source.start(0);
+    });
+  } catch (error) {
+    console.error("[WebAudio] Decode/play error:", error);
+    await ctx.close().catch(() => {});
+    return { interrupted: false };
+  }
+}
+
+// TTS 중단 시그널
+interface TTSAbortSignal {
+  aborted: boolean;
+  onAbort?: () => void;
+}
+
 export function useVoiceAgent() {
   const { profile } = useProfile();
   const [status, setStatus] = useState<VoiceStatus>("idle");
@@ -35,12 +91,12 @@ export function useVoiceAgent() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
 
-  const audioElRef = useRef<HTMLAudioElement | null>(null);
   const abortRef = useRef(false);
   const messagesContextRef = useRef<VoiceMessage[]>([]);
   const processingRef = useRef(false);
   const pendingTranscriptRef = useRef<string>("");
   const sessionActiveRef = useRef(false);
+  const currentAbortSignalRef = useRef<TTSAbortSignal | null>(null);
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
@@ -63,23 +119,19 @@ export function useVoiceAgent() {
       console.log("[Scribe] Disconnected");
     },
     onPartialTranscript: (data) => {
-      // 부분 인식 중 → 화면에 실시간 표시
       if (data.text && sessionActiveRef.current) {
         // TTS 재생 중이 아닐 때만 UI 업데이트 (에코 방지)
-        const isTTSPlaying = audioElRef.current && !audioElRef.current.paused;
-        if (!isTTSPlaying) {
+        if (!currentAbortSignalRef.current) {
           setLastMessage({ role: "user", text: data.text, timestamp: new Date() });
         }
       }
     },
     onCommittedTranscript: (data) => {
-      // 최종 인식 완료 → AI 파이프라인 시작
       if (data.text && sessionActiveRef.current) {
         console.log("[Scribe] Committed:", data.text);
         
         // 인터럽트: TTS 재생 중에 확정된 사용자 발화 감지 시 TTS 중단
-        const isTTSPlaying = audioElRef.current && !audioElRef.current.paused;
-        if (isTTSPlaying && data.text.length >= 2) {
+        if (currentAbortSignalRef.current && data.text.length >= 2) {
           console.log("[Interrupt] User committed speech during TTS, stopping audio");
           interruptTTS();
         }
@@ -101,9 +153,11 @@ export function useVoiceAgent() {
 
   // --- TTS 인터럽트 ---
   const interruptTTS = useCallback(() => {
-    if (audioElRef.current) {
-      audioElRef.current.pause();
-      audioElRef.current.currentTime = 0;
+    const signal = currentAbortSignalRef.current;
+    if (signal) {
+      signal.aborted = true;
+      signal.onAbort?.();
+      currentAbortSignalRef.current = null;
     }
     if (status === "speaking") {
       setStatus("listening");
@@ -125,47 +179,14 @@ export function useVoiceAgent() {
     }
   }, []);
 
-  // --- 오디오 유틸 ---
-  const stopAudio = useCallback(() => {
-    if (audioElRef.current) {
-      audioElRef.current.pause();
-      audioElRef.current.currentTime = 0;
-    }
-  }, []);
-
-  // 유저 제스처 시점에 AudioContext 잠금 해제 (모바일 autoplay 정책 대응)
-  const unlockAudio = useCallback(() => {
-    // AudioContext 잠금 해제
-    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-    if (AudioCtx) {
-      const ctx = new AudioCtx();
-      ctx.resume().then(() => ctx.close()).catch(() => {});
-    }
-
-    // HTMLAudioElement 생성 및 프라이밍
-    if (!audioElRef.current) {
-      audioElRef.current = new Audio();
-    }
-    const el = audioElRef.current;
-    el.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
-    // play → pause 하지 않고 play만 (pause하면 제스처 소실)
-    el.play().catch(() => {});
-  }, []);
-
-  // --- TTS 재생 (인터럽트 지원, raw binary blob 방식) ---
-  const speakText = useCallback(async (text: string): Promise<boolean> => {
-    if (abortRef.current) return false;
-
+  // --- TTS fetch + 재생 (Web Audio API) ---
+  const fetchAndPlayTTS = useCallback(async (text: string): Promise<boolean> => {
     const cleaned = cleanForTTS(text);
-    if (!cleaned) return false;
+    if (!cleaned || abortRef.current) return false;
 
     setStatus("speaking");
 
-    let blobUrl: string | null = null;
-    let interrupted = false;
-
     try {
-      // fetch()로 raw 바이너리 오디오를 직접 받음 (ElevenLabs 공식 권장)
       const response = await fetch(TTS_URL, {
         method: "POST",
         headers: {
@@ -181,50 +202,33 @@ export function useVoiceAgent() {
       });
 
       if (!response.ok) throw new Error(`TTS error: ${response.status}`);
-
       if (abortRef.current) return false;
 
-      // blob()으로 바이너리 오디오 수신 → Object URL 생성
-      const audioBlob = await response.blob();
-      blobUrl = URL.createObjectURL(audioBlob);
+      const audioData = await response.arrayBuffer();
+      if (abortRef.current) return false;
 
-      if (!audioElRef.current) {
-        audioElRef.current = new Audio();
-      }
-      const el = audioElRef.current;
-      el.src = blobUrl;
+      // Web Audio API로 재생 (Scribe 마이크와 충돌 없음)
+      const abortSignal: TTSAbortSignal = { aborted: false };
+      currentAbortSignalRef.current = abortSignal;
 
-      await new Promise<void>((resolve, reject) => {
-        el.onended = () => resolve();
-        el.onpause = () => {
-          if (el.currentTime < el.duration - 0.1) {
-            interrupted = true;
-            resolve();
-          }
-        };
-        el.onerror = (e) => {
-          console.error("Audio element error:", e);
-          reject(new Error("Audio playback failed"));
-        };
-        el.play().catch((err) => {
-          console.error("Audio play() failed:", err);
-          reject(err);
-        });
-      });
-    } catch (error) {
-      if (!abortRef.current) {
-        console.error("TTS error:", error);
-      }
-    } finally {
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
-      }
+      console.log("[TTS] Playing audio via Web Audio API...");
+      const { interrupted } = await playAudioWithWebAudio(audioData, abortSignal);
+      
+      currentAbortSignalRef.current = null;
+
       if (!abortRef.current && !interrupted) {
         setStatus("listening");
       }
-    }
 
-    return interrupted;
+      return interrupted;
+    } catch (error) {
+      currentAbortSignalRef.current = null;
+      if (!abortRef.current) {
+        console.error("[TTS] Error:", error);
+        setStatus("listening");
+      }
+      return false;
+    }
   }, [secretaryGender, secretaryTone]);
 
   // --- chat-ai 호출 ---
@@ -270,7 +274,6 @@ export function useVoiceAgent() {
   const handleCommittedTranscript = useCallback(async (transcript: string) => {
     if (abortRef.current || !transcript.trim() || !sessionActiveRef.current) return;
 
-    // 이미 처리 중이면 대기열에 저장 (이전 요청은 인터럽트로 취소됨)
     if (processingRef.current) {
       pendingTranscriptRef.current = transcript;
       return;
@@ -278,7 +281,6 @@ export function useVoiceAgent() {
 
     processingRef.current = true;
 
-    // 사용자 메시지 저장
     const userMsg: VoiceMessage = { role: "user", text: transcript, timestamp: new Date() };
     messagesContextRef.current = [...messagesContextRef.current, userMsg];
     setLastMessage(userMsg);
@@ -291,16 +293,13 @@ export function useVoiceAgent() {
 
       if (abortRef.current || !sessionActiveRef.current) return;
 
-      // AI 응답 저장
       const agentMsg: VoiceMessage = { role: "agent", text: aiResponse, timestamp: new Date() };
       messagesContextRef.current = [...messagesContextRef.current, agentMsg];
       setLastMessage(agentMsg);
       saveMessageToDB("assistant", aiResponse);
 
-      // TTS 재생 (인터럽트 가능)
-      await speakText(aiResponse);
+      await fetchAndPlayTTS(aiResponse);
 
-      // 대기 중인 인터럽트 트랜스크립트 처리
       if (pendingTranscriptRef.current && sessionActiveRef.current) {
         const pending = pendingTranscriptRef.current;
         pendingTranscriptRef.current = "";
@@ -327,7 +326,7 @@ export function useVoiceAgent() {
     } finally {
       processingRef.current = false;
     }
-  }, [queryAI, speakText, saveMessageToDB]);
+  }, [queryAI, fetchAndPlayTTS, saveMessageToDB]);
 
   // --- 세션 시작 ---
   const startSession = useCallback(async () => {
@@ -341,15 +340,18 @@ export function useVoiceAgent() {
     setLastMessage(null);
     setLastError(null);
 
-    // 1. 유저 제스처 직후: AudioContext + Audio 잠금 해제
-    unlockAudio();
+    // 1. 유저 제스처 직후: AudioContext 잠금 해제
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (AudioCtx) {
+      const ctx = new AudioCtx();
+      ctx.resume().then(() => ctx.close()).catch(() => {});
+    }
 
-    // 2. 인사 메시지 준비 & TTS 프리페치 (비동기, await 안 함)
+    // 2. 인사말 TTS 프리페치 (유저 제스처 직후 즉시 시작)
     const greeting = `안녕하세요, ${secretaryName}입니다. 무엇을 도와드릴까요?`;
     const greetingMsg: VoiceMessage = { role: "agent", text: greeting, timestamp: new Date() };
     const cleanedGreeting = cleanForTTS(greeting);
 
-    // TTS fetch를 유저 제스처 직후 즉시 시작 (가장 빠른 타이밍)
     const ttsFetchPromise = fetch(TTS_URL, {
       method: "POST",
       headers: {
@@ -364,16 +366,7 @@ export function useVoiceAgent() {
       }),
     });
 
-    try {
-      // 3. 마이크 권한 확인
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      setPermissionDenied(true);
-      toast.error("마이크 권한이 필요합니다. 브라우저 설정에서 마이크 접근을 허용해주세요.");
-      return;
-    }
-
-    // 4. Scribe 토큰 발급 & 연결 (TTS fetch와 병렬 실행됨)
+    // 3. Scribe 토큰 발급 & 연결 (getUserMedia는 Scribe가 내부적으로 처리)
     try {
       const { data, error } = await supabase.functions.invoke("elevenlabs-scribe-token");
       
@@ -394,49 +387,35 @@ export function useVoiceAgent() {
     messagesContextRef.current = [greetingMsg];
     setLastMessage(greetingMsg);
 
-    // 5. TTS 응답 수신 & 즉시 재생 (이미 프리페치 시작함)
+    // 4. TTS 응답 수신 & Web Audio API로 재생
     try {
       const ttsResponse = await ttsFetchPromise;
       if (!ttsResponse.ok) throw new Error(`TTS error: ${ttsResponse.status}`);
       if (abortRef.current) return;
 
-      const audioBlob = await ttsResponse.blob();
-      const blobUrl = URL.createObjectURL(audioBlob);
+      const audioData = await ttsResponse.arrayBuffer();
+      if (abortRef.current) return;
 
-      if (!audioElRef.current) {
-        audioElRef.current = new Audio();
-      }
-      const el = audioElRef.current;
-      el.src = blobUrl;
+      const abortSignal: TTSAbortSignal = { aborted: false };
+      currentAbortSignalRef.current = abortSignal;
+
       setStatus("speaking");
+      console.log("[Greeting] Playing via Web Audio API...");
+      
+      const { interrupted } = await playAudioWithWebAudio(audioData, abortSignal);
+      currentAbortSignalRef.current = null;
 
-      await new Promise<void>((resolve) => {
-        el.onended = () => resolve();
-        el.onpause = () => {
-          if (el.currentTime < el.duration - 0.1) resolve();
-        };
-        el.onerror = () => {
-          console.error("Greeting audio playback error");
-          resolve();
-        };
-        el.play().catch((err) => {
-          console.error("Greeting play() rejected:", err);
-          resolve();
-        });
-      });
-
-      URL.revokeObjectURL(blobUrl);
-
-      if (!abortRef.current) {
+      if (!abortRef.current && !interrupted) {
         setStatus("listening");
       }
     } catch (error) {
       console.error("Greeting TTS error:", error);
+      currentAbortSignalRef.current = null;
       if (!abortRef.current) {
         setStatus("listening");
       }
     }
-  }, [status, permissionDenied, secretaryName, secretaryGender, secretaryTone, unlockAudio, scribe]);
+  }, [status, permissionDenied, secretaryName, secretaryGender, secretaryTone, scribe]);
 
   // --- 세션 종료 ---
   const endSession = useCallback(() => {
@@ -445,20 +424,23 @@ export function useVoiceAgent() {
     processingRef.current = false;
     pendingTranscriptRef.current = "";
     
+    // 현재 재생 중인 오디오 중단
+    const signal = currentAbortSignalRef.current;
+    if (signal) {
+      signal.aborted = true;
+      signal.onAbort?.();
+      currentAbortSignalRef.current = null;
+    }
+    
     // Scribe 연결 해제
     if (scribe.isConnected) {
       scribe.disconnect();
     }
     
-    stopAudio();
-    if (audioElRef.current) {
-      audioElRef.current.src = "";
-      audioElRef.current = null;
-    }
     setStatus("idle");
     setLastMessage(null);
     messagesContextRef.current = [];
-  }, [scribe, stopAudio]);
+  }, [scribe]);
 
   // --- 권한 리셋 ---
   const resetPermission = useCallback(() => {
@@ -471,16 +453,16 @@ export function useVoiceAgent() {
     return () => {
       abortRef.current = true;
       sessionActiveRef.current = false;
+      const signal = currentAbortSignalRef.current;
+      if (signal) {
+        signal.aborted = true;
+        signal.onAbort?.();
+      }
       if (scribe.isConnected) {
         scribe.disconnect();
       }
-      stopAudio();
-      if (audioElRef.current) {
-        audioElRef.current.src = "";
-        audioElRef.current = null;
-      }
     };
-  }, [scribe, stopAudio]);
+  }, [scribe]);
 
   return {
     status,
