@@ -42,7 +42,7 @@ export function useAIChat() {
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
   const secretaryGender = profile?.secretary_gender || "female";
-  const secretaryAvatarUrl = (profile as any)?.secretary_avatar_url || null;
+  const secretaryAvatarUrl = profile?.secretary_avatar_url || null;
 
    // 연동 상태에 따른 동적 플레이스홀더 생성
    const getPlaceholderText = useCallback(() => {
