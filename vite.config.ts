@@ -23,4 +23,15 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime"],
   },
+  optimizeDeps: {
+    // @elevenlabs/react 내부의 React를 프로젝트 React로 강제 통합
+    include: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "@elevenlabs/react",
+      "@elevenlabs/client",
+    ],
+    force: true,
+  },
 }));
