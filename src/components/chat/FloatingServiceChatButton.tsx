@@ -28,7 +28,7 @@ export function FloatingServiceChatButton() {
     <Button
       onClick={openVoice}
       className={cn(
-        "fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:scale-105 transition-all z-40 bg-primary hover:bg-primary/90 p-1 animate-bounce-subtle overflow-hidden",
+        "fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg hover:scale-105 transition-all z-40 bg-primary hover:bg-primary/90 p-1 animate-bounce-subtle overflow-hidden ring-2 ring-white",
         isHidden ? "opacity-0 pointer-events-none scale-90" : "opacity-100"
       )}
       size="icon"

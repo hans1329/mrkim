@@ -34,7 +34,7 @@ export function FloatingVoiceButton() {
       onClick={openVoice}
       size="lg"
       className={cn(
-        "h-16 w-16 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-primary hover:bg-primary/90 p-1 animate-bounce-subtle overflow-hidden",
+        "h-16 w-16 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all z-50 bg-primary hover:bg-primary/90 p-1 animate-bounce-subtle overflow-hidden ring-2 ring-white",
         isMobile
           ? "absolute bottom-20 right-4"
           : "fixed bottom-6 right-6"
