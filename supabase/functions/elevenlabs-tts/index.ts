@@ -57,11 +57,11 @@ serve(async (req) => {
           text,
           model_id: "eleven_multilingual_v2",
           voice_settings: {
-            stability: 0.25,        // 낮을수록 억양 변화 풍부 (0.35→0.25)
-            similarity_boost: 0.65,  // 낮출수록 자연스러운 변주 허용 (0.8→0.65)
-            style: 0.65,             // 높을수록 감정 표현 강화 (0.45→0.65)
+            stability: 0.4,          // 안정성 확보로 끊김 방지 (0.25→0.4)
+            similarity_boost: 0.7,   // 자연스러운 변주 허용 (0.65→0.7)
+            style: 0.5,              // 감정 표현 적절히 (0.65→0.5)
             use_speaker_boost: true,
-            speed: 1.0,              // 자연스러운 속도 (1.05→1.0)
+            speed: 1.0,
           },
         }),
       }

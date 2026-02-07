@@ -365,7 +365,13 @@ export function useVoiceAgent() {
     greetingAudio.preload = "auto";
     console.log("[Session] Audio element created (gesture context)");
 
-    const greeting = `안녕하세요, ${secretaryName}입니다. 무엇을 도와드릴까요?`;
+    // 말투에 맞는 인사말 생성
+    const greetingByTone: Record<string, string> = {
+      polite: `안녕하세요, ${secretaryName}입니다. 무엇을 도와드리겠습니까?`,
+      friendly: `안녕하세요~ ${secretaryName}이에요! 무엇을 도와드릴까요?`,
+      cute: `안녕하세용~ ${secretaryName}이에용! 무엇을 도와드릴까용? ✨`,
+    };
+    const greeting = greetingByTone[secretaryTone] || greetingByTone.polite;
     const greetingMsg: VoiceMessage = { role: "agent", text: greeting, timestamp: new Date() };
     const cleanedGreeting = cleanForTTS(greeting);
 
