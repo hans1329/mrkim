@@ -41,6 +41,8 @@ function buildGemini429Message(geminiErrorJson: any): { message: string; retryAf
   return { message: base + suffix, retryAfterSeconds };
 }
 
+const fmt = (n: number) => n.toLocaleString("ko-KR");
+
 // ============ 공통 Gemini 호출 ============
 
 const SAFETY_SETTINGS = [
@@ -52,11 +54,8 @@ const SAFETY_SETTINGS = [
 
 const GENERATION_CONFIG = { temperature: 0.7, topK: 40, topP: 0.95, maxOutputTokens: 1024 };
 
-async function callGemini(apiKey: string, contents: any[], options?: { tools?: any[]; toolConfig?: any }): Promise<any> {
+async function callGemini(apiKey: string, contents: any[]): Promise<any> {
   const body: any = { contents, generationConfig: GENERATION_CONFIG, safetySettings: SAFETY_SETTINGS };
-  if (options?.tools) body.tools = options.tools;
-  if (options?.toolConfig) body.toolConfig = options.toolConfig;
-
   const MAX_RETRIES = 3;
   let lastError: any = null;
 
@@ -66,56 +65,46 @@ async function callGemini(apiKey: string, contents: any[], options?: { tools?: a
       console.log(`Retry attempt ${attempt}/${MAX_RETRIES}, waiting ${Math.round(delayMs)}ms...`);
       await new Promise(r => setTimeout(r, delayMs));
     }
-
     const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-
-    if (response.ok) {
-      return response.json();
-    }
-
+    if (response.ok) return response.json();
     const errorText = await response.text();
     lastError = { status: response.status, body: errorText };
-
-    // Only retry on 429 (rate limit) or 503 (service unavailable)
-    if (response.status !== 429 && response.status !== 503) {
-      throw lastError;
-    }
+    if (response.status !== 429 && response.status !== 503) throw lastError;
     console.warn(`Gemini API returned ${response.status}, attempt ${attempt + 1}/${MAX_RETRIES}`);
   }
-
   throw lastError;
+}
+
+// ============ Supabase 클라이언트 생성 ============
+
+function createSupabaseClient(authHeader: string) {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!url || !key) return null;
+  return createClient(url, key, { global: { headers: { Authorization: authHeader } } });
 }
 
 // ============ 연동 상태 확인 ============
 
-interface ConnectionStatus { hometax: boolean; card: boolean; bank: boolean; employee: boolean; }
+interface ConnectionStatus { hometax: boolean; card: boolean; bank: boolean; }
 
 async function checkConnectionStatus(userId: string, authHeader: string): Promise<ConnectionStatus> {
-  const def: ConnectionStatus = { hometax: false, card: false, bank: false, employee: false };
+  const def: ConnectionStatus = { hometax: false, card: false, bank: false };
   if (!userId) return def;
   try {
-    const url = Deno.env.get("SUPABASE_URL");
-    const key = Deno.env.get("SUPABASE_ANON_KEY");
-    if (!url || !key) return def;
-    const sb = createClient(url, key, { global: { headers: { Authorization: authHeader } } });
+    const sb = createSupabaseClient(authHeader);
+    if (!sb) return def;
     const { data, error } = await sb.from("profiles").select("hometax_connected, card_connected, account_connected").eq("user_id", userId).maybeSingle();
     if (error || !data) return def;
-    return { hometax: data.hometax_connected ?? false, card: data.card_connected ?? false, bank: data.account_connected ?? false, employee: true };
+    return { hometax: data.hometax_connected ?? false, card: data.card_connected ?? false, bank: data.account_connected ?? false };
   } catch { return def; }
 }
 
-// ============ 데이터 조회 ============
-
-interface TransactionSummary {
-  totalExpense: number; totalIncome: number; expenseCount: number; incomeCount: number;
-  topCategories: { category: string; amount: number; count: number }[];
-  recentTransactions: { description: string; amount: number; date: string; category: string | null }[];
-  periodLabel: string;
-}
+// ============ 기간 계산 ============
 
 function calculateDateRange(tp?: { type: string; startDate?: string; endDate?: string }) {
   const now = new Date();
@@ -132,13 +121,14 @@ function calculateDateRange(tp?: { type: string; startDate?: string; endDate?: s
   }
 }
 
-async function fetchTransactionData(userId: string, authHeader: string, timePeriod?: { type: string; startDate?: string; endDate?: string }): Promise<TransactionSummary | null> {
+// ============ 데이터 조회 함수들 ============
+
+// --- 거래내역 (transactions) ---
+async function fetchTransactionData(userId: string, authHeader: string, timePeriod?: any) {
   try {
-    const url = Deno.env.get("SUPABASE_URL"), key = Deno.env.get("SUPABASE_ANON_KEY");
-    if (!url || !key || !userId) return null;
-    const sb = createClient(url, key, { global: { headers: { Authorization: authHeader } } });
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
     const { startDate, endDate, label: periodLabel } = calculateDateRange(timePeriod);
-    console.log(`Fetching transactions: ${startDate} ~ ${endDate} (${periodLabel})`);
     const { data: txs, error } = await sb.from("transactions").select("id, amount, type, category, description, transaction_date").eq("user_id", userId).gte("transaction_date", startDate).lte("transaction_date", endDate).order("transaction_date", { ascending: false });
     if (error || !txs) return null;
     console.log(`Found ${txs.length} transactions for ${periodLabel}`);
@@ -151,83 +141,198 @@ async function fetchTransactionData(userId: string, authHeader: string, timePeri
       const e = catMap.get(c) || { amount: 0, count: 0 };
       catMap.set(c, { amount: e.amount + tx.amount, count: e.count + 1 });
     }
-    return {
-      totalExpense, totalIncome, expenseCount, incomeCount, periodLabel,
-      topCategories: Array.from(catMap.entries()).map(([category, d]) => ({ category, ...d })).sort((a, b) => b.amount - a.amount).slice(0, 5),
-      recentTransactions: txs.slice(0, 5).map(tx => ({ description: tx.description, amount: tx.amount, date: tx.transaction_date, category: tx.category })),
-    };
+    const topCategories = Array.from(catMap.entries()).map(([category, d]) => ({ category, ...d })).sort((a, b) => b.amount - a.amount).slice(0, 5);
+    const recentTransactions = txs.slice(0, 5).map(tx => ({ description: tx.description, amount: tx.amount, date: tx.transaction_date, category: tx.category }));
+    return { totalExpense, totalIncome, expenseCount, incomeCount, periodLabel, topCategories, recentTransactions };
   } catch (e) { console.error("fetchTransactionData error:", e); return null; }
 }
 
-// ============ 직원 급여 데이터 조회 ============
-
-interface EmployeeSalarySummary {
-  totalMonthlySalary: number;
-  employees: { name: string; type: string; salary: number; position: string | null }[];
-  activeCount: number;
-  periodLabel: string;
-}
-
-async function fetchEmployeeSalaryData(userId: string, authHeader: string, periodLabel: string): Promise<EmployeeSalarySummary | null> {
-  try {
-    const url = Deno.env.get("SUPABASE_URL"), key = Deno.env.get("SUPABASE_ANON_KEY");
-    if (!url || !key || !userId) return null;
-    const sb = createClient(url, key, { global: { headers: { Authorization: authHeader } } });
-    const { data: emps, error } = await sb.from("employees")
-      .select("name, employee_type, monthly_salary, hourly_rate, weekly_hours, position, status")
-      .eq("user_id", userId)
-      .eq("status", "재직");
-    if (error || !emps) return null;
-    console.log(`Found ${emps.length} active employees`);
-
-    let totalMonthlySalary = 0;
-    const employees: EmployeeSalarySummary["employees"] = [];
-    for (const emp of emps) {
-      let salary = 0;
-      if (emp.monthly_salary) {
-        salary = emp.monthly_salary;
-      } else if (emp.hourly_rate && emp.weekly_hours) {
-        // 시급 × 주당 근무시간 × 약 4.345주 (월 환산)
-        salary = Math.round(emp.hourly_rate * emp.weekly_hours * 4.345);
-      }
-      totalMonthlySalary += salary;
-      employees.push({ name: emp.name, type: emp.employee_type, salary, position: emp.position });
-    }
-    return { totalMonthlySalary, employees, activeCount: emps.length, periodLabel };
-  } catch (e) { console.error("fetchEmployeeSalaryData error:", e); return null; }
-}
-
-function formatEmployeeDataForPrompt(data: EmployeeSalarySummary): string {
-  const f = (n: number) => n.toLocaleString("ko-KR");
-  let p = `\n\n## 📊 직원 급여 현황 (${data.periodLabel})\n`;
-  p += `- **재직 중인 직원 수**: ${data.activeCount}명\n`;
-  p += `- **이번 달 예상 총 급여**: ${f(data.totalMonthlySalary)}원\n`;
-  if (data.employees.length > 0) {
-    p += `\n### 직원별 급여\n`;
-    for (const emp of data.employees) {
-      p += `- ${emp.name} (${emp.type}${emp.position ? `, ${emp.position}` : ""}): ${f(emp.salary)}원/월\n`;
-    }
-  }
-  p += `\n위 데이터는 현재 재직 중인 직원의 급여 정보입니다. 이 달에 **지급 예정인 금액**으로 안내하세요. 과거형("지출된", "사용된")이 아닌 미래/현재형("지급 예정", "나가야 할")으로 표현하세요.`;
-  return p;
-}
-
-function formatDataForPrompt(data: TransactionSummary, periodLabel: string): string {
-  const f = (n: number) => n.toLocaleString("ko-KR");
-  let p = `\n\n## 📊 실시간 데이터 (${periodLabel} 기준)\n`;
-  p += `- **총 지출**: ${f(data.totalExpense)}원 (${data.expenseCount}건)\n- **총 수입**: ${f(data.totalIncome)}원 (${data.incomeCount}건)\n`;
+function formatTransactionPrompt(data: any): string {
+  let p = `\n\n## 📊 거래 데이터 (${data.periodLabel} 기준)\n`;
+  p += `- **총 지출**: ${fmt(data.totalExpense)}원 (${data.expenseCount}건)\n- **총 수입**: ${fmt(data.totalIncome)}원 (${data.incomeCount}건)\n`;
   if (data.expenseCount === 0 && data.incomeCount === 0) p += `- 해당 기간에 거래 내역이 없습니다.\n`;
-  if (data.topCategories.length > 0) { p += `\n### 카테고리별 지출\n`; for (const c of data.topCategories) p += `- ${c.category}: ${f(c.amount)}원 (${c.count}건)\n`; }
-  if (data.recentTransactions.length > 0) { p += `\n### 최근 거래\n`; for (const tx of data.recentTransactions) p += `- ${tx.date}: ${tx.description} - ${f(tx.amount)}원 (${tx.category || "미분류"})\n`; }
+  if (data.topCategories.length > 0) { p += `\n### 카테고리별 지출\n`; for (const c of data.topCategories) p += `- ${c.category}: ${fmt(c.amount)}원 (${c.count}건)\n`; }
+  if (data.recentTransactions.length > 0) { p += `\n### 최근 거래\n`; for (const tx of data.recentTransactions) p += `- ${tx.date}: ${tx.description} - ${fmt(tx.amount)}원 (${tx.category || "미분류"})\n`; }
   p += `\n위 데이터를 기반으로 정확하게 답변하세요. 데이터가 0건이면 "해당 기간에 기록이 없습니다"라고 안내하세요.`;
   return p;
 }
 
-// ============ 키워드 기반 의도 분류 (AI 호출 없음) ============
+// --- 직원 급여 (employees) ---
+async function fetchEmployeeData(userId: string, authHeader: string) {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
+    const { data: emps, error } = await sb.from("employees")
+      .select("name, employee_type, monthly_salary, hourly_rate, weekly_hours, position, status, insurance_national_pension, insurance_health, insurance_employment, insurance_industrial")
+      .eq("user_id", userId).eq("status", "재직");
+    if (error || !emps) return null;
+    console.log(`Found ${emps.length} active employees`);
+    let totalSalary = 0;
+    const employees = emps.map(emp => {
+      let salary = 0;
+      if (emp.monthly_salary) { salary = emp.monthly_salary; }
+      else if (emp.hourly_rate && emp.weekly_hours) { salary = Math.round(emp.hourly_rate * emp.weekly_hours * 4.345); }
+      totalSalary += salary;
+      return { name: emp.name, type: emp.employee_type, salary, position: emp.position };
+    });
+    return { totalSalary, employees, count: emps.length };
+  } catch (e) { console.error("fetchEmployeeData error:", e); return null; }
+}
+
+function formatEmployeePrompt(data: any): string {
+  let p = `\n\n## 📊 직원 급여 현황\n`;
+  p += `- **재직 중인 직원**: ${data.count}명\n- **이번 달 예상 총 급여**: ${fmt(data.totalSalary)}원\n`;
+  if (data.employees.length > 0) {
+    p += `\n### 직원별 급여\n`;
+    for (const emp of data.employees) p += `- ${emp.name} (${emp.type}${emp.position ? `, ${emp.position}` : ""}): ${fmt(emp.salary)}원/월\n`;
+  }
+  p += `\n이 달에 **지급 예정인 금액**으로 안내하세요. 과거형("지출된", "사용된")이 아닌 미래/현재형("지급 예정", "나가야 할")으로 표현하세요.`;
+  return p;
+}
+
+// --- 세금계산서 (tax_invoices) ---
+async function fetchTaxInvoiceData(userId: string, authHeader: string, timePeriod?: any) {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
+    const { startDate, endDate, label: periodLabel } = calculateDateRange(timePeriod);
+    const { data: invoices, error } = await sb.from("tax_invoices")
+      .select("invoice_type, supply_amount, tax_amount, total_amount, supplier_name, buyer_name, item_name, invoice_date")
+      .eq("user_id", userId).gte("invoice_date", startDate).lte("invoice_date", endDate)
+      .order("invoice_date", { ascending: false });
+    if (error || !invoices) return null;
+    console.log(`Found ${invoices.length} tax invoices for ${periodLabel}`);
+    let salesTotal = 0, salesTax = 0, salesCount = 0;
+    let purchaseTotal = 0, purchaseTax = 0, purchaseCount = 0;
+    for (const inv of invoices) {
+      if (inv.invoice_type === "매출") { salesTotal += inv.supply_amount; salesTax += inv.tax_amount; salesCount++; }
+      else { purchaseTotal += inv.supply_amount; purchaseTax += inv.tax_amount; purchaseCount++; }
+    }
+    const vatPayable = salesTax - purchaseTax;
+    return { salesTotal, salesTax, salesCount, purchaseTotal, purchaseTax, purchaseCount, vatPayable, periodLabel, recentInvoices: invoices.slice(0, 5) };
+  } catch (e) { console.error("fetchTaxInvoiceData error:", e); return null; }
+}
+
+function formatTaxInvoicePrompt(data: any): string {
+  let p = `\n\n## 📊 세금계산서 현황 (${data.periodLabel})\n`;
+  p += `- **매출 세금계산서**: ${data.salesCount}건, 공급가액 ${fmt(data.salesTotal)}원, 부가세 ${fmt(data.salesTax)}원\n`;
+  p += `- **매입 세금계산서**: ${data.purchaseCount}건, 공급가액 ${fmt(data.purchaseTotal)}원, 부가세 ${fmt(data.purchaseTax)}원\n`;
+  p += `- **예상 부가세 ${data.vatPayable >= 0 ? "납부" : "환급"}액**: ${fmt(Math.abs(data.vatPayable))}원\n`;
+  if (data.recentInvoices.length > 0) {
+    p += `\n### 최근 세금계산서\n`;
+    for (const inv of data.recentInvoices) {
+      const counterpart = inv.invoice_type === "매출" ? inv.buyer_name : inv.supplier_name;
+      p += `- ${inv.invoice_date} [${inv.invoice_type}] ${counterpart || "미상"}: ${fmt(inv.total_amount)}원${inv.item_name ? ` (${inv.item_name})` : ""}\n`;
+    }
+  }
+  p += `\n위 데이터는 홈택스에서 동기화된 세금계산서 기준입니다. 정확한 숫자로 답변하세요.`;
+  return p;
+}
+
+// --- 예치금 (deposits) ---
+async function fetchDepositData(userId: string, authHeader: string) {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
+    const { data: deposits, error } = await sb.from("deposits")
+      .select("name, type, amount, target_amount, due_date, is_active")
+      .eq("user_id", userId).eq("is_active", true);
+    if (error || !deposits) return null;
+    console.log(`Found ${deposits.length} active deposits`);
+    let totalAmount = 0, totalTarget = 0;
+    for (const d of deposits) { totalAmount += d.amount; if (d.target_amount) totalTarget += d.target_amount; }
+    return { deposits, count: deposits.length, totalAmount, totalTarget };
+  } catch (e) { console.error("fetchDepositData error:", e); return null; }
+}
+
+function formatDepositPrompt(data: any): string {
+  let p = `\n\n## 📊 예치금 현황\n`;
+  p += `- **활성 예치금**: ${data.count}건\n- **총 적립 금액**: ${fmt(data.totalAmount)}원\n`;
+  if (data.totalTarget > 0) p += `- **총 목표 금액**: ${fmt(data.totalTarget)}원 (달성률: ${Math.round(data.totalAmount / data.totalTarget * 100)}%)\n`;
+  if (data.deposits.length > 0) {
+    p += `\n### 예치금 목록\n`;
+    for (const d of data.deposits) {
+      p += `- ${d.name} (${d.type}): ${fmt(d.amount)}원`;
+      if (d.target_amount) p += ` / 목표 ${fmt(d.target_amount)}원`;
+      if (d.due_date) p += ` (기한: ${d.due_date})`;
+      p += `\n`;
+    }
+  }
+  p += `\n위 데이터를 기반으로 정확하게 답변하세요.`;
+  return p;
+}
+
+// --- 저축 계좌 (savings_accounts) ---
+async function fetchSavingsData(userId: string, authHeader: string) {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
+    const { data: accounts, error } = await sb.from("savings_accounts")
+      .select("name, type, bank_name, amount, interest_rate, is_active")
+      .eq("user_id", userId).eq("is_active", true);
+    if (error || !accounts) return null;
+    console.log(`Found ${accounts.length} savings accounts`);
+    let totalAmount = 0, totalMonthlyInterest = 0;
+    for (const a of accounts) {
+      totalAmount += a.amount;
+      totalMonthlyInterest += Math.round(a.amount * (a.interest_rate / 100) / 12);
+    }
+    return { accounts, count: accounts.length, totalAmount, totalMonthlyInterest };
+  } catch (e) { console.error("fetchSavingsData error:", e); return null; }
+}
+
+function formatSavingsPrompt(data: any): string {
+  let p = `\n\n## 📊 저축/투자 현황\n`;
+  p += `- **등록 계좌**: ${data.count}개\n- **총 잔액**: ${fmt(data.totalAmount)}원\n- **이번 달 예상 이자**: ${fmt(data.totalMonthlyInterest)}원\n`;
+  if (data.accounts.length > 0) {
+    p += `\n### 계좌별 현황\n`;
+    for (const a of data.accounts) {
+      p += `- ${a.name}${a.bank_name ? ` (${a.bank_name})` : ""} [${a.type}]: ${fmt(a.amount)}원, 연 ${a.interest_rate}%\n`;
+    }
+  }
+  p += `\n위 데이터는 사용자가 직접 등록한 저축/투자 정보입니다. 정확한 숫자로 답변하세요.`;
+  return p;
+}
+
+// --- 자동이체 (auto_transfers) ---
+async function fetchAutoTransferData(userId: string, authHeader: string) {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
+    const { data: transfers, error } = await sb.from("auto_transfers")
+      .select("name, amount, recipient, condition, is_active, status, next_execution_at, last_executed_at")
+      .eq("user_id", userId);
+    if (error || !transfers) return null;
+    console.log(`Found ${transfers.length} auto transfers`);
+    const active = transfers.filter(t => t.is_active);
+    let totalMonthly = 0;
+    for (const t of active) totalMonthly += t.amount;
+    return { transfers, activeCount: active.length, totalCount: transfers.length, totalMonthly };
+  } catch (e) { console.error("fetchAutoTransferData error:", e); return null; }
+}
+
+function formatAutoTransferPrompt(data: any): string {
+  let p = `\n\n## 📊 자동이체 현황\n`;
+  p += `- **활성 자동이체**: ${data.activeCount}건 / 전체 ${data.totalCount}건\n`;
+  p += `- **월 총 이체 금액**: ${fmt(data.totalMonthly)}원\n`;
+  if (data.transfers.length > 0) {
+    p += `\n### 이체 목록\n`;
+    for (const t of data.transfers) {
+      p += `- ${t.name}: ${fmt(t.amount)}원 → ${t.recipient} (${t.is_active ? "활성" : "비활성"}, ${t.condition})\n`;
+    }
+  }
+  p += `\n위 데이터는 등록된 자동이체 규칙입니다. 정확한 숫자로 답변하세요.`;
+  return p;
+}
+
+// ============ 키워드 기반 의도 분류 ============
+
+type DataSource = "transaction" | "employee" | "tax_invoice" | "deposit" | "savings" | "auto_transfer";
 
 interface ClassifiedIntent {
   needsData: boolean;
-  dataSources: string[];
+  dataSource: DataSource | null;
+  requiresConnection: string | null; // null = 내부 데이터, 연동 불필요
   timePeriod?: { type: string; startDate?: string; endDate?: string };
 }
 
@@ -244,45 +349,117 @@ function classifyByKeyword(text: string): ClassifiedIntent {
   else if (/분기/.test(t)) timePeriod = { type: "quarter" };
   else if (/올해|금년/.test(t)) timePeriod = { type: "year" };
 
-  // 데이터 질문 감지
-  const salesExpensePattern = /매출|수입|수익|지출|비용|결제|소비|얼마|현황|내역|카드.*사용|총액|합계|브리핑|요약|정리/;
-  const taxPattern = /세금|부가세|종소세|종합소득|세무|신고|납부|홈택스/;
-  const employeePattern = /급여|월급|임금|직원.*급|인건비|4대.*보험/;
+  // 순서 중요: 구체적인 패턴을 먼저 매칭
 
-  if (taxPattern.test(t)) {
-    return { needsData: true, dataSources: ["hometax"], timePeriod };
-  }
-  if (employeePattern.test(t)) {
-    return { needsData: true, dataSources: ["employee"], timePeriod };
-  }
-  if (salesExpensePattern.test(t)) {
-    return { needsData: true, dataSources: ["card", "bank"], timePeriod };
+  // 자동이체
+  if (/자동\s*이체|자동\s*송금|이체\s*규칙|이체\s*설정/.test(t)) {
+    return { needsData: true, dataSource: "auto_transfer", requiresConnection: null, timePeriod };
   }
 
-  // 기간 키워드가 있으면 데이터 질문으로 간주
+  // 저축/투자
+  if (/적금|예금|파킹\s*통장|저축|이자.*얼마|굴리|투자.*현황/.test(t)) {
+    return { needsData: true, dataSource: "savings", requiresConnection: null, timePeriod };
+  }
+
+  // 예치금/비상금
+  if (/예치금|비상금|퇴직금.*적립|부가세.*예치|목표.*금액|적립.*현황/.test(t)) {
+    return { needsData: true, dataSource: "deposit", requiresConnection: null, timePeriod };
+  }
+
+  // 세금계산서 (일반 세금 질문보다 먼저)
+  if (/세금\s*계산서|계산서.*발행|계산서.*현황|매입.*계산서|매출.*계산서/.test(t)) {
+    return { needsData: true, dataSource: "tax_invoice", requiresConnection: "hometax", timePeriod };
+  }
+
+  // 직원/급여
+  if (/급여|월급|임금|직원.*급|인건비|4대.*보험|직원.*몇/.test(t)) {
+    return { needsData: true, dataSource: "employee", requiresConnection: null, timePeriod };
+  }
+
+  // 세금 일반 (부가세, 종소세 등 - 세금계산서 데이터 기반)
+  if (/세금|부가세|종소세|종합소득|세무|신고|납부|홈택스/.test(t)) {
+    return { needsData: true, dataSource: "tax_invoice", requiresConnection: "hometax", timePeriod };
+  }
+
+  // 매출/지출/거래내역
+  if (/매출|수입|수익|지출|비용|결제|소비|얼마|현황|내역|카드.*사용|총액|합계|브리핑|요약|정리/.test(t)) {
+    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod };
+  }
+
+  // 기간 키워드 + 조회 동사
   if (timePeriod && /얼마|얼만큼|어때|어떻게|알려|보여|확인/.test(t)) {
-    return { needsData: true, dataSources: ["card", "bank"], timePeriod };
+    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod };
   }
 
-  return { needsData: false, dataSources: [] };
+  return { needsData: false, dataSource: null, requiresConnection: null };
 }
 
-// ============ 연동/범위 외 응답 ============
+// ============ 연동 확인 ============
 
-function buildConnectionRequiredResponse(secretaryName: string, missingSources: string[], intent: string): string {
-  const sourceList = missingSources.join(", ");
-  return `사장님, **요청하신 정보**를 확인하려면 먼저 데이터 연동이 필요합니다.\n\n📋 **필요한 연동 항목**: ${sourceList}\n\n연동 방법:\n1. **설정 > 데이터 연결**로 이동\n2. 필요한 서비스 선택 후 인증 진행\n3. 연동 완료 후 실시간 데이터 확인 가능\n\n💡 연동은 약 1분이면 완료됩니다.`;
+function checkConnectionForSource(source: string | null, conn: ConnectionStatus): string | null {
+  if (!source) return null;
+  if (source === "hometax" && !conn.hometax) return "홈택스";
+  if (source === "card_or_bank" && !conn.card && !conn.bank) return "카드사 또는 은행 계좌";
+  return null; // 연동 완료 또는 내부 데이터
 }
 
-function getMissingDataSources(sources: string[], cs: ConnectionStatus): string[] {
-  const m: string[] = [];
-  for (const s of sources) {
-    if (s === "hometax" && !cs.hometax) m.push("홈택스");
-    if (s === "card" && !cs.card) m.push("카드사");
-    if (s === "bank" && !cs.bank) m.push("은행 계좌");
-    if (s === "employee" && !cs.employee) m.push("직원 정보");
+function buildConnectionRequiredResponse(missingSources: string): string {
+  return `사장님, **요청하신 정보**를 확인하려면 먼저 데이터 연동이 필요합니다.\n\n📋 **필요한 연동 항목**: ${missingSources}\n\n연동 방법:\n1. **설정 > 데이터 연결**로 이동\n2. 필요한 서비스 선택 후 인증 진행\n3. 연동 완료 후 실시간 데이터 확인 가능\n\n💡 연동은 약 1분이면 완료됩니다.`;
+}
+
+// ============ 데이터 조회 + 프롬프트 통합 ============
+
+async function fetchAndFormatData(
+  dataSource: DataSource,
+  userId: string,
+  authHeader: string,
+  timePeriod?: any
+): Promise<{ data: any; prompt: string; emptyMessage: string } | null> {
+  switch (dataSource) {
+    case "transaction": {
+      const data = await fetchTransactionData(userId, authHeader, timePeriod);
+      if (!data) return null;
+      return { data, prompt: formatTransactionPrompt(data), emptyMessage: "해당 기간에 거래 기록이 없습니다." };
+    }
+    case "employee": {
+      const data = await fetchEmployeeData(userId, authHeader);
+      if (!data) return null;
+      return { data, prompt: formatEmployeePrompt(data), emptyMessage: "현재 등록된 재직 직원이 없습니다. 직원 관리 메뉴에서 직원을 등록해주세요." };
+    }
+    case "tax_invoice": {
+      const data = await fetchTaxInvoiceData(userId, authHeader, timePeriod);
+      if (!data) return null;
+      return { data, prompt: formatTaxInvoicePrompt(data), emptyMessage: "해당 기간에 세금계산서 기록이 없습니다." };
+    }
+    case "deposit": {
+      const data = await fetchDepositData(userId, authHeader);
+      if (!data) return null;
+      return { data, prompt: formatDepositPrompt(data), emptyMessage: "등록된 예치금이 없습니다. 자금관리 메뉴에서 예치금을 등록해보세요." };
+    }
+    case "savings": {
+      const data = await fetchSavingsData(userId, authHeader);
+      if (!data) return null;
+      return { data, prompt: formatSavingsPrompt(data), emptyMessage: "등록된 저축/투자 계좌가 없습니다. 자금관리 메뉴에서 계좌를 등록해보세요." };
+    }
+    case "auto_transfer": {
+      const data = await fetchAutoTransferData(userId, authHeader);
+      if (!data) return null;
+      return { data, prompt: formatAutoTransferPrompt(data), emptyMessage: "등록된 자동이체 규칙이 없습니다. 자금관리 메뉴에서 자동이체를 설정해보세요." };
+    }
+    default: return null;
   }
-  return m;
+}
+
+function hasActualData(dataSource: DataSource, data: any): boolean {
+  switch (dataSource) {
+    case "transaction": return data.expenseCount > 0 || data.incomeCount > 0;
+    case "employee": return data.count > 0;
+    case "tax_invoice": return data.salesCount > 0 || data.purchaseCount > 0;
+    case "deposit": return data.count > 0;
+    case "savings": return data.count > 0;
+    case "auto_transfer": return data.totalCount > 0;
+    default: return false;
+  }
 }
 
 // ============ 메인 핸들러 ============
@@ -305,16 +482,8 @@ serve(async (req) => {
     const genderDesc = secretaryGender === "male" ? "남성" : "여성";
     const toneInst = toneMap[secretaryTone] || toneMap.polite;
 
-    const voiceModeInstructions = voiceMode ? `
-
-## 🔊 음성 모드 (매우 중요!)
-지금은 사용자가 음성으로 대화 중입니다. 반드시 아래 규칙을 따르세요:
-- **구어체**로 말하듯 자연스럽게 답변하세요. 문어체/보고서 형식 금지.
-- 마크다운 기호(#, *, -, 번호 목록) 절대 사용 금지.
-- 이모지 사용 금지.
-- 숫자는 "삼백이십만원" 같이 한글로 읽기 쉽게 표현하세요.
-- 핵심만 짧게 2~3문장으로 답변하세요.
-- "사장님~" 같은 호칭을 자연스럽게 사용하세요.` : "";
+    const voiceInst = voiceMode ? `\n\n## 🔊 음성 모드\n- 구어체로 자연스럽게 2~3문장\n- 마크다운/이모지 금지\n- 숫자는 한글로 읽기 쉽게\n- "사장님~" 호칭 사용` : "";
+    const voiceDataInst = voiceMode ? "\n- 구어체로 짧게 2~3문장으로 핵심만 답변\n- 마크다운/이모지 사용 금지\n- 숫자는 읽기 쉽게 한글로 표현" : "";
 
     const geminiMessages = messages.map((msg: any) => ({
       role: msg.role === "assistant" ? "model" : "user",
@@ -322,115 +491,64 @@ serve(async (req) => {
     }));
 
     const lastMsg = messages.filter((m: any) => m.role === "user").pop()?.content || "";
-    console.log("Processing message:", lastMsg.substring(0, 50));
+    console.log("Processing:", lastMsg.substring(0, 50));
 
-    // ━━━ 키워드 기반 의도 분류 (AI 호출 없음, 즉시 완료) ━━━
+    // ━━━ 키워드 분류 ━━━
     const classified = classifyByKeyword(lastMsg);
-    console.log("Keyword classification:", { needsData: classified.needsData, sources: classified.dataSources, period: classified.timePeriod?.type });
+    console.log("Classification:", { needsData: classified.needsData, source: classified.dataSource, period: classified.timePeriod?.type });
 
-    // ━━━ Case 1: 데이터 불필요 → 단일 Gemini 호출 (Tool Calling 없이) ━━━
-    if (!classified.needsData) {
-      const systemPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.
-성별: ${genderDesc}
-
-${toneInst}
-${voiceModeInstructions}
-
-## 성격
-- 따뜻하고 친근한 비서, 사장님을 진심으로 응원
-- 가끔 이모지를 적절히 사용, 딱딱하게 거절하지 않음${voiceMode ? "\n- (음성 모드: 이모지 대신 말투로 감정 표현)" : ""}
-
-## 주의사항
-- 가짜 숫자를 절대 만들지 마세요. 데이터가 필요하면 "확인해볼게요"라고 안내
-- 불법/위험 요청만 정중히 거절
-- ${voiceMode ? "구어체로 짧은" : "마크다운 형식의"} 응답을 작성`;
-
+    // ━━━ Case 1: 데이터 불필요 → 단순 대화 ━━━
+    if (!classified.needsData || !classified.dataSource) {
+      const systemPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}${voiceInst}\n\n## 성격\n- 따뜻하고 친근한 비서, 사장님을 진심으로 응원${voiceMode ? "\n- 이모지 대신 말투로 감정 표현" : "\n- 가끔 이모지를 적절히 사용"}\n\n## 주의사항\n- 가짜 숫자를 절대 만들지 마세요\n- 불법/위험 요청만 정중히 거절`;
       const result = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: systemPrompt }] },
         { role: "model", parts: [{ text: "네, 알겠습니다." }] },
         ...geminiMessages,
       ]);
-
       const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "무엇을 도와드릴까요?";
-      console.log("Direct response (1 API call, no tool calling)");
+      console.log("Direct response (no data)");
       return new Response(JSON.stringify({ response }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // ━━━ Case 2: 데이터 필요 → 연동 확인 + 데이터 조회 + 단일 Gemini 호출 ━━━
+    // ━━━ Case 2: 데이터 필요 → 연동 확인 + 조회 ━━━
     const authHeader = req.headers.get("Authorization") || "";
-    const connStatus = await checkConnectionStatus(userId, authHeader);
-    const missing = getMissingDataSources(classified.dataSources, connStatus);
 
-    if (missing.length > 0) {
-      return new Response(
-        JSON.stringify({ response: buildConnectionRequiredResponse(secretaryName, missing, "data_inquiry"), requiresConnection: true }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // 데이터 조회 (직원 급여 vs 거래내역 분기)
-    const voiceDataInst = voiceMode ? "\n- 구어체로 짧게 2~3문장으로 핵심만 답변\n- 마크다운/이모지 사용 금지\n- 숫자는 읽기 쉽게 한글로 표현" : "";
-    const isEmployeeQuery = classified.dataSources.includes("employee");
-
-    if (isEmployeeQuery) {
-      // ━━━ 직원 급여 조회 ━━━
-      const periodLabel = classified.timePeriod?.type === "last_month" ? "지난달" : "이번 달";
-      const empData = await fetchEmployeeSalaryData(userId, authHeader, periodLabel);
-
-      if (empData && empData.activeCount > 0) {
-        console.log("Employee data found:", { count: empData.activeCount, totalSalary: empData.totalMonthlySalary });
-        const dataContext = formatEmployeeDataForPrompt(empData);
-        const dataPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}\n\n## 중요\n- 아래 실제 직원 급여 데이터를 기반으로 정확한 숫자로 답변\n- 급여는 "지급 예정" 또는 "나가야 할 금액"으로 표현 (과거형 금지)\n- 데이터에 없는 정보는 추측 금지\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${dataContext}`;
-
-        const result = await callGemini(GEMINI_API_KEY, [
-          { role: "user", parts: [{ text: dataPrompt }] },
-          { role: "model", parts: [{ text: "네, 직원 급여 데이터를 기반으로 정확하게 답변하겠습니다." }] },
-          ...geminiMessages,
-        ]);
-
-        const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
-        console.log("Employee salary response (1 API call)");
-        return new Response(JSON.stringify({ response, hasData: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // 연동 확인 (내부 데이터는 스킵)
+    if (classified.requiresConnection) {
+      const connStatus = await checkConnectionStatus(userId, authHeader);
+      const missingSource = checkConnectionForSource(classified.requiresConnection, connStatus);
+      if (missingSource) {
+        return new Response(
+          JSON.stringify({ response: buildConnectionRequiredResponse(missingSource), requiresConnection: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
-
-      // 직원 데이터 없음
-      const noEmpPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}\n\n참고: 등록된 재직 직원이 없습니다. 사용자에게 "현재 등록된 직원이 없어서 급여 정보를 확인할 수 없습니다. 직원 관리 메뉴에서 직원을 등록해주세요."라고 친절하게 안내하세요.${voiceDataInst}`;
-      const result = await callGemini(GEMINI_API_KEY, [
-        { role: "user", parts: [{ text: noEmpPrompt }] },
-        { role: "model", parts: [{ text: "네, 알겠습니다." }] },
-        ...geminiMessages,
-      ]);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
-      return new Response(JSON.stringify({ response }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // ━━━ 거래내역 조회 ━━━
-    const txData = await fetchTransactionData(userId, authHeader, classified.timePeriod);
+    // 데이터 조회
+    const result = await fetchAndFormatData(classified.dataSource, userId, authHeader, classified.timePeriod);
 
-    if (txData) {
-      console.log("Data found:", { expense: txData.totalExpense, income: txData.totalIncome, count: txData.expenseCount, period: txData.periodLabel });
-      const dataContext = formatDataForPrompt(txData, txData.periodLabel);
-      const dataPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- 0건이면 "기록이 없습니다" 안내\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${dataContext}`;
-
-      const result = await callGemini(GEMINI_API_KEY, [
+    if (result && hasActualData(classified.dataSource, result.data)) {
+      const dataPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${result.prompt}`;
+      const geminiResult = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: dataPrompt }] },
         { role: "model", parts: [{ text: "네, 실제 데이터를 기반으로 정확하게 답변하겠습니다." }] },
         ...geminiMessages,
       ]);
-
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
-      console.log("Data response (1 API call total)");
+      const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
+      console.log(`${classified.dataSource} data response (1 API call)`);
       return new Response(JSON.stringify({ response, hasData: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 데이터 없음
-    const noDataPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}\n\n참고: 데이터를 조회했으나 해당 기간에 기록이 없습니다. 사용자에게 친절하게 안내하세요.${voiceDataInst}`;
-    const result = await callGemini(GEMINI_API_KEY, [
+    const emptyMsg = result?.emptyMessage || "해당 데이터를 찾을 수 없습니다.";
+    const noDataPrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n${toneInst}\n\n참고: ${emptyMsg} 사용자에게 친절하게 안내하세요.${voiceDataInst}`;
+    const geminiResult = await callGemini(GEMINI_API_KEY, [
       { role: "user", parts: [{ text: noDataPrompt }] },
       { role: "model", parts: [{ text: "네, 알겠습니다." }] },
       ...geminiMessages,
     ]);
-    const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
+    const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
     return new Response(JSON.stringify({ response }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (error: any) {
