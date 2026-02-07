@@ -24,8 +24,6 @@ export default defineConfig(({ mode }) => ({
     dedupe: ["react", "react-dom", "react/jsx-runtime"],
   },
   optimizeDeps: {
-    // @elevenlabs 패키지를 프리번들에서 제외하여 런타임에 프로젝트 React 사용
-    exclude: ["@elevenlabs/react", "@elevenlabs/client"],
     force: true,
   },
 }));
