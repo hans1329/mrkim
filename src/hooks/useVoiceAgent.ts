@@ -145,12 +145,7 @@ export function useVoiceAgent() {
     }).catch(() => {});
   }, []);
 
-  // data URI 방식으로 변경 (atob 디코딩은 바이너리 오디오 손상 가능)
-  const toAudioSrc = useCallback((base64: string): string => {
-    return `data:audio/mpeg;base64,${base64}`;
-  }, []);
-
-  // --- TTS 재생 (인터럽트 지원) ---
+  // --- TTS 재생 (인터럽트 지원, raw binary blob 방식) ---
   const speakText = useCallback(async (text: string): Promise<boolean> => {
     if (abortRef.current) return false;
 
@@ -159,9 +154,11 @@ export function useVoiceAgent() {
 
     setStatus("speaking");
 
+    let blobUrl: string | null = null;
     let interrupted = false;
 
     try {
+      // fetch()로 raw 바이너리 오디오를 직접 받음 (ElevenLabs 공식 권장)
       const response = await fetch(TTS_URL, {
         method: "POST",
         headers: {
@@ -178,44 +175,50 @@ export function useVoiceAgent() {
 
       if (!response.ok) throw new Error(`TTS error: ${response.status}`);
 
-      const data = await response.json();
-      if (!data?.audioContent) throw new Error("No audio content");
-
       if (abortRef.current) return false;
 
-      // data URI 방식 사용 (브라우저가 base64를 네이티브 디코딩)
-      const audioSrc = toAudioSrc(data.audioContent);
+      // blob()으로 바이너리 오디오 수신 → Object URL 생성
+      const audioBlob = await response.blob();
+      blobUrl = URL.createObjectURL(audioBlob);
 
       if (!audioElRef.current) {
         audioElRef.current = new Audio();
       }
       const el = audioElRef.current;
-      el.src = audioSrc;
+      el.src = blobUrl;
 
       await new Promise<void>((resolve, reject) => {
         el.onended = () => resolve();
         el.onpause = () => {
-          // 인터럽트로 인한 일시정지 감지
           if (el.currentTime < el.duration - 0.1) {
             interrupted = true;
             resolve();
           }
         };
-        el.onerror = () => reject(new Error("Audio playback failed"));
-        el.play().catch(reject);
+        el.onerror = (e) => {
+          console.error("Audio element error:", e);
+          reject(new Error("Audio playback failed"));
+        };
+        el.play().catch((err) => {
+          console.error("Audio play() failed:", err);
+          reject(err);
+        });
       });
     } catch (error) {
       if (!abortRef.current) {
         console.error("TTS error:", error);
       }
     } finally {
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
       if (!abortRef.current && !interrupted) {
         setStatus("listening");
       }
     }
 
     return interrupted;
-  }, [secretaryGender, secretaryTone, toAudioSrc]);
+  }, [secretaryGender, secretaryTone]);
 
   // --- chat-ai 호출 ---
   const queryAI = useCallback(async (userText: string): Promise<string> => {
