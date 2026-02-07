@@ -25,5 +25,6 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     force: true,
+    include: ["@tanstack/react-query"],
   },
 }));
