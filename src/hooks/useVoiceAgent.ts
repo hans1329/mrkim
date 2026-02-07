@@ -51,7 +51,7 @@ export function useVoiceAgent() {
   // --- HTMLAudioElement 기반 TTS 재생 ---
   // audioEl이 이미 생성된 경우 해당 엘리먼트에 src를 설정하여 재생
   const playAudioBlob = useCallback(
-    (audioBlob: Blob, preCreatedAudio?: HTMLAudioElement): Promise<{ interrupted: boolean }> => {
+    (audioBlob: Blob, preCreatedAudio?: HTMLAudioElement, onPlayStarted?: () => void): Promise<{ interrupted: boolean }> => {
       return new Promise((resolve) => {
         const url = URL.createObjectURL(audioBlob);
         const audio = preCreatedAudio || new Audio();
@@ -73,8 +73,10 @@ export function useVoiceAgent() {
 
         audio.play().then(() => {
           console.log("[Audio] ▶ Playback started");
+          onPlayStarted?.();
         }).catch((err) => {
           console.error("[Audio] play() rejected:", err);
+          onPlayStarted?.(); // 실패해도 텍스트는 표시
           currentAudioRef.current = null;
           URL.revokeObjectURL(url);
           resolve({ interrupted: false });
@@ -113,8 +115,8 @@ export function useVoiceAgent() {
     }
   }, []);
 
-  // --- TTS fetch + 재생 ---
-  const fetchAndPlayTTS = useCallback(async (text: string): Promise<boolean> => {
+  // --- TTS fetch + 재생 (onPlayStart: 재생 시작 시 호출되는 콜백) ---
+  const fetchAndPlayTTS = useCallback(async (text: string, onPlayStart?: () => void): Promise<boolean> => {
     const cleaned = cleanForTTS(text);
     if (!cleaned || abortRef.current) return false;
 
@@ -143,6 +145,9 @@ export function useVoiceAgent() {
       console.log("[TTS] Received:", audioBlob.size, "bytes");
       if (abortRef.current) return false;
 
+      // 재생 시작 시 텍스트 표시 콜백 호출
+      onPlayStart?.();
+
       const { interrupted } = await playAudioBlob(audioBlob);
 
       if (!abortRef.current && !interrupted) {
@@ -153,6 +158,8 @@ export function useVoiceAgent() {
     } catch (error) {
       if (!abortRef.current) {
         console.error("[TTS] ❌ Error:", error);
+        // TTS 실패 시에도 텍스트는 표시
+        onPlayStart?.();
         setStatus("listening");
       }
       return false;
@@ -223,10 +230,12 @@ export function useVoiceAgent() {
 
       const agentMsg: VoiceMessage = { role: "agent", text: aiResponse, timestamp: new Date() };
       messagesContextRef.current = [...messagesContextRef.current, agentMsg];
-      setLastMessage(agentMsg);
       saveMessageToDB("assistant", aiResponse);
 
-      await fetchAndPlayTTS(aiResponse);
+      // 텍스트는 TTS 재생이 시작될 때 표시
+      await fetchAndPlayTTS(aiResponse, () => {
+        setLastMessage(agentMsg);
+      });
 
       if (pendingTranscriptRef.current && sessionActiveRef.current) {
         const pending = pendingTranscriptRef.current;
@@ -388,13 +397,15 @@ export function useVoiceAgent() {
 
     // 2. 인사말 재생(미리 생성한 Audio 사용) + Scribe 연결 병렬
     messagesContextRef.current = [greetingMsg];
-    setLastMessage(greetingMsg);
 
     if (greetingAudioBlob) {
       setStatus("speaking");
       console.log("[Session] 2. Playing greeting (pre-created audio)...");
 
-      const playPromise = playAudioBlob(greetingAudioBlob, greetingAudio);
+      // 재생 시작 시점에 인사말 텍스트 표시
+      const playPromise = playAudioBlob(greetingAudioBlob, greetingAudio, () => {
+        setLastMessage(greetingMsg);
+      });
       const scribePromise = connectScribe();
 
       const { interrupted } = await playPromise;
