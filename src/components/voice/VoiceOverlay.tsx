@@ -106,22 +106,6 @@ export function VoiceOverlay() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 relative">
-        {/* 마지막 메시지 (가운데 표시) */}
-        {lastMessage && !permissionDenied && (
-          <div className="absolute top-8 left-4 right-4 flex justify-center">
-            <div
-              className={cn(
-                "max-w-[85%] rounded-2xl px-5 py-3 animate-fade-in",
-                lastMessage.role === "user"
-                  ? "bg-white text-primary"
-                  : "bg-white/20 text-white backdrop-blur-sm"
-              )}
-            >
-              <p className="text-sm leading-relaxed">{lastMessage.text}</p>
-            </div>
-          </div>
-        )}
-
         {/* 권한 거부 상태 */}
         {permissionDenied ? (
           <div className="flex flex-col items-center gap-4">
@@ -208,6 +192,22 @@ export function VoiceOverlay() {
                     }}
                   />
                 ))}
+              </div>
+            )}
+
+            {/* 마지막 메시지 (버튼 아래) */}
+            {lastMessage && (
+              <div className="mt-6 w-full flex justify-center">
+                <div
+                  className={cn(
+                    "max-w-[85%] rounded-2xl px-5 py-3 animate-fade-in",
+                    lastMessage.role === "user"
+                      ? "bg-white text-primary"
+                      : "bg-white/20 text-white backdrop-blur-sm"
+                  )}
+                >
+                  <p className="text-sm leading-relaxed">{lastMessage.text}</p>
+                </div>
               </div>
             )}
 
