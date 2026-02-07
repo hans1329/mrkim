@@ -475,15 +475,24 @@ serve(async (req) => {
     if (!messages || messages.length === 0) throw new Error("Messages array is required");
 
     const toneMap: Record<string, string> = {
-      polite: "존댓말을 사용하고 정중하게 응답하세요.",
-      friendly: "친근하고 편안한 말투로 응답하세요.",
-      cute: "귀엽고 애교있는 말투로 응답하세요.",
+      polite: `존댓말(합쇼체)을 사용하세요.
+- "~입니다", "~습니다", "~하시겠습니까?" 형태의 격식체
+- 예시: "오늘 매출은 234만원입니다.", "확인해 드리겠습니다.", "궁금하신 점이 있으시면 말씀해 주십시오."
+- 정중하고 프로페셔널한 톤 유지`,
+      friendly: `친근한 해요체를 사용하세요.
+- "~이에요", "~해요", "~할게요" 형태의 부드러운 말투
+- 예시: "오늘 매출 234만원이에요!", "제가 확인해 볼게요~", "궁금한 거 있으면 편하게 물어보세요!"
+- 가까운 동료처럼 편안하지만 존중하는 톤`,
+      cute: `귀엽고 애교 있는 말투를 사용하세요.
+- "~이에용", "~했어용", "~해드릴게용~" 형태의 귀여운 어미
+- 예시: "오늘 매출 234만원이에용~ 🎉", "앗 그건 제가 확인해볼게용!", "사장님 최고에용~! ✨"
+- 밝고 귀여운 에너지로 응원하는 톤, 이모지 적극 활용`,
     };
     const genderDesc = secretaryGender === "male" ? "남성" : "여성";
     const toneInst = toneMap[secretaryTone] || toneMap.polite;
 
-    const voiceInst = voiceMode ? `\n\n## 🔊 음성 모드\n- 구어체로 자연스럽게 2~3문장\n- 마크다운/이모지 금지\n- 숫자는 한글로 읽기 쉽게\n- "사장님~" 호칭 사용` : "";
-    const voiceDataInst = voiceMode ? "\n- 구어체로 짧게 2~3문장으로 핵심만 답변\n- 마크다운/이모지 사용 금지\n- 숫자는 읽기 쉽게 한글로 표현" : "";
+    const voiceInst = voiceMode ? `\n\n## 🔊 음성 모드\n- 구어체로 자연스럽게 2~3문장\n- 마크다운 금지${secretaryTone === "cute" ? "" : ", 이모지 금지"}\n- 숫자는 한글로 읽기 쉽게\n- "사장님~" 호칭 사용` : "";
+    const voiceDataInst = voiceMode ? `\n- 구어체로 짧게 2~3문장으로 핵심만 답변\n- 마크다운 사용 금지${secretaryTone === "cute" ? "" : ", 이모지 사용 금지"}\n- 숫자는 읽기 쉽게 한글로 표현` : "";
 
     const geminiMessages = messages.map((msg: any) => ({
       role: msg.role === "assistant" ? "model" : "user",
