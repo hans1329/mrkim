@@ -520,6 +520,23 @@ export function useVoiceAgent() {
     };
   }, []);
 
+  // --- TTS 중단 후 듣기 모드 전환 (세션 유지) ---
+  const interruptAndListen = useCallback(() => {
+    const audio = currentAudioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+      currentAudioRef.current = null;
+      console.log("[Voice] ⏹ TTS interrupted, switching to listening");
+    }
+    setIsTTSPreparing(false);
+    processingRef.current = false;
+    pendingTranscriptRef.current = "";
+    if (sessionActiveRef.current) {
+      setStatus("listening");
+    }
+  }, []);
+
   return {
     status,
     isSpeaking: status === "speaking",
@@ -532,6 +549,7 @@ export function useVoiceAgent() {
     lastError,
     startSession,
     endSession,
+    interruptAndListen,
     resetPermission,
   };
 }
