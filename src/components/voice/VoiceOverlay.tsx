@@ -24,6 +24,7 @@ export function VoiceOverlay() {
     lastError,
     startSession,
     endSession,
+    interruptAndListen,
     resetPermission,
   } = useVoiceAgent();
 
@@ -59,7 +60,13 @@ export function VoiceOverlay() {
   };
 
   const handleMicClick = () => {
-    if (isProcessing || isSpeaking) return;
+    if (isProcessing) return;
+    
+    // TTS 재생 중이면 중단하고 듣기 모드로 전환
+    if (isSpeaking) {
+      interruptAndListen();
+      return;
+    }
     
     if (isActive) {
       endSession();
@@ -151,11 +158,13 @@ export function VoiceOverlay() {
               
               <button
                 onClick={handleMicClick}
-                disabled={isProcessing || isSpeaking}
+                disabled={isProcessing}
                 className={cn(
                   "relative z-10 flex h-28 w-28 items-center justify-center rounded-full transition-all duration-300 cursor-pointer",
-                  isProcessing || isSpeaking
+                  isProcessing
                     ? "bg-white/30 text-white cursor-wait"
+                    : isSpeaking
+                    ? "bg-white/40 text-white hover:bg-white/50 active:bg-white/60"
                     : isListening
                     ? "bg-white text-primary scale-110 shadow-2xl hover:scale-105 active:scale-100"
                     : isActive
@@ -219,10 +228,10 @@ export function VoiceOverlay() {
               </div>
             )}
 
-            {/* 활성 상태에서 종료 안내 */}
-            {isActive && !isProcessing && !isSpeaking && (
+            {/* 활성 상태에서 종료/중단 안내 */}
+            {isActive && !isProcessing && (
               <p className="text-white/50 text-xs mt-4">
-                마이크를 다시 누르면 종료됩니다
+                {isSpeaking ? "마이크를 눌러 AI 발화를 중단할 수 있어요" : "마이크를 다시 누르면 종료됩니다"}
               </p>
             )}
           </>
