@@ -20,11 +20,16 @@ const TTS_URL = `${SUPABASE_URL}/functions/v1/elevenlabs-tts`;
 
 function cleanForTTS(text: string): string {
   return text
-    .replace(/#{1,6}\s?/g, "")
-    .replace(/\*{1,2}([^*]+)\*{1,2}/g, "$1")
-    .replace(/📊|📋|💡|🔴|✅|❌|⚠️|📈|📉|👋|😅|💰|📌|🎯/g, "")
-    .replace(/^[-•]\s/gm, "")
-    .replace(/\n{2,}/g, "\n")
+    .replace(/#{1,6}\s?/g, "")                          // 마크다운 헤더
+    .replace(/\*{1,2}([^*]+)\*{1,2}/g, "$1")             // 볼드/이탤릭
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")              // 링크
+    .replace(/`([^`]+)`/g, "$1")                          // 인라인 코드
+    .replace(/^\d+\.\s+/gm, "")                           // 번호 목록 (1. 2. 3.)
+    .replace(/^[-•*]\s+/gm, "")                           // 불릿 목록
+    .replace(/\p{Extended_Pictographic}/gu, "")            // 모든 이모지 제거
+    .replace(/\n{2,}/g, " ")                              // 여러 줄바꿈 → 공백
+    .replace(/\n/g, " ")                                  // 단일 줄바꿈 → 공백
+    .replace(/\s{2,}/g, " ")                              // 연속 공백 정리
     .trim();
 }
 
