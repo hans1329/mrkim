@@ -322,11 +322,11 @@ export function useVoiceAgent() {
         if (data.text && sessionActiveRef.current) {
           console.log("[Scribe] Committed:", data.text);
 
-          // 인터럽트: TTS 재생 중 확정된 사용자 발화 시 TTS 중단
-          // 배경 소음(TV 등) 오인식 방지를 위해 5글자 이상의 의미있는 발화만 인터럽트 처리
-          if (currentAudioRef.current && data.text.trim().length >= 5) {
-            console.log("[Interrupt] User speech during TTS:", data.text);
-            interruptTTS();
+          // TTS 재생 중에는 스피커→마이크 에코가 사용자 발화로 오인식되므로 무시
+          // (TTS 끝난 후 자동으로 listening 모드로 전환됨)
+          if (currentAudioRef.current) {
+            console.log("[Scribe] ⏭ Ignoring during TTS playback (echo prevention):", data.text);
+            return;
           }
 
           handleCommittedTranscript(data.text);
@@ -357,7 +357,7 @@ export function useVoiceAgent() {
       toast.error("음성 인식 연결에 실패했습니다.");
       return false;
     }
-  }, [interruptTTS, handleCommittedTranscript]);
+  }, [handleCommittedTranscript]);
 
   // --- 세션 시작 ---
   const startSession = useCallback(async () => {
