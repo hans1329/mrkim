@@ -18,7 +18,15 @@ import {
   Volume2,
   MessageCircle,
   Phone,
-  Headphones
+  Headphones,
+  Search,
+  Layers,
+  FileText,
+  Users,
+  Wallet,
+  PiggyBank,
+  ArrowLeftRight,
+  Share2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -34,7 +42,7 @@ export default function Engine() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">김비서 AI 엔진 아키텍처</h1>
-              <p className="text-muted-foreground text-sm">v1.1 · 2025-02-03 업데이트</p>
+              <p className="text-muted-foreground text-sm">v1.3 · 2025-02-08 업데이트</p>
             </div>
           </div>
         </div>
@@ -84,7 +92,7 @@ export default function Engine() {
             </CardContent>
           </Card>
 
-          {/* 응답 채널 구성 - 신규 */}
+          {/* 응답 채널 구성 */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -94,7 +102,7 @@ export default function Engine() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                동일한 AI 엔진을 기반으로, 채널에 맞는 응답 형식을 제공합니다.
+                동일한 AI 엔진(<code className="text-xs bg-muted px-1 rounded">chat-ai</code>)을 기반으로, 채널에 맞는 응답 형식을 제공합니다.
               </p>
               
               <div className="grid md:grid-cols-3 gap-4">
@@ -109,7 +117,7 @@ export default function Engine() {
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <p>• <strong>chat-ai</strong> Edge Function</p>
                     <p>• 마크다운 응답</p>
-                    <p>• 상세한 정보 제공</p>
+                    <p>• 6대 데이터 소스 조회</p>
                     <p>• 대화 히스토리 저장</p>
                   </div>
                   <Badge className="mt-3" variant="outline">로그인 사용자</Badge>
@@ -124,10 +132,10 @@ export default function Engine() {
                     <h4 className="font-semibold">음성 채널</h4>
                   </div>
                   <div className="space-y-2 text-sm text-muted-foreground">
-                    <p>• <strong>ElevenLabs</strong> Conversational AI</p>
+                    <p>• <strong>Scribe STT</strong> → chat-ai → <strong>TTS</strong></p>
                     <p>• 실시간 음성 대화</p>
-                    <p>• 짧고 명확한 응답</p>
-                    <p>• TTS/STT 통합</p>
+                    <p>• voiceMode 구어체 응답</p>
+                    <p>• 텍스트 채팅과 로직 일관성</p>
                   </div>
                   <Badge className="mt-3" variant="outline">로그인 사용자</Badge>
                 </div>
@@ -158,7 +166,9 @@ export default function Engine() {
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   <Badge variant="outline">채널 감지</Badge>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <Badge variant="secondary">공통 의도 분류</Badge>
+                  <Badge variant="secondary">키워드 의도 분류</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">데이터 조회</Badge>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   <Badge variant="secondary">채널별 응답 포맷</Badge>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
@@ -168,7 +178,7 @@ export default function Engine() {
             </CardContent>
           </Card>
 
-          {/* 음성 엔진 상세 - 신규 */}
+          {/* 음성 엔진 상세 */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -177,24 +187,46 @@ export default function Engine() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                {/* 실시간 대화 */}
+              <p className="text-sm text-muted-foreground">
+                ElevenLabs Conversational AI 대신 <strong>Scribe STT → chat-ai → TTS 파이프라인</strong>을 채택한 이유:
+                <code className="text-xs bg-muted px-1 rounded ml-1">chat-ai</code> 내에서 실시간 DB 데이터(6대 소스)에 직접 접근하고,
+                텍스트 채팅과 완벽한 로직 일관성을 유지하기 위함.
+              </p>
+
+              {/* 3단계 파이프라인 */}
+              <div className="p-4 rounded-lg bg-purple-500/5 border border-purple-500/20">
+                <p className="text-xs font-medium mb-3">🎙️ 음성 대화 파이프라인</p>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <Badge variant="outline" className="bg-purple-500/10">🎤 Scribe STT</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">chat-ai (Gemini)</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="outline" className="bg-blue-500/10">🔊 ElevenLabs TTS</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  voiceMode=true → 구어체 2~3문장, 마크다운/이모지 제거, 숫자 한글 표현
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                {/* STT */}
                 <div className="p-4 rounded-lg border">
                   <div className="flex items-center gap-2 mb-3">
                     <Mic className="h-5 w-5 text-purple-500" />
-                    <h4 className="font-semibold">실시간 음성 대화</h4>
+                    <h4 className="font-semibold text-sm">1단계: STT</h4>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    ElevenLabs Conversational AI를 통한 양방향 실시간 대화
-                  </p>
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
+                      <span className="text-muted-foreground">엔진</span>
+                      <Badge variant="outline" className="text-xs">ElevenLabs Scribe</Badge>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-muted-foreground">프로토콜</span>
-                      <Badge variant="outline" className="text-xs">WebRTC</Badge>
+                      <span>WebSocket</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Edge Function</span>
-                      <code className="text-xs bg-muted px-1 rounded">elevenlabs-conversation-token</code>
+                      <code className="text-xs bg-muted px-1 rounded">elevenlabs-scribe-token</code>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">언어</span>
@@ -203,15 +235,38 @@ export default function Engine() {
                   </div>
                 </div>
 
+                {/* AI 처리 */}
+                <div className="p-4 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Brain className="h-5 w-5 text-blue-500" />
+                    <h4 className="font-semibold text-sm">2단계: AI 처리</h4>
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">엔진</span>
+                      <Badge variant="outline" className="text-xs">Gemini 2.0 Flash</Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Edge Function</span>
+                      <code className="text-xs bg-muted px-1 rounded">chat-ai</code>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">voiceMode</span>
+                      <span>true (구어체)</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">데이터</span>
+                      <span>6대 소스 조회</span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* TTS */}
                 <div className="p-4 rounded-lg border">
                   <div className="flex items-center gap-2 mb-3">
                     <Volume2 className="h-5 w-5 text-blue-500" />
-                    <h4 className="font-semibold">텍스트 → 음성 (TTS)</h4>
+                    <h4 className="font-semibold text-sm">3단계: TTS</h4>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    텍스트 응답을 자연스러운 음성으로 변환
-                  </p>
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">모델</span>
@@ -224,6 +279,10 @@ export default function Engine() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">포맷</span>
                       <span>MP3 44.1kHz</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">전처리</span>
+                      <span>cleanForTTS()</span>
                     </div>
                   </div>
                 </div>
@@ -248,6 +307,43 @@ export default function Engine() {
             </CardContent>
           </Card>
 
+          {/* 6대 데이터 소스 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5 text-cyan-500" />
+                6대 데이터 소스
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                AI가 사용자 질문에 답변할 때 조회하는 데이터 소스입니다. 각 소스별 전용 조회·포맷팅 함수가 <code className="text-xs bg-muted px-1 rounded">chat-ai</code>에 구현되어 있습니다.
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {[
+                  { icon: <Receipt className="h-4 w-4" />, name: "거래내역", table: "transactions", source: "card/bank", keywords: "매출, 지출, 결제, 비용" },
+                  { icon: <FileText className="h-4 w-4" />, name: "세금계산서", table: "tax_invoices", source: "hometax", keywords: "부가세, 계산서, 세금" },
+                  { icon: <Users className="h-4 w-4" />, name: "직원/급여", table: "employees", source: "내부", keywords: "급여, 월급, 직원, 인건비" },
+                  { icon: <Wallet className="h-4 w-4" />, name: "예치금", table: "deposits", source: "내부", keywords: "예치금, 비상금, 적립" },
+                  { icon: <PiggyBank className="h-4 w-4" />, name: "저축/투자", table: "savings_accounts", source: "내부", keywords: "적금, 예금, 이자, 투자" },
+                  { icon: <ArrowLeftRight className="h-4 w-4" />, name: "자동이체", table: "auto_transfers", source: "내부", keywords: "자동이체, 이체 규칙" },
+                ].map((item) => (
+                  <div key={item.table} className="p-3 rounded-lg border bg-card">
+                    <div className="flex items-center gap-2 mb-2">
+                      {item.icon}
+                      <span className="font-semibold text-sm">{item.name}</span>
+                    </div>
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                      <p>테이블: <code className="bg-muted px-1 rounded">{item.table}</code></p>
+                      <p>연동: {item.source}</p>
+                      <p className="text-[10px]">키워드: {item.keywords}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* 핵심 모듈 */}
           <Card>
             <CardHeader>
@@ -258,55 +354,27 @@ export default function Engine() {
               {/* 의도 분류기 */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-blue-500" />
-                  <h3 className="font-semibold">1. 의도 분류기 (Intent Classifier)</h3>
+                  <Search className="h-5 w-5 text-blue-500" />
+                  <h3 className="font-semibold">1. 키워드 기반 의도 분류기</h3>
+                  <Badge variant="secondary" className="text-xs">구현 완료</Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">사용자 입력이 업무 범위 내인지 판단</p>
+                <p className="text-sm text-muted-foreground">
+                  정규식 키워드 매칭으로 빠르게 의도를 분류합니다. Gemini API 호출 없이 0ms에 분류 완료.
+                </p>
                 
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-                    <p className="text-xs font-medium text-green-600 mb-2">✓ 업무 범위</p>
-                    <ul className="text-xs space-y-1 text-muted-foreground">
-                      <li>• 매출/지출 현황 조회</li>
-                      <li>• 세금 관련 질문</li>
-                      <li>• 급여/인사 관리</li>
-                      <li>• 경영 브리핑</li>
-                    </ul>
-                  </div>
-                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
-                    <p className="text-xs font-medium text-red-600 mb-2">✗ 범위 외 → 거절</p>
-                    <ul className="text-xs space-y-1 text-muted-foreground">
-                      <li>• 불법/위험 요청</li>
-                      <li>• 개인적인 상담</li>
-                      <li>• 부적절한 콘텐츠</li>
-                    </ul>
-                  </div>
-                </div>
-
                 <div className="p-3 rounded-lg bg-muted/50 overflow-x-auto">
-                  <p className="text-xs font-medium mb-3">Tool Calling 스키마: classify_intent</p>
+                  <p className="text-xs font-medium mb-3">classifyByKeyword() 분류 로직</p>
                   <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
-{`{
-  intent: "sales_inquiry" | "expense_inquiry" | "tax_question" 
-        | "payroll_inquiry" | "employee_management" 
-        | "transaction_classify" | "daily_briefing" 
-        | "alert_check" | "setting_change" 
-        | "self_introduction" | "casual_chat" | "out_of_scope",
-  
-  confidence: 0.0 ~ 1.0,
-  
-  requires_data: boolean,
-  
-  data_sources: ["card", "bank", "hometax", "employee", "none"],
-  
-  time_period: {
-    type: "today" | "week" | "month" | "quarter" | "year" | "custom",
-    start_date?: "YYYY-MM-DD",
-    end_date?: "YYYY-MM-DD"
-  },
-  
-  rejection_reason?: string  // out_of_scope일 경우
-}`}
+{`function classifyByKeyword(text) → {
+  needsData: boolean,       // 데이터 조회 필요 여부
+  dataSource: DataSource,   // "transaction" | "employee" | "tax_invoice" 
+                            // | "deposit" | "savings" | "auto_transfer"
+  requiresConnection: string | null,  // "hometax" | "card_or_bank" | null(내부)
+  timePeriod?: { type: "today" | "week" | "month" | ... }
+}
+
+// 기간 감지: /오늘/ → today, /이번\\s*주/ → week, /이번\\s*달/ → month ...
+// 카테고리별 정규식 매칭 (구체적 패턴 우선)`}
                   </pre>
                 </div>
 
@@ -316,15 +384,17 @@ export default function Engine() {
                     <thead>
                       <tr className="border-b">
                         <th className="text-left py-2 px-2">사용자 입력</th>
-                        <th className="text-left py-2 px-2">intent</th>
-                        <th className="text-left py-2 px-2">data_sources</th>
+                        <th className="text-left py-2 px-2">dataSource</th>
+                        <th className="text-left py-2 px-2">연동 필요</th>
                       </tr>
                     </thead>
                     <tbody className="text-muted-foreground">
-                      <tr className="border-b"><td className="py-1.5 px-2">"오늘 매출 얼마야?"</td><td className="py-1.5 px-2">sales_inquiry</td><td className="py-1.5 px-2">card, bank</td></tr>
-                      <tr className="border-b"><td className="py-1.5 px-2">"부가세 얼마 내야해?"</td><td className="py-1.5 px-2">tax_question</td><td className="py-1.5 px-2">hometax, card</td></tr>
-                      <tr className="border-b"><td className="py-1.5 px-2">"넌 누구야?"</td><td className="py-1.5 px-2">self_introduction</td><td className="py-1.5 px-2">none</td></tr>
-                      <tr><td className="py-1.5 px-2">"심심해"</td><td className="py-1.5 px-2">casual_chat</td><td className="py-1.5 px-2">none</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"오늘 매출 얼마야?"</td><td className="py-1.5 px-2">transaction</td><td className="py-1.5 px-2">card/bank</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"부가세 얼마 내야해?"</td><td className="py-1.5 px-2">tax_invoice</td><td className="py-1.5 px-2">hometax</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"직원 급여 현황"</td><td className="py-1.5 px-2">employee</td><td className="py-1.5 px-2">없음 (내부)</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"자동이체 설정 보여줘"</td><td className="py-1.5 px-2">auto_transfer</td><td className="py-1.5 px-2">없음 (내부)</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"적금 이자 얼마야?"</td><td className="py-1.5 px-2">savings</td><td className="py-1.5 px-2">없음 (내부)</td></tr>
+                      <tr><td className="py-1.5 px-2">"넌 누구야?"</td><td className="py-1.5 px-2">—</td><td className="py-1.5 px-2">—</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -337,6 +407,7 @@ export default function Engine() {
                 <div className="flex items-center gap-2">
                   <Receipt className="h-5 w-5 text-purple-500" />
                   <h3 className="font-semibold">2. 거래 자동 분류기 (Transaction Classifier)</h3>
+                  <Badge variant="outline" className="text-xs">예정</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">상호명 패턴으로 비용 카테고리 자동 분류</p>
                 
@@ -365,6 +436,7 @@ export default function Engine() {
                 <div className="flex items-center gap-2">
                   <Bell className="h-5 w-5 text-orange-500" />
                   <h3 className="font-semibold">3. 알림 생성기 (Alert Generator)</h3>
+                  <Badge variant="outline" className="text-xs">예정</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">긴급도별 할 일 자동 생성</p>
                 
@@ -377,13 +449,44 @@ export default function Engine() {
 
               <Separator />
 
-              {/* 대화 에이전트 */}
+              {/* 일일 브리핑 */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-teal-500" />
                   <h3 className="font-semibold">4. 일일 브리핑 (Daily Briefing)</h3>
+                  <Badge variant="outline" className="text-xs">예정</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">매일 아침 경영 현황 요약 제공</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 공유 모듈 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Share2 className="h-5 w-5 text-indigo-500" />
+                공유 응답 엔진
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                <code className="text-xs bg-muted px-1 rounded">_shared/response-engine.ts</code>에 중앙 집중화된 공통 로직입니다.
+              </p>
+              <div className="grid md:grid-cols-2 gap-3">
+                {[
+                  { label: "의도 분류 스키마", desc: "classifyIntentTool (Tool Calling 용 예비)" },
+                  { label: "말투 설정", desc: "toneInstructions: polite / friendly / cute" },
+                  { label: "시스템 프롬프트", desc: "buildSystemPrompt(context) - 채널별 분기" },
+                  { label: "연동 확인", desc: "getMissingDataSources() + 안내 응답 생성" },
+                  { label: "범위 외 응답", desc: "buildOutOfScopeResponse() - 채널별 분기" },
+                  { label: "429 에러 처리", desc: "buildGemini429Message() - Quota/Rate Limit" },
+                ].map((item) => (
+                  <div key={item.label} className="p-3 rounded-lg bg-muted/30 border">
+                    <p className="text-sm font-medium">{item.label}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -392,28 +495,39 @@ export default function Engine() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5 text-cyan-500" />
+                <Layers className="h-5 w-5 text-cyan-500" />
                 데이터 플로우
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <Badge variant="outline">사용자 입력</Badge>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                <Badge variant="outline">의도 분류</Badge>
+                <Badge variant="outline">classifyByKeyword()</Badge>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 <Badge variant="outline">데이터 필요?</Badge>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 <Badge variant="outline">연동 확인</Badge>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                <Badge variant="outline">API 조회</Badge>
+                <Badge variant="outline">fetchAndFormatData()</Badge>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                <Badge>AI 응답</Badge>
+                <Badge>Gemini 응답</Badge>
               </div>
               
-              <p className="text-xs text-muted-foreground mt-4">
-                * 미연동 상태 → 시뮬레이션 데이터 + 연동 권유 메시지
-              </p>
+              <div className="grid md:grid-cols-3 gap-3 mt-4">
+                <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+                  <p className="text-xs font-medium text-green-600 mb-1">Case 1: 데이터 불필요</p>
+                  <p className="text-xs text-muted-foreground">일상 대화, 자기소개 → Gemini 직접 응답</p>
+                </div>
+                <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                  <p className="text-xs font-medium text-blue-600 mb-1">Case 2: 데이터 있음</p>
+                  <p className="text-xs text-muted-foreground">DB 조회 → 포맷팅 → Gemini에 주입 → 응답</p>
+                </div>
+                <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                  <p className="text-xs font-medium text-amber-600 mb-1">Case 3: 연동 미완료</p>
+                  <p className="text-xs text-muted-foreground">연동 필요 안내 메시지 반환</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -430,8 +544,10 @@ export default function Engine() {
                 <ul className="text-sm space-y-2 text-muted-foreground">
                   <li>• API 키 은닉: Edge Function 경유</li>
                   <li>• JWT 검증: 인증된 사용자만 접근</li>
-                  <li>• Rate Limiting: 분당 요청 제한</li>
+                  <li>• Rate Limiting: 분당 요청 제한 + 429 처리</li>
                   <li>• 페르소나 안전장치: 업무 범위 강제</li>
+                  <li>• Gemini Safety Settings: 4대 카테고리 필터링</li>
+                  <li className="text-destructive">• ⚠️ Lovable AI Gateway 사용 금지</li>
                 </ul>
               </CardContent>
             </Card>
@@ -442,8 +558,9 @@ export default function Engine() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-wrap gap-2">
-                  <Badge>Gemini API</Badge>
-                  <Badge variant="secondary">ElevenLabs</Badge>
+                  <Badge>Gemini 2.0 Flash</Badge>
+                  <Badge variant="secondary">ElevenLabs Scribe</Badge>
+                  <Badge variant="secondary">ElevenLabs TTS</Badge>
                   <Badge variant="secondary">Edge Functions</Badge>
                   <Badge variant="secondary">Codef API</Badge>
                   <Badge variant="outline">PostgreSQL</Badge>
@@ -479,7 +596,7 @@ export default function Engine() {
           {/* Edge Functions 목록 */}
           <Card>
             <CardHeader>
-              <CardTitle>Edge Functions 구성</CardTitle>
+              <CardTitle>Edge Functions 전체 구성</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -489,28 +606,100 @@ export default function Engine() {
                       <th className="text-left py-2 px-3">함수명</th>
                       <th className="text-left py-2 px-3">역할</th>
                       <th className="text-left py-2 px-3">인증</th>
+                      <th className="text-left py-2 px-3">상태</th>
                     </tr>
                   </thead>
                   <tbody className="text-muted-foreground">
+                    {/* AI 채팅 */}
+                    <tr className="border-b bg-muted/20">
+                      <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>💬 AI 채팅</td>
+                    </tr>
                     <tr className="border-b">
                       <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">chat-ai</code></td>
-                      <td className="py-2 px-3">메인 AI 채팅 (로그인 사용자)</td>
+                      <td className="py-2 px-3">메인 AI 채팅 + 6대 데이터 소스 조회</td>
                       <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Optional</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
                     </tr>
                     <tr className="border-b">
                       <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">service-chat</code></td>
-                      <td className="py-2 px-3">서비스 안내 챗봇</td>
+                      <td className="py-2 px-3">서비스 안내 챗봇 (비로그인)</td>
                       <td className="py-2 px-3"><Badge variant="secondary" className="text-xs">Public</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
                     </tr>
                     <tr className="border-b">
-                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">elevenlabs-conversation-token</code></td>
-                      <td className="py-2 px-3">음성 대화 토큰 발급</td>
-                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Optional</Badge></td>
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">generate-insights</code></td>
+                      <td className="py-2 px-3">AI 인사이트 생성 (리포트)</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
                     </tr>
-                    <tr>
+                    
+                    {/* 음성 */}
+                    <tr className="border-b bg-muted/20">
+                      <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>🎙️ 음성 엔진</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">elevenlabs-scribe-token</code></td>
+                      <td className="py-2 px-3">STT 토큰 발급 (Scribe WebSocket)</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Optional</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
                       <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">elevenlabs-tts</code></td>
                       <td className="py-2 px-3">텍스트 → 음성 변환</td>
                       <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Optional</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">elevenlabs-conversation-token</code></td>
+                      <td className="py-2 px-3">Conversational AI 토큰 (미사용, 예비)</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Optional</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">예비</Badge></td>
+                    </tr>
+                    
+                    {/* 데이터 연동 */}
+                    <tr className="border-b bg-muted/20">
+                      <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>🔗 데이터 연동 (Codef)</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">codef-auth</code></td>
+                      <td className="py-2 px-3">Codef 인증 토큰 발급</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">codef-bank</code></td>
+                      <td className="py-2 px-3">은행 계좌 거래내역 동기화</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">codef-card</code></td>
+                      <td className="py-2 px-3">카드사 거래내역 동기화</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">codef-hometax</code></td>
+                      <td className="py-2 px-3">홈택스 연동 (사업자 확인)</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">codef-tax-invoice</code></td>
+                      <td className="py-2 px-3">세금계산서 동기화</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+
+                    {/* 공유 모듈 */}
+                    <tr className="bg-muted/20">
+                      <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>📦 공유 모듈</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">_shared/response-engine.ts</code></td>
+                      <td className="py-2 px-3">의도 분류 스키마, 말투 설정, 시스템 프롬프트, 에러 처리</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Internal</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
                     </tr>
                   </tbody>
                 </table>
@@ -526,13 +715,16 @@ export default function Engine() {
             <CardContent>
               <div className="space-y-3">
                 {[
-                  { step: 1, name: "기본 채팅 AI", priority: "완료", color: "bg-green-500" },
-                  { step: 2, name: "서비스 안내 AI", priority: "완료", color: "bg-green-500" },
+                  { step: 1, name: "기본 채팅 AI + 6대 데이터 소스", priority: "완료", color: "bg-green-500" },
+                  { step: 2, name: "서비스 안내 AI (비로그인)", priority: "완료", color: "bg-green-500" },
                   { step: 3, name: "음성 TTS 엔진", priority: "완료", color: "bg-green-500" },
-                  { step: 4, name: "실시간 음성 대화", priority: "진행중", color: "bg-yellow-500" },
-                  { step: 5, name: "거래 분류기", priority: "예정", color: "bg-gray-400" },
-                  { step: 6, name: "알림 생성기", priority: "예정", color: "bg-gray-400" },
-                  { step: 7, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
+                  { step: 4, name: "Scribe STT 음성 대화", priority: "완료", color: "bg-green-500" },
+                  { step: 5, name: "Codef 데이터 연동 (5종)", priority: "완료", color: "bg-green-500" },
+                  { step: 6, name: "AI 인사이트 리포트", priority: "완료", color: "bg-green-500" },
+                  { step: 7, name: "거래 자동 분류기", priority: "예정", color: "bg-gray-400" },
+                  { step: 8, name: "알림 생성기 (자동 스케줄)", priority: "예정", color: "bg-gray-400" },
+                  { step: 9, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
+                  { step: 10, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
                 ].map((item) => (
                   <div key={item.step} className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
