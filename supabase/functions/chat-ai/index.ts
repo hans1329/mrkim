@@ -403,7 +403,10 @@ function checkConnectionForSource(source: string | null, conn: ConnectionStatus)
   return null; // 연동 완료 또는 내부 데이터
 }
 
-function buildConnectionRequiredResponse(missingSources: string): string {
+function buildConnectionRequiredResponse(missingSources: string, voiceMode: boolean): string {
+  if (voiceMode) {
+    return `사장님, 요청하신 정보를 확인하려면 먼저 ${missingSources} 연동이 필요해요. 설정 메뉴에서 데이터 연결을 진행해주시면 바로 확인해드릴게요.`;
+  }
   return `사장님, **요청하신 정보**를 확인하려면 먼저 데이터 연동이 필요합니다.\n\n📋 **필요한 연동 항목**: ${missingSources}\n\n연동 방법:\n1. **설정 > 데이터 연결**로 이동\n2. 필요한 서비스 선택 후 인증 진행\n3. 연동 완료 후 실시간 데이터 확인 가능\n\n💡 연동은 약 1분이면 완료됩니다.`;
 }
 
@@ -529,7 +532,7 @@ serve(async (req) => {
       const missingSource = checkConnectionForSource(classified.requiresConnection, connStatus);
       if (missingSource) {
         return new Response(
-          JSON.stringify({ response: buildConnectionRequiredResponse(missingSource), requiresConnection: true }),
+          JSON.stringify({ response: buildConnectionRequiredResponse(missingSource, voiceMode), requiresConnection: true }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
