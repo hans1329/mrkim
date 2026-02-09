@@ -96,7 +96,21 @@ export function IncomeTaxEstimateSection({ salesTotal, purchaseTotal }: IncomeTa
   const localTaxSimulated = Math.floor(simulatedTax * 0.1);
 
   if (salesTotal === 0 && purchaseTotal === 0) {
-    return null;
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calculator className="h-4 w-4 text-primary" />
+            종합소득세 예상
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            세금계산서 데이터가 동기화되면 종합소득세 예상 금액을 확인할 수 있습니다.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
