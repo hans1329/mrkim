@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+
 import {
   Dialog,
   DialogContent,
@@ -23,9 +24,10 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Users, Wallet, Shield, User, LinkIcon } from "lucide-react";
+import { Plus, Users, Wallet, Shield, User, LinkIcon, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { PraiseDialog } from "@/components/employees/PraiseDialog";
 import {
   useEmployees,
   useEmployeeStats,
@@ -38,9 +40,11 @@ import {
 export default function Employees() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isResignDialogOpen, setIsResignDialogOpen] = useState(false);
+  const [isPraiseDialogOpen, setIsPraiseDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [newEmployee, setNewEmployee] = useState<EmployeeInsert>({
     name: "",
+    phone: "",
     employee_type: "정규직",
     position: "",
     department: "",
@@ -67,6 +71,7 @@ export default function Employees() {
         toast.success("직원이 등록되었습니다");
         setNewEmployee({
           name: "",
+          phone: "",
           employee_type: "정규직",
           position: "",
           department: "",
@@ -156,13 +161,24 @@ export default function Employees() {
               <DialogTitle>새 직원 등록</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>이름 *</Label>
-                <Input
-                  placeholder="홍길동"
-                  value={newEmployee.name}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>이름 *</Label>
+                  <Input
+                    placeholder="홍길동"
+                    value={newEmployee.name}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>전화번호</Label>
+                  <Input
+                    type="tel"
+                    placeholder="010-0000-0000"
+                    value={newEmployee.phone || ""}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
@@ -331,14 +347,8 @@ export default function Employees() {
                 <div
                   key={employee.id}
                   className={`flex items-center justify-between p-4 ${
-                    employee.status === "퇴사" ? "opacity-50" : "cursor-pointer active:bg-muted/50"
+                    employee.status === "퇴사" ? "opacity-50" : ""
                   }`}
-                  onClick={() => {
-                    if (employee.status === "재직") {
-                      setSelectedEmployee(employee);
-                      setIsResignDialogOpen(true);
-                    }
-                  }}
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
@@ -367,15 +377,39 @@ export default function Employees() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold">
-                      {employee.monthly_salary
-                        ? formatCurrency(employee.monthly_salary)
-                        : "-"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {employee.start_date ? `${employee.start_date} 입사` : "입사일 미등록"}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    {employee.status === "재직" && employee.phone && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedEmployee(employee);
+                          setIsPraiseDialogOpen(true);
+                        }}
+                      >
+                        <Heart className="h-4 w-4 text-pink-500" />
+                      </Button>
+                    )}
+                    <div
+                      className={`text-right ${employee.status === "재직" ? "cursor-pointer" : ""}`}
+                      onClick={() => {
+                        if (employee.status === "재직") {
+                          setSelectedEmployee(employee);
+                          setIsResignDialogOpen(true);
+                        }
+                      }}
+                    >
+                      <p className="font-semibold">
+                        {employee.monthly_salary
+                          ? formatCurrency(employee.monthly_salary)
+                          : "-"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {employee.start_date ? `${employee.start_date} 입사` : "입사일 미등록"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -416,6 +450,16 @@ export default function Employees() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* 칭찬하기 다이얼로그 */}
+        {selectedEmployee?.phone && (
+          <PraiseDialog
+            open={isPraiseDialogOpen}
+            onOpenChange={setIsPraiseDialogOpen}
+            employeeName={selectedEmployee.name}
+            employeePhone={selectedEmployee.phone}
+          />
+        )}
       </div>
     </MainLayout>
   );

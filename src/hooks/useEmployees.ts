@@ -5,6 +5,7 @@ export interface Employee {
   id: string;
   user_id: string;
   name: string;
+  phone: string | null;
   employee_type: "정규직" | "계약직" | "알바";
   position: string | null;
   department: string | null;
@@ -27,6 +28,7 @@ export interface Employee {
 
 export interface EmployeeInsert {
   name: string;
+  phone?: string;
   employee_type?: "정규직" | "계약직" | "알바";
   position?: string;
   department?: string;
@@ -128,6 +130,7 @@ export function useAddEmployee() {
         .insert({
           user_id: userData.user.id,
           name: input.name,
+          phone: input.phone || null,
           employee_type: input.employee_type || "정규직",
           position: input.position || null,
           department: input.department || null,
