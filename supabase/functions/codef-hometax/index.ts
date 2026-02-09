@@ -108,8 +108,9 @@ serve(async (req) => {
       }
 
       // 2) Sometimes CODEF responses arrive percent-encoded (e.g. %7B%22result%22...)
+      //    Also handle '+' as space (form-encoded style)
       try {
-        const decoded = decodeURIComponent(text);
+        const decoded = decodeURIComponent(text.replace(/\+/g, " "));
         return JSON.parse(decoded);
       } catch {
         return { raw: text };
