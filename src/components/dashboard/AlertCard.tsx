@@ -41,28 +41,31 @@ function useRealAlerts() {
         });
       }
 
-      // 2. 세금 마감 알림 (올해 + 내년까지 확인)
+      // 2. 가장 가까운 세금 마감일 표시
       const taxDeadlines = [
         { month: 1, day: 25, label: "부가세 신고" },
         { month: 5, day: 31, label: "종합소득세 신고" },
         { month: 7, day: 25, label: "부가세 신고" },
       ];
+      
+      let nearest: { diff: number; d: typeof taxDeadlines[0] } | null = null;
       for (const d of taxDeadlines) {
-        // 올해와 내년 모두 체크
         for (const year of [now.getFullYear(), now.getFullYear() + 1]) {
           const deadline = new Date(year, d.month - 1, d.day);
           const diff = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          if (diff > 0 && diff <= 90) {
-            alerts.push({
-              id: `tax-${d.label}-${d.month}-${year}`,
-              type: diff <= 14 ? "warning" : "info",
-              title: `${d.label} 마감 D-${diff}`,
-              time: `${d.month}월 ${d.day}일 마감`,
-              icon: CalendarClock,
-            });
-            break; // 가장 가까운 마감만
+          if (diff > 0 && (!nearest || diff < nearest.diff)) {
+            nearest = { diff, d };
           }
         }
+      }
+      if (nearest) {
+        alerts.push({
+          id: `tax-${nearest.d.label}-${nearest.d.month}`,
+          type: nearest.diff <= 14 ? "warning" : "info",
+          title: `${nearest.d.label} 마감 D-${nearest.diff}`,
+          time: `${nearest.d.month}월 ${nearest.d.day}일 마감`,
+          icon: CalendarClock,
+        });
       }
 
       // 3. 이번 달 vs 지난 달 지출 비교
