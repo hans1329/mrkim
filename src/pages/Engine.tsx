@@ -407,7 +407,7 @@ export default function Engine() {
                 <div className="flex items-center gap-2">
                   <Receipt className="h-5 w-5 text-purple-500" />
                   <h3 className="font-semibold">2. 거래 자동 분류기 (Transaction Classifier)</h3>
-                  <Badge variant="outline" className="text-xs">예정</Badge>
+                  <Badge className="text-xs bg-green-500/10 text-green-600 border-green-500/20">완료</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">상호명 패턴으로 비용 카테고리 자동 분류</p>
                 
@@ -721,7 +721,7 @@ export default function Engine() {
                   { step: 4, name: "Scribe STT 음성 대화", priority: "완료", color: "bg-green-500" },
                   { step: 5, name: "Codef 데이터 연동 (5종)", priority: "완료", color: "bg-green-500" },
                   { step: 6, name: "AI 인사이트 리포트", priority: "완료", color: "bg-green-500" },
-                  { step: 7, name: "거래 자동 분류기", priority: "예정", color: "bg-gray-400" },
+                  { step: 7, name: "거래 자동 분류기", priority: "완료", color: "bg-green-500" },
                   { step: 8, name: "알림 생성기 (자동 스케줄)", priority: "예정", color: "bg-gray-400" },
                   { step: 9, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
                   { step: 10, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
