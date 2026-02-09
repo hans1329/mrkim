@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useCardConnection } from "@/hooks/useCardConnection";
 import { useCardSync } from "@/hooks/useCardSync";
+import { useConnection } from "@/contexts/ConnectionContext";
 import { toast } from "sonner";
 
 // 카드사 목록 (실제 Codef 지원 카드사)
@@ -68,6 +69,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
 
   const { isLoading, registerCardAccount, getCards, connectedId } = useCardConnection();
   const cardSync = useCardSync();
+  const { refetch: refetchProfile } = useConnection();
 
   const stepProgress: Record<FlowStep, number> = {
     "select-company": 25,
@@ -161,6 +163,8 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
   };
 
   const handleComplete = () => {
+    // 프로필 캐시 즉시 갱신하여 대시보드에서 연동 상태 반영
+    refetchProfile();
     onComplete();
   };
 
