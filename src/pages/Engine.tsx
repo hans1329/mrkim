@@ -379,24 +379,67 @@ export default function Engine() {
                 </div>
 
                 <div className="overflow-x-auto mt-4">
-                  <p className="text-xs font-medium mb-2">의도별 매핑 예시</p>
+                  <p className="text-xs font-medium mb-2">의도별 매핑 예시 (6대 데이터 소스)</p>
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-2 px-2">사용자 입력</th>
+                        <th className="text-left py-2 px-2">사용자 입력 예시</th>
                         <th className="text-left py-2 px-2">dataSource</th>
+                        <th className="text-left py-2 px-2">정규식 패턴</th>
                         <th className="text-left py-2 px-2">연동 필요</th>
                       </tr>
                     </thead>
                     <tbody className="text-muted-foreground">
-                      <tr className="border-b"><td className="py-1.5 px-2">"오늘 매출 얼마야?"</td><td className="py-1.5 px-2">transaction</td><td className="py-1.5 px-2">card/bank</td></tr>
-                      <tr className="border-b"><td className="py-1.5 px-2">"부가세 얼마 내야해?"</td><td className="py-1.5 px-2">tax_invoice</td><td className="py-1.5 px-2">hometax</td></tr>
-                      <tr className="border-b"><td className="py-1.5 px-2">"직원 급여 현황"</td><td className="py-1.5 px-2">employee</td><td className="py-1.5 px-2">없음 (내부)</td></tr>
-                      <tr className="border-b"><td className="py-1.5 px-2">"자동이체 설정 보여줘"</td><td className="py-1.5 px-2">auto_transfer</td><td className="py-1.5 px-2">없음 (내부)</td></tr>
-                      <tr className="border-b"><td className="py-1.5 px-2">"적금 이자 얼마야?"</td><td className="py-1.5 px-2">savings</td><td className="py-1.5 px-2">없음 (내부)</td></tr>
-                      <tr><td className="py-1.5 px-2">"넌 누구야?"</td><td className="py-1.5 px-2">—</td><td className="py-1.5 px-2">—</td></tr>
+                      <tr className="border-b bg-muted/30">
+                        <td className="py-1.5 px-2 font-medium text-foreground" colSpan={4}>📊 거래/매출 (transaction)</td>
+                      </tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"오늘 매출 얼마야?"</td><td className="py-1.5 px-2">transaction</td><td className="py-1.5 px-2 font-mono text-[10px]">/매출|수입|수익|지출|비용|결제/</td><td className="py-1.5 px-2">card/bank</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"이번 달 카드 사용 내역"</td><td className="py-1.5 px-2">transaction</td><td className="py-1.5 px-2 font-mono text-[10px]">/카드.*사용|내역|현황/</td><td className="py-1.5 px-2">card/bank</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"이번 주 어때?"</td><td className="py-1.5 px-2">transaction</td><td className="py-1.5 px-2 font-mono text-[10px]">기간 + /어때|알려|보여/</td><td className="py-1.5 px-2">card/bank</td></tr>
+
+                      <tr className="border-b bg-muted/30">
+                        <td className="py-1.5 px-2 font-medium text-foreground" colSpan={4}>🧾 세금계산서 (tax_invoice)</td>
+                      </tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"부가세 얼마 내야해?"</td><td className="py-1.5 px-2">tax_invoice</td><td className="py-1.5 px-2 font-mono text-[10px]">/세금|부가세|종소세|납부/</td><td className="py-1.5 px-2">hometax</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"매입 계산서 현황"</td><td className="py-1.5 px-2">tax_invoice</td><td className="py-1.5 px-2 font-mono text-[10px]">/세금\s*계산서|매입.*계산서/</td><td className="py-1.5 px-2">hometax</td></tr>
+
+                      <tr className="border-b bg-muted/30">
+                        <td className="py-1.5 px-2 font-medium text-foreground" colSpan={4}>👥 직원/급여 (employee)</td>
+                      </tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"직원 급여 현황"</td><td className="py-1.5 px-2">employee</td><td className="py-1.5 px-2 font-mono text-[10px]">/급여|월급|임금|인건비|4대.*보험/</td><td className="py-1.5 px-2">없음 (내부)</td></tr>
+
+                      <tr className="border-b bg-muted/30">
+                        <td className="py-1.5 px-2 font-medium text-foreground" colSpan={4}>💰 비상금/예치금 (deposit)</td>
+                      </tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"비상금 얼마 모았어?"</td><td className="py-1.5 px-2">deposit</td><td className="py-1.5 px-2 font-mono text-[10px]">/예치금|비상금|퇴직금.*적립/</td><td className="py-1.5 px-2">없음 (내부)</td></tr>
+
+                      <tr className="border-b bg-muted/30">
+                        <td className="py-1.5 px-2 font-medium text-foreground" colSpan={4}>🏦 저축/투자 (savings)</td>
+                      </tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"적금 이자 얼마야?"</td><td className="py-1.5 px-2">savings</td><td className="py-1.5 px-2 font-mono text-[10px]">/적금|예금|파킹\s*통장|이자.*얼마/</td><td className="py-1.5 px-2">없음 (내부)</td></tr>
+
+                      <tr className="border-b bg-muted/30">
+                        <td className="py-1.5 px-2 font-medium text-foreground" colSpan={4}>🔄 자동이체 (auto_transfer)</td>
+                      </tr>
+                      <tr className="border-b"><td className="py-1.5 px-2">"자동이체 설정 보여줘"</td><td className="py-1.5 px-2">auto_transfer</td><td className="py-1.5 px-2 font-mono text-[10px]">/자동\s*이체|자동\s*송금|이체\s*규칙/</td><td className="py-1.5 px-2">없음 (내부)</td></tr>
+
+                      <tr className="bg-muted/30">
+                        <td className="py-1.5 px-2 font-medium text-foreground" colSpan={4}>💬 일반 대화 (데이터 불필요)</td>
+                      </tr>
+                      <tr><td className="py-1.5 px-2">"넌 누구야?"</td><td className="py-1.5 px-2">—</td><td className="py-1.5 px-2 font-mono text-[10px]">매칭 없음 → needsData: false</td><td className="py-1.5 px-2">—</td></tr>
                     </tbody>
                   </table>
+                </div>
+
+                {/* 분류 후 처리 흐름 */}
+                <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20 mt-3">
+                  <p className="text-xs font-semibold mb-2">분류 후 처리 흐름</p>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p>1. <strong>연동 확인</strong>: checkConnectionForSource()로 필요 연동 여부 판별</p>
+                    <p>2. <strong>미연동 시</strong>: buildConnectionRequiredResponse()로 연동 안내 (voiceMode별 분기)</p>
+                    <p>3. <strong>연동 완료</strong>: fetchAndFormatData()로 6대 소스별 데이터 조회 + 프롬프트 포매팅</p>
+                    <p>4. <strong>Gemini 호출</strong>: 포매팅된 데이터 컨텍스트 + 시스템 프롬프트 → 자연어 응답 생성</p>
+                  </div>
                 </div>
               </div>
 
