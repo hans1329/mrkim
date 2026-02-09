@@ -597,7 +597,8 @@ function parseCodefResponse(text: string): any {
     return JSON.parse(text);
   } catch {
     try {
-      const decoded = decodeURIComponent(text);
+      // '+' 문자를 공백으로 처리 (form-encoded style)
+      const decoded = decodeURIComponent(text.replace(/\+/g, " "));
       return JSON.parse(decoded);
     } catch {
       return { raw: text };
