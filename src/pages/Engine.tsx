@@ -409,23 +409,66 @@ export default function Engine() {
                   <h3 className="font-semibold">2. 거래 자동 분류기 (Transaction Classifier)</h3>
                   <Badge className="text-xs bg-green-500/10 text-green-600 border-green-500/20">완료</Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">상호명 패턴으로 비용 카테고리 자동 분류</p>
+                <p className="text-sm text-muted-foreground">상호명 패턴 매칭으로 60개+ 키워드를 12개 비용 카테고리로 자동 분류</p>
                 
+                {/* 아키텍처 구성 */}
+                <div className="grid md:grid-cols-3 gap-3">
+                  <div className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
+                    <p className="text-xs font-semibold text-purple-600 mb-1">분류 엔진</p>
+                    <p className="text-xs text-muted-foreground">src/lib/transactionClassifier.ts</p>
+                    <p className="text-xs text-muted-foreground mt-1">정규식 패턴 매칭으로 상호명 → 카테고리 자동 매핑</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                    <p className="text-xs font-semibold text-blue-600 mb-1">UI 컴포넌트</p>
+                    <p className="text-xs text-muted-foreground">TransactionClassifier.tsx</p>
+                    <p className="text-xs text-muted-foreground mt-1">일괄/개별 분류, 통계 요약, 신뢰도 표시, 재분류</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+                    <p className="text-xs font-semibold text-green-600 mb-1">DB 연동</p>
+                    <p className="text-xs text-muted-foreground">useClassifyTransactions 훅</p>
+                    <p className="text-xs text-muted-foreground mt-1">분류 결과를 transactions 테이블에 실시간 저장</p>
+                  </div>
+                </div>
+
+                {/* 카테고리 매핑 테이블 */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-2 px-3">상호명 패턴</th>
-                        <th className="text-left py-2 px-3">카테고리</th>
+                        <th className="text-left py-2 px-3">카테고리 (12개)</th>
+                        <th className="text-left py-2 px-3">주요 패턴 예시</th>
                       </tr>
                     </thead>
                     <tbody className="text-muted-foreground">
-                      <tr className="border-b"><td className="py-2 px-3">스타벅스, 이디야</td><td className="py-2 px-3">복리후생비</td></tr>
-                      <tr className="border-b"><td className="py-2 px-3">카카오택시, 타다</td><td className="py-2 px-3">여비교통비</td></tr>
-                      <tr className="border-b"><td className="py-2 px-3">11번가, 쿠팡</td><td className="py-2 px-3">소모품비</td></tr>
-                      <tr><td className="py-2 px-3">식당, 레스토랑</td><td className="py-2 px-3">접대비/복리후생비</td></tr>
+                      <tr className="border-b"><td className="py-2 px-3">🍽️ 복리후생비</td><td className="py-2 px-3">식당, 카페, 스타벅스, 편의점, 병원, 약국</td></tr>
+                      <tr className="border-b"><td className="py-2 px-3">🚗 여비교통비</td><td className="py-2 px-3">택시, 주유소, KTX, 항공, 호텔</td></tr>
+                      <tr className="border-b"><td className="py-2 px-3">📱 통신비</td><td className="py-2 px-3">SKT, KT, LG유플러스</td></tr>
+                      <tr className="border-b"><td className="py-2 px-3">💳 지급수수료</td><td className="py-2 px-3">PG결제, 구독료, 은행수수료, 클라우드</td></tr>
+                      <tr className="border-b"><td className="py-2 px-3">📦 소모품비</td><td className="py-2 px-3">쿠팡, 11번가, 다이소, 문구</td></tr>
+                      <tr className="border-b"><td className="py-2 px-3">📢 광고선전비</td><td className="py-2 px-3">메타, 구글애즈, 네이버광고</td></tr>
+                      <tr className="border-b"><td className="py-2 px-3">🛡️ 보험료 · 🔑 임차료 · 🥬 원재료비</td><td className="py-2 px-3">보험사, 월세, 마트/도매</td></tr>
+                      <tr><td className="py-2 px-3">📚 교육훈련비 · 🍻 접대비</td><td className="py-2 px-3">학원, 세미나 / 술집, 골프</td></tr>
                     </tbody>
                   </table>
+                </div>
+
+                {/* 분류 흐름 */}
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="text-xs font-semibold mb-2">분류 파이프라인</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                    <span className="px-2 py-1 rounded bg-background border">거래 수집</span>
+                    <ArrowRight className="h-3 w-3 shrink-0" />
+                    <span className="px-2 py-1 rounded bg-background border">상호명 정규식 매칭</span>
+                    <ArrowRight className="h-3 w-3 shrink-0" />
+                    <span className="px-2 py-1 rounded bg-background border">카테고리 + 신뢰도 부여</span>
+                    <ArrowRight className="h-3 w-3 shrink-0" />
+                    <span className="px-2 py-1 rounded bg-background border">DB 저장</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    · 미분류/기타비용 항목만 자동 분류 대상 (수동 분류 제외)<br/>
+                    · 신뢰도: high(패턴 정확 매칭) / low(미매칭 → 기타비용)<br/>
+                    · <span className="text-amber-600 font-medium">예정:</span> 패턴 미매칭 시 Gemini AI 폴백 분류
+                  </p>
                 </div>
               </div>
 
