@@ -5,6 +5,7 @@ import { Building2, Loader2, CheckCircle2, AlertCircle, ArrowLeft } from "lucide
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useConnection } from "@/contexts/ConnectionContext";
 
 // 사업자등록번호 포맷팅
 const formatBusinessNumber = (value: string) => {
@@ -32,6 +33,7 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
   const [step, setStep] = useState<"input" | "verifying" | "confirmed">("input");
   const [businessNumber, setBusinessNumber] = useState("");
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo | null>(null);
+  const { refetch: refetchProfile } = useConnection();
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -106,6 +108,7 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
       if (updateError) throw updateError;
 
       toast.success("홈택스가 연결되었습니다.");
+      refetchProfile();
       onComplete();
 
     } catch (err) {

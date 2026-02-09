@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAccountConnection } from "@/hooks/useAccountConnection";
 import { useBankSync } from "@/hooks/useBankSync";
+import { useConnection } from "@/contexts/ConnectionContext";
 
 // 은행 목록
 const BANKS = [
@@ -68,6 +69,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
 
   const { isLoading, registerBankAccount, getAccounts } = useAccountConnection();
   const bankSync = useBankSync();
+  const { refetch: refetchProfile } = useConnection();
 
   const stepProgress: Record<FlowStep, number> = {
     "select-bank": 20,
@@ -146,6 +148,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   };
 
   const handleComplete = () => {
+    refetchProfile();
     onComplete();
   };
 
