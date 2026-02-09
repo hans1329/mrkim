@@ -260,7 +260,7 @@ serve(async (req) => {
     } else {
       return new Response(
         JSON.stringify({ success: false, error: "알 수 없는 action입니다." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -288,7 +288,7 @@ async function handleRegister(
   if (!organizationCode) {
     return new Response(
       JSON.stringify({ success: false, error: "지원하지 않는 은행입니다." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -351,7 +351,7 @@ async function handleRegister(
         code: result.code,
         errorList: data.data?.errorList || [],
       }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 }
@@ -369,7 +369,7 @@ async function handleAddAccount(
   if (!organizationCode) {
     return new Response(
       JSON.stringify({ success: false, error: "지원하지 않는 은행입니다." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -433,7 +433,7 @@ async function handleGetAccounts(
   if (!organizationCode) {
     return new Response(
       JSON.stringify({ success: false, error: "지원하지 않는 은행입니다." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -487,7 +487,7 @@ async function handleGetAccounts(
         error: result.message || "계좌 목록 조회 실패",
         code: result.code,
       }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 }
@@ -505,14 +505,14 @@ async function handleGetTransactions(
   if (!organizationCode) {
     return new Response(
       JSON.stringify({ success: false, error: "지원하지 않는 은행입니다." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
   if (!accountNo) {
     return new Response(
       JSON.stringify({ success: false, error: "계좌번호가 필요합니다." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -575,7 +575,7 @@ async function handleGetTransactions(
         error: result.message || "거래 내역 조회 실패",
         code: result.code,
       }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 }
