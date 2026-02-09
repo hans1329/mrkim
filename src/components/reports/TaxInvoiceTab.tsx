@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { IncomeTaxEstimateSection } from "./IncomeTaxEstimateSection";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
@@ -273,6 +274,12 @@ export function TaxInvoiceTab() {
           )}
         </CardContent>
       </Card>
+
+        {/* 종합소득세 예상 섹션 */}
+        <IncomeTaxEstimateSection 
+          salesTotal={salesTotal} 
+          purchaseTotal={purchaseTotal} 
+        />
     </div>
   );
 }
