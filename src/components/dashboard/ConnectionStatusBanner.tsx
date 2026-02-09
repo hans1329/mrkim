@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useConnection } from "@/contexts/ConnectionContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface UrgentAlert {
@@ -23,19 +23,74 @@ interface UrgentAlert {
   title: string;
   description: string;
   actionLabel: string;
-  onAction: () => void;
+  route: string;
 }
 
-// Mock urgent alerts - 연동 완료 후 AI 엔진에서 생성
-const createMockUrgentAlerts = (navigate: ReturnType<typeof useNavigate>): UrgentAlert[] => [
-  {
-    id: "1",
-    title: "부가세 신고 마감 임박",
-    description: "1월 25일까지 부가세 신고를 완료해야 합니다.",
-    actionLabel: "확인하기",
-    onAction: () => navigate("/reports?tab=expense"),
-  },
-];
+// 실제 데이터 기반 긴급 알림 생성
+function generateRealAlerts(
+  unclassifiedCount: number,
+  navigate: ReturnType<typeof useNavigate>
+): UrgentAlert[] {
+  const alerts: UrgentAlert[] = [];
+  const now = new Date();
+  const month = now.getMonth() + 1; // 1-12
+  const day = now.getDate();
+
+  // 부가세 신고 마감 (1월 25일, 7월 25일)
+  const vatDeadlines = [
+    { month: 1, day: 25, label: "1월 25일" },
+    { month: 7, day: 25, label: "7월 25일" },
+  ];
+
+  for (const deadline of vatDeadlines) {
+    const deadlineDate = new Date(now.getFullYear(), deadline.month - 1, deadline.day);
+    const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 0 && diffDays <= 30) {
+      alerts.push({
+        id: `vat-${deadline.month}`,
+        title: `부가세 신고 마감 D-${diffDays}`,
+        description: `${deadline.label}까지 부가세 신고를 완료해야 합니다.`,
+        actionLabel: "확인하기",
+        route: "/reports?tab=tax",
+      });
+    } else if (diffDays === 0) {
+      alerts.push({
+        id: `vat-${deadline.month}`,
+        title: "부가세 신고 마감일입니다!",
+        description: `오늘(${deadline.label})까지 부가세 신고를 완료해야 합니다.`,
+        actionLabel: "확인하기",
+        route: "/reports?tab=tax",
+      });
+    }
+  }
+
+  // 종합소득세 마감 (5월 31일)
+  const incomeTaxDate = new Date(now.getFullYear(), 4, 31);
+  const incomeTaxDiff = Math.ceil((incomeTaxDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  if (incomeTaxDiff > 0 && incomeTaxDiff <= 30) {
+    alerts.push({
+      id: "income-tax",
+      title: `종합소득세 신고 마감 D-${incomeTaxDiff}`,
+      description: "5월 31일까지 종합소득세 신고를 완료해야 합니다.",
+      actionLabel: "확인하기",
+      route: "/reports?tab=tax",
+    });
+  }
+
+  // 미분류 거래 알림
+  if (unclassifiedCount > 0) {
+    alerts.push({
+      id: "unclassified",
+      title: `미분류 거래 ${unclassifiedCount}건 확인 필요`,
+      description: "분류되지 않은 거래가 있습니다. 정확한 분석을 위해 분류해주세요.",
+      actionLabel: "분류하기",
+      route: "/transactions",
+    });
+  }
+
+  return alerts;
+}
 
 interface ConnectionStatusBannerProps {
   isLoggedOut?: boolean;
@@ -45,9 +100,30 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
   const navigate = useNavigate();
   // ConnectionContext에서 캐시된 프로필 사용 (중복 API 호출 방지)
   const { profile, profileLoading: loading } = useConnection();
-  const [alerts] = useState<UrgentAlert[]>(() => createMockUrgentAlerts(navigate));
+  const [alerts, setAlerts] = useState<UrgentAlert[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+
+  // 실제 데이터 기반 알림 생성
+  useEffect(() => {
+    if (isLoggedOut || loading) return;
+    
+    const fetchUnclassifiedCount = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { count } = await supabase
+        .from("transactions")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .is("category", null);
+      
+      const realAlerts = generateRealAlerts(count || 0, navigate);
+      setAlerts(realAlerts);
+    };
+    
+    fetchUnclassifiedCount();
+  }, [isLoggedOut, loading, navigate]);
 
   // React Query가 캐싱과 refetch를 자동 관리하므로 별도의 visibility/focus 핸들러 불필요
 
@@ -266,7 +342,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
             size="sm"
             variant="destructive"
             className="h-7 text-xs mt-2"
-            onClick={currentAlert.onAction}
+            onClick={() => navigate(currentAlert.route)}
           >
             {currentAlert.actionLabel}
             <ChevronRight className="h-3 w-3 ml-1" />
