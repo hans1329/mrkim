@@ -111,39 +111,60 @@ export default function Dashboard() {
 
         {/* 연동 상태: 실데이터 기반 UI */}
         {isAnyConnected && (
-          <div className={isMobile ? "space-y-6" : "grid grid-cols-2 gap-6"}>
-            {/* 좌측 칼럼 */}
-            <div className="space-y-6">
-              {/* 오늘의 할 일 */}
-              <section>
-                <TodayActionsCard />
-              </section>
-
-              {/* 주간 매출/지출 차트 - 카드/계좌 연동 시에만 표시 */}
-              {isTransactionConnected && (
+          <>
+            <div className={isMobile ? "space-y-6" : "grid grid-cols-2 gap-6"}>
+              {/* 좌측 칼럼 */}
+              <div className="space-y-6">
                 <section>
-                  <WeeklyChart />
+                  <TodayActionsCard />
                 </section>
-              )}
+
+                {/* 주간 매출/지출 차트 - 카드/계좌 연동 시에만 표시 */}
+                {isTransactionConnected && (
+                  <section>
+                    <WeeklyChart />
+                  </section>
+                )}
+              </div>
+
+              {/* 우측 칼럼 */}
+              <div className="space-y-6">
+                {/* 홈택스 현황 */}
+                {hometaxConnected && (
+                  <section>
+                    <HometaxSummaryCard />
+                  </section>
+                )}
+
+                {/* 최근 거래 내역 */}
+                {isTransactionConnected && (
+                  <section>
+                    <RecentTransactionsCard />
+                  </section>
+                )}
+              </div>
             </div>
 
-            {/* 우측 칼럼 */}
-            <div className="space-y-6">
-              {/* 홈택스 현황 - 홈택스 연동 시에만 표시 */}
-              {hometaxConnected && (
+            {/* 두 번째 행: 직원 + 예치금 / 자동이체 + 알림 */}
+            <div className={isMobile ? "space-y-6" : "grid grid-cols-2 gap-6"}>
+              <div className="space-y-6">
                 <section>
-                  <HometaxSummaryCard />
+                  <EmployeeSummaryCard />
                 </section>
-              )}
-
-              {/* 최근 거래 내역 - 카드/계좌 연동 시에만 표시 */}
-              {isTransactionConnected && (
                 <section>
-                  <RecentTransactionsCard />
+                  <DepositCard />
                 </section>
-              )}
+              </div>
+              <div className="space-y-6">
+                <section>
+                  <AutoTransferCard />
+                </section>
+                <section>
+                  <AlertCard />
+                </section>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </MainLayout>
