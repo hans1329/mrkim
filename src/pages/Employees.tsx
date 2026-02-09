@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,22 +23,22 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Users, Wallet, Shield, User, LinkIcon, Heart } from "lucide-react";
+import { Plus, Users, Wallet, Shield, User, LinkIcon, Heart, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { PraiseDialog } from "@/components/employees/PraiseDialog";
+import { EmployeeEditDialog } from "@/components/employees/EmployeeEditDialog";
 import {
   useEmployees,
   useEmployeeStats,
   useAddEmployee,
-  useResignEmployee,
   type Employee,
   type EmployeeInsert,
 } from "@/hooks/useEmployees";
 
 export default function Employees() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isResignDialogOpen, setIsResignDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPraiseDialogOpen, setIsPraiseDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [newEmployee, setNewEmployee] = useState<EmployeeInsert>({
@@ -58,7 +57,6 @@ export default function Employees() {
   const { data: employees, isLoading } = useEmployees();
   const { data: stats, isLoading: isStatsLoading } = useEmployeeStats();
   const addEmployee = useAddEmployee();
-  const resignEmployee = useResignEmployee();
 
   const handleAddEmployee = () => {
     if (!newEmployee.name) {
@@ -85,21 +83,6 @@ export default function Employees() {
       },
       onError: (error) => {
         toast.error(error.message || "등록에 실패했습니다");
-      },
-    });
-  };
-
-  const handleResign = () => {
-    if (!selectedEmployee) return;
-
-    resignEmployee.mutate(selectedEmployee.id, {
-      onSuccess: () => {
-        toast.success("퇴사 처리되었습니다");
-        setIsResignDialogOpen(false);
-        setSelectedEmployee(null);
-      },
-      onError: (error) => {
-        toast.error(error.message || "퇴사 처리에 실패했습니다");
       },
     });
   };
@@ -346,9 +329,13 @@ export default function Employees() {
               {employees?.map((employee) => (
                 <div
                   key={employee.id}
-                  className={`flex items-center justify-between p-4 ${
+                  className={`flex items-center justify-between p-4 cursor-pointer active:bg-muted/50 ${
                     employee.status === "퇴사" ? "opacity-50" : ""
                   }`}
+                  onClick={() => {
+                    setSelectedEmployee(employee);
+                    setIsEditDialogOpen(true);
+                  }}
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
@@ -392,15 +379,7 @@ export default function Employees() {
                         <Heart className="h-4 w-4 text-pink-500" />
                       </Button>
                     )}
-                    <div
-                      className={`text-right ${employee.status === "재직" ? "cursor-pointer" : ""}`}
-                      onClick={() => {
-                        if (employee.status === "재직") {
-                          setSelectedEmployee(employee);
-                          setIsResignDialogOpen(true);
-                        }
-                      }}
-                    >
+                    <div className="text-right">
                       <p className="font-semibold">
                         {employee.monthly_salary
                           ? formatCurrency(employee.monthly_salary)
@@ -417,39 +396,14 @@ export default function Employees() {
           </Card>
         )}
 
-        {/* 퇴사 확인 다이얼로그 */}
-        <Dialog open={isResignDialogOpen} onOpenChange={setIsResignDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>퇴사 처리 확인</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <p className="text-muted-foreground">
-                <strong>{selectedEmployee?.name}</strong> 직원을 퇴사 처리하시겠습니까?
-              </p>
-              <div className="mt-4 rounded-lg bg-muted p-4">
-                <p className="text-sm font-medium">퇴사 처리 시 진행되는 절차:</p>
-                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  <li>✅ 4대보험 상실신고 (별도 진행 필요)</li>
-                  <li>✅ 퇴직금 계산 (별도 확인 필요)</li>
-                  <li>✅ 마지막 급여 정산 (별도 확인 필요)</li>
-                </ul>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsResignDialogOpen(false)}>
-                취소
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleResign}
-                disabled={resignEmployee.isPending}
-              >
-                {resignEmployee.isPending ? "처리 중..." : "퇴사 처리"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* 직원 편집 다이얼로그 */}
+        {selectedEmployee && (
+          <EmployeeEditDialog
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            employee={selectedEmployee}
+          />
+        )}
 
         {/* 칭찬하기 다이얼로그 */}
         {selectedEmployee?.phone && (

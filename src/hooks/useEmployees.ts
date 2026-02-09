@@ -48,6 +48,7 @@ export interface EmployeeInsert {
 export interface EmployeeUpdate {
   id: string;
   name?: string;
+  phone?: string | null;
   employee_type?: "정규직" | "계약직" | "알바";
   position?: string;
   department?: string;
