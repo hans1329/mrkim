@@ -42,7 +42,7 @@ export default function Engine() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">김비서 AI 엔진 아키텍처</h1>
-              <p className="text-muted-foreground text-sm">v1.4 · 2025-02-09 업데이트</p>
+              <p className="text-muted-foreground text-sm">v1.5 · 2025-02-09 업데이트</p>
             </div>
           </div>
         </div>
@@ -642,11 +642,54 @@ export default function Engine() {
 
               <Separator />
 
+              {/* 직원 평판 관리 */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-pink-500" />
+                  <h3 className="font-semibold">6. 직원 평판 관리 (칭찬하기)</h3>
+                  <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">업장 간 공유되는 직원 칭찬/평판 시스템 (네거티브 항목 없음, 긍정 피드백만)</p>
+                
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg border bg-card">
+                    <p className="text-xs font-medium mb-2">칭찬 등록</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• 8종 태그: 성실함, 친절함, 팀워크, 시간준수, 책임감, 빠른학습, 꼼꼼함, 리더십</li>
+                      <li>• 자유 코멘트 작성 (선택)</li>
+                      <li>• 직원 리스트에서 ❤️ 버튼으로 진입</li>
+                      <li>• 전화번호 등록된 직원만 칭찬 가능</li>
+                    </ul>
+                  </div>
+                  <div className="p-3 rounded-lg border bg-card">
+                    <p className="text-xs font-medium mb-2">평판 공유 설계</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• 식별 기준: 이름 + 전화번호</li>
+                      <li>• 공개 범위: 모든 인증 사업자</li>
+                      <li>• 태그별 집계 자동 표시</li>
+                      <li>• RLS: 조회=전체, 등록/삭제=본인만</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="text-xs font-semibold mb-2">DB 구조</p>
+                  <div className="text-xs text-muted-foreground font-mono space-y-1">
+                    <p>employee_praises: id, praiser_user_id, employee_name, employee_phone, tags[], comment, created_at</p>
+                    <p>employees.phone: 직원 전화번호 (평판 매칭 키)</p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground italic">
+                  위치: 직원 관리 &gt; 직원 리스트 &gt; ❤️ 버튼. useEmployeePraises.ts / PraiseDialog.tsx
+                </p>
+              </div>
+
+              <Separator />
+
               {/* 일일 브리핑 */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-teal-500" />
-                  <h3 className="font-semibold">6. 일일 브리핑 (Daily Briefing)</h3>
+                  <h3 className="font-semibold">7. 일일 브리핑 (Daily Briefing)</h3>
                   <Badge variant="outline" className="text-xs">예정</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">매일 아침 경영 현황 요약 제공</p>
@@ -1048,11 +1091,12 @@ export default function Engine() {
                   { step: 7, name: "거래 자동 분류기", priority: "완료", color: "bg-green-500" },
                   { step: 8, name: "실데이터 기반 알림 생성기", priority: "완료", color: "bg-green-500" },
                   { step: 9, name: "종합소득세 간이 계산기", priority: "완료", color: "bg-green-500" },
-                  { step: 10, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
-                  { step: 11, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
-                  { step: 12, name: "알림 스케줄러 (cron 자동화)", priority: "예정", color: "bg-gray-400" },
-                  { step: 13, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
-                  { step: 14, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
+                  { step: 10, name: "직원 평판 관리 (칭찬하기)", priority: "완료", color: "bg-green-500" },
+                  { step: 11, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
+                  { step: 12, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
+                  { step: 13, name: "알림 스케줄러 (cron 자동화)", priority: "예정", color: "bg-gray-400" },
+                  { step: 14, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
+                  { step: 15, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
                 ].map((item) => (
                   <div key={item.step} className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
