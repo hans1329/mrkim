@@ -42,7 +42,7 @@ export default function Engine() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">김비서 AI 엔진 아키텍처</h1>
-              <p className="text-muted-foreground text-sm">v1.3 · 2025-02-08 업데이트</p>
+              <p className="text-muted-foreground text-sm">v1.4 · 2025-02-09 업데이트</p>
             </div>
           </div>
         </div>
@@ -550,14 +550,93 @@ export default function Engine() {
                 <div className="flex items-center gap-2">
                   <Bell className="h-5 w-5 text-orange-500" />
                   <h3 className="font-semibold">3. 알림 생성기 (Alert Generator)</h3>
-                  <Badge variant="outline" className="text-xs">예정</Badge>
+                  <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">부분 완료</Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">긴급도별 할 일 자동 생성</p>
+                <p className="text-sm text-muted-foreground">실제 데이터 기반으로 긴급 알림을 자동 생성합니다.</p>
                 
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="destructive">🔴 세금 신고 마감 D-7일</Badge>
-                  <Badge variant="outline" className="border-yellow-500 text-yellow-600">🟡 미수금 30일 초과</Badge>
-                  <Badge variant="secondary">🟢 급여일 D-3일</Badge>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg border bg-card">
+                    <p className="text-xs font-medium mb-2 text-green-600">✅ 구현 완료</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• 세금 마감일 자동 D-day 계산 (부가세 1/25, 7/25 · 종소세 5/31)</li>
+                      <li>• 가장 가까운 마감일 우선 표시</li>
+                      <li>• 미분류 거래 건수 실시간 알림</li>
+                      <li>• 전월 대비 지출 증감 알림 (±10%/20% 기준)</li>
+                      <li>• 대시보드 배너 + 알림 카드 연동</li>
+                    </ul>
+                  </div>
+                  <div className="p-3 rounded-lg border border-dashed bg-card">
+                    <p className="text-xs font-medium mb-2 text-muted-foreground">🔮 예정</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• 자동 스케줄 알림 (cron)</li>
+                      <li>• 미수금 30일 초과 감지</li>
+                      <li>• 급여일 D-3 알림</li>
+                      <li>• 푸시 알림 연동</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* 종합소득세 계산기 */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-5 w-5 text-emerald-500" />
+                  <h3 className="font-semibold">4. 종합소득세 간이 계산기</h3>
+                  <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">세금계산서 매출/매입 기반 종합소득세 예상액 자동 계산</p>
+                
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg border bg-card">
+                    <p className="text-xs font-medium mb-2">자동 계산</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• 매출 - 매입 = 추정 소득금액</li>
+                      <li>• 2025년 8단계 세율표 적용 (6%~45%)</li>
+                      <li>• 지방소득세 (10%) 자동 합산</li>
+                      <li>• 적용 세율 구간 표시</li>
+                    </ul>
+                  </div>
+                  <div className="p-3 rounded-lg border bg-card">
+                    <p className="text-xs font-medium mb-2">상세 시뮬레이션</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• 기본공제 (본인+부양가족) 입력</li>
+                      <li>• 국민연금, 건강보험료 공제</li>
+                      <li>• 기타 소득공제 입력</li>
+                      <li>• 절세 효과 실시간 확인</li>
+                    </ul>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground italic">
+                  위치: 리포트 &gt; 세금계산서 탭 하단. 법인사업자 분기 처리는 미구현 (향후 business_type 기반 분기 예정)
+                </p>
+              </div>
+
+              <Separator />
+
+              {/* AI 인사이트 */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-indigo-500" />
+                  <h3 className="font-semibold">5. AI 인사이트 리포트</h3>
+                  <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">Gemini 기반 경영 분석 인사이트 생성 (24시간 캐싱)</p>
+                
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="text-xs font-semibold mb-2">동작 방식</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                    <span className="px-2 py-1 rounded bg-background border">사용자 클릭</span>
+                    <ArrowRight className="h-3 w-3 shrink-0" />
+                    <span className="px-2 py-1 rounded bg-background border">generate-insights</span>
+                    <ArrowRight className="h-3 w-3 shrink-0" />
+                    <span className="px-2 py-1 rounded bg-background border">DB 데이터 수집</span>
+                    <ArrowRight className="h-3 w-3 shrink-0" />
+                    <span className="px-2 py-1 rounded bg-background border">Gemini 분석</span>
+                    <ArrowRight className="h-3 w-3 shrink-0" />
+                    <span className="px-2 py-1 rounded bg-background border">ai_insights 캐싱 (24h)</span>
+                  </div>
                 </div>
               </div>
 
@@ -567,7 +646,7 @@ export default function Engine() {
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-teal-500" />
-                  <h3 className="font-semibold">4. 일일 브리핑 (Daily Briefing)</h3>
+                  <h3 className="font-semibold">6. 일일 브리핑 (Daily Briefing)</h3>
                   <Badge variant="outline" className="text-xs">예정</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">매일 아침 경영 현황 요약 제공</p>
@@ -967,11 +1046,13 @@ export default function Engine() {
                   { step: 5, name: "Codef 데이터 연동 (5종, 베타)", priority: "완료", color: "bg-green-500" },
                   { step: 6, name: "AI 인사이트 리포트", priority: "완료", color: "bg-green-500" },
                   { step: 7, name: "거래 자동 분류기", priority: "완료", color: "bg-green-500" },
-                  { step: 8, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
-                  { step: 9, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
-                  { step: 10, name: "알림 생성기 (자동 스케줄)", priority: "예정", color: "bg-gray-400" },
-                  { step: 11, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
-                  { step: 12, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
+                  { step: 8, name: "실데이터 기반 알림 생성기", priority: "완료", color: "bg-green-500" },
+                  { step: 9, name: "종합소득세 간이 계산기", priority: "완료", color: "bg-green-500" },
+                  { step: 10, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
+                  { step: 11, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
+                  { step: 12, name: "알림 스케줄러 (cron 자동화)", priority: "예정", color: "bg-gray-400" },
+                  { step: 13, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
+                  { step: 14, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
                 ].map((item) => (
                   <div key={item.step} className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
