@@ -36,31 +36,32 @@ function generateRealAlerts(
   const month = now.getMonth() + 1; // 1-12
   const day = now.getDate();
 
-  // 세금 마감 알림 (90일 이내)
+  // 가장 가까운 세금 마감일 표시
   const taxDeadlines = [
     { month: 1, day: 25, label: "부가세 신고" },
     { month: 5, day: 31, label: "종합소득세 신고" },
     { month: 7, day: 25, label: "부가세 신고" },
   ];
 
+  let nearest: { diff: number; d: typeof taxDeadlines[0] } | null = null;
   for (const deadline of taxDeadlines) {
     for (const year of [now.getFullYear(), now.getFullYear() + 1]) {
       const deadlineDate = new Date(year, deadline.month - 1, deadline.day);
       const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-      if (diffDays > 0 && diffDays <= 90) {
-        alerts.push({
-          id: `tax-${deadline.label}-${deadline.month}-${year}`,
-          title: diffDays === 0 
-            ? `${deadline.label} 마감일입니다!` 
-            : `${deadline.label} 마감 D-${diffDays}`,
-          description: `${deadline.month}월 ${deadline.day}일까지 ${deadline.label}를 완료해야 합니다.`,
-          actionLabel: "확인하기",
-          route: "/reports?tab=tax",
-        });
-        break;
+      if (diffDays > 0 && (!nearest || diffDays < nearest.diff)) {
+        nearest = { diff: diffDays, d: deadline };
       }
     }
+  }
+
+  if (nearest) {
+    alerts.push({
+      id: `tax-${nearest.d.label}-${nearest.d.month}`,
+      title: `${nearest.d.label} 마감 D-${nearest.diff}`,
+      description: `${nearest.d.month}월 ${nearest.d.day}일까지 ${nearest.d.label}를 완료해야 합니다.`,
+      actionLabel: "확인하기",
+      route: "/reports?tab=tax",
+    });
   }
 
   // 미분류 거래 알림
