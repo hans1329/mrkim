@@ -586,21 +586,129 @@ export default function Engine() {
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 <code className="text-xs bg-muted px-1 rounded">_shared/response-engine.ts</code>에 중앙 집중화된 공통 로직입니다.
+                <code className="text-xs bg-muted px-1 rounded">chat-ai</code>, <code className="text-xs bg-muted px-1 rounded">service-chat</code> 등 여러 Edge Function에서 import하여 사용합니다.
               </p>
-              <div className="grid md:grid-cols-2 gap-3">
-                {[
-                  { label: "의도 분류 스키마", desc: "classifyIntentTool (Tool Calling 용 예비)" },
-                  { label: "말투 설정", desc: "toneInstructions: polite / friendly / cute" },
-                  { label: "시스템 프롬프트", desc: "buildSystemPrompt(context) - 채널별 분기" },
-                  { label: "연동 확인", desc: "getMissingDataSources() + 안내 응답 생성" },
-                  { label: "범위 외 응답", desc: "buildOutOfScopeResponse() - 채널별 분기" },
-                  { label: "429 에러 처리", desc: "buildGemini429Message() - Quota/Rate Limit" },
-                ].map((item) => (
-                  <div key={item.label} className="p-3 rounded-lg bg-muted/30 border">
-                    <p className="text-sm font-medium">{item.label}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+
+              {/* 모듈별 상세 */}
+              <div className="space-y-3">
+
+                {/* 1. 타입 정의 */}
+                <div className="p-3 rounded-lg border">
+                  <p className="text-sm font-medium mb-2">📦 타입 정의</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-muted-foreground">
+                    <div className="p-2 rounded bg-muted/30">
+                      <code className="font-mono text-[11px]">IntentResult</code>
+                      <p className="mt-1">의도, 신뢰도, 필요 데이터소스, 기간, 거절사유</p>
+                    </div>
+                    <div className="p-2 rounded bg-muted/30">
+                      <code className="font-mono text-[11px]">ConnectionStatus</code>
+                      <p className="mt-1">hometax, card, bank, employee 연동 여부</p>
+                    </div>
+                    <div className="p-2 rounded bg-muted/30">
+                      <code className="font-mono text-[11px]">ResponseContext</code>
+                      <p className="mt-1">userId, secretaryName, tone, channel</p>
+                    </div>
                   </div>
-                ))}
+                </div>
+
+                {/* 2. 말투 설정 */}
+                <div className="p-3 rounded-lg border">
+                  <p className="text-sm font-medium mb-2">🗣️ 말투 설정 (toneInstructions)</p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-1.5 px-2">말투</th>
+                          <th className="text-left py-1.5 px-2">어미 예시</th>
+                          <th className="text-left py-1.5 px-2">톤</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-muted-foreground">
+                        <tr className="border-b"><td className="py-1.5 px-2 font-medium">polite (격식체)</td><td className="py-1.5 px-2">~입니다, ~습니다, ~하시겠습니까?</td><td className="py-1.5 px-2">정중하고 프로페셔널</td></tr>
+                        <tr className="border-b"><td className="py-1.5 px-2 font-medium">friendly (친근체)</td><td className="py-1.5 px-2">~이에요, ~해요, ~할게요</td><td className="py-1.5 px-2">편안하지만 존중</td></tr>
+                        <tr><td className="py-1.5 px-2 font-medium">cute (귀여운체)</td><td className="py-1.5 px-2">~이에용, ~했어용, ~해드릴게용~</td><td className="py-1.5 px-2">밝고 귀여운 에너지 + 이모지</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2 italic">
+                    비서 이름의 받침 유무(hasBatchim)에 따라 "이에요/예요" 등 조사가 자동 선택됨
+                  </p>
+                </div>
+
+                {/* 3. 시스템 프롬프트 */}
+                <div className="p-3 rounded-lg border">
+                  <p className="text-sm font-medium mb-2">📝 시스템 프롬프트 (buildSystemPrompt)</p>
+                  <p className="text-xs text-muted-foreground mb-2">채널(text/voice/service)에 따라 기본 프롬프트 + 채널별 지침을 결합합니다.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div className="p-2 rounded bg-muted/30 text-xs">
+                      <p className="font-medium">💬 text</p>
+                      <p className="text-muted-foreground mt-1">마크다운 형식, 간결한 응답</p>
+                    </div>
+                    <div className="p-2 rounded bg-muted/30 text-xs">
+                      <p className="font-medium">🎙️ voice</p>
+                      <p className="text-muted-foreground mt-1">2-3문장 권장, 마크다운 금지, 숫자 읽기 쉽게</p>
+                    </div>
+                    <div className="p-2 rounded bg-muted/30 text-xs">
+                      <p className="font-medium">🤖 service</p>
+                      <p className="text-muted-foreground mt-1">서비스 설명 중심, 미로그인 사용자 대상</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 p-2 rounded bg-muted/20 text-[10px] text-muted-foreground">
+                    <p className="font-medium mb-1">기본 프롬프트에 포함된 의도별 지침:</p>
+                    <p>• <strong>self_introduction</strong>: 자기소개 + 할 수 있는 일 소개</p>
+                    <p>• <strong>casual_chat</strong>: 공감 + 업무 도움 제안</p>
+                    <p>• <strong>out_of_scope</strong>: 부드러운 거절 + 대안 제시</p>
+                    <p>• 가짜 금액 생성 금지, 데이터 필요 시 연동 안내</p>
+                  </div>
+                </div>
+
+                {/* 4. 연동 확인 & 응답 */}
+                <div className="p-3 rounded-lg border">
+                  <p className="text-sm font-medium mb-2">🔗 연동 확인 & 응답 생성</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 rounded bg-muted/30">
+                      <code className="font-mono text-[11px]">getMissingDataSources()</code>
+                      <p className="text-muted-foreground mt-1">필요 소스(hometax/card/bank/employee) vs 연동 상태 비교 → 미연동 목록 반환</p>
+                    </div>
+                    <div className="p-2 rounded bg-muted/30">
+                      <code className="font-mono text-[11px]">buildConnectionRequiredResponse()</code>
+                      <p className="text-muted-foreground mt-1">voice: 간결한 구어체 안내 / text: 마크다운 상세 안내 + 연동 방법</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. 에러 처리 */}
+                <div className="p-3 rounded-lg border">
+                  <p className="text-sm font-medium mb-2">⚠️ 에러 처리</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 rounded bg-muted/30">
+                      <code className="font-mono text-[11px]">buildGemini429Message()</code>
+                      <p className="text-muted-foreground mt-1">Quota 소진 vs 일시적 Rate Limit 구분. RetryInfo에서 재시도 시간 파싱</p>
+                    </div>
+                    <div className="p-2 rounded bg-muted/30">
+                      <code className="font-mono text-[11px]">buildOutOfScopeResponse()</code>
+                      <p className="text-muted-foreground mt-1">범위 외 질문에 채널별 부드러운 거절 + 대안 제시</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 6. 예비 스키마 */}
+                <div className="p-3 rounded-lg border border-dashed">
+                  <p className="text-sm font-medium mb-2">🔧 의도 분류 Tool Calling 스키마 (예비)</p>
+                  <p className="text-xs text-muted-foreground">
+                    <code className="font-mono text-[11px]">classifyIntentTool</code> — Gemini Tool Calling용 14개 의도 분류 스키마.
+                    현재는 <code className="font-mono text-[11px]">classifyByKeyword()</code> 로컬 매칭을 우선 사용하여 API 호출 절감 중.
+                    향후 복잡한 의도 판별이 필요할 때 폴백으로 활용 예정.
+                  </p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {["sales_inquiry", "expense_inquiry", "tax_question", "payroll_inquiry", "employee_management", 
+                      "transaction_classify", "daily_briefing", "alert_check", "setting_change", "general_advice", 
+                      "service_help", "self_introduction", "casual_chat", "out_of_scope"].map((intent) => (
+                      <Badge key={intent} variant="outline" className="text-[10px]">{intent}</Badge>
+                    ))}
+                  </div>
+                </div>
+
               </div>
             </CardContent>
           </Card>
