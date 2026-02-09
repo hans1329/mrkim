@@ -319,24 +319,52 @@ export default function Engine() {
               <p className="text-sm text-muted-foreground">
                 AI가 사용자 질문에 답변할 때 조회하는 데이터 소스입니다. 각 소스별 전용 조회·포맷팅 함수가 <code className="text-xs bg-muted px-1 rounded">chat-ai</code>에 구현되어 있습니다.
               </p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+
+              {/* 연동 API 범례 */}
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge className="bg-green-500/10 text-green-600 border-green-500/20">코드에프 베타 (현재)</Badge>
+                <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20">코드에프 정식 (필요)</Badge>
+                <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">하이픈 (필요)</Badge>
+                <Badge variant="outline">내부 DB</Badge>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {[
-                  { icon: <Receipt className="h-4 w-4" />, name: "거래내역", table: "transactions", source: "card/bank", keywords: "매출, 지출, 결제, 비용" },
-                  { icon: <FileText className="h-4 w-4" />, name: "세금계산서", table: "tax_invoices", source: "hometax", keywords: "부가세, 계산서, 세금" },
-                  { icon: <Users className="h-4 w-4" />, name: "직원/급여", table: "employees", source: "내부", keywords: "급여, 월급, 직원, 인건비" },
-                  { icon: <Wallet className="h-4 w-4" />, name: "예치금", table: "deposits", source: "내부", keywords: "예치금, 비상금, 적립" },
-                  { icon: <PiggyBank className="h-4 w-4" />, name: "저축/투자", table: "savings_accounts", source: "내부", keywords: "적금, 예금, 이자, 투자" },
-                  { icon: <ArrowLeftRight className="h-4 w-4" />, name: "자동이체", table: "auto_transfers", source: "내부", keywords: "자동이체, 이체 규칙" },
+                  { icon: <Receipt className="h-4 w-4" />, name: "거래내역", table: "transactions", keywords: "매출, 지출, 결제, 비용",
+                    api: "코드에프", apiStatus: "beta", apiNote: "베타 ConnectedId로 조회 중. 정식 전환 시 실계좌 연동 필요",
+                    badgeClass: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+                  { icon: <FileText className="h-4 w-4" />, name: "세금계산서", table: "tax_invoices", keywords: "부가세, 계산서, 세금",
+                    api: "코드에프", apiStatus: "beta", apiNote: "베타 홈택스 인증으로 조회 중. 정식 전환 필요",
+                    badgeClass: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+                  { icon: <Users className="h-4 w-4" />, name: "직원/급여", table: "employees", keywords: "급여, 월급, 직원, 인건비",
+                    api: "내부 DB", apiStatus: "done", apiNote: "자체 관리. 향후 하이픈 급여 자동 집행 연동 예정",
+                    badgeClass: "" },
+                  { icon: <Wallet className="h-4 w-4" />, name: "예치금/비상금", table: "deposits", keywords: "예치금, 비상금, 적립",
+                    api: "내부 DB", apiStatus: "done", apiNote: "자체 관리. 향후 하이픈 자동 적립 연동 예정",
+                    badgeClass: "" },
+                  { icon: <PiggyBank className="h-4 w-4" />, name: "저축/투자", table: "savings_accounts", keywords: "적금, 예금, 이자, 투자",
+                    api: "내부 DB", apiStatus: "done", apiNote: "자체 관리",
+                    badgeClass: "" },
+                  { icon: <ArrowLeftRight className="h-4 w-4" />, name: "자동이체", table: "auto_transfers", keywords: "자동이체, 이체 규칙",
+                    api: "내부 DB → 하이픈", apiStatus: "partial", apiNote: "규칙 저장만 완료. 실제 자금 집행은 하이픈 연동 필요",
+                    badgeClass: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
                 ].map((item) => (
                   <div key={item.table} className="p-3 rounded-lg border bg-card">
                     <div className="flex items-center gap-2 mb-2">
                       {item.icon}
                       <span className="font-semibold text-sm">{item.name}</span>
+                      {item.apiStatus === "beta" && (
+                        <Badge className={`text-[10px] ${item.badgeClass}`}>코드에프 정식 필요</Badge>
+                      )}
+                      {item.apiStatus === "partial" && (
+                        <Badge className={`text-[10px] ${item.badgeClass}`}>하이픈 필요</Badge>
+                      )}
                     </div>
                     <div className="space-y-1 text-xs text-muted-foreground">
                       <p>테이블: <code className="bg-muted px-1 rounded">{item.table}</code></p>
-                      <p>연동: {item.source}</p>
+                      <p>연동: {item.api}</p>
                       <p className="text-[10px]">키워드: {item.keywords}</p>
+                      <p className="text-[10px] mt-1 italic">{item.apiNote}</p>
                     </div>
                   </div>
                 ))}
@@ -744,37 +772,60 @@ export default function Engine() {
                     
                     {/* 데이터 연동 */}
                     <tr className="border-b bg-muted/20">
-                      <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>🔗 데이터 연동 (Codef)</td>
+                      <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>🔗 데이터 연동 (Codef 베타)</td>
                     </tr>
                     <tr className="border-b">
                       <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">codef-auth</code></td>
                       <td className="py-2 px-3">Codef 인증 토큰 발급</td>
                       <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
-                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                      <td className="py-2 px-3"><Badge className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">베타</Badge></td>
                     </tr>
                     <tr className="border-b">
                       <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">codef-bank</code></td>
                       <td className="py-2 px-3">은행 계좌 거래내역 동기화</td>
                       <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
-                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                      <td className="py-2 px-3"><Badge className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">베타</Badge></td>
                     </tr>
                     <tr className="border-b">
                       <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">codef-card</code></td>
                       <td className="py-2 px-3">카드사 거래내역 동기화</td>
                       <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
-                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                      <td className="py-2 px-3"><Badge className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">베타</Badge></td>
                     </tr>
                     <tr className="border-b">
                       <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">codef-hometax</code></td>
                       <td className="py-2 px-3">홈택스 연동 (사업자 확인)</td>
                       <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
-                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                      <td className="py-2 px-3"><Badge className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">베타</Badge></td>
                     </tr>
                     <tr className="border-b">
                       <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">codef-tax-invoice</code></td>
                       <td className="py-2 px-3">세금계산서 동기화</td>
                       <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
-                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                      <td className="py-2 px-3"><Badge className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">베타</Badge></td>
+                    </tr>
+
+                    {/* 향후 필요 */}
+                    <tr className="border-b bg-muted/20">
+                      <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>🔮 향후 연동 필요</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3 text-muted-foreground">codef-* (정식 전환)</td>
+                      <td className="py-2 px-3 text-muted-foreground">실 ConnectedId 생성 + 실계좌 인증</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
+                      <td className="py-2 px-3"><Badge className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">정식 전환</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3 text-muted-foreground">hyphen-transfer</td>
+                      <td className="py-2 px-3 text-muted-foreground">자동이체 자금 집행 (ARS/OTP 동의)</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
+                      <td className="py-2 px-3"><Badge className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/20">하이픈</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3 text-muted-foreground">hyphen-payroll</td>
+                      <td className="py-2 px-3 text-muted-foreground">급여 자동 집행</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Required</Badge></td>
+                      <td className="py-2 px-3"><Badge className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/20">하이픈</Badge></td>
                     </tr>
 
                     {/* 공유 모듈 */}
@@ -805,12 +856,14 @@ export default function Engine() {
                   { step: 2, name: "서비스 안내 AI (비로그인)", priority: "완료", color: "bg-green-500" },
                   { step: 3, name: "음성 TTS 엔진", priority: "완료", color: "bg-green-500" },
                   { step: 4, name: "Scribe STT 음성 대화", priority: "완료", color: "bg-green-500" },
-                  { step: 5, name: "Codef 데이터 연동 (5종)", priority: "완료", color: "bg-green-500" },
+                  { step: 5, name: "Codef 데이터 연동 (5종, 베타)", priority: "완료", color: "bg-green-500" },
                   { step: 6, name: "AI 인사이트 리포트", priority: "완료", color: "bg-green-500" },
                   { step: 7, name: "거래 자동 분류기", priority: "완료", color: "bg-green-500" },
-                  { step: 8, name: "알림 생성기 (자동 스케줄)", priority: "예정", color: "bg-gray-400" },
-                  { step: 9, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
-                  { step: 10, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
+                  { step: 8, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
+                  { step: 9, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
+                  { step: 10, name: "알림 생성기 (자동 스케줄)", priority: "예정", color: "bg-gray-400" },
+                  { step: 11, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
+                  { step: 12, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
                 ].map((item) => (
                   <div key={item.step} className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
