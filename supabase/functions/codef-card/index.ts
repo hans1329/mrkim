@@ -284,7 +284,7 @@ serve(async (req) => {
     } else {
       return new Response(
         JSON.stringify({ success: false, error: "알 수 없는 action입니다." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -312,7 +312,7 @@ async function handleRegister(
   if (!organizationCode) {
     return new Response(
       JSON.stringify({ success: false, error: "지원하지 않는 카드사입니다." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -373,7 +373,7 @@ async function handleRegister(
         code: result.code,
         errorList: data.data?.errorList || [],
       }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 }
@@ -391,7 +391,7 @@ async function handleAddAccount(
   if (!organizationCode) {
     return new Response(
       JSON.stringify({ success: false, error: "지원하지 않는 카드사입니다." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -439,8 +439,7 @@ async function handleAddAccount(
       errorList: data.data?.errorList || [],
     }),
     { 
-      status: isSuccess ? 200 : 400, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
     }
   );
 }
@@ -455,7 +454,7 @@ async function handleGetCards(
   if (!organizationCode) {
     return new Response(
       JSON.stringify({ success: false, error: "지원하지 않는 카드사입니다." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -509,7 +508,7 @@ async function handleGetCards(
         error: result.message || "카드 목록 조회 실패",
         code: result.code,
       }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 }
@@ -552,14 +551,14 @@ async function handleGetTransactions(
   if (!organizationCode) {
     return new Response(
       JSON.stringify({ success: false, error: "지원하지 않는 카드사입니다." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
   if (!connectedId) {
     return new Response(
       JSON.stringify({ success: false, error: "connectedId가 필요합니다." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -665,7 +664,7 @@ async function handleGetTransactions(
     if (cardNosToQuery.length === 0) {
       return new Response(
         JSON.stringify({ success: false, error: "조회 가능한 카드가 없습니다." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -678,7 +677,7 @@ async function handleGetTransactions(
       const msg = firstErr instanceof Error ? firstErr.message : "승인 내역 조회 실패";
       return new Response(
         JSON.stringify({ success: false, error: msg }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -730,7 +729,7 @@ async function handleGetTransactions(
     const msg = err instanceof Error ? err.message : "승인 내역 조회 실패";
     return new Response(
       JSON.stringify({ success: false, error: msg }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 }
