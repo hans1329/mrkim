@@ -299,6 +299,36 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_praises: {
+        Row: {
+          comment: string | null
+          created_at: string
+          employee_name: string
+          employee_phone: string
+          id: string
+          praiser_user_id: string
+          tags: string[]
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          employee_name: string
+          employee_phone: string
+          id?: string
+          praiser_user_id: string
+          tags?: string[]
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          employee_name?: string
+          employee_phone?: string
+          id?: string
+          praiser_user_id?: string
+          tags?: string[]
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           created_at: string
@@ -315,6 +345,7 @@ export type Database = {
           memo: string | null
           monthly_salary: number | null
           name: string
+          phone: string | null
           position: string | null
           source: string
           start_date: string | null
@@ -338,6 +369,7 @@ export type Database = {
           memo?: string | null
           monthly_salary?: number | null
           name: string
+          phone?: string | null
           position?: string | null
           source?: string
           start_date?: string | null
@@ -361,6 +393,7 @@ export type Database = {
           memo?: string | null
           monthly_salary?: number | null
           name?: string
+          phone?: string | null
           position?: string | null
           source?: string
           start_date?: string | null
