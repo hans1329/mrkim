@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { PraiseDialog } from "@/components/employees/PraiseDialog";
 import { EmployeeEditDialog } from "@/components/employees/EmployeeEditDialog";
+import { usePraiseCount } from "@/hooks/useEmployeePraises";
 import {
   useEmployees,
   useEmployeeStats,
@@ -35,6 +36,22 @@ import {
   type Employee,
   type EmployeeInsert,
 } from "@/hooks/useEmployees";
+
+function PraiseHeartButton({ employee, onPraise }: { employee: Employee; onPraise: (e: React.MouseEvent) => void }) {
+  const { data: count } = usePraiseCount(employee.name, employee.phone || undefined);
+  const hasPraises = (count || 0) > 0;
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8"
+      onClick={onPraise}
+    >
+      <Heart className={`h-4 w-4 ${hasPraises ? "fill-pink-500 text-pink-500" : "text-pink-500"}`} />
+    </Button>
+  );
+}
 
 export default function Employees() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -366,18 +383,14 @@ export default function Employees() {
                   </div>
                   <div className="flex items-center gap-2">
                     {employee.status === "재직" && employee.phone && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={(e) => {
+                      <PraiseHeartButton
+                        employee={employee}
+                        onPraise={(e) => {
                           e.stopPropagation();
                           setSelectedEmployee(employee);
                           setIsPraiseDialogOpen(true);
                         }}
-                      >
-                        <Heart className="h-4 w-4 text-pink-500" />
-                      </Button>
+                      />
                     )}
                     <div className="text-right">
                       <p className="font-semibold">

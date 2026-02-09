@@ -44,8 +44,8 @@ export function PraiseDialog({
   };
 
   const handleSubmit = () => {
-    if (selectedTags.length === 0) {
-      toast.error("칭찬 태그를 1개 이상 선택해주세요");
+    if (selectedTags.length === 0 && !comment.trim()) {
+      toast.error("태그 또는 코멘트를 입력해주세요");
       return;
     }
 
@@ -61,6 +61,7 @@ export function PraiseDialog({
           toast.success("칭찬이 등록되었습니다 🎉");
           setSelectedTags([]);
           setComment("");
+          onOpenChange(false);
         },
         onError: (error) => {
           toast.error(error.message || "등록에 실패했습니다");
@@ -154,7 +155,7 @@ export function PraiseDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={addPraise.isPending || selectedTags.length === 0}
+            disabled={addPraise.isPending || (selectedTags.length === 0 && !comment.trim())}
           >
             <ThumbsUp className="mr-1.5 h-4 w-4" />
             {addPraise.isPending ? "등록 중..." : "칭찬 등록"}
