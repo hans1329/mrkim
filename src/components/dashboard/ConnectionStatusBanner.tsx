@@ -36,46 +36,31 @@ function generateRealAlerts(
   const month = now.getMonth() + 1; // 1-12
   const day = now.getDate();
 
-  // 부가세 신고 마감 (1월 25일, 7월 25일)
-  const vatDeadlines = [
-    { month: 1, day: 25, label: "1월 25일" },
-    { month: 7, day: 25, label: "7월 25일" },
+  // 세금 마감 알림 (90일 이내)
+  const taxDeadlines = [
+    { month: 1, day: 25, label: "부가세 신고" },
+    { month: 5, day: 31, label: "종합소득세 신고" },
+    { month: 7, day: 25, label: "부가세 신고" },
   ];
 
-  for (const deadline of vatDeadlines) {
-    const deadlineDate = new Date(now.getFullYear(), deadline.month - 1, deadline.day);
-    const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  for (const deadline of taxDeadlines) {
+    for (const year of [now.getFullYear(), now.getFullYear() + 1]) {
+      const deadlineDate = new Date(year, deadline.month - 1, deadline.day);
+      const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (diffDays > 0 && diffDays <= 30) {
-      alerts.push({
-        id: `vat-${deadline.month}`,
-        title: `부가세 신고 마감 D-${diffDays}`,
-        description: `${deadline.label}까지 부가세 신고를 완료해야 합니다.`,
-        actionLabel: "확인하기",
-        route: "/reports?tab=tax",
-      });
-    } else if (diffDays === 0) {
-      alerts.push({
-        id: `vat-${deadline.month}`,
-        title: "부가세 신고 마감일입니다!",
-        description: `오늘(${deadline.label})까지 부가세 신고를 완료해야 합니다.`,
-        actionLabel: "확인하기",
-        route: "/reports?tab=tax",
-      });
+      if (diffDays > 0 && diffDays <= 90) {
+        alerts.push({
+          id: `tax-${deadline.label}-${deadline.month}-${year}`,
+          title: diffDays === 0 
+            ? `${deadline.label} 마감일입니다!` 
+            : `${deadline.label} 마감 D-${diffDays}`,
+          description: `${deadline.month}월 ${deadline.day}일까지 ${deadline.label}를 완료해야 합니다.`,
+          actionLabel: "확인하기",
+          route: "/reports?tab=tax",
+        });
+        break;
+      }
     }
-  }
-
-  // 종합소득세 마감 (5월 31일)
-  const incomeTaxDate = new Date(now.getFullYear(), 4, 31);
-  const incomeTaxDiff = Math.ceil((incomeTaxDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (incomeTaxDiff > 0 && incomeTaxDiff <= 30) {
-    alerts.push({
-      id: "income-tax",
-      title: `종합소득세 신고 마감 D-${incomeTaxDiff}`,
-      description: "5월 31일까지 종합소득세 신고를 완료해야 합니다.",
-      actionLabel: "확인하기",
-      route: "/reports?tab=tax",
-    });
   }
 
   // 미분류 거래 알림
