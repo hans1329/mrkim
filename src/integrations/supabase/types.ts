@@ -260,6 +260,101 @@ export type Database = {
         }
         Relationships: []
       }
+      connector_instances: {
+        Row: {
+          connected_id: string | null
+          connector_id: string
+          created_at: string
+          credentials_meta: Json | null
+          id: string
+          last_sync_at: string | null
+          next_sync_at: string | null
+          status: Database["public"]["Enums"]["connector_status"]
+          status_message: string | null
+          sync_interval_minutes: number | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_id?: string | null
+          connector_id: string
+          created_at?: string
+          credentials_meta?: Json | null
+          id?: string
+          last_sync_at?: string | null
+          next_sync_at?: string | null
+          status?: Database["public"]["Enums"]["connector_status"]
+          status_message?: string | null
+          sync_interval_minutes?: number | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_id?: string | null
+          connector_id?: string
+          created_at?: string
+          credentials_meta?: Json | null
+          id?: string
+          last_sync_at?: string | null
+          next_sync_at?: string | null
+          status?: Database["public"]["Enums"]["connector_status"]
+          status_message?: string | null
+          sync_interval_minutes?: number | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_instances_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "connectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connectors: {
+        Row: {
+          category: string
+          config_schema: Json | null
+          created_at: string
+          description: string | null
+          display_order: number
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          provider: string
+        }
+        Insert: {
+          category: string
+          config_schema?: Json | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id: string
+          is_active?: boolean
+          name: string
+          provider?: string
+        }
+        Update: {
+          category?: string
+          config_schema?: Json | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          provider?: string
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           amount: number
@@ -707,6 +802,103 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          instance_id: string
+          job_type: string
+          max_retries: number
+          records_fetched: number | null
+          records_saved: number | null
+          retry_count: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["sync_job_status"]
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          instance_id: string
+          job_type?: string
+          max_retries?: number
+          records_fetched?: number | null
+          records_saved?: number | null
+          retry_count?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["sync_job_status"]
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          instance_id?: string
+          job_type?: string
+          max_retries?: number
+          records_fetched?: number | null
+          records_saved?: number | null
+          retry_count?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["sync_job_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_jobs_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "connector_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_logs: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          level: string
+          message: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          level?: string
+          message: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_logs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "sync_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tax_invoices: {
         Row: {
           buyer_business_number: string | null
@@ -920,7 +1112,19 @@ export type Database = {
     }
     Enums: {
       app_role: "owner" | "manager" | "employee" | "admin"
+      connector_status:
+        | "pending"
+        | "connected"
+        | "failed"
+        | "expired"
+        | "disconnected"
       employee_type: "정규직" | "계약직" | "알바"
+      sync_job_status:
+        | "pending"
+        | "running"
+        | "completed"
+        | "failed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1049,7 +1253,21 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["owner", "manager", "employee", "admin"],
+      connector_status: [
+        "pending",
+        "connected",
+        "failed",
+        "expired",
+        "disconnected",
+      ],
       employee_type: ["정규직", "계약직", "알바"],
+      sync_job_status: [
+        "pending",
+        "running",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
     },
   },
 } as const
