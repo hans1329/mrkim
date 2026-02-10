@@ -27,6 +27,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { ConnectedAccountsCard } from "@/components/profile/ConnectedAccountsCard";
+import { ConnectorStatusCard } from "@/components/profile/ConnectorStatusCard";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -480,6 +481,9 @@ export default function Profile() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 데이터 연동 현황 */}
+        <ConnectorStatusCard />
 
         {/* 연결된 계좌 */}
         <ConnectedAccountsCard />
