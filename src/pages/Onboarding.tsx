@@ -194,31 +194,6 @@ export default function Onboarding() {
     }
   };
 
-  const handleConnect = async (service: "hometax" | "card" | "account") => {
-    // 로그인 상태 체크
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error("로그인이 필요합니다.");
-      navigate("/login");
-      return;
-    }
-
-    setIsConnecting(true);
-    setConnectionResult(null);
-    
-    try {
-      // 카드/계좌는 아직 모의 연결
-      await new Promise((r) => setTimeout(r, 1500));
-      connectLocal(service);
-      await saveConnectionToDb(service);
-      toast.success(`${service === "card" ? "카드" : "계좌"} 연동 완료 (모의)`);
-    } catch (err) {
-      console.error("Connection error:", err);
-      toast.error("연동 중 오류가 발생했습니다.");
-    } finally {
-      setIsConnecting(false);
-    }
-  };
 
   const handleNext = () => {
     const nextIdx = currentIdx + 1;
