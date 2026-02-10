@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Mic, MicOff, Sparkles, MessageCircle, Loader2, AlertCircle } from "lucide-react";
+import { VoiceDataVisualization } from "@/components/chat/DataVisualization";
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/contexts/VoiceContext";
 import { useChat } from "@/contexts/ChatContext";
@@ -215,7 +216,7 @@ export function VoiceOverlay() {
 
             {/* 마지막 메시지 (버튼 아래) */}
             {lastMessage && (
-              <div className="mt-6 w-full flex justify-center">
+              <div className="mt-6 w-full flex flex-col items-center">
                 <div
                   className={cn(
                     "max-w-[85%] rounded-2xl px-5 py-3 animate-fade-in",
@@ -226,6 +227,10 @@ export function VoiceOverlay() {
                 >
                   <p className="text-sm leading-relaxed">{lastMessage.text}</p>
                 </div>
+                {/* 시각화 데이터 */}
+                {lastMessage.visualization && lastMessage.role === "agent" && (
+                  <VoiceDataVisualization data={lastMessage.visualization} />
+                )}
               </div>
             )}
 
