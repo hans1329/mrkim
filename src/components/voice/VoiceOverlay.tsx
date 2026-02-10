@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Mic, MicOff, Sparkles, MessageCircle, Loader2, AlertCircle } from "lucide-react";
+import { X, Mic, Sparkles, MessageCircle, Loader2, AlertCircle } from "lucide-react";
 import { VoiceDataVisualization } from "@/components/chat/DataVisualization";
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/contexts/VoiceContext";

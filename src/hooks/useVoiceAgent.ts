@@ -59,6 +59,8 @@ export function useVoiceAgent() {
   const pendingTranscriptRef = useRef<string>("");
   const sessionActiveRef = useRef(false);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  // 유저 제스처 컨텍스트에서 생성한 Audio 객체 (재사용)
+  const persistentAudioRef = useRef<HTMLAudioElement | null>(null);
   // ScribeRealtime 연결을 ref로 관리 (React 훅 아님!)
   const scribeConnectionRef = useRef<RealtimeConnection | null>(null);
 
@@ -69,10 +71,11 @@ export function useVoiceAgent() {
   // --- HTMLAudioElement 기반 TTS 재생 ---
   // audioEl이 이미 생성된 경우 해당 엘리먼트에 src를 설정하여 재생
   const playAudioBlob = useCallback(
-    (audioBlob: Blob, preCreatedAudio?: HTMLAudioElement, onPlayStarted?: () => void): Promise<{ interrupted: boolean }> => {
+    (audioBlob: Blob, onPlayStarted?: () => void): Promise<{ interrupted: boolean }> => {
       return new Promise((resolve) => {
         const url = URL.createObjectURL(audioBlob);
-        const audio = preCreatedAudio || new Audio();
+        // 유저 제스처에서 생성한 Audio 객체 재사용 (autoplay 제한 우회)
+        const audio = persistentAudioRef.current || new Audio();
         audio.src = url;
         currentAudioRef.current = audio;
 
@@ -385,9 +388,10 @@ export function useVoiceAgent() {
 
     // ★ 핵심: 유저 제스처 컨텍스트 내에서 즉시 Audio 객체 생성
     // 이렇게 해야 브라우저 자동재생 제한을 우회할 수 있음
-    const greetingAudio = new Audio();
-    greetingAudio.preload = "auto";
-    console.log("[Session] Audio element created (gesture context)");
+    const gestureAudio = new Audio();
+    gestureAudio.preload = "auto";
+    persistentAudioRef.current = gestureAudio;
+    console.log("[Session] Audio element created (gesture context) - will reuse for all TTS");
 
     // 말투에 맞는 인사말 생성 (받침 여부에 따라 조사 변경)
     const nameHasBatchim = hasBatchim(secretaryName);
@@ -437,7 +441,7 @@ export function useVoiceAgent() {
       console.log("[Session] 2. Playing greeting (pre-created audio)...");
 
       // 재생 시작 시점에 인사말 텍스트 표시
-      const playPromise = playAudioBlob(greetingAudioBlob, greetingAudio, () => {
+      const playPromise = playAudioBlob(greetingAudioBlob, () => {
         setLastMessage(greetingMsg);
       });
       const scribePromise = connectScribe();
@@ -491,6 +495,7 @@ export function useVoiceAgent() {
       audio.currentTime = 0;
       currentAudioRef.current = null;
     }
+    persistentAudioRef.current = null;
 
     // Scribe 연결 해제
     disconnectScribe();
@@ -517,6 +522,7 @@ export function useVoiceAgent() {
         audio.pause();
         currentAudioRef.current = null;
       }
+      persistentAudioRef.current = null;
       const conn = scribeConnectionRef.current;
       if (conn) {
         try { conn.close(); } catch {}
