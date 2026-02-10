@@ -194,6 +194,32 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         await syncProfileFlags(category, true);
       }
 
+      // 연동 완료 후 즉시 최초 동기화 트리거 (fire-and-forget)
+      // connector_instances에서 해당 인스턴스 ID를 찾아 sync-orchestrator 호출
+      try {
+        const { data: instances } = await supabase
+          .from("connector_instances")
+          .select("id")
+          .eq("connector_id", connectorId)
+          .eq("status", "connected")
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (instances && instances.length > 0) {
+          supabase.functions.invoke("sync-orchestrator", {
+            body: { instanceId: instances[0].id },
+          }).then((res) => {
+            if (res.data?.success) {
+              console.log(`Initial sync triggered for ${connectorId}:`, res.data);
+            }
+          }).catch((err) => {
+            console.warn("Initial sync trigger failed (non-blocking):", err);
+          });
+        }
+      } catch (syncErr) {
+        console.warn("Failed to trigger initial sync:", syncErr);
+      }
+
       return true;
     } catch (error) {
       console.error("connectService error:", error);
