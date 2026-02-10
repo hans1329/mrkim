@@ -537,6 +537,12 @@ export function useVoiceAgent() {
     }
   }, []);
 
+  // --- 텍스트 직접 전송 (제안 칩 탭 시 사용) ---
+  const sendTextDirectly = useCallback(async (text: string) => {
+    if (!sessionActiveRef.current || processingRef.current || abortRef.current) return;
+    handleCommittedTranscript(text);
+  }, [handleCommittedTranscript]);
+
   return {
     status,
     isSpeaking: status === "speaking",
@@ -551,5 +557,6 @@ export function useVoiceAgent() {
     endSession,
     interruptAndListen,
     resetPermission,
+    sendTextDirectly,
   };
 }

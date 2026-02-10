@@ -494,8 +494,11 @@ serve(async (req) => {
     const genderDesc = secretaryGender === "male" ? "남성" : "여성";
     const toneInst = toneMap[secretaryTone] || toneMap.polite;
 
-    const voiceInst = voiceMode ? `\n\n## 🔊 음성 모드\n- 구어체로 자연스럽게 2~3문장\n- 마크다운 금지${secretaryTone === "cute" ? "" : ", 이모지 금지"}\n- 숫자는 한글로 읽기 쉽게\n- "사장님~" 호칭 사용` : "";
-    const voiceDataInst = voiceMode ? `\n- 구어체로 짧게 2~3문장으로 핵심만 답변\n- 마크다운 사용 금지${secretaryTone === "cute" ? "" : ", 이모지 사용 금지"}\n- 숫자는 읽기 쉽게 한글로 표현` : "";
+    const followUpInst = voiceMode
+      ? `\n- 답변 마지막에 자연스럽게 후속 질문을 유도하세요. 예: "혹시 지출 내역도 확인해볼까요?", "더 궁금한 거 있으세요?"`
+      : `\n- 답변 마지막에 자연스럽게 후속 질문을 유도하세요.`;
+    const voiceInst = voiceMode ? `\n\n## 🔊 음성 모드\n- 구어체로 자연스럽게 2~3문장\n- 마크다운 금지${secretaryTone === "cute" ? "" : ", 이모지 금지"}\n- 숫자는 한글로 읽기 쉽게\n- "사장님~" 호칭 사용${followUpInst}` : "";
+    const voiceDataInst = voiceMode ? `\n- 구어체로 짧게 2~3문장으로 핵심만 답변\n- 마크다운 사용 금지${secretaryTone === "cute" ? "" : ", 이모지 사용 금지"}\n- 숫자는 읽기 쉽게 한글로 표현${followUpInst}` : "";
 
     const geminiMessages = messages.map((msg: any) => ({
       role: msg.role === "assistant" ? "model" : "user",
