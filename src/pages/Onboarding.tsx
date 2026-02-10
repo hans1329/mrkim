@@ -19,6 +19,7 @@ import { CardConnectionFlow } from "@/components/onboarding/CardConnectionFlow";
 import { AccountConnectionFlow } from "@/components/onboarding/AccountConnectionFlow";
 import { BusinessNumberModal } from "@/components/onboarding/BusinessNumberModal";
 import { supabase } from "@/integrations/supabase/client";
+import { useConnection } from "@/contexts/ConnectionContext";
 import { toast } from "sonner";
 
 const characterImg = "/images/icc-5.webp";
@@ -50,7 +51,8 @@ const stepIndex = (step: OnboardingStep) => steps.findIndex((s) => s.key === ste
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { currentStep, connections, goToStep, connectService, setConnections, completeOnboarding, resetOnboarding } = useOnboarding();
+  const { currentStep, connections, goToStep, connectService: connectLocal, setConnections, completeOnboarding, resetOnboarding } = useOnboarding();
+  const { connectService: connectToDb, refetch: refetchConnection } = useConnection();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showCardFlow, setShowCardFlow] = useState(false);
   const [showAccountFlow, setShowAccountFlow] = useState(false);
@@ -69,24 +71,31 @@ export default function Onboarding() {
           return;
         }
 
+        // connector_instances에서 연동 상태 조회
+        const { data: instances } = await supabase
+          .from("connector_instances")
+          .select("connector_id, status")
+          .eq("user_id", user.id);
+
+        const connectedIds = new Set(
+          (instances || []).filter((i: any) => i.status === "connected").map((i: any) => i.connector_id)
+        );
+
+        setConnections({
+          hometax: connectedIds.has("codef_hometax_tax_invoice"),
+          card: connectedIds.has("codef_card_usage") || connectedIds.has("codef_card_sales"),
+          account: connectedIds.has("codef_bank_account"),
+        });
+
+        // 사업자등록번호는 여전히 profiles에서
         const { data: profile } = await supabase
           .from("profiles")
-          .select("hometax_connected, card_connected, account_connected, business_registration_number")
+          .select("business_registration_number")
           .eq("user_id", user.id)
           .single();
 
-        if (profile) {
-          // DB 상태를 로컬 상태에 동기화 (false도 반영)
-          setConnections({
-            hometax: !!profile.hometax_connected,
-            card: !!profile.card_connected,
-            account: !!profile.account_connected,
-          });
-          
-          // 저장된 사업자등록번호가 있으면 자동으로 채우기
-          if (profile.business_registration_number) {
-            setBusinessNumber(profile.business_registration_number);
-          }
+        if (profile?.business_registration_number) {
+          setBusinessNumber(profile.business_registration_number);
         }
       } catch (err) {
         console.error("Failed to load connection status:", err);
@@ -101,25 +110,14 @@ export default function Onboarding() {
   
   const currentIdx = stepIndex(currentStep);
 
-  // DB에 연결 상태 저장
+  // connector_instances 기반으로 연동 상태 저장
   const saveConnectionToDb = async (service: "hometax" | "card" | "account") => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const columnMap = {
-      hometax: { connected: "hometax_connected", connectedAt: "hometax_connected_at" },
-      card: { connected: "card_connected", connectedAt: "card_connected_at" },
-      account: { connected: "account_connected", connectedAt: "account_connected_at" },
+    const connectorMap = {
+      hometax: "codef_hometax_tax_invoice",
+      card: "codef_card_usage",
+      account: "codef_bank_account",
     };
-
-    const columns = columnMap[service];
-    await supabase
-      .from("profiles")
-      .update({
-        [columns.connected]: true,
-        [columns.connectedAt]: new Date().toISOString(),
-      })
-      .eq("user_id", user.id);
+    await connectToDb(connectorMap[service]);
   };
 
   // 사업자등록번호가 설정되어 있는지 확인 후 연동 시작
@@ -179,16 +177,10 @@ export default function Onboarding() {
       
       if (data?.success) {
         toast.success("홈택스 연동 성공!");
-        connectService("hometax");
+        connectLocal("hometax");
         
-        // 연결 상태만 업데이트 (사업자번호는 이미 저장됨)
-        await supabase
-          .from("profiles")
-          .update({
-            hometax_connected: true,
-            hometax_connected_at: new Date().toISOString(),
-          })
-          .eq("user_id", user.id);
+        // connector_instances + profiles 플래그 동기화
+        await saveConnectionToDb("hometax");
       } else {
         toast.error("홈택스 연동 실패: " + (data?.message || "알 수 없는 오류"));
       }
@@ -215,7 +207,7 @@ export default function Onboarding() {
     try {
       // 카드/계좌는 아직 모의 연결
       await new Promise((r) => setTimeout(r, 1500));
-      connectService(service);
+      connectLocal(service);
       await saveConnectionToDb(service);
       toast.success(`${service === "card" ? "카드" : "계좌"} 연동 완료 (모의)`);
     } catch (err) {
@@ -249,7 +241,7 @@ export default function Onboarding() {
   };
 
   const handleCardFlowComplete = () => {
-    connectService("card");
+    connectLocal("card");
     setShowCardFlow(false);
     handleNext();
   };
@@ -270,7 +262,7 @@ export default function Onboarding() {
   };
 
   const handleAccountFlowComplete = () => {
-    connectService("account");
+    connectLocal("account");
     setShowAccountFlow(false);
     handleNext();
   };

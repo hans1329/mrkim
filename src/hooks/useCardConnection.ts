@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useProfile } from "./useProfile";
+import { useConnection } from "@/contexts/ConnectionContext";
 
 interface CardInfo {
   cardNo: string;
@@ -26,7 +26,7 @@ export function useCardConnection(): UseCardConnectionReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [connectedId, setConnectedId] = useState<string | null>(null);
   const [cards, setCards] = useState<CardInfo[]>([]);
-  const { updateProfile } = useProfile();
+  const { connectService } = useConnection();
 
   // 카드사 계정 등록 (ConnectedId 신규 발급) - connectedId 반환
   const registerCardAccount = async (
@@ -74,11 +74,8 @@ export function useCardConnection(): UseCardConnectionReturn {
       if (data.success && data.connectedId) {
         setConnectedId(data.connectedId);
         
-        // DB에 연결 상태 저장
-        await updateProfile({
-          card_connected: true,
-          card_connected_at: new Date().toISOString(),
-        }, false);
+        // connector_instances + profiles 플래그 동기화
+        await connectService("codef_card_usage", data.connectedId);
         
         toast.success("카드사 연결이 완료되었습니다!");
         return data.connectedId;
