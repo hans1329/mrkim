@@ -42,7 +42,7 @@ export default function Engine() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">김비서 AI 엔진 아키텍처</h1>
-              <p className="text-muted-foreground text-sm">v1.5 · 2025-02-09 업데이트</p>
+              <p className="text-muted-foreground text-sm">v1.6 · 2026-02-10 업데이트</p>
             </div>
           </div>
         </div>
@@ -891,7 +891,6 @@ export default function Engine() {
                   <li>• Rate Limiting: 분당 요청 제한 + 429 처리</li>
                   <li>• 페르소나 안전장치: 업무 범위 강제</li>
                   <li>• Gemini Safety Settings: 4대 카테고리 필터링</li>
-                  <li className="text-destructive">• ⚠️ Lovable AI Gateway 사용 금지</li>
                 </ul>
               </CardContent>
             </Card>
@@ -1035,6 +1034,17 @@ export default function Engine() {
                       <td className="py-2 px-3"><Badge className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">베타</Badge></td>
                     </tr>
 
+                    {/* 동기화 자동화 */}
+                    <tr className="border-b bg-muted/20">
+                      <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>🔄 동기화 자동화</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">sync-orchestrator</code></td>
+                      <td className="py-2 px-3">connector_instances 기반 자동 동기화 (pg_cron 6시간)</td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs">Service Role</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+
                     {/* 향후 필요 */}
                     <tr className="border-b bg-muted/20">
                       <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>🔮 향후 연동 필요</td>
@@ -1092,11 +1102,13 @@ export default function Engine() {
                   { step: 8, name: "실데이터 기반 알림 생성기", priority: "완료", color: "bg-green-500" },
                   { step: 9, name: "종합소득세 간이 계산기", priority: "완료", color: "bg-green-500" },
                   { step: 10, name: "직원 평판 관리 (칭찬하기)", priority: "완료", color: "bg-green-500" },
-                  { step: 11, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
-                  { step: 12, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
-                  { step: 13, name: "알림 스케줄러 (cron 자동화)", priority: "예정", color: "bg-gray-400" },
-                  { step: 14, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
-                  { step: 15, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
+                  { step: 11, name: "동기화 오케스트레이터 (sync-orchestrator)", priority: "완료", color: "bg-green-500" },
+                  { step: 12, name: "pg_cron 자동 스케줄링 (6시간 주기)", priority: "완료", color: "bg-green-500" },
+                  { step: 13, name: "연동 완료 시 즉시 동기화 트리거", priority: "완료", color: "bg-green-500" },
+                  { step: 14, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
+                  { step: 15, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
+                  { step: 16, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
+                  { step: 17, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
                 ].map((item) => (
                   <div key={item.step} className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
