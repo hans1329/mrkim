@@ -4,11 +4,13 @@ import { useProfile } from "@/hooks/useProfile";
 import { Scribe, CommitStrategy, RealtimeEvents } from "@elevenlabs/client";
 import type { RealtimeConnection, PartialTranscriptMessage, CommittedTranscriptMessage } from "@elevenlabs/client";
 import { toast } from "sonner";
+import type { VisualizationData } from "@/components/chat/DataVisualization";
 
 export interface VoiceMessage {
   role: "user" | "agent";
   text: string;
   timestamp: Date;
+  visualization?: VisualizationData | null;
 }
 
 type VoiceStatus = "idle" | "listening" | "processing" | "speaking";
@@ -186,7 +188,7 @@ export function useVoiceAgent() {
   }, [secretaryGender, secretaryTone, playAudioBlob]);
 
   // --- chat-ai 호출 ---
-  const queryAI = useCallback(async (userText: string): Promise<string> => {
+  const queryAI = useCallback(async (userText: string): Promise<{ response: string; visualization?: VisualizationData | null }> => {
     const { data: { session } } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
     const userId = session?.user?.id;
@@ -221,7 +223,10 @@ export function useVoiceAgent() {
     }
 
     const data = await response.json();
-    return data.response || "죄송합니다, 응답을 생성하지 못했습니다.";
+    return {
+      response: data.response || "죄송합니다, 응답을 생성하지 못했습니다.",
+      visualization: data.visualization || null,
+    };
   }, [secretaryName, secretaryTone, secretaryGender]);
 
   // --- 최종 인식 처리 ---
@@ -243,16 +248,16 @@ export function useVoiceAgent() {
     setStatus("processing");
 
     try {
-      const aiResponse = await queryAI(transcript);
+      const aiResult = await queryAI(transcript);
 
       if (abortRef.current || !sessionActiveRef.current) return;
 
-      const agentMsg: VoiceMessage = { role: "agent", text: aiResponse, timestamp: new Date() };
+      const agentMsg: VoiceMessage = { role: "agent", text: aiResult.response, timestamp: new Date(), visualization: aiResult.visualization };
       messagesContextRef.current = [...messagesContextRef.current, agentMsg];
-      saveMessageToDB("assistant", aiResponse);
+      saveMessageToDB("assistant", aiResult.response);
 
       // 텍스트는 TTS 재생이 시작될 때 표시
-      await fetchAndPlayTTS(aiResponse, () => {
+      await fetchAndPlayTTS(aiResult.response, () => {
         setLastMessage(agentMsg);
       });
 

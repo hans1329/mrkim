@@ -465,6 +465,75 @@ function hasActualData(dataSource: DataSource, data: any): boolean {
   }
 }
 
+// ============ 시각화 데이터 구성 ============
+
+interface VisStat { label: string; value: number; format: "currency" | "count" | "percent"; color?: string; }
+interface VisChartItem { label: string; value: number; }
+interface Visualization {
+  stats: VisStat[];
+  chart?: { type: "bar"; data: VisChartItem[]; title: string };
+}
+
+function buildVisualization(dataSource: DataSource, data: any): Visualization | null {
+  switch (dataSource) {
+    case "transaction": {
+      const stats: VisStat[] = [
+        { label: "총 수입", value: data.totalIncome, format: "currency", color: "blue" },
+        { label: "총 지출", value: data.totalExpense, format: "currency", color: "red" },
+        { label: "순이익", value: data.totalIncome - data.totalExpense, format: "currency", color: "green" },
+      ];
+      const chart = data.topCategories?.length > 0 ? {
+        type: "bar" as const,
+        title: "카테고리별 지출",
+        data: data.topCategories.slice(0, 5).map((c: any) => ({ label: c.category, value: c.amount })),
+      } : undefined;
+      return { stats, chart };
+    }
+    case "employee": {
+      return {
+        stats: [
+          { label: "재직 직원", value: data.count, format: "count" },
+          { label: "월 총 급여", value: data.totalSalary, format: "currency", color: "blue" },
+        ],
+      };
+    }
+    case "tax_invoice": {
+      return {
+        stats: [
+          { label: "매출 세금계산서", value: data.salesTotal, format: "currency", color: "blue" },
+          { label: "매입 세금계산서", value: data.purchaseTotal, format: "currency", color: "red" },
+          { label: `부가세 ${data.vatPayable >= 0 ? "납부" : "환급"}`, value: Math.abs(data.vatPayable), format: "currency", color: data.vatPayable >= 0 ? "orange" : "green" },
+        ],
+      };
+    }
+    case "deposit": {
+      const stats: VisStat[] = [
+        { label: "예치금 수", value: data.count, format: "count" },
+        { label: "총 적립액", value: data.totalAmount, format: "currency", color: "blue" },
+      ];
+      if (data.totalTarget > 0) stats.push({ label: "달성률", value: Math.round(data.totalAmount / data.totalTarget * 100), format: "percent", color: "green" });
+      return { stats };
+    }
+    case "savings": {
+      return {
+        stats: [
+          { label: "총 잔액", value: data.totalAmount, format: "currency", color: "blue" },
+          { label: "월 예상 이자", value: data.totalMonthlyInterest, format: "currency", color: "green" },
+        ],
+      };
+    }
+    case "auto_transfer": {
+      return {
+        stats: [
+          { label: "활성 이체", value: data.activeCount, format: "count" },
+          { label: "월 총액", value: data.totalMonthly, format: "currency", color: "blue" },
+        ],
+      };
+    }
+    default: return null;
+  }
+}
+
 // ============ 메인 핸들러 ============
 
 serve(async (req) => {
@@ -545,6 +614,7 @@ serve(async (req) => {
     const result = await fetchAndFormatData(classified.dataSource, userId, authHeader, classified.timePeriod);
 
     if (result && hasActualData(classified.dataSource, result.data)) {
+      const visualization = buildVisualization(classified.dataSource, result.data);
       const dataPrompt = `당신은 "${secretaryName}"입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${result.prompt}`;
       const geminiResult = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: dataPrompt }] },
@@ -553,7 +623,6 @@ serve(async (req) => {
       ]);
       const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
       console.log(`${classified.dataSource} data response (1 API call)`);
-      return new Response(JSON.stringify({ response, hasData: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 데이터 없음

@@ -17,6 +17,7 @@ import {
 import { Bot, Send, X, MessageCircle, Sparkles, RotateCcw, History, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import { DataVisualization } from "./DataVisualization";
 import { useChat } from "@/contexts/ChatContext";
 import { useAIChat } from "@/hooks/useAIChat";
 import { ChatSessionList } from "./ChatSessionList";
@@ -279,9 +280,12 @@ export function AIChatPanel() {
                           : "bg-gradient-to-br from-card to-muted/60 text-foreground rounded-bl-md border border-border/50 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.08)]"
                       )}
                     >
-                      {message.role === "assistant" ? (
+                    {message.role === "assistant" ? (
                         <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
                           <ReactMarkdown>{message.content}</ReactMarkdown>
+                          {message.visualization && (
+                            <DataVisualization data={message.visualization} />
+                          )}
                         </div>
                       ) : (
                         <p className="whitespace-pre-wrap text-sm">{message.content}</p>

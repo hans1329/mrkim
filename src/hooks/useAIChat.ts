@@ -4,12 +4,14 @@ import { useProfileQuery } from "./useProfileQuery";
 import { toast } from "sonner";
 import { format, isToday, isYesterday, startOfDay } from "date-fns";
 import { ko } from "date-fns/locale";
+import type { VisualizationData } from "@/components/chat/DataVisualization";
 
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  visualization?: VisualizationData | null;
 }
 
 export interface ChatSession {
@@ -303,6 +305,7 @@ export function useAIChat() {
 
       const data = await response.json();
       const assistantContent = data.response || "죄송합니다, 응답을 생성하지 못했습니다.";
+      const visualization = data.visualization || null;
       
       // AI 응답 저장
       const assistantMessageId = await saveMessage("assistant", assistantContent);
@@ -312,6 +315,7 @@ export function useAIChat() {
         role: "assistant",
         content: assistantContent,
         timestamp: new Date(),
+        visualization,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
