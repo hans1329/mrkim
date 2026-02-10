@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useProfile } from "./useProfile";
+import { useConnection } from "@/contexts/ConnectionContext";
 
 interface AccountInfo {
   accountNo: string;
@@ -25,7 +25,7 @@ export function useAccountConnection(): UseAccountConnectionReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [connectedId, setConnectedId] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<AccountInfo[]>([]);
-  const { updateProfile } = useProfile();
+  const { connectService } = useConnection();
 
   // 은행 계정 등록 (ConnectedId 신규 발급) - connectedId 반환
   const registerBankAccount = async (
@@ -67,11 +67,8 @@ export function useAccountConnection(): UseAccountConnectionReturn {
       if (data?.success && data?.connectedId) {
         setConnectedId(data.connectedId);
         
-        // DB에 연결 상태 저장
-        await updateProfile({
-          account_connected: true,
-          account_connected_at: new Date().toISOString(),
-        }, false);
+        // connector_instances + profiles 플래그 동기화
+        await connectService("codef_bank_account", data.connectedId);
         
         toast.success("은행 연결이 완료되었습니다!");
         return data.connectedId;
