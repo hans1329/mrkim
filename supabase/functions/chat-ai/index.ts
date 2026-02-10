@@ -56,12 +56,13 @@ const GENERATION_CONFIG = { temperature: 0.7, topK: 40, topP: 0.95, maxOutputTok
 
 async function callGemini(apiKey: string, contents: any[]): Promise<any> {
   const body: any = { contents, generationConfig: GENERATION_CONFIG, safetySettings: SAFETY_SETTINGS };
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 2; // 재시도 횟수 축소 (재시도 자체가 할당량 소진)
   let lastError: any = null;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     if (attempt > 0) {
-      const delayMs = Math.min(1000 * Math.pow(2, attempt) + Math.random() * 500, 8000);
+      // 429에서는 최소 15초 대기 (RPM 리밋 회복 시간 확보)
+      const delayMs = Math.min(15000 * Math.pow(2, attempt) + Math.random() * 2000, 30000);
       console.log(`Retry attempt ${attempt}/${MAX_RETRIES}, waiting ${Math.round(delayMs)}ms...`);
       await new Promise(r => setTimeout(r, delayMs));
     }
@@ -73,6 +74,19 @@ async function callGemini(apiKey: string, contents: any[]): Promise<any> {
     if (response.ok) return response.json();
     const errorText = await response.text();
     lastError = { status: response.status, body: errorText };
+
+    // RESOURCE_EXHAUSTED(할당량 소진)는 재시도해도 소용없으므로 즉시 중단
+    if (response.status === 429) {
+      const parsed = safeJsonParse(errorText);
+      const isQuotaExhausted = parsed?.error?.status === "RESOURCE_EXHAUSTED" ||
+        (Array.isArray(parsed?.error?.details) && parsed.error.details.some((d: any) => 
+          typeof d?.["@type"] === "string" && d["@type"].includes("QuotaFailure")));
+      if (isQuotaExhausted) {
+        console.error("=== Gemini Quota EXHAUSTED === No retry will help:", errorText);
+        throw lastError;
+      }
+    }
+
     if (response.status !== 429 && response.status !== 503) throw lastError;
     console.warn(`Gemini API returned ${response.status}, attempt ${attempt + 1}/${MAX_RETRIES}`);
   }
