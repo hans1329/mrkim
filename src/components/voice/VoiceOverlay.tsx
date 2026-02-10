@@ -26,6 +26,7 @@ export function VoiceOverlay() {
     endSession,
     interruptAndListen,
     resetPermission,
+    sendTextDirectly,
   } = useVoiceAgent();
 
   const secretaryName = profile?.secretary_name || "김비서";
@@ -225,6 +226,26 @@ export function VoiceOverlay() {
                 >
                   <p className="text-sm leading-relaxed">{lastMessage.text}</p>
                 </div>
+              </div>
+            )}
+
+            {/* 빠른 질문 제안 칩 */}
+            {isActive && !isProcessing && !isSpeaking && (
+              <div className="mt-4 flex flex-wrap justify-center gap-2 max-w-sm">
+                {[
+                  "오늘 매출 알려줘",
+                  "이번 달 지출 현황",
+                  "직원 급여 정리해줘",
+                  "세금 언제 내야 해?",
+                ].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => sendTextDirectly(suggestion)}
+                    className="px-3 py-1.5 rounded-full bg-white/20 text-white/90 text-xs hover:bg-white/30 active:bg-white/40 transition-colors"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
               </div>
             )}
 
