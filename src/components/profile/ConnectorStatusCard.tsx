@@ -17,6 +17,13 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
+
+const CATEGORY_TO_STEP: Record<string, string> = {
+  hometax: "hometax",
+  bank: "account",
+  card: "card",
+};
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   hometax: FileText,
@@ -39,6 +46,7 @@ const STATUS_CONFIG = {
 
 export function ConnectorStatusCard() {
   const { data: connectors, isLoading } = useConnectorStatus();
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -117,8 +125,15 @@ export function ConnectorStatusCard() {
                     )}
                   </div>
                 ) : (
-                  <Badge variant="outline" className="text-xs text-muted-foreground">
-                    미연동
+                  <Badge
+                    variant="outline"
+                    className="text-xs text-muted-foreground cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors"
+                    onClick={() => {
+                      const step = CATEGORY_TO_STEP[connector.category];
+                      if (step) navigate(`/onboarding?step=${step}`);
+                    }}
+                  >
+                    미연동 →
                   </Badge>
                 )}
               </div>

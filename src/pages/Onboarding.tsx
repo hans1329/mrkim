@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { currentStep, connections, goToStep, connectService: connectLocal, setConnections, completeOnboarding, resetOnboarding } = useOnboarding();
   const { connectService: connectToDb, refetch: refetchConnection } = useConnection();
+  const [searchParams] = useSearchParams();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showCardFlow, setShowCardFlow] = useState(false);
   const [showAccountFlow, setShowAccountFlow] = useState(false);
@@ -104,7 +105,8 @@ export default function Onboarding() {
       }
     };
 
-    goToStep("welcome");
+    const startStep = searchParams.get("step") as OnboardingStep | null;
+    goToStep(startStep && ["hometax", "card", "account"].includes(startStep) ? startStep : "welcome");
     loadConnectionStatus();
   }, []);
   
