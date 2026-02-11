@@ -146,27 +146,20 @@ export function ExpenseAnalysisTab() {
       <div className="grid grid-cols-2 gap-3">
         <Card>
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-destructive" />
-              <span className="text-xs text-muted-foreground">총 지출</span>
-            </div>
-            <p className="mt-1 text-lg font-bold">{formatCurrency(stats.totalExpense)}</p>
+            <span className="text-xs text-muted-foreground">총 지출</span>
+            <p className="mt-1 text-base font-bold text-primary">{formatCurrency(stats.totalExpense)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">월 평균</span>
-            </div>
-            <p className="mt-1 text-lg font-bold">{formatCurrency(stats.avgMonthly)}</p>
+            <span className="text-xs text-muted-foreground">월 평균</span>
+            <p className="mt-1 text-base font-bold text-chart-1">{formatCurrency(stats.avgMonthly)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">최대 지출월</span>
-            </div>
-            <p className="mt-1 text-lg font-bold">{stats.maxMonth?.name || "-"}</p>
+            <span className="text-xs text-muted-foreground">최대 지출월</span>
+            <p className="mt-1 text-base font-bold text-chart-2">{stats.maxMonth?.name || "-"}</p>
             <p className="text-xs text-muted-foreground">
               {stats.maxMonth ? formatCurrency(stats.maxMonth.지출) : "-"}
             </p>
@@ -174,10 +167,8 @@ export function ExpenseAnalysisTab() {
         </Card>
         <Card>
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">최소 지출월</span>
-            </div>
-            <p className="mt-1 text-lg font-bold">{stats.minMonth?.name || "-"}</p>
+            <span className="text-xs text-muted-foreground">최소 지출월</span>
+            <p className="mt-1 text-base font-bold text-chart-3">{stats.minMonth?.name || "-"}</p>
             <p className="text-xs text-muted-foreground">
               {stats.minMonth ? formatCurrency(stats.minMonth.지출) : "-"}
             </p>
