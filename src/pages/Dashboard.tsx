@@ -130,6 +130,8 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* 히어로 아래 콘텐츠 - 흰 배경 */}
+          <div className="bg-background">
           {/* 퀵 액션 가로 스크롤 */}
           <div className="px-4 py-5 relative z-10">
             <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-1 px-1">
@@ -190,6 +192,7 @@ export default function Dashboard() {
                 <AlertCard />
               </>
             )}
+          </div>
           </div>
         </div>
       ) : (
