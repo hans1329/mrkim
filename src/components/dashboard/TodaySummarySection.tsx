@@ -107,7 +107,7 @@ function RealStatCard({
             )}>
               {title}
             </p>
-            <p className="text-sm font-bold leading-tight truncate">{value}</p>
+            <p className="text-[13px] font-bold leading-tight">{value}</p>
             {(subtitle || trend) && (
               <div className="flex items-center gap-1">
                 {trend && (
