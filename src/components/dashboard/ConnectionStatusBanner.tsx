@@ -184,7 +184,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
 
         <Button
           size="sm"
-          className="h-8 text-xs gap-1"
+          className="h-8 text-xs gap-1 rounded-full"
           onClick={handleStartConnection}
         >
           <Sparkles className="h-3.5 w-3.5" />
@@ -280,7 +280,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
 
         <Button
           size="sm"
-          className="h-8 text-xs gap-1"
+          className="h-8 text-xs gap-1 rounded-full"
           onClick={handleStartConnection}
         >
           <Sparkles className="h-3.5 w-3.5" />

@@ -138,7 +138,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
             <Button 
               size="sm" 
               onClick={() => navigate("/onboarding")}
-              className="gap-1.5"
+              className="gap-1.5 rounded-full"
             >
               연동하기
               <ArrowRight className="h-3.5 w-3.5" />
