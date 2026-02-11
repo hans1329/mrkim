@@ -150,7 +150,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
   // 로그아웃 상태: 항상 연동 배너 표시 (목업 상태)
   if (isLoggedOut) {
     return (
-      <div className="rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 mb-4">
+      <div className="rounded-xl bg-card border border-border p-4 mb-4 shadow-sm">
         <div className="flex items-center gap-2 mb-1">
           <h4 className="font-semibold text-sm">
             데이터 연동을 완료해주세요
@@ -237,7 +237,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
   // 연동이 완료되지 않은 경우: 연동 상태 배너
   if (!isFullyConnected) {
     return (
-      <div className="rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 mb-4">
+      <div className="rounded-xl bg-card border border-border p-4 mb-4 shadow-sm">
         <div className="flex items-center gap-2 mb-1">
           <h4 className="font-semibold text-sm">
             데이터 연동을 완료해주세요
@@ -259,7 +259,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
               className={cn(
                 "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
                 conn.connected 
-                  ? "bg-green-500 text-white" 
+                  ? "bg-success text-success-foreground" 
                   : "bg-muted text-muted-foreground"
               )}
             >
