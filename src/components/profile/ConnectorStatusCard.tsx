@@ -1,6 +1,7 @@
 import { useConnectorStatus } from "@/hooks/useConnectors";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   FileText,
@@ -14,6 +15,7 @@ import {
   Clock,
   XCircle,
   Link2,
+  RefreshCw,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -108,9 +110,9 @@ export function ConnectorStatusCard() {
                   {connector.description}
                 </p>
               </div>
-              <div className="shrink-0 text-right">
+              <div className="shrink-0 text-right space-y-1">
                 {instance ? (
-                  <div className="space-y-1">
+                  <>
                     <Badge variant={statusInfo!.variant} className="text-xs gap-1">
                       {StatusIcon && <StatusIcon className="h-3 w-3" />}
                       {statusInfo!.label}
@@ -123,7 +125,19 @@ export function ConnectorStatusCard() {
                         })}
                       </p>
                     )}
-                  </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 px-1.5 text-[10px] text-muted-foreground hover:text-primary"
+                      onClick={() => {
+                        const step = CATEGORY_TO_STEP[connector.category];
+                        if (step) navigate(`/onboarding?step=${step}`);
+                      }}
+                    >
+                      <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
+                      재연동
+                    </Button>
+                  </>
                 ) : (
                   <Badge
                     variant="outline"

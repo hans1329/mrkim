@@ -184,6 +184,23 @@ export default function Transactions() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-3 mt-0">
+          {/* 미연동 상태: 온보딩 유도 배너 */}
+          {!isCardConnected && !isAccountConnected && (
+            <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center">
+              <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-primary/10 mb-3">
+                <LinkIcon className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-sm font-semibold mb-1">카드/계좌를 연동해보세요</h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                연동하면 거래 내역이 자동으로 수집되고 AI가 분류해드려요
+              </p>
+              <Button size="sm" className="gap-1" onClick={() => navigate("/onboarding")}>
+                <Sparkles className="h-3.5 w-3.5" />
+                연동하러 가기
+              </Button>
+            </div>
+          )}
+
           {/* 동기화 배너 - 카드/계좌 한 행 */}
           {(isCardConnected || isAccountConnected) && (
             <div className="grid grid-cols-2 gap-2">
