@@ -31,6 +31,7 @@ export function VoiceOverlay() {
   } = useVoiceAgent();
 
   const secretaryName = profile?.secretary_name || "김비서";
+  const secretaryAvatarUrl = profile?.secretary_avatar_url || null;
 
   // 오버레이가 열릴 때 자동 세션 시작, 닫힐 때 세션 종료
   const wasOpenRef = useRef(isOpen);
@@ -228,6 +229,18 @@ export function VoiceOverlay() {
                       : "bg-white/20 text-white backdrop-blur-sm"
                   )}
                 >
+                  {lastMessage.role === "agent" && (
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <div className="h-6 w-6 rounded-full bg-white/20 overflow-hidden flex items-center justify-center shrink-0">
+                        {secretaryAvatarUrl ? (
+                          <img src={secretaryAvatarUrl} alt={secretaryName} className="h-full w-full object-cover" />
+                        ) : (
+                          <Sparkles className="h-3.5 w-3.5 text-white/80" />
+                        )}
+                      </div>
+                      <span className="text-xs text-white/70 font-medium">{secretaryName}</span>
+                    </div>
+                  )}
                   <p className="text-sm leading-relaxed">{lastMessage.text}</p>
                 </div>
                 {/* 시각화 데이터 */}
