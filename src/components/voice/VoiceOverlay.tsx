@@ -32,14 +32,17 @@ export function VoiceOverlay() {
 
   const secretaryName = profile?.secretary_name || "김비서";
 
-  // 오버레이가 닫힐 때 세션 종료
+  // 오버레이가 열릴 때 자동 세션 시작, 닫힐 때 세션 종료
   const wasOpenRef = useRef(isOpen);
   useEffect(() => {
+    if (!wasOpenRef.current && isOpen && !isActive) {
+      startSession();
+    }
     if (wasOpenRef.current && !isOpen && isActive) {
       endSession();
     }
     wasOpenRef.current = isOpen;
-  }, [isOpen, isActive, endSession]);
+  }, [isOpen, isActive, endSession, startSession]);
 
   // (removed: no longer need message scroll)
 
