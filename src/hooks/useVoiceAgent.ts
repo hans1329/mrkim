@@ -428,6 +428,7 @@ export function useVoiceAgent() {
     abortRef.current = false;
     sessionActiveRef.current = true;
     processingRef.current = false;
+    suppressSTTRef.current = false;
     pendingTranscriptRef.current = "";
     messagesContextRef.current = [];
     setLastMessage(null);
