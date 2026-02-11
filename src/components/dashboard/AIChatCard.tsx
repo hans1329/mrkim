@@ -406,7 +406,7 @@ export function AIChatCard() {
             <button
               key={prompt}
               type="button"
-              className="text-[11px] px-1 text-white/70 hover:text-white transition-colors disabled:opacity-50"
+              className="text-xs px-1.5 text-white/70 hover:text-white transition-colors disabled:opacity-50"
               onClick={() => handleQuickAsk(prompt)}
               disabled={isTyping}
             >
