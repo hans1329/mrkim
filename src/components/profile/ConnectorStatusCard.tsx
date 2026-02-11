@@ -117,61 +117,57 @@ export function ConnectorStatusCard() {
           return (
             <div
               key={connector.id}
-              className="flex items-center gap-2.5 p-3 rounded-lg bg-muted/50"
+              className="p-3 rounded-lg bg-muted/50 space-y-2"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
-                <Icon className="h-4 w-4 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium">{connector.name}</p>
-                  {isConnected ? (
-                    <Badge variant={statusInfo!.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0">
-                      {StatusIcon && <StatusIcon className="h-2.5 w-2.5" />}
-                      {statusInfo!.label}
-                    </Badge>
-                  ) : statusInfo ? (
-                    <Badge variant={statusInfo.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0">
-                      {StatusIcon && <StatusIcon className="h-2.5 w-2.5" />}
-                      {statusInfo.label}
-                    </Badge>
-                  ) : null}
+              {/* 1행: 아이콘 + 이름 + 상태 배지 */}
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                  <Icon className="h-4 w-4 text-primary" />
                 </div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  {instance?.last_sync_at && (
-                    <p className="text-[10px] text-muted-foreground">
-                      {formatDistanceToNow(new Date(instance.last_sync_at), {
-                        addSuffix: true,
-                        locale: ko,
-                      })}
-                    </p>
-                  )}
-                </div>
+                <p className="text-sm font-medium flex-1">{connector.name}</p>
+                {isConnected ? (
+                  <Badge variant={statusInfo!.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
+                    {StatusIcon && <StatusIcon className="h-2.5 w-2.5" />}
+                    {statusInfo!.label}
+                  </Badge>
+                ) : statusInfo ? (
+                  <Badge variant={statusInfo.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
+                    {StatusIcon && <StatusIcon className="h-2.5 w-2.5" />}
+                    {statusInfo.label}
+                  </Badge>
+                ) : null}
               </div>
-              <div className="shrink-0">
+              {/* 2행: 동기화 시간 + 액션 버튼 */}
+              <div className="flex items-center justify-between pl-[42px]">
+                <p className="text-[10px] text-muted-foreground">
+                  {instance?.last_sync_at
+                    ? formatDistanceToNow(new Date(instance.last_sync_at), { addSuffix: true, locale: ko })
+                    : isConnected ? "동기화 기록 없음" : "미연동"}
+                </p>
                 {isConnected || instance ? (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-muted-foreground"
+                    className="h-6 w-6 text-muted-foreground"
                     onClick={() => {
                       const step = CATEGORY_TO_STEP[connector.category];
                       if (step) navigate(`/onboarding?step=${step}`);
                     }}
                   >
-                    <RefreshCw className="h-3.5 w-3.5" />
+                    <RefreshCw className="h-3 w-3" />
                   </Button>
                 ) : (
-                  <Badge
+                  <Button
                     variant="outline"
-                    className="text-xs text-muted-foreground cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors"
+                    size="sm"
+                    className="h-6 px-2 text-[10px]"
                     onClick={() => {
                       const step = CATEGORY_TO_STEP[connector.category];
                       if (step) navigate(`/onboarding?step=${step}`);
                     }}
                   >
-                    연동 →
-                  </Badge>
+                    연동하기
+                  </Button>
                 )}
               </div>
             </div>
