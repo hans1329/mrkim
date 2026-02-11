@@ -331,9 +331,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
                 <div
                   key={item.id}
                   className={cn(
-                    "rounded-lg border p-3 transition-all",
-                    item.id === "connection" ? "bg-primary/5 border-primary/30" : config.bg,
-                    item.id === "connection" ? "" : config.border
+                    "rounded-lg border border-border/50 p-3 transition-all bg-muted/50"
                   )}
                 >
                   <div className="flex items-start gap-3">
