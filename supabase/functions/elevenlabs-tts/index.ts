@@ -61,7 +61,7 @@ serve(async (req) => {
             similarity_boost: 0.7,   // 자연스러운 변주 허용 (0.65→0.7)
             style: 0.5,              // 감정 표현 적절히 (0.65→0.5)
             use_speaker_boost: true,
-            speed: 1.15,
+            speed: 1.1,
           },
         }),
       }
