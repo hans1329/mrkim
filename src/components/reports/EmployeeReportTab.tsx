@@ -137,7 +137,7 @@ export function EmployeeReportTab() {
           {hasData ? (
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyLaborCost}>
+                <BarChart data={monthlyLaborCost} margin={{ top: 5, right: 16, left: 16, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis
                     dataKey="name"
