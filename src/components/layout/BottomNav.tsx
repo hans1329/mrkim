@@ -35,7 +35,7 @@ export function BottomNav() {
             to={item.url}
             end={item.url === "/"}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-muted-foreground transition-colors"
+              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-muted-foreground/40 transition-colors"
             )}
             activeClassName="text-primary"
           >
@@ -74,7 +74,7 @@ export function BottomNav() {
             to={item.url}
             end={item.url === "/"}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-muted-foreground transition-colors"
+              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-muted-foreground/40 transition-colors"
             )}
             activeClassName="text-primary"
           >
