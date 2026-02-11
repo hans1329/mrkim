@@ -193,14 +193,23 @@ export function AIChatCard() {
     if (hasConversationHistory === false) {
       return `${secretaryName || "김비서"}와 대화를 시작해보세요!`;
     }
-    const incompleteMessages = getIncompleteSettingsMessages(profile, secretaryName || "김비서");
 
-    // 미완료 설정이 있으면 그 중 랜덤 선택
+    // 연동 상태에 따른 안내
+    const { hometax_connected, card_connected, account_connected } = profile || {};
+    if (!hometax_connected && !card_connected && !account_connected) {
+      return "계좌·카드·홈택스를 연동하면 실시간 경영 현황을 알려드려요.";
+    }
+    if (!account_connected) return "계좌를 연동하면 매출·지출을 자동 관리해드려요.";
+    if (!card_connected) return "카드를 연동하면 지출 분석까지 가능해요.";
+    if (!hometax_connected) return "홈택스를 연동하면 세금계산서까지 관리해드려요.";
+
+    // 미완료 설정 안내
+    const incompleteMessages = getIncompleteSettingsMessages(profile, secretaryName || "김비서");
     if (incompleteMessages.length > 0) {
       return incompleteMessages[Math.floor(Math.random() * incompleteMessages.length)];
     }
 
-    // 없으면 일반 플레이스홀더 중 랜덤 선택
+    // 모두 완료 시
     return defaultPlaceholders[Math.floor(Math.random() * defaultPlaceholders.length)];
   }, [profile, secretaryName, hasConversationHistory]);
 
@@ -265,7 +274,14 @@ export function AIChatCard() {
   return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/15 backdrop-blur-md border-white/20" : "bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] border-primary/30"}`}>
       <CardContent className="p-4">
         {/* Header */}
-        <p className="text-xs text-white/60 mb-2 tracking-wide">당신의 경영 비서</p>
+        <div className="mb-2">
+          <p className="text-xs text-white/60 tracking-wide">당신의 경영 비서</p>
+          {profileLoading || realStats.isLoading ? (
+            <Skeleton className="h-3.5 w-40 bg-white/20 mt-1" />
+          ) : (
+            <p className="text-xs text-white/80 mt-0.5">{placeholder}</p>
+          )}
+        </div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -309,7 +325,7 @@ export function AIChatCard() {
 
         {/* Input */}
         <form onSubmit={handleSubmit} className="flex gap-2 mb-3 mt-3">
-          <Input value={input} onChange={e => setInput(e.target.value)} placeholder={placeholder} className="flex-1 bg-white/20 border-0 backdrop-blur-sm text-white placeholder:text-white/60 placeholder:text-xs placeholder:leading-normal focus-visible:ring-white/30 leading-normal" disabled={isTyping || profileLoading || realStats.isLoading} />
+          <Input value={input} onChange={e => setInput(e.target.value)} placeholder="비서에게 요청해주세요!" className="flex-1 bg-white/20 border-0 backdrop-blur-sm text-white placeholder:text-white/60 placeholder:text-xs placeholder:leading-normal focus-visible:ring-white/30 leading-normal" disabled={isTyping || profileLoading || realStats.isLoading} />
           <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm">
             <Send className="h-4 w-4" />
           </Button>
