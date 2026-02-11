@@ -32,34 +32,34 @@ export default function Reports() {
   return (
     <MainLayout title="리포트" subtitle="경영 현황 분석" showBackButton>
       <Tabs defaultValue={defaultTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 mb-4 h-11 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-5 mb-4 h-11 bg-muted/50 p-1">
           <TabsTrigger 
             value="sales" 
-            className="text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            className="text-xs font-medium px-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
             매출
           </TabsTrigger>
           <TabsTrigger 
             value="expense" 
-            className="text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            className="text-xs font-medium px-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
             지출
           </TabsTrigger>
           <TabsTrigger 
             value="tax" 
-            className="text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            className="text-xs font-medium px-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap"
           >
             세금계산서
           </TabsTrigger>
           <TabsTrigger 
             value="employee" 
-            className="text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            className="text-xs font-medium px-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
             직원
           </TabsTrigger>
           <TabsTrigger 
             value="insights" 
-            className="text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            className="text-xs font-medium px-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
             AI분석
           </TabsTrigger>
