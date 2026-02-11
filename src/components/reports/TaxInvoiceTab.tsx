@@ -98,13 +98,10 @@ export function TaxInvoiceTab() {
     <div className="space-y-4">
       {/* 요약 카드 */}
       <div className="grid grid-cols-3 gap-3">
-        <Card className="bg-green-500/10 border-green-500/20">
+        <Card className="bg-muted/50 border-border/50">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
-              <span className="text-sm text-muted-foreground">매출</span>
-            </div>
-            <p className="text-xl font-bold text-green-600">
+            <span className="text-sm text-muted-foreground">매출</span>
+            <p className="text-xl font-bold text-foreground mt-1">
               ₩{formatShortAmount(salesTotal)}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -113,13 +110,10 @@ export function TaxInvoiceTab() {
           </CardContent>
         </Card>
         
-        <Card className="bg-red-500/10 border-red-500/20">
+        <Card className="bg-muted/50 border-border/50">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingDown className="h-4 w-4 text-red-600" />
-              <span className="text-sm text-muted-foreground">매입</span>
-            </div>
-            <p className="text-xl font-bold text-red-600">
+            <span className="text-sm text-muted-foreground">매입</span>
+            <p className="text-xl font-bold text-foreground mt-1">
               ₩{formatShortAmount(purchaseTotal)}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -128,23 +122,12 @@ export function TaxInvoiceTab() {
           </CardContent>
         </Card>
         
-        <Card className={cn(
-          vatPayable >= 0 ? "bg-amber-500/10 border-amber-500/20" : "bg-blue-500/10 border-blue-500/20"
-        )}>
+        <Card className="bg-muted/50 border-border/50">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Receipt className={cn(
-                "h-4 w-4",
-                vatPayable >= 0 ? "text-amber-600" : "text-blue-600"
-              )} />
-              <span className="text-sm text-muted-foreground">
-                {vatPayable >= 0 ? "부가세 납부" : "부가세 환급"}
-              </span>
-            </div>
-            <p className={cn(
-              "text-xl font-bold",
-              vatPayable >= 0 ? "text-amber-600" : "text-blue-600"
-            )}>
+            <span className="text-sm text-muted-foreground">
+              {vatPayable >= 0 ? "부가세 납부" : "부가세 환급"}
+            </span>
+            <p className="text-xl font-bold text-foreground mt-1">
               ₩{formatShortAmount(Math.abs(vatPayable))}
             </p>
             <p className="text-xs text-muted-foreground mt-1">예상금액</p>
