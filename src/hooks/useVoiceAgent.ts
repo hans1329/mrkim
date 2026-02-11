@@ -562,33 +562,27 @@ export function useVoiceAgent() {
 
     if (abortRef.current) return;
 
-    // 2. 인사말 재생(미리 생성한 Audio 사용) + Scribe 연결 병렬
+    // 2. 인사말 재생 → 끝나면 Scribe 연결 (병렬 X, 순차)
+    // ★ 핵심: 인사말 재생 중 마이크가 꺼져있어 에코 원천 차단
     messagesContextRef.current = [greetingMsg];
 
     if (greetingAudioBlob) {
       setIsTTSPreparing(false);
-      console.log("[Session] 2. Playing greeting (pre-created audio)...");
+      console.log("[Session] 2. Playing greeting...");
 
-      // 재생 시작 시점에 인사말 텍스트 표시
-      const playPromise = playAudioBlob(greetingAudioBlob, () => {
+      await playAudioBlob(greetingAudioBlob, () => {
         setLastMessage(greetingMsg);
       });
-      const scribePromise = connectScribe();
 
-      const { interrupted } = await playPromise;
-      const scribeOk = await scribePromise;
+      if (abortRef.current) return;
 
-      console.log("[Session] Greeting done, interrupted:", interrupted, "scribe:", scribeOk);
-
-      // ★ 인사말 재생 완료 후 STT 억제 해제
+      // ★ 재생 완료 후에만 Scribe(마이크) 연결
+      console.log("[Session] 3. Greeting done, connecting Scribe...");
       suppressSTTRef.current = false;
-      console.log("[STT] 🔊 Greeting done, STT enabled");
-
-      if (!abortRef.current && !interrupted) {
+      const scribeOk = await connectScribe();
+      if (!abortRef.current) {
         setStatus(scribeOk ? "listening" : "idle");
-        if (!scribeOk) {
-          sessionActiveRef.current = false;
-        }
+        if (!scribeOk) sessionActiveRef.current = false;
       }
     } else {
       // TTS 실패 시 바로 Scribe 연결
