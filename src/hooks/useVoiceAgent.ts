@@ -369,11 +369,9 @@ export function useVoiceAgent() {
 
       connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data: PartialTranscriptMessage) => {
         if (data.text && sessionActiveRef.current) {
-          // processing/speaking 중이면 무시
-          if (suppressSTTRef.current) return;
-          if (!currentAudioRef.current) {
-            setLastMessage({ role: "user", text: data.text, timestamp: new Date() });
-          }
+          // processing/speaking 중이면 무시 (suppressSTT 또는 오디오 재생 중)
+          if (suppressSTTRef.current || processingRef.current || currentAudioRef.current) return;
+          setLastMessage({ role: "user", text: data.text, timestamp: new Date() });
         }
       });
 
