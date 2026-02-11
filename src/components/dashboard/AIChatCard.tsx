@@ -284,11 +284,6 @@ export function AIChatCard() {
             <div>
               <p className="text-[11px] text-white/60 tracking-wide mb-0.5">당신의 경영 비서</p>
               {secretaryName ? <h3 className="font-bold text-white">{secretaryName}</h3> : <Skeleton className="h-5 w-16 bg-white/30" />}
-              {profileLoading || realStats.isLoading ? (
-                <Skeleton className="h-3 w-32 bg-white/20 mt-0.5" />
-              ) : (
-                <p className="text-[11px] text-white/70 mt-0.5 truncate max-w-[180px]">{placeholder}</p>
-              )}
             </div>
           </div>
           <Button variant="secondary" size="sm" onClick={openVoice} className="gap-1.5 bg-white/20 hover:bg-white/30 text-white border border-white/40 backdrop-blur-sm">
