@@ -29,6 +29,7 @@ function cleanForTTS(text: string): string {
     .replace(/^\d+\.\s+/gm, "")                           // 번호 목록 (1. 2. 3.)
     .replace(/^[-•*]\s+/gm, "")                           // 불릿 목록
     .replace(/\p{Extended_Pictographic}/gu, "")            // 모든 이모지 제거
+    .replace(/(\d),(\d)/g, "$1$2")                         // 숫자 내 쉼표 제거 (4,431,570 → 4431570)
     .replace(/\n{2,}/g, " ")                              // 여러 줄바꿈 → 공백
     .replace(/\n/g, " ")                                  // 단일 줄바꿈 → 공백
     .replace(/\s{2,}/g, " ")                              // 연속 공백 정리
