@@ -104,38 +104,26 @@ export function EmployeeReportTab() {
       <div className="grid grid-cols-2 gap-3">
         <Card>
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
-              <span className="text-xs text-muted-foreground">총 직원</span>
-            </div>
-            <p className="mt-1 text-lg font-bold">{employeeSalaryData.length}명</p>
+            <span className="text-xs text-muted-foreground">총 직원</span>
+            <p className="mt-1 text-base font-bold text-primary">{employeeSalaryData.length}명</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-chart-1" />
-              <span className="text-xs text-muted-foreground">월 인건비</span>
-            </div>
-            <p className="mt-1 text-lg font-bold">{formatCurrency(stats.totalSalary)}</p>
+            <span className="text-xs text-muted-foreground">월 인건비</span>
+            <p className="mt-1 text-base font-bold text-chart-1">{formatCurrency(stats.totalSalary)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-success" />
-              <span className="text-xs text-muted-foreground">4대보험 가입</span>
-            </div>
-            <p className="mt-1 text-lg font-bold">{stats.insuredCount}명</p>
+            <span className="text-xs text-muted-foreground">4대보험 가입</span>
+            <p className="mt-1 text-base font-bold text-chart-2">{stats.insuredCount}명</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <ShieldOff className="h-4 w-4 text-warning" />
-              <span className="text-xs text-muted-foreground">미가입 (단기)</span>
-            </div>
-            <p className="mt-1 text-lg font-bold">{stats.uninsuredCount}명</p>
+            <span className="text-xs text-muted-foreground">미가입 (단기)</span>
+            <p className="mt-1 text-base font-bold text-chart-3">{stats.uninsuredCount}명</p>
           </CardContent>
         </Card>
       </div>
