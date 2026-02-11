@@ -211,12 +211,7 @@ export function AlertCard({ isLoggedOut = false }: AlertCardProps) {
 function AlertRow({ alert }: { alert: AlertItem }) {
   return (
     <div
-      className={cn(
-        "flex items-start gap-3 p-2 rounded-lg",
-        alert.type === "warning" && "bg-warning/10",
-        alert.type === "success" && "bg-success/10",
-        alert.type === "info" && "bg-muted"
-      )}
+      className="flex items-start gap-3 p-2 rounded-lg bg-muted/50"
     >
       <alert.icon
         className={cn(
