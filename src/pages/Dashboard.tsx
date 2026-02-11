@@ -61,15 +61,10 @@ export default function Dashboard() {
     <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요">
       {/* 모바일 전용 네이티브 홈 */}
       {isMobile ? (
-        <div className="space-y-0">
-          {/* 히어로 영역 - 풀블리드 그라데이션 */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] px-5 pt-[calc(env(safe-area-inset-top)+16px)] pb-6">
-            {/* 배경 데코 */}
-            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-2xl" />
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/4 blur-xl" />
-            
-            {/* 상단 바: 인사말 + 알림/설정 */}
-            <div className="relative flex items-center justify-between mb-5">
+        <div>
+          {/* 상단 고정 바: 인사말 + 알림/설정 */}
+          <div className="sticky top-0 z-20 bg-gradient-to-r from-primary to-[hsl(230,70%,50%)] px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-3">
+            <div className="flex items-center justify-between">
               <div
                 className="cursor-pointer"
                 onClick={() => navigate("/profile")}
@@ -77,11 +72,10 @@ export default function Dashboard() {
                 {profileLoading ? (
                   <Skeleton className="h-6 w-32 bg-white/20" />
                 ) : (
-                  <h1 className="text-xl font-bold text-white">
+                  <h1 className="text-lg font-bold text-white">
                     안녕하세요, {greeting} 👋
                   </h1>
                 )}
-                <p className="text-xs text-white/70 mt-0.5">오늘도 김비서가 도와드릴게요</p>
               </div>
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10" onClick={() => navigate("/notifications")}>
@@ -97,6 +91,15 @@ export default function Dashboard() {
                 </Button>
               </div>
             </div>
+          </div>
+
+          {/* 히어로 영역 - AI 브리핑 */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] px-5 pb-8">
+            {/* 배경 데코 */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-2xl" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/4 blur-xl" />
+            
+            <p className="text-xs text-white/70 mb-3">오늘도 김비서가 도와드릴게요</p>
 
             {/* AI 비서 브리핑 카드 */}
             <div className="relative">
@@ -105,7 +108,7 @@ export default function Dashboard() {
           </div>
 
           {/* 퀵 액션 가로 스크롤 */}
-          <div className="px-4 mt-6 relative z-10">
+          <div className="px-4 py-5 relative z-10">
             <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-1 px-1">
               {quickActions.map((action) => (
                 <button
