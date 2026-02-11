@@ -20,6 +20,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { useConnection } from "@/contexts/ConnectionContext";
 
 const CATEGORY_TO_STEP: Record<string, string> = {
   hometax: "hometax",
@@ -48,7 +49,15 @@ const STATUS_CONFIG = {
 
 export function ConnectorStatusCard() {
   const { data: connectors, isLoading } = useConnectorStatus();
+  const { hometaxConnected, cardConnected, accountConnected } = useConnection();
   const navigate = useNavigate();
+
+  // profiles fallback: connector_instances가 없을 때 카테고리별 연동 상태
+  const profileFallback: Record<string, boolean> = {
+    hometax: hometaxConnected,
+    card: cardConnected,
+    bank: accountConnected,
+  };
 
   if (isLoading) {
     return (
@@ -68,7 +77,12 @@ export function ConnectorStatusCard() {
     );
   }
 
-  const connectedCount = connectors?.filter((c) => c.instance?.status === "connected").length || 0;
+  const connectedCount = connectors?.filter((c) => {
+    if (c.instance?.status === "connected") return true;
+    // fallback: profiles 플래그 확인
+    if (!c.instance && profileFallback[c.category]) return true;
+    return false;
+  }).length || 0;
   const totalCount = connectors?.length || 0;
 
   return (
@@ -91,10 +105,14 @@ export function ConnectorStatusCard() {
         {connectors?.map((connector) => {
           const Icon = CATEGORY_ICONS[connector.category] || FileText;
           const instance = connector.instance;
+          const isFallbackConnected = !instance && profileFallback[connector.category];
           const statusInfo = instance
             ? STATUS_CONFIG[instance.status]
-            : null;
+            : isFallbackConnected
+              ? STATUS_CONFIG.connected
+              : null;
           const StatusIcon = statusInfo?.icon;
+          const isConnected = instance?.status === "connected" || isFallbackConnected;
 
           return (
             <div
@@ -111,13 +129,13 @@ export function ConnectorStatusCard() {
                 </p>
               </div>
               <div className="shrink-0 text-right space-y-1">
-                {instance ? (
+                {isConnected ? (
                   <>
                     <Badge variant={statusInfo!.variant} className="text-xs gap-1">
                       {StatusIcon && <StatusIcon className="h-3 w-3" />}
                       {statusInfo!.label}
                     </Badge>
-                    {instance.last_sync_at && (
+                    {instance?.last_sync_at && (
                       <p className="text-[10px] text-muted-foreground">
                         {formatDistanceToNow(new Date(instance.last_sync_at), {
                           addSuffix: true,
@@ -125,6 +143,25 @@ export function ConnectorStatusCard() {
                         })}
                       </p>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 px-1.5 text-[10px] text-muted-foreground hover:text-primary"
+                      onClick={() => {
+                        const step = CATEGORY_TO_STEP[connector.category];
+                        if (step) navigate(`/onboarding?step=${step}`);
+                      }}
+                    >
+                      <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
+                      재연동
+                    </Button>
+                  </>
+                ) : instance ? (
+                  <>
+                    <Badge variant={statusInfo!.variant} className="text-xs gap-1">
+                      {StatusIcon && <StatusIcon className="h-3 w-3" />}
+                      {statusInfo!.label}
+                    </Badge>
                     <Button
                       variant="ghost"
                       size="sm"
