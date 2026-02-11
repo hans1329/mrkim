@@ -17,6 +17,7 @@ interface AppLayoutProps {
   showHeader?: boolean;
   showBackButton?: boolean;
   onBack?: () => void;
+  stickyHeader?: ReactNode;
 }
 
 export function AppLayout({
@@ -25,7 +26,8 @@ export function AppLayout({
   subtitle,
   showHeader = true,
   showBackButton = false,
-  onBack
+  onBack,
+  stickyHeader
 }: AppLayoutProps) {
   const navigate = useNavigate();
 
@@ -100,8 +102,11 @@ export function AppLayout({
       <div className="w-full h-full lg:w-[580px] xl:w-[640px] lg:flex-shrink-0">
         <div className="relative flex h-full max-w-xl flex-col bg-background shadow-2xl lg:max-w-none mx-auto overflow-hidden">
           <div className="flex-1 overflow-auto">
+            {/* 커스텀 sticky 헤더 (홈 등) */}
+            {stickyHeader}
+
             {/* 서브페이지 전용 미니 헤더 (뒤로가기 있을 때만) */}
-            {showHeader && showBackButton && (
+            {!stickyHeader && showHeader && showBackButton && (
               <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
@@ -128,7 +133,7 @@ export function AppLayout({
               </header>
             )}
 
-            {/* Main Content - 홈에서는 헤더 없이 풀블리드 */}
+            {/* Main Content */}
             <main className={showBackButton ? "p-4 pb-24 overflow-x-hidden" : "pb-24 overflow-x-hidden"}>
               {children}
             </main>

@@ -57,43 +57,40 @@ export default function Dashboard() {
   const userName = profileLoading ? "" : (profile?.nickname || profile?.name || null);
   const greeting = userName ? `${userName}님` : "사장님";
 
+  const mobileStickyHeader = isMobile ? (
+    <div className="sticky top-0 z-20 bg-gradient-to-r from-primary to-[hsl(230,70%,50%)] px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-3">
+      <div className="flex items-center justify-between">
+        <div className="cursor-pointer" onClick={() => navigate("/profile")}>
+          {profileLoading ? (
+            <Skeleton className="h-6 w-32 bg-white/20" />
+          ) : (
+            <h1 className="text-lg font-bold text-white">
+              안녕하세요, {greeting} 👋
+            </h1>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10" onClick={() => navigate("/notifications")}>
+            <div className="relative">
+              <Bell className="h-5 w-5" />
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
+                2
+              </span>
+            </div>
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10" onClick={() => navigate("/settings")}>
+            <Settings className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  ) : undefined;
+
   return (
-    <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요">
+    <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요" stickyHeader={mobileStickyHeader}>
       {/* 모바일 전용 네이티브 홈 */}
       {isMobile ? (
         <div>
-          {/* 상단 고정 바: 인사말 + 알림/설정 */}
-          <div className="sticky top-0 z-20 bg-gradient-to-r from-primary to-[hsl(230,70%,50%)] px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-3">
-            <div className="flex items-center justify-between">
-              <div
-                className="cursor-pointer"
-                onClick={() => navigate("/profile")}
-              >
-                {profileLoading ? (
-                  <Skeleton className="h-6 w-32 bg-white/20" />
-                ) : (
-                  <h1 className="text-lg font-bold text-white">
-                    안녕하세요, {greeting} 👋
-                  </h1>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10" onClick={() => navigate("/notifications")}>
-                  <div className="relative">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
-                      2
-                    </span>
-                  </div>
-                </Button>
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10" onClick={() => navigate("/settings")}>
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* 히어로 영역 - AI 브리핑 */}
           <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] px-5 pb-8">
             {/* 배경 데코 */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-2xl" />
