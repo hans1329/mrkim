@@ -314,7 +314,7 @@ export function AIChatCard() {
 
         {/* Input */}
         <form onSubmit={handleSubmit} className="flex gap-2 mb-3 mt-3">
-          <Input value={input} onChange={e => setInput(e.target.value)} placeholder="비서에게 요청해주세요!" className="flex-1 bg-white/25 border-0 text-sm font-medium !opacity-100 disabled:!opacity-70 placeholder:text-xs placeholder:font-normal placeholder:text-white/50 placeholder:leading-normal focus-visible:ring-white/30 leading-normal caret-white" style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }} disabled={isTyping || profileLoading || realStats.isLoading} />
+          <Input value={input} onChange={e => setInput(e.target.value)} placeholder="비서에게 요청해주세요!" className="flex-1 bg-white/25 border-0 text-sm font-medium opacity-100 disabled:opacity-70 placeholder:text-xs placeholder:font-normal placeholder:text-white/50 placeholder:leading-normal focus-visible:ring-white/30 leading-normal caret-white [&:not(:disabled)]:opacity-100" style={{ color: 'rgba(255,255,255,1)', WebkitTextFillColor: 'rgba(255,255,255,1)', opacity: 1 }} disabled={isTyping || profileLoading || realStats.isLoading} />
           <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm">
             <Send className="h-4 w-4" />
           </Button>
