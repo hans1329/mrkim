@@ -182,6 +182,17 @@ serve(async (req) => {
           message: `동기화 완료: ${syncResult.recordsFetched}건 조회, ${syncResult.recordsSaved}건 저장`,
         });
 
+        // 알림 생성 (새 데이터가 있을 때만)
+        if (syncResult.recordsSaved > 0) {
+          const connectorLabel = getConnectorLabel(connectorId);
+          await supabase.from("notifications").insert({
+            user_id: instance.user_id,
+            type: "success",
+            title: `${connectorLabel} 동기화 완료`,
+            message: `${syncResult.recordsSaved}건의 새 데이터가 수집되었습니다.`,
+          });
+        }
+
         results.push({
           instanceId: instance.id,
           connectorId,
@@ -223,6 +234,17 @@ serve(async (req) => {
           level: "error",
           message: `동기화 실패: ${errorMessage}`,
         });
+
+        // 실패 알림 생성
+        if (retryCount >= job.max_retries) {
+          const connectorLabel = getConnectorLabel(connectorId);
+          await supabase.from("notifications").insert({
+            user_id: instance.user_id,
+            type: "warning",
+            title: `${connectorLabel} 동기화 실패`,
+            message: `데이터 수집에 실패했습니다. 연동 상태를 확인해주세요.`,
+          });
+        }
 
         results.push({
           instanceId: instance.id,
@@ -266,6 +288,17 @@ serve(async (req) => {
     );
   }
 });
+
+// ─── 커넥터 라벨 매핑 ──────────────────────────────────
+
+function getConnectorLabel(connectorId: string): string {
+  const labels: Record<string, string> = {
+    codef_hometax_tax_invoice: "홈택스 세금계산서",
+    codef_card_usage: "카드 거래내역",
+    codef_bank_account: "은행 거래내역",
+  };
+  return labels[connectorId] || connectorId;
+}
 
 // ─── 커넥터별 동기화 핸들러 ────────────────────────────
 

@@ -17,6 +17,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useChat } from "@/contexts/ChatContext";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { Bell, Settings, Receipt, Users, Wallet, TrendingUp, FileText, CreditCard } from "lucide-react";
+import { useNotificationGenerator } from "@/hooks/useNotificationGenerator";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,6 +47,9 @@ export default function Dashboard() {
     profile,
     profileLoading,
   } = useConnection();
+
+  // 대시보드 접속 시 실데이터 기반 알림 자동 생성
+  useNotificationGenerator();
   
   useEffect(() => {
     if (searchParams.get("openChat") === "true") {
