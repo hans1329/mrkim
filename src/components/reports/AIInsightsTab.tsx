@@ -183,7 +183,7 @@ export function AIInsightsTab() {
               onClick={handleRefresh}
               disabled={generateInsights.isPending}
             >
-              <Sparkles className="mr-2 h-4 w-4" />
+              <Sparkles className="mr-1 h-4 w-4" />
               {generateInsights.isPending ? "분석 중..." : "AI 분석 시작"}
             </Button>
           </CardContent>
