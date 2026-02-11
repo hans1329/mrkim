@@ -352,7 +352,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
                         <Button
                           size="sm"
                           variant={item.priority === "urgent" ? "default" : "outline"}
-                          className="h-7 text-xs px-3"
+                          className="h-7 text-xs px-3 rounded-full"
                           onClick={() => {
                             item.actions.primary.action();
                             if (item.id !== "connection") {

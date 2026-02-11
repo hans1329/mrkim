@@ -311,7 +311,7 @@ export function TodaySummarySection({ isLoggedOut = false }: TodaySummarySection
               </div>
               <Button 
                 onClick={() => navigate("/onboarding")}
-                className="gap-2"
+                className="gap-2 rounded-full"
               >
                 <Sparkles className="h-4 w-4" />
                 연동 시작하기

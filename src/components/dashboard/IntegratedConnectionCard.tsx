@@ -80,7 +80,7 @@ const benefits = [
            {/* 연동 버튼 */}
            <Button 
              onClick={() => navigate("/onboarding")} 
-             className="w-full gap-2 h-12 text-base"
+             className="w-full gap-2 h-12 text-base rounded-full"
              size="lg"
            >
              지금 바로 연동하기
