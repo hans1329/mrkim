@@ -9,6 +9,7 @@ import { formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
 import { useVoice } from "@/contexts/VoiceContext";
 import { useProfile } from "@/hooks/useProfile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 
 interface RealTimeStats {
@@ -115,6 +116,7 @@ export function AIChatCard() {
   const { openChat } = useChat();
   const { openVoice } = useVoice();
   const { profile, loading: profileLoading } = useProfile();
+  const isMobile = useIsMobile();
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -297,7 +299,11 @@ export function AIChatCard() {
   const isBriefingDisplay = !response && showBriefing;
 
   return (
-    <Card className="overflow-hidden bg-white/15 backdrop-blur-md border-white/20 shadow-lg">
+    <Card className={`overflow-hidden shadow-lg ${
+      isMobile 
+        ? "bg-white/15 backdrop-blur-md border-white/20" 
+        : "bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] border-primary/30"
+    }`}>
       <CardContent className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
