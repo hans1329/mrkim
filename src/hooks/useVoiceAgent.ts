@@ -118,8 +118,7 @@ export function useVoiceAgent() {
   const persistentAudioRef = useRef<HTMLAudioElement | null>(null);
   // ScribeRealtime 연결을 ref로 관리 (React 훅 아님!)
   const scribeConnectionRef = useRef<RealtimeConnection | null>(null);
-  const suppressSTTRef = useRef(false);
-  const suppressUntilRef = useRef(0); // ★ TTS 종료 후 grace period (ms timestamp)
+  const suppressSTTRef = useRef(false); // ★ 응답 구성 시작~음성 출력 완료 구간 차단
   const consecutiveErrorsRef = useRef(0);
   const MAX_CONSECUTIVE_ERRORS = 3;
   const MIN_TRANSCRIPT_LENGTH = 5; // 잡음/에코 필터링
@@ -335,15 +334,14 @@ export function useVoiceAgent() {
 
       connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data: PartialTranscriptMessage) => {
         if (data.text && sessionActiveRef.current) {
-          if (suppressSTTRef.current || processingRef.current || currentAudioRef.current || Date.now() < suppressUntilRef.current) return;
+          if (suppressSTTRef.current) return;
           setLastMessage({ role: "user", text: data.text, timestamp: new Date() });
         }
       });
 
       connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data: CommittedTranscriptMessage) => {
         if (data.text && sessionActiveRef.current) {
-          // ★ 모든 차단 조건 통합: 플래그 + 오디오 재생 중 + grace period
-          if (suppressSTTRef.current || processingRef.current || currentAudioRef.current || Date.now() < suppressUntilRef.current) {
+          if (suppressSTTRef.current) {
             console.log("[Scribe] ⏭ Suppressed:", data.text);
             return;
           }
@@ -431,10 +429,9 @@ export function useVoiceAgent() {
         setLastMessage(agentMsg);
       });
 
-      // ★ TTS 완료 후 STT 재개 + grace period
+      // ★ TTS 완료 → STT 즉시 재개
       suppressSTTRef.current = false;
-      suppressUntilRef.current = Date.now() + 1500;
-      console.log("[STT] 🔊 Resumed (grace 1.5s)");
+      console.log("[STT] 🔊 Resumed (TTS done)");
 
       if (pendingTranscriptRef.current && sessionActiveRef.current) {
         const pending = pendingTranscriptRef.current;
@@ -564,10 +561,9 @@ export function useVoiceAgent() {
 
       console.log("[Session] Greeting done, interrupted:", interrupted, "scribe:", scribeOk);
 
-      // ★ 인사말 재생 완료 후 STT 억제 해제 + 1.5초 grace period
+      // ★ 인사말 재생 완료 → STT 즉시 활성화
       suppressSTTRef.current = false;
-      suppressUntilRef.current = Date.now() + 1500;
-      console.log("[STT] 🔊 Greeting done, STT enabled (grace 1.5s)");
+      console.log("[STT] 🔊 Greeting done, STT enabled");
 
       if (!abortRef.current && !interrupted) {
         setStatus(scribeOk ? "listening" : "idle");
