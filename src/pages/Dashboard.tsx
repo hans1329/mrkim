@@ -125,27 +125,28 @@ export default function Dashboard() {
             <div className="relative">
               <AIChatCard />
             </div>
+
+            {/* 퀵 액션 가로 스크롤 - 히어로 영역 내 */}
+            <div className="mt-5 relative z-10">
+              <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-1 px-1">
+                {quickActions.map((action) => (
+                  <button
+                    key={action.label}
+                    onClick={() => navigate(action.url)}
+                    className="flex flex-col items-center gap-1.5 min-w-[64px] group"
+                  >
+                    <div className="h-12 w-12 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center group-active:scale-95 transition-transform">
+                      <action.icon className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-[11px] font-medium text-white/80 whitespace-nowrap">{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* 히어로 아래 콘텐츠 - 흰 배경 */}
           <div className="bg-background">
-          {/* 퀵 액션 가로 스크롤 */}
-          <div className="px-4 py-5 relative z-10">
-            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-1 px-1">
-              {quickActions.map((action) => (
-                <button
-                  key={action.label}
-                  onClick={() => navigate(action.url)}
-                  className="flex flex-col items-center gap-1.5 min-w-[64px] group"
-                >
-                  <div className="h-12 w-12 rounded-2xl bg-card shadow-sm border border-border flex items-center justify-center group-active:scale-95 transition-transform">
-                    <action.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="text-[11px] font-medium text-foreground whitespace-nowrap">{action.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* 연동 상태 배너 */}
           <div className="px-4 pt-4">
