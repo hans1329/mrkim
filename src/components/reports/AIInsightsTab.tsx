@@ -80,7 +80,7 @@ export function AIInsightsTab() {
   return (
     <div className="space-y-4">
       {/* 김비서 소개 + 갱신 버튼 */}
-      <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+      <Card className="border-primary/20 bg-primary/5 backdrop-blur-md">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
