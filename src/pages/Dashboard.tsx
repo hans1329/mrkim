@@ -18,6 +18,7 @@ import { useChat } from "@/contexts/ChatContext";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { Bell, Settings, Receipt, Users, Wallet, TrendingUp, FileText, CreditCard } from "lucide-react";
 import { useNotificationGenerator } from "@/hooks/useNotificationGenerator";
+import { useNotifications } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,6 +51,7 @@ export default function Dashboard() {
 
   // 대시보드 접속 시 실데이터 기반 알림 자동 생성
   useNotificationGenerator();
+  const { unreadCount } = useNotifications();
   
   useEffect(() => {
     if (searchParams.get("openChat") === "true") {
@@ -101,9 +103,11 @@ export default function Dashboard() {
           )} onClick={() => navigate("/notifications")}>
             <div className="relative">
               <Bell className="h-5 w-5" />
-              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
-                2
-              </span>
+              {unreadCount > 0 && (
+                <span className="absolute -right-2.5 -top-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </div>
           </Button>
           <Button variant="ghost" size="icon" className={cn(
