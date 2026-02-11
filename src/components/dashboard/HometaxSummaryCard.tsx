@@ -46,6 +46,9 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
               <Building2 className="h-4 w-4 text-primary" />
               홈택스 현황
             </CardTitle>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/reports?tab=tax")}>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-2.5 pt-0">
@@ -85,10 +88,6 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
                   <p className="text-lg font-bold text-amber-600">₩1,300만</p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" className="text-[11px] h-7 px-2">
-                상세보기
-                <ArrowRight className="h-3 w-3 ml-0.5" />
-              </Button>
             </div>
           </div>
         </CardContent>
@@ -175,15 +174,20 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
             <Building2 className="h-4 w-4 text-primary" />
             홈택스 현황
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={syncTaxInvoices}
-            disabled={syncing}
-          >
-            <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={syncTaxInvoices}
+              disabled={syncing}
+            >
+              <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/reports?tab=tax")}>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </div>
         </div>
         {lastSyncText && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
@@ -270,15 +274,6 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/reports?tab=tax")}
-                  className="text-[11px] h-7 px-2"
-                >
-                  상세보기
-                  <ArrowRight className="h-3 w-3 ml-0.5" />
-                </Button>
               </div>
             </div>
           </>
