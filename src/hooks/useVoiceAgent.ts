@@ -64,6 +64,9 @@ export function useVoiceAgent() {
   // ScribeRealtime 연결을 ref로 관리 (React 훅 아님!)
   const scribeConnectionRef = useRef<RealtimeConnection | null>(null);
   const suppressSTTRef = useRef(false);
+  const consecutiveErrorsRef = useRef(0);
+  const MAX_CONSECUTIVE_ERRORS = 3;
+  const MIN_TRANSCRIPT_LENGTH = 5; // 잡음/에코 필터링
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
@@ -244,6 +247,22 @@ export function useVoiceAgent() {
   const handleCommittedTranscript = useCallback(async (transcript: string) => {
     if (abortRef.current || !transcript.trim() || !sessionActiveRef.current) return;
 
+    // ★ 최소 길이 필터 - 잡음/에코 방지
+    const cleaned = transcript.trim().replace(/[()（）\s]/g, "");
+    if (cleaned.length < MIN_TRANSCRIPT_LENGTH) {
+      console.log("[Scribe] ⏭ Too short, ignoring:", transcript);
+      return;
+    }
+
+    // ★ 연속 에러 시 자동 중단
+    if (consecutiveErrorsRef.current >= MAX_CONSECUTIVE_ERRORS) {
+      console.log("[Voice] ⛔ Too many consecutive errors, stopping");
+      setLastError("연속 오류가 발생하여 음성 인식을 일시 중지했습니다. 마이크를 다시 눌러 시작하세요.");
+      setStatus("idle");
+      sessionActiveRef.current = false;
+      return;
+    }
+
     if (processingRef.current) {
       pendingTranscriptRef.current = transcript;
       return;
@@ -258,10 +277,6 @@ export function useVoiceAgent() {
 
     setStatus("processing");
 
-    // ★ AI 처리+TTS 재생 동안 마이크 트랙을 비활성화하여 STT 입력 차단
-    const connection = scribeConnectionRef.current;
-    const audioCleanup = (connection as any)?._audioCleanup;
-    // MediaStreamTrack을 비활성화하는 대신 ref 플래그로 관리
     suppressSTTRef.current = true;
     console.log("[STT] 🔇 Suppressed (processing+speaking)");
 
@@ -270,16 +285,17 @@ export function useVoiceAgent() {
 
       if (abortRef.current || !sessionActiveRef.current) return;
 
+      // ★ 성공 시 에러 카운터 리셋
+      consecutiveErrorsRef.current = 0;
+
       const agentMsg: VoiceMessage = { role: "agent", text: aiResult.response, timestamp: new Date(), visualization: aiResult.visualization };
       messagesContextRef.current = [...messagesContextRef.current, agentMsg];
       saveMessageToDB("assistant", aiResult.response);
 
-      // 텍스트는 TTS 재생이 시작될 때 표시
       await fetchAndPlayTTS(aiResult.response, () => {
         setLastMessage(agentMsg);
       });
 
-      // ★ TTS 재생 완료 후 STT 다시 활성화
       suppressSTTRef.current = false;
       console.log("[STT] 🔊 Resumed (listening)");
 
@@ -292,23 +308,34 @@ export function useVoiceAgent() {
       }
     } catch (error: any) {
       if (!abortRef.current) {
-        console.error("Voice pipeline error:", error);
+        consecutiveErrorsRef.current += 1;
+        console.error(`Voice pipeline error (${consecutiveErrorsRef.current}/${MAX_CONSECUTIVE_ERRORS}):`, error);
+        
+        const isQuotaError = error?.message?.includes("429") || error?.message?.includes("RESOURCE_EXHAUSTED");
+        const errorText = isQuotaError 
+          ? "죄송합니다, 잠시 후 다시 시도해주세요." 
+          : "죄송합니다, 일시적인 오류가 발생했습니다.";
+        
         setLastError(error?.message || "오류가 발생했습니다.");
 
         const errorMsg: VoiceMessage = {
           role: "agent",
-          text: "죄송합니다, 일시적인 오류가 발생했습니다.",
+          text: errorText,
           timestamp: new Date(),
         };
         messagesContextRef.current = [...messagesContextRef.current, errorMsg];
         setLastMessage(errorMsg);
         saveMessageToDB("assistant", errorMsg.text);
 
+        // ★ 에러 후 잠시 STT 억제 유지 (에코 방지)
+        setTimeout(() => {
+          suppressSTTRef.current = false;
+        }, 2000);
+        
         setStatus("listening");
       }
     } finally {
       processingRef.current = false;
-      suppressSTTRef.current = false;
     }
   }, [queryAI, fetchAndPlayTTS, saveMessageToDB]);
 
@@ -405,6 +432,7 @@ export function useVoiceAgent() {
     messagesContextRef.current = [];
     setLastMessage(null);
     setLastError(null);
+    consecutiveErrorsRef.current = 0;
 
     // ★ 핵심: 유저 제스처 컨텍스트 내에서 즉시 Audio 객체 생성
     // 이렇게 해야 브라우저 자동재생 제한을 우회할 수 있음
