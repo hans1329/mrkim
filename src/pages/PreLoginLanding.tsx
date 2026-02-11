@@ -125,24 +125,24 @@ const PreLoginLandingContent = () => {
             <div className="space-y-5 text-center lg:text-left">
               
               
-              <h1 className="text-4xl lg:text-5xl font-black leading-tight">
+              <h1 className="text-2xl lg:text-5xl font-black leading-tight">
                 사장님은 <span className="text-primary">말로</span><br />
                 <span className="text-primary">명령만</span> 하세요!
               </h1>
               
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-sm lg:text-lg text-muted-foreground leading-relaxed">
                 세금, 급여, 매출 관리까지<br className="lg:hidden" />
                 <span className="font-semibold text-foreground">실행은 김비서가 합니다</span>
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                <Button size="lg" className="h-14 px-8 text-lg font-bold gap-2 rounded-xl" onClick={() => navigate("/")}>
-                  <img src={icc} alt="김비서" className="h-6 w-auto opacity-90" />
+              <div className="flex flex-col sm:flex-row gap-2 justify-center lg:justify-start">
+                <Button size="lg" className="h-11 lg:h-14 px-6 lg:px-8 text-sm lg:text-lg font-bold gap-2 rounded-xl" onClick={() => navigate("/")}>
+                  <img src={icc} alt="김비서" className="h-5 lg:h-6 w-auto opacity-90" />
                   무료로 시작하기
-                  <ArrowRight className="h-5 w-5" />
+                  <ArrowRight className="h-4 w-4 lg:h-5 lg:w-5" />
                 </Button>
-                <Button size="lg" variant="outline" className="h-14 px-8 text-lg font-medium rounded-xl" onClick={() => navigate("/landing")}>
-                  <Calculator className="h-5 w-5 mr-2" />
+                <Button size="lg" variant="outline" className="h-11 lg:h-14 px-6 lg:px-8 text-sm lg:text-lg font-medium rounded-xl" onClick={() => navigate("/landing")}>
+                  <Calculator className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
                   생존 기간 테스트
                 </Button>
               </div>
