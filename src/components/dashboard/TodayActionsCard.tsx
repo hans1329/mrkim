@@ -366,7 +366,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-7 text-xs px-3"
+                            className="h-7 text-xs px-3 rounded-full"
                             onClick={() => handlePostpone(item.id)}
                           >
                             {item.actions.secondary.label}
