@@ -99,14 +99,13 @@ export function AIInsightsTab() {
               </div>
             </div>
             <Button
-              variant="outline"
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={handleRefresh}
               disabled={generateInsights.isPending}
-              className="gap-1"
+              className="h-8 w-8"
             >
               <RefreshCw className={`h-4 w-4 ${generateInsights.isPending ? "animate-spin" : ""}`} />
-              {generateInsights.isPending ? "분석 중..." : "갱신"}
             </Button>
           </div>
         </CardContent>
