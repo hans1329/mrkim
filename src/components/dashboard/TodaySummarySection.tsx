@@ -42,19 +42,19 @@ function EmptyStatCard({
 
   return (
     <Card className={cn("overflow-hidden transition-shadow", variantStyles[variant])}>
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
+      <CardContent className="p-3">
+        <div className="flex items-start gap-2.5">
           <div className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
             iconStyles[variant]
           )}>
-            <Icon className="h-5 w-5" />
+            <Icon className="h-4 w-4" />
           </div>
-          <div className="flex-1 min-w-0 space-y-1">
-            <p className="text-xs font-medium text-muted-foreground truncate">
+          <div className="flex-1 min-w-0 space-y-0.5">
+            <p className="text-[11px] font-medium text-muted-foreground truncate">
               {title}
             </p>
-            <p className="text-base font-medium text-muted-foreground/60">—</p>
+            <p className="text-sm font-medium text-muted-foreground/60">—</p>
           </div>
         </div>
       </CardContent>
@@ -92,22 +92,22 @@ function RealStatCard({
 
   return (
     <Card className={cn("overflow-hidden transition-shadow", variantStyles[variant])}>
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
+      <CardContent className="p-3">
+        <div className="flex items-start gap-2.5">
           <div className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
             iconVariantStyles[variant]
           )}>
-            <Icon className="h-5 w-5" />
+            <Icon className="h-4 w-4" />
           </div>
-          <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex-1 min-w-0 space-y-0.5">
             <p className={cn(
-              "text-xs font-medium truncate",
+              "text-[11px] font-medium truncate",
               variant === "default" ? "text-muted-foreground" : "opacity-80"
             )}>
               {title}
             </p>
-            <p className="text-base font-bold leading-tight">{value}</p>
+            <p className="text-sm font-bold leading-tight truncate">{value}</p>
             {(subtitle || trend) && (
               <div className="flex items-center gap-1">
                 {trend && (
@@ -141,12 +141,12 @@ function RealStatCard({
 function SkeletonStatCard() {
   return (
     <Card className="overflow-hidden">
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <Skeleton className="h-10 w-10 rounded-xl" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-3 w-14" />
-            <Skeleton className="h-5 w-20" />
+      <CardContent className="p-3">
+        <div className="flex items-start gap-2.5">
+          <Skeleton className="h-9 w-9 rounded-lg" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-4 w-16" />
           </div>
         </div>
       </CardContent>

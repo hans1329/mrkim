@@ -17,7 +17,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useChat } from "@/contexts/ChatContext";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { Bell, Settings, Receipt, Users, Wallet, TrendingUp, FileText, CreditCard } from "lucide-react";
-import { ScrollAwareStickyHeader } from "@/components/layout/ScrollAwareStickyHeader";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,69 +58,51 @@ export default function Dashboard() {
   const userName = profileLoading ? "" : (profile?.nickname || profile?.name || null);
   const greeting = userName ? `${userName}님` : "사장님";
 
-  const mobileStickyHeader = isMobile ? (
-    <ScrollAwareStickyHeader>
-      {(scrolled) => (
-        <div className={cn(
-          "px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-3 transition-all duration-300",
-          scrolled
-            ? "bg-background shadow-md"
-            : "bg-transparent"
-        )}>
-          <div className="flex items-center justify-between">
-            <div className="cursor-pointer" onClick={() => navigate("/profile")}>
-              {profileLoading ? (
-                <Skeleton className={cn("h-6 w-32", scrolled ? "bg-muted" : "bg-white/20")} />
-              ) : (
-                <h1 className={cn(
-                  "text-lg font-bold transition-colors duration-300",
-                  scrolled ? "text-foreground" : "text-white"
-                )}>
-                  안녕하세요, {greeting} 👋
-                </h1>
-              )}
-            </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className={cn(
-                "h-9 w-9 transition-colors duration-300",
-                scrolled ? "text-foreground hover:bg-muted" : "text-white/80 hover:text-white hover:bg-white/10"
-              )} onClick={() => navigate("/notifications")}>
-                <div className="relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
-                    2
-                  </span>
-                </div>
-              </Button>
-              <Button variant="ghost" size="icon" className={cn(
-                "h-9 w-9 transition-colors duration-300",
-                scrolled ? "text-foreground hover:bg-muted" : "text-white/80 hover:text-white hover:bg-white/10"
-              )} onClick={() => navigate("/settings")}>
-                <Settings className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </ScrollAwareStickyHeader>
-  ) : undefined;
-
   return (
-    <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요" stickyHeader={mobileStickyHeader}>
+    <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요">
       {/* 모바일 전용 네이티브 홈 */}
       {isMobile ? (
-        <div>
-          {/* 히어로 영역 - 헤더 뒤까지 확장 */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] px-5 pb-8 -mt-[100px] pt-[100px]">
+        <div className="-mx-0">
+          {/* 히어로 + 스티키 헤더 통합 영역 */}
+          <div className="relative bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)]">
             {/* 배경 데코 */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-2xl" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/4 blur-xl" />
-            
-            <p className="text-xs text-white/70 mb-3">오늘도 김비서가 도와드릴게요</p>
 
-            {/* AI 비서 브리핑 카드 */}
-            <div className="relative">
-              <AIChatCard />
+            {/* 상단 인사 바 */}
+            <div className="px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-1">
+              <div className="flex items-center justify-between">
+                <div className="cursor-pointer" onClick={() => navigate("/profile")}>
+                  {profileLoading ? (
+                    <Skeleton className="h-6 w-32 bg-white/20" />
+                  ) : (
+                    <h1 className="text-lg font-bold text-white">
+                      안녕하세요, {greeting} 👋
+                    </h1>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10" onClick={() => navigate("/notifications")}>
+                    <div className="relative">
+                      <Bell className="h-5 w-5" />
+                      <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
+                        2
+                      </span>
+                    </div>
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10" onClick={() => navigate("/settings")}>
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* 히어로 콘텐츠 */}
+            <div className="px-5 pb-8 relative">
+              <p className="text-xs text-white/70 mb-3">오늘도 김비서가 도와드릴게요</p>
+              <div className="relative">
+                <AIChatCard />
+              </div>
             </div>
           </div>
 

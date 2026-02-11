@@ -101,8 +101,8 @@ export function AppLayout({
       {/* 앱 영역 */}
       <div className="w-full h-full lg:w-[580px] xl:w-[640px] lg:flex-shrink-0">
         <div className="relative flex h-full max-w-xl flex-col shadow-2xl lg:max-w-none mx-auto overflow-hidden">
-          <div className="flex-1 overflow-auto">
-            {/* 커스텀 sticky 헤더 (홈 등) */}
+          <div className="flex-1 overflow-auto" id="app-scroll-container">
+            {/* 커스텀 sticky 헤더 (홈 등) - children 앞에 렌더, main 바깥 */}
             {stickyHeader}
 
             {/* 서브페이지 전용 미니 헤더 (뒤로가기 있을 때만) */}
