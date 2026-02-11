@@ -124,7 +124,7 @@ export default function Dashboard() {
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-2xl" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/4 blur-xl" />
 
-            
+            <div className="mb-4" />
             <div className="relative">
               <AIChatCard />
             </div>
