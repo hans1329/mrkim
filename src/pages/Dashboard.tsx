@@ -74,7 +74,7 @@ export default function Dashboard() {
     <div className={cn(
       "sticky top-0 z-30 px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-3 transition-all duration-300",
       scrolled
-        ? "bg-background/95 backdrop-blur-md shadow-md"
+        ? "bg-background/80 backdrop-blur-md shadow-sm"
         : "bg-transparent"
     )}>
       <div className="flex items-center justify-between">
