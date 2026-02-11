@@ -107,7 +107,8 @@ export function useVoiceAgent() {
           console.log("[Audio] ▶ Playback started");
           onPlayStarted?.();
         }).catch((err) => {
-          console.error("[Audio] play() rejected:", err);
+          console.error("[Audio] play() rejected:", err?.name, err?.message);
+          console.error("[Audio] This may be a mobile autoplay policy issue. User gesture context may have expired.");
           onPlayStarted?.(); // 실패해도 텍스트는 표시
           currentAudioRef.current = null;
           URL.revokeObjectURL(url);
@@ -418,6 +419,12 @@ export function useVoiceAgent() {
   // --- 세션 시작 ---
   const startSession = useCallback(async () => {
     if (status !== "idle" || permissionDenied) return;
+    
+    // 프로필 로딩 완료 전에는 시작하지 않음 (기본값 female 사용 방지)
+    if (!profile) {
+      console.warn("[Session] Profile not loaded yet, delaying start");
+      return;
+    }
 
     console.log("[Session] ▶ Starting voice session...");
 
@@ -512,7 +519,7 @@ export function useVoiceAgent() {
         setStatus("idle");
       }
     }
-  }, [status, permissionDenied, secretaryName, secretaryGender, secretaryTone, playAudioBlob, connectScribe]);
+  }, [status, permissionDenied, profile, secretaryName, secretaryGender, secretaryTone, playAudioBlob, connectScribe]);
 
   // --- Scribe 연결 해제 ---
   const disconnectScribe = useCallback(() => {
