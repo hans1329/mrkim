@@ -416,9 +416,9 @@ export function useVoiceAgent() {
     // 말투에 맞는 인사말 생성 (받침 여부에 따라 조사 변경)
     const nameHasBatchim = hasBatchim(secretaryName);
     const greetingByTone: Record<string, string> = {
-      polite: `안녕하세요, ${secretaryName}입니다. 어떻게 도와드릴까요?`,
-      friendly: `안녕하세요~ ${secretaryName}${nameHasBatchim ? "이에요" : "예요"}! 무엇을 도와드릴까요?`,
-      cute: `안녕하세용~ ${secretaryName}${nameHasBatchim ? "이에용" : "에용"}! 무엇을 도와드릴까용? ✨`,
+      polite: `${secretaryName}입니다! 무엇을 도와드릴까요?`,
+      friendly: `${secretaryName}${nameHasBatchim ? "이에요" : "예요"}! 무엇을 도와드릴까요?`,
+      cute: `${secretaryName}${nameHasBatchim ? "이에용" : "에용"}! 무엇을 도와드릴까용? ✨`,
     };
     const greeting = greetingByTone[secretaryTone] || greetingByTone.polite;
     const greetingMsg: VoiceMessage = { role: "agent", text: greeting, timestamp: new Date() };
