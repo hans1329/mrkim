@@ -101,7 +101,7 @@ export function TaxInvoiceTab() {
         <Card className="bg-muted/50 border-border/50">
           <CardContent className="p-4">
             <span className="text-sm text-muted-foreground">매출</span>
-            <p className="text-xl font-bold text-foreground mt-1">
+            <p className="text-xl font-bold text-green-600 mt-1">
               ₩{formatShortAmount(salesTotal)}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -113,7 +113,7 @@ export function TaxInvoiceTab() {
         <Card className="bg-muted/50 border-border/50">
           <CardContent className="p-4">
             <span className="text-sm text-muted-foreground">매입</span>
-            <p className="text-xl font-bold text-foreground mt-1">
+            <p className="text-xl font-bold text-red-600 mt-1">
               ₩{formatShortAmount(purchaseTotal)}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -127,7 +127,10 @@ export function TaxInvoiceTab() {
             <span className="text-sm text-muted-foreground">
               {vatPayable >= 0 ? "부가세 납부" : "부가세 환급"}
             </span>
-            <p className="text-xl font-bold text-foreground mt-1">
+            <p className={cn(
+              "text-xl font-bold mt-1",
+              vatPayable >= 0 ? "text-amber-600" : "text-blue-600"
+            )}>
               ₩{formatShortAmount(Math.abs(vatPayable))}
             </p>
             <p className="text-xs text-muted-foreground mt-1">예상금액</p>
