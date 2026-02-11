@@ -101,9 +101,13 @@ export function VoiceOverlay() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+12px)]">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-            <Sparkles className="h-5 w-5 text-white" />
-          </div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm overflow-hidden">
+              {secretaryAvatarUrl ? (
+                <img src={secretaryAvatarUrl} alt={secretaryName} className="h-full w-full object-cover" />
+              ) : (
+                <Sparkles className="h-5 w-5 text-white" />
+              )}
+            </div>
           <div>
             <h3 className="font-semibold text-white">{secretaryName}</h3>
             <p className="text-xs text-white/70">음성 대화</p>
@@ -229,18 +233,6 @@ export function VoiceOverlay() {
                       : "bg-white/20 text-white backdrop-blur-sm"
                   )}
                 >
-                  {lastMessage.role === "agent" && (
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="h-6 w-6 rounded-full bg-white/20 overflow-hidden flex items-center justify-center shrink-0">
-                        {secretaryAvatarUrl ? (
-                          <img src={secretaryAvatarUrl} alt={secretaryName} className="h-full w-full object-cover" />
-                        ) : (
-                          <Sparkles className="h-3.5 w-3.5 text-white/80" />
-                        )}
-                      </div>
-                      <span className="text-xs text-white/70 font-medium">{secretaryName}</span>
-                    </div>
-                  )}
                   <p className="text-sm leading-relaxed">{lastMessage.text}</p>
                 </div>
                 {/* 시각화 데이터 */}
