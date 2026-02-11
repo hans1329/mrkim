@@ -90,8 +90,8 @@ export function AIInsightsTab() {
                 className="h-9 w-auto object-contain opacity-70"
               />
               <div>
-                <p className="font-semibold text-primary">김비서 AI 분석</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm font-semibold text-primary">김비서 AI 분석</p>
+                <p className="text-[11px] text-muted-foreground">
                   {lastGeneratedAt
                     ? `${format(new Date(lastGeneratedAt), "M월 d일 HH:mm", { locale: ko })} 기준`
                     : "분석 데이터 없음"}
@@ -118,22 +118,22 @@ export function AIInsightsTab() {
             <Card>
               <CardContent className="p-3 text-center">
                 <Target className="mx-auto h-5 w-5 text-destructive" />
-                <p className="mt-1 text-lg font-bold">{highPriorityCount}</p>
-                <p className="text-xs text-muted-foreground">중요 알림</p>
+                <p className="mt-1 text-base font-bold">{highPriorityCount}</p>
+                <p className="text-[11px] text-muted-foreground">중요 알림</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
                 <AlertTriangle className="mx-auto h-5 w-5 text-warning" />
-                <p className="mt-1 text-lg font-bold">{warningCount}</p>
-                <p className="text-xs text-muted-foreground">주의 필요</p>
+                <p className="mt-1 text-base font-bold">{warningCount}</p>
+                <p className="text-[11px] text-muted-foreground">주의 필요</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
                 <TrendingUp className="mx-auto h-5 w-5 text-success" />
-                <p className="mt-1 text-lg font-bold">{positiveCount}</p>
-                <p className="text-xs text-muted-foreground">긍정 지표</p>
+                <p className="mt-1 text-base font-bold">{positiveCount}</p>
+                <p className="text-[11px] text-muted-foreground">긍정 지표</p>
               </CardContent>
             </Card>
           </div>
@@ -147,10 +147,10 @@ export function AIInsightsTab() {
                     <div className="mt-0.5">{getInsightIcon(insight.type)}</div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">{insight.title}</p>
+                        <p className="text-sm font-medium">{insight.title}</p>
                         {getPriorityBadge(insight.priority)}
                       </div>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {insight.description}
                       </p>
                       {insight.impact && (
@@ -172,9 +172,9 @@ export function AIInsightsTab() {
         /* 데이터 없음 상태 */
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
-            <Sparkles className="mx-auto h-10 w-10 text-muted-foreground/50" />
-            <p className="mt-4 text-sm font-medium">AI 분석 결과가 없습니다</p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <Sparkles className="mx-auto h-8 w-8 text-muted-foreground/50" />
+            <p className="mt-3 text-xs font-medium">AI 분석 결과가 없습니다</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
               '갱신' 버튼을 눌러 경영 인사이트를 생성해보세요
             </p>
             <Button
