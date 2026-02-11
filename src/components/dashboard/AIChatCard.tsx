@@ -265,6 +265,7 @@ export function AIChatCard() {
   return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/15 backdrop-blur-md border-white/20" : "bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] border-primary/30"}`}>
       <CardContent className="p-4">
         {/* Header */}
+        <p className="text-[10px] text-white/60 mb-2 tracking-wide">당신의 경영 비서</p>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="relative">
