@@ -93,7 +93,7 @@ export function VoiceOverlay() {
   return (
     <div
       className={cn(
-        "fixed inset-0 z-50 flex flex-col bg-gradient-to-br from-primary via-primary/90 to-primary/80 transition-all duration-300",
+        "fixed inset-0 z-50 flex flex-col bg-gradient-to-br from-primary via-primary to-primary transition-all duration-300",
         isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       )}
     >
