@@ -133,7 +133,7 @@ export function EmployeeReportTab() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">월별 인건비 추이</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-0 pb-4">
           {hasData ? (
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
