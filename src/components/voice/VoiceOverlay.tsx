@@ -187,7 +187,11 @@ export function VoiceOverlay() {
                 ) : isSpeaking && isTTSPreparing ? (
                   <Loader2 className="h-12 w-12 animate-spin opacity-70" />
                 ) : isSpeaking ? (
-                  <Sparkles className="h-12 w-12 animate-pulse" />
+                  secretaryAvatarUrl ? (
+                    <img src={secretaryAvatarUrl} alt={secretaryName} className="h-full w-full rounded-full object-cover animate-pulse" />
+                  ) : (
+                    <Sparkles className="h-12 w-12 animate-pulse" />
+                  )
                 ) : isListening ? (
                   <Mic className="h-12 w-12" />
                 ) : (
