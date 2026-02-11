@@ -11,7 +11,6 @@ import { useVoice } from "@/contexts/VoiceContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
-
 interface RealTimeStats {
   todayIncome: number;
   todayExpense: number;
@@ -19,43 +18,26 @@ interface RealTimeStats {
   monthlyExpense: number;
   isLoading: boolean;
 }
-
-const quickPrompts = [
-  "오늘 매출 얼마야?",
-  "급여 현황",
-  "부가세 확인",
-  "이번 달 요약",
-];
+const quickPrompts = ["오늘 매출 얼마야?", "급여 현황", "부가세 확인", "이번 달 요약"];
 
 // 일반 플레이스홀더 메시지
-const defaultPlaceholders = [
-  "오늘 매출이 궁금해요",
-  "이번 달 경영 현황은?",
-  "급여일 언제야?",
-  "할 일이 뭐가 있어?",
-  "부가세 얼마나 모였어?",
-];
+const defaultPlaceholders = ["오늘 매출이 궁금해요", "이번 달 경영 현황은?", "급여일 언제야?", "할 일이 뭐가 있어?", "부가세 얼마나 모였어?"];
 
 // 미완료 설정 안내 메시지
 const getIncompleteSettingsMessages = (profile: any, secretaryName: string) => {
   const messages: string[] = [];
-  
   if (!profile?.secretary_avatar_url) {
     messages.push(`${secretaryName}의 프로필 사진을 설정해보세요!`);
   }
-  
   if (!profile?.secretary_name || profile?.secretary_name === "김비서") {
     messages.push("비서의 이름을 직접 지어주세요!");
   }
-  
   if (!profile?.secretary_tone || profile?.secretary_tone === "polite") {
     messages.push("비서의 말투를 바꿔보세요!");
   }
-  
   if (!profile?.business_name) {
     messages.push("사업장 정보를 등록해보세요!");
   }
-  
   return messages;
 };
 
@@ -64,9 +46,7 @@ const isBriefingTime = (): boolean => {
   const now = new Date();
   const hour = now.getHours();
   const minute = now.getMinutes();
-  
   const briefingHours = [9, 12, 18, 22];
-  
   return briefingHours.some(bh => {
     if (hour === bh && minute <= 30) return true;
     if (hour === bh - 1 && minute >= 30) return true;
@@ -76,13 +56,17 @@ const isBriefingTime = (): boolean => {
 
 // 실제 데이터 기반 브리핑 메시지 생성
 const generateRealBriefingMessage = (stats: RealTimeStats, profile: any): string => {
-  const { hometax_connected, card_connected, account_connected } = profile || {};
-  
+  const {
+    hometax_connected,
+    card_connected,
+    account_connected
+  } = profile || {};
+
   // 연동이 하나도 안된 경우
   if (!hometax_connected && !card_connected && !account_connected) {
     return "데이터를 연동하면 실시간 경영 현황을 알려드릴게요.";
   }
-  
+
   // 오늘 데이터가 있는 경우
   if (stats.todayIncome > 0 || stats.todayExpense > 0) {
     const parts = [];
@@ -94,7 +78,7 @@ const generateRealBriefingMessage = (stats: RealTimeStats, profile: any): string
     }
     return parts.join(", ") + "입니다.";
   }
-  
+
   // 이번 달 데이터만 있는 경우
   if (stats.monthlyIncome > 0 || stats.monthlyExpense > 0) {
     const parts = [];
@@ -106,16 +90,22 @@ const generateRealBriefingMessage = (stats: RealTimeStats, profile: any): string
     }
     return parts.join(", ") + "입니다.";
   }
-  
+
   // 연동은 되어있지만 데이터가 없는 경우
   return "아직 이번 달 거래 내역이 없어요. 거래가 발생하면 알려드릴게요!";
 };
-
 export function AIChatCard() {
   const navigate = useNavigate();
-  const { openChat } = useChat();
-  const { openVoice } = useVoice();
-  const { profile, loading: profileLoading } = useProfile();
+  const {
+    openChat
+  } = useChat();
+  const {
+    openVoice
+  } = useVoice();
+  const {
+    profile,
+    loading: profileLoading
+  } = useProfile();
   const isMobile = useIsMobile();
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<string | null>(null);
@@ -126,56 +116,44 @@ export function AIChatCard() {
     todayExpense: 0,
     monthlyIncome: 0,
     monthlyExpense: 0,
-    isLoading: true,
+    isLoading: true
   });
-   const [hasConversationHistory, setHasConversationHistory] = useState<boolean | null>(null);
-  
+  const [hasConversationHistory, setHasConversationHistory] = useState<boolean | null>(null);
+
   // 설정한 비서 이름과 아바타 사용 (로딩 중에는 undefined)
-  const secretaryName = profileLoading ? undefined : (profile?.secretary_name || "김비서");
-  const secretaryAvatarUrl = profileLoading ? undefined : (profile?.secretary_avatar_url || null);
+  const secretaryName = profileLoading ? undefined : profile?.secretary_name || "김비서";
+  const secretaryAvatarUrl = profileLoading ? undefined : profile?.secretary_avatar_url || null;
 
   // 실제 거래 데이터 불러오기
   useEffect(() => {
     const fetchRealStats = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: {
+            user
+          }
+        } = await supabase.auth.getUser();
         if (!user) {
-          setRealStats(prev => ({ ...prev, isLoading: false }));
-           setHasConversationHistory(false);
+          setRealStats(prev => ({
+            ...prev,
+            isLoading: false
+          }));
+          setHasConversationHistory(false);
           return;
         }
-
         const today = new Date();
         const todayStr = today.toISOString().split("T")[0];
         const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
 
-         // 오늘 거래, 이번달 거래, 대화 기록을 병렬로 조회
-         const [todayResult, monthlyResult, chatResult] = await Promise.all([
-          supabase
-            .from("transactions")
-            .select("amount, type")
-            .eq("user_id", user.id)
-            .eq("transaction_date", todayStr),
-          supabase
-            .from("transactions")
-            .select("amount, type")
-            .eq("user_id", user.id)
-            .gte("transaction_date", monthStart)
-            .lte("transaction_date", todayStr),
-           supabase
-             .from("chat_messages")
-             .select("id")
-             .eq("user_id", user.id)
-             .limit(1),
-        ]);
+        // 오늘 거래, 이번달 거래, 대화 기록을 병렬로 조회
+        const [todayResult, monthlyResult, chatResult] = await Promise.all([supabase.from("transactions").select("amount, type").eq("user_id", user.id).eq("transaction_date", todayStr), supabase.from("transactions").select("amount, type").eq("user_id", user.id).gte("transaction_date", monthStart).lte("transaction_date", todayStr), supabase.from("chat_messages").select("id").eq("user_id", user.id).limit(1)]);
 
         // 오늘 통계
         let todayIncome = 0;
         let todayExpense = 0;
         if (todayResult.data) {
-          todayResult.data.forEach((tx) => {
-            if (tx.type === "income") todayIncome += Number(tx.amount);
-            else if (tx.type === "expense") todayExpense += Number(tx.amount);
+          todayResult.data.forEach(tx => {
+            if (tx.type === "income") todayIncome += Number(tx.amount);else if (tx.type === "expense") todayExpense += Number(tx.amount);
           });
         }
 
@@ -183,244 +161,165 @@ export function AIChatCard() {
         let monthlyIncome = 0;
         let monthlyExpense = 0;
         if (monthlyResult.data) {
-          monthlyResult.data.forEach((tx) => {
-            if (tx.type === "income") monthlyIncome += Number(tx.amount);
-            else if (tx.type === "expense") monthlyExpense += Number(tx.amount);
+          monthlyResult.data.forEach(tx => {
+            if (tx.type === "income") monthlyIncome += Number(tx.amount);else if (tx.type === "expense") monthlyExpense += Number(tx.amount);
           });
         }
 
-         // 대화 기록 존재 여부
-         setHasConversationHistory((chatResult.data?.length ?? 0) > 0);
-
+        // 대화 기록 존재 여부
+        setHasConversationHistory((chatResult.data?.length ?? 0) > 0);
         setRealStats({
           todayIncome,
           todayExpense,
           monthlyIncome,
           monthlyExpense,
-          isLoading: false,
+          isLoading: false
         });
       } catch (error) {
         console.error("Failed to fetch real stats:", error);
-        setRealStats(prev => ({ ...prev, isLoading: false }));
-         setHasConversationHistory(false);
+        setRealStats(prev => ({
+          ...prev,
+          isLoading: false
+        }));
+        setHasConversationHistory(false);
       }
     };
-
     fetchRealStats();
   }, []);
-  
+
   // 랜덤 플레이스홀더 선택 (미완료 설정 우선)
   const placeholder = useMemo(() => {
-     // 첫 대화인 경우 우선 표시
-     if (hasConversationHistory === false) {
-       return `${secretaryName || "김비서"}와 대화를 시작해보세요!`;
-     }
-
+    // 첫 대화인 경우 우선 표시
+    if (hasConversationHistory === false) {
+      return `${secretaryName || "김비서"}와 대화를 시작해보세요!`;
+    }
     const incompleteMessages = getIncompleteSettingsMessages(profile, secretaryName || "김비서");
-    
+
     // 미완료 설정이 있으면 그 중 랜덤 선택
     if (incompleteMessages.length > 0) {
       return incompleteMessages[Math.floor(Math.random() * incompleteMessages.length)];
     }
-    
+
     // 없으면 일반 플레이스홀더 중 랜덤 선택
     return defaultPlaceholders[Math.floor(Math.random() * defaultPlaceholders.length)];
-   }, [profile, secretaryName, hasConversationHistory]);
-  
+  }, [profile, secretaryName, hasConversationHistory]);
+
   // 실제 데이터 기반 브리핑 메시지
   const briefingMessage = useMemo(() => {
     if (realStats.isLoading) return "";
     return generateRealBriefingMessage(realStats, profile);
   }, [realStats, profile]);
-  
+
   // 브리핑 시간 체크
   useEffect(() => {
     const checkBriefing = () => {
-       // 첫 대화 사용자에게는 브리핑 표시하지 않음
-       if (isBriefingTime() && !response && !realStats.isLoading && hasConversationHistory === true) {
+      // 첫 대화 사용자에게는 브리핑 표시하지 않음
+      if (isBriefingTime() && !response && !realStats.isLoading && hasConversationHistory === true) {
         setShowBriefing(true);
       }
     };
-    
     checkBriefing();
     const interval = setInterval(checkBriefing, 60000);
-    
     return () => clearInterval(interval);
-   }, [response, realStats.isLoading, hasConversationHistory]);
+  }, [response, realStats.isLoading, hasConversationHistory]);
 
   // 실제 데이터 기반 빠른 응답
   const generateQuickResponse = (inputText: string): string => {
     const lowerInput = inputText.toLowerCase();
-
     if (lowerInput.includes("매출") && (lowerInput.includes("오늘") || lowerInput.includes("얼마"))) {
       if (realStats.todayIncome > 0) {
         return `오늘 총 매출은 ${formatCurrency(realStats.todayIncome)}입니다.`;
       }
       return "오늘은 아직 매출 기록이 없어요.";
     }
-
     if (lowerInput.includes("급여") || lowerInput.includes("월급")) {
       return "급여 현황은 직원 관리 메뉴에서 확인할 수 있어요.";
     }
-
     if (lowerInput.includes("부가세") || lowerInput.includes("vat")) {
       return "부가세 현황은 리포트 > 세금계산서 탭에서 확인할 수 있어요.";
     }
-
     if (lowerInput.includes("이번 달") || lowerInput.includes("요약")) {
       if (realStats.monthlyIncome > 0 || realStats.monthlyExpense > 0) {
         return `이번 달 매출 ${formatCurrency(realStats.monthlyIncome)}, 지출 ${formatCurrency(realStats.monthlyExpense)}입니다.`;
       }
       return "이번 달은 아직 거래 내역이 없어요.";
     }
-
     return `자세한 내용은 ${secretaryName}와 대화해보세요!`;
   };
-
   const handleQuickAsk = async (question: string) => {
     setInput("");
     setIsTyping(true);
     setShowBriefing(false);
-    
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
+    await new Promise(resolve => setTimeout(resolve, 500));
     const answer = generateQuickResponse(question);
     setResponse(answer);
     setIsTyping(false);
   };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
     handleQuickAsk(input);
   };
-  
   const displayMessage = response || (showBriefing ? briefingMessage : null);
   const isBriefingDisplay = !response && showBriefing;
-
-  return (
-    <Card className={`overflow-hidden shadow-lg ${
-      isMobile 
-        ? "bg-white/15 backdrop-blur-md border-white/20" 
-        : "bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] border-primary/30"
-    }`}>
+  return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/15 backdrop-blur-md border-white/20" : "bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] border-primary/30"}`}>
       <CardContent className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <button
-                onClick={() => navigate("/secretary-settings")}
-                className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors overflow-hidden"
-              >
-                {secretaryAvatarUrl ? (
-                  <img 
-                    src={secretaryAvatarUrl} 
-                    alt={secretaryName || "비서"} 
-                    className="h-full w-auto object-contain"
-                  />
-                ) : (
-                  <Bot className="h-8 w-8 text-white" />
-                )}
+              <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors overflow-hidden">
+                {secretaryAvatarUrl ? <img src={secretaryAvatarUrl} alt={secretaryName || "비서"} className="h-full w-auto object-contain" /> : <Bot className="h-8 w-8 text-white" />}
               </button>
               <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 flex items-center justify-center bg-black/20 rounded-full">
                 <Settings className="h-2.5 w-2.5 text-white/70" />
               </div>
             </div>
             <div>
-              {secretaryName ? (
-                <h3 className="font-bold text-white">{secretaryName}</h3>
-              ) : (
-                <Skeleton className="h-5 w-16 bg-white/30" />
-              )}
-              <p className="text-xs text-white/80">당신의 AI 경영 비서</p>
+              {secretaryName ? <h3 className="font-bold text-white">{secretaryName}</h3> : <Skeleton className="h-5 w-16 bg-white/30" />}
+              
             </div>
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={openVoice}
-            className="gap-1.5 bg-white/20 hover:bg-white/30 text-white border border-white/40 backdrop-blur-sm"
-          >
+          <Button variant="secondary" size="sm" onClick={openVoice} className="gap-1.5 bg-white/20 hover:bg-white/30 text-white border border-white/40 backdrop-blur-sm">
             <Mic className="h-4 w-4" />
             대화
           </Button>
         </div>
 
         {/* Response/Briefing Area */}
-        {(displayMessage || isTyping) && (
-          <div className={`mb-4 rounded-xl backdrop-blur-sm p-3 border ${
-            isBriefingDisplay 
-              ? "bg-amber-500/30 border-amber-300/50" 
-              : "bg-white/40 border-white/30"
-          }`}>
-            {isTyping ? (
-              <div className="flex items-center gap-2">
+        {(displayMessage || isTyping) && <div className={`mb-4 rounded-xl backdrop-blur-sm p-3 border ${isBriefingDisplay ? "bg-amber-500/30 border-amber-300/50" : "bg-white/40 border-white/30"}`}>
+            {isTyping ? <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 animate-pulse text-primary" />
                 <span className="text-sm text-muted-foreground">답변 중...</span>
-              </div>
-            ) : (
-              <div 
-                className="flex items-center justify-between gap-2 cursor-pointer"
-                onClick={openChat}
-              >
+              </div> : <div className="flex items-center justify-between gap-2 cursor-pointer" onClick={openChat}>
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {isBriefingDisplay && (
-                    <Clock className="h-4 w-4 text-amber-200 shrink-0" />
-                  )}
+                  {isBriefingDisplay && <Clock className="h-4 w-4 text-amber-200 shrink-0" />}
                   <p className="text-sm text-white flex-1 line-clamp-2">{displayMessage}</p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setResponse(null);
-                    setShowBriefing(false);
-                  }}
-                >
+                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={e => {
+            e.stopPropagation();
+            setResponse(null);
+            setShowBriefing(false);
+          }}>
                   <RotateCcw className="h-3.5 w-3.5 text-white/70" />
                 </Button>
-              </div>
-            )}
-          </div>
-        )}
+              </div>}
+          </div>}
 
         {/* Input */}
         <form onSubmit={handleSubmit} className="flex gap-2 mb-3 mt-3">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={placeholder}
-            className="flex-1 bg-white/20 border-0 backdrop-blur-sm text-white placeholder:text-white/60 placeholder:text-xs focus-visible:ring-white/30"
-            disabled={isTyping || profileLoading || realStats.isLoading}
-          />
-          <Button 
-            type="submit" 
-            size="icon" 
-            disabled={!input.trim() || isTyping}
-            className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
-          >
+          <Input value={input} onChange={e => setInput(e.target.value)} placeholder={placeholder} className="flex-1 bg-white/20 border-0 backdrop-blur-sm text-white placeholder:text-white/60 placeholder:text-xs focus-visible:ring-white/30" disabled={isTyping || profileLoading || realStats.isLoading} />
+          <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm">
             <Send className="h-4 w-4" />
           </Button>
         </form>
 
         {/* Quick Prompts */}
         <div className="flex flex-wrap gap-1">
-          {quickPrompts.map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              className="text-xs px-1.5 text-white/70 hover:text-white transition-colors disabled:opacity-50"
-              onClick={() => handleQuickAsk(prompt)}
-              disabled={isTyping}
-            >
+          {quickPrompts.map(prompt => <button key={prompt} type="button" className="text-xs px-1.5 text-white/70 hover:text-white transition-colors disabled:opacity-50" onClick={() => handleQuickAsk(prompt)} disabled={isTyping}>
               #{prompt}
-            </button>
-          ))}
+            </button>)}
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 }
