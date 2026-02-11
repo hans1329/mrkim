@@ -17,6 +17,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useChat } from "@/contexts/ChatContext";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { Bell, Settings, Receipt, Users, Wallet, TrendingUp, FileText, CreditCard } from "lucide-react";
+import { ScrollAwareStickyHeader } from "@/components/layout/ScrollAwareStickyHeader";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -58,32 +60,50 @@ export default function Dashboard() {
   const greeting = userName ? `${userName}님` : "사장님";
 
   const mobileStickyHeader = isMobile ? (
-    <div className="sticky top-0 z-20 bg-gradient-to-r from-primary to-[hsl(230,70%,50%)] px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-3">
-      <div className="flex items-center justify-between">
-        <div className="cursor-pointer" onClick={() => navigate("/profile")}>
-          {profileLoading ? (
-            <Skeleton className="h-6 w-32 bg-white/20" />
-          ) : (
-            <h1 className="text-lg font-bold text-white">
-              안녕하세요, {greeting} 👋
-            </h1>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10" onClick={() => navigate("/notifications")}>
-            <div className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
-                2
-              </span>
+    <ScrollAwareStickyHeader>
+      {(scrolled) => (
+        <div className={cn(
+          "px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-3 transition-all duration-300",
+          scrolled
+            ? "bg-background shadow-md"
+            : "bg-transparent"
+        )}>
+          <div className="flex items-center justify-between">
+            <div className="cursor-pointer" onClick={() => navigate("/profile")}>
+              {profileLoading ? (
+                <Skeleton className={cn("h-6 w-32", scrolled ? "bg-muted" : "bg-white/20")} />
+              ) : (
+                <h1 className={cn(
+                  "text-lg font-bold transition-colors duration-300",
+                  scrolled ? "text-foreground" : "text-white"
+                )}>
+                  안녕하세요, {greeting} 👋
+                </h1>
+              )}
             </div>
-          </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10" onClick={() => navigate("/settings")}>
-            <Settings className="h-5 w-5" />
-          </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className={cn(
+                "h-9 w-9 transition-colors duration-300",
+                scrolled ? "text-foreground hover:bg-muted" : "text-white/80 hover:text-white hover:bg-white/10"
+              )} onClick={() => navigate("/notifications")}>
+                <div className="relative">
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
+                    2
+                  </span>
+                </div>
+              </Button>
+              <Button variant="ghost" size="icon" className={cn(
+                "h-9 w-9 transition-colors duration-300",
+                scrolled ? "text-foreground hover:bg-muted" : "text-white/80 hover:text-white hover:bg-white/10"
+              )} onClick={() => navigate("/settings")}>
+                <Settings className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </ScrollAwareStickyHeader>
   ) : undefined;
 
   return (
