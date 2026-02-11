@@ -268,7 +268,10 @@ export function useVoiceAgent() {
       return;
     }
 
+    // ★ 준비 시작 즉시 STT 차단 (에코/중복 방지)
     processingRef.current = true;
+    suppressSTTRef.current = true;
+    console.log("[STT] 🔇 Suppressed (from processing start)");
 
     const userMsg: VoiceMessage = { role: "user", text: transcript, timestamp: new Date() };
     messagesContextRef.current = [...messagesContextRef.current, userMsg];
@@ -276,9 +279,6 @@ export function useVoiceAgent() {
     saveMessageToDB("user", transcript);
 
     setStatus("processing");
-
-    suppressSTTRef.current = true;
-    console.log("[STT] 🔇 Suppressed (processing+speaking)");
 
     try {
       const aiResult = await queryAI(transcript);
