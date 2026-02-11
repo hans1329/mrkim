@@ -9,12 +9,12 @@ interface MainLayoutProps {
   subtitle?: string;
   showBackButton?: boolean;
   onBack?: () => void;
+  stickyHeader?: ReactNode;
 }
 
-export function MainLayout({ children, title, subtitle, showBackButton, onBack }: MainLayoutProps) {
+export function MainLayout({ children, title, subtitle, showBackButton, onBack, stickyHeader }: MainLayoutProps) {
   const isMobile = useIsMobile();
 
-  // PC에서는 3컬럼 레이아웃 사용
   if (!isMobile) {
     return (
       <PCLayout title={title} subtitle={subtitle}>
@@ -23,9 +23,8 @@ export function MainLayout({ children, title, subtitle, showBackButton, onBack }
     );
   }
 
-  // 모바일에서는 기존 레이아웃 사용
   return (
-    <AppLayout title={title} subtitle={subtitle} showBackButton={showBackButton} onBack={onBack}>
+    <AppLayout title={title} subtitle={subtitle} showBackButton={showBackButton} onBack={onBack} stickyHeader={stickyHeader}>
       {children}
     </AppLayout>
   );
