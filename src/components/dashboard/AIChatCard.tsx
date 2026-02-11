@@ -35,9 +35,6 @@ const getIncompleteSettingsMessages = (profile: any, secretaryName: string) => {
   if (!profile?.secretary_tone || profile?.secretary_tone === "polite") {
     messages.push("비서의 말투를 바꿔보세요!");
   }
-  if (!profile?.business_name) {
-    messages.push("사업장 정보를 등록해보세요!");
-  }
   return messages;
 };
 
