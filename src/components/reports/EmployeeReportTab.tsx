@@ -183,26 +183,26 @@ export function EmployeeReportTab() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">직원별 급여 현황</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-0 divide-y">
           {hasData ? (
             employeeSalaryData.map((employee) => (
               <div
                 key={employee.id}
-                className="flex items-center justify-between rounded-lg border p-3"
+                className="flex items-center justify-between py-2.5"
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                    <span className="text-sm font-medium">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+                    <span className="text-xs font-medium">
                       {employee.name.slice(0, 1)}
                     </span>
                   </div>
                   <div>
-                    <p className="font-medium">{employee.name}</p>
-                    <p className="text-xs text-muted-foreground">{employee.position}</p>
+                    <p className="text-sm font-medium">{employee.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{employee.position}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium">{formatCurrency(employee.salary)}</p>
+                  <p className="text-sm font-medium">{formatCurrency(employee.salary)}</p>
                   <Badge
                     variant={employee.insurance ? "default" : "secondary"}
                     className="text-[10px]"
