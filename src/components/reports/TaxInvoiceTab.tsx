@@ -125,7 +125,7 @@ export function TaxInvoiceTab() {
         <Card className="bg-muted/50 border-border/50">
           <CardContent className="p-4">
             <span className="text-sm text-muted-foreground">
-              {vatPayable >= 0 ? "부가세 납부" : "부가세 환급"}
+              {vatPayable >= 0 ? "부가세" : "환급"}
             </span>
             <p className={cn(
               "text-xl font-bold mt-1",
