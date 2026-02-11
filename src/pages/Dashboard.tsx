@@ -89,8 +89,8 @@ export default function Dashboard() {
             <Skeleton className={cn("h-6 w-32", scrolled ? "bg-muted" : "bg-white/20")} />
           ) : (
             <h1 className={cn(
-              "text-lg font-bold transition-colors duration-300",
-              scrolled ? "text-foreground" : "text-white"
+              "text-base font-bold transition-colors duration-300",
+              scrolled ? "text-foreground/80" : "text-white"
             )}>
               안녕하세요, {greeting} 👋
             </h1>
