@@ -498,12 +498,6 @@ export function useVoiceAgent() {
   // --- 세션 시작 ---
   const startSession = useCallback(async () => {
     if (status !== "idle" || permissionDenied) return;
-    
-    // 프로필 로딩 완료 전에는 시작하지 않음 (기본값 female 사용 방지)
-    if (!profile) {
-      console.warn("[Session] Profile not loaded yet, delaying start");
-      return;
-    }
 
     console.log("[Session] ▶ Starting voice session...");
 
@@ -518,11 +512,15 @@ export function useVoiceAgent() {
     consecutiveErrorsRef.current = 0;
 
     // ★ 핵심: 유저 제스처 컨텍스트 내에서 즉시 Audio 객체 생성
-    // 이렇게 해야 브라우저 자동재생 제한을 우회할 수 있음
-    const gestureAudio = new Audio();
-    gestureAudio.preload = "auto";
-    persistentAudioRef.current = gestureAudio;
-    console.log("[Session] Audio element created (gesture context) - will reuse for all TTS");
+    // 이미 있으면 재사용 (두 번째 세션 시작 시)
+    if (!persistentAudioRef.current) {
+      const gestureAudio = new Audio();
+      gestureAudio.preload = "auto";
+      persistentAudioRef.current = gestureAudio;
+      console.log("[Session] Audio element created (gesture context)");
+    } else {
+      console.log("[Session] Reusing existing audio element");
+    }
 
     // 말투에 맞는 인사말 생성 (받침 여부에 따라 조사 변경)
     const nameHasBatchim = hasBatchim(secretaryName);
@@ -617,7 +615,7 @@ export function useVoiceAgent() {
       audio.currentTime = 0;
       currentAudioRef.current = null;
     }
-    persistentAudioRef.current = null;
+    // persistentAudioRef는 유지 (재시작 시 제스처 컨텍스트 재사용)
 
     // Scribe 연결 해제
     disconnectScribe();
