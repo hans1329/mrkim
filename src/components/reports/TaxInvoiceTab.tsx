@@ -172,7 +172,7 @@ export function TaxInvoiceTab() {
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 )}
               >
-                {item.label} ({item.count})
+                {item.label} <span className="text-muted-foreground/50 font-normal">{item.count}</span>
               </button>
             ))}
           </div>
