@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useConnection } from "@/contexts/ConnectionContext";
 
@@ -8,11 +8,14 @@ import { useConnection } from "@/contexts/ConnectionContext";
  */
 export function useNotificationGenerator() {
   const { isLoggedIn, userId, isAnyConnected } = useConnection();
-  const hasRun = useRef(false);
 
   useEffect(() => {
-    if (!isLoggedIn || !userId || hasRun.current) return;
-    hasRun.current = true;
+    if (!isLoggedIn || !userId) return;
+
+    // 전역 플래그로 StrictMode 이중 실행 방지
+    const key = `notif_gen_${userId}_${new Date().toISOString().split("T")[0]}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
 
     generateNotifications(userId, isAnyConnected);
   }, [isLoggedIn, userId, isAnyConnected]);
