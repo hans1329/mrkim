@@ -93,45 +93,43 @@ function RealStatCard({
   return (
     <Card className={cn("overflow-hidden transition-shadow", variantStyles[variant])}>
       <CardContent className="p-3">
-        <div className="flex items-start gap-2.5">
+        <div className="flex items-center gap-2 mb-1.5">
           <div className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
             iconVariantStyles[variant]
           )}>
-            <Icon className="h-4 w-4" />
+            <Icon className="h-3.5 w-3.5" />
           </div>
-          <div className="flex-1 min-w-0 space-y-0.5">
-            <p className={cn(
-              "text-[11px] font-medium truncate",
-              variant === "default" ? "text-muted-foreground" : "opacity-80"
-            )}>
-              {title}
-            </p>
-            <p className="text-[13px] font-bold leading-tight">{value}</p>
-            {(subtitle || trend) && (
-              <div className="flex items-center gap-1">
-                {trend && (
-                  <span className={cn(
-                    "text-[10px] font-semibold",
-                    variant === "default" 
-                      ? (trend.isPositive ? "text-success" : "text-destructive")
-                      : "text-current opacity-90"
-                  )}>
-                    {trend.isPositive ? "↑" : "↓"}{trend.value}%
-                  </span>
-                )}
-                {subtitle && (
-                  <span className={cn(
-                    "text-[10px] truncate",
-                    variant === "default" ? "text-muted-foreground" : "opacity-70"
-                  )}>
-                    {subtitle}
-                  </span>
-                )}
-              </div>
+          <p className={cn(
+            "text-[11px] font-medium truncate",
+            variant === "default" ? "text-muted-foreground" : "opacity-80"
+          )}>
+            {title}
+          </p>
+        </div>
+        <p className="text-lg font-bold leading-tight pl-0.5">{value}</p>
+        {(subtitle || trend) && (
+          <div className="flex items-center gap-1 mt-0.5 pl-0.5">
+            {trend && (
+              <span className={cn(
+                "text-[10px] font-semibold",
+                variant === "default" 
+                  ? (trend.isPositive ? "text-success" : "text-destructive")
+                  : "text-current opacity-90"
+              )}>
+                {trend.isPositive ? "↑" : "↓"}{trend.value}%
+              </span>
+            )}
+            {subtitle && (
+              <span className={cn(
+                "text-[10px] truncate",
+                variant === "default" ? "text-muted-foreground" : "opacity-70"
+              )}>
+                {subtitle}
+              </span>
             )}
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
