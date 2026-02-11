@@ -124,7 +124,7 @@ export function ConnectorStatusCard() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium truncate">{connector.name}</p>
+                  <p className="text-sm font-medium">{connector.name}</p>
                   {isConnected ? (
                     <Badge variant={statusInfo!.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0">
                       {StatusIcon && <StatusIcon className="h-2.5 w-2.5" />}
@@ -152,15 +152,14 @@ export function ConnectorStatusCard() {
                 {isConnected || instance ? (
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs text-muted-foreground hover:text-primary"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground"
                     onClick={() => {
                       const step = CATEGORY_TO_STEP[connector.category];
                       if (step) navigate(`/onboarding?step=${step}`);
                     }}
                   >
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    재연동
+                    <RefreshCw className="h-3.5 w-3.5" />
                   </Button>
                 ) : (
                   <Badge
