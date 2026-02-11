@@ -143,27 +143,15 @@ export function TaxInvoiceTab() {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
-              <Receipt className="h-4 w-4" />
               세금계산서 목록
             </CardTitle>
-            <div className="flex items-center gap-2">
-              {lastSyncText && (
-                <span className="text-xs text-muted-foreground hidden sm:flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {lastSyncText}
-                </span>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={syncTaxInvoices}
-                disabled={syncing}
-                className="h-8 gap-1.5 text-xs"
-              >
-                <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
-                {syncing ? "동기화 중..." : "동기화"}
-              </Button>
-            </div>
+            <button
+              onClick={syncTaxInvoices}
+              disabled={syncing}
+              className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
+            </button>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
