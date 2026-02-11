@@ -105,8 +105,8 @@ export default function Dashboard() {
           </div>
 
           {/* 퀵 액션 가로 스크롤 */}
-          <div className="px-4 -mt-3 relative z-10">
-            <div className="flex gap-3 overflow-x-auto scrollbar-thin pb-2 -mx-1 px-1">
+          <div className="px-4 mt-4 relative z-10">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-1 px-1">
               {quickActions.map((action) => (
                 <button
                   key={action.label}
