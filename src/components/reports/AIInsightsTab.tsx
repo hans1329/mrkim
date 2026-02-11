@@ -179,7 +179,7 @@ export function AIInsightsTab() {
             </p>
             <Button
               variant="default"
-              className="mt-4"
+              className="mt-4 rounded-full"
               onClick={handleRefresh}
               disabled={generateInsights.isPending}
             >
