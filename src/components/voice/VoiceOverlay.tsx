@@ -248,7 +248,7 @@ export function VoiceOverlay() {
             {/* 활성 상태에서 종료/중단 안내 */}
             {isActive && !isProcessing && (
               <p className="text-white/50 text-xs mt-4">
-                {isSpeaking ? "마이크를 눌러 AI 발화를 중단할 수 있어요" : "마이크를 다시 누르면 종료됩니다"}
+                {isSpeaking ? "마이크를 눌러 비서의 보고를 중단할 수 있어요" : "마이크를 다시 누르면 종료됩니다"}
               </p>
             )}
           </>
