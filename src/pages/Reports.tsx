@@ -33,11 +33,11 @@ export default function Reports() {
     <MainLayout title="리포트" subtitle="경영 현황 분석" showBackButton>
       <Tabs defaultValue={defaultTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-5 mb-4 h-11 bg-transparent p-0">
-          <TabsTrigger value="sales" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:font-bold data-[state=active]:shadow-none">매출</TabsTrigger>
-          <TabsTrigger value="expense" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:font-bold data-[state=active]:shadow-none">지출</TabsTrigger>
-          <TabsTrigger value="tax" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:font-bold data-[state=active]:shadow-none">세금계산서</TabsTrigger>
-          <TabsTrigger value="employee" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:font-bold data-[state=active]:shadow-none">직원</TabsTrigger>
-          <TabsTrigger value="insights" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:font-bold data-[state=active]:shadow-none">AI분석</TabsTrigger>
+          <TabsTrigger value="sales" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none">매출</TabsTrigger>
+          <TabsTrigger value="expense" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none">지출</TabsTrigger>
+          <TabsTrigger value="tax" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none">세금계산서</TabsTrigger>
+          <TabsTrigger value="employee" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none">직원</TabsTrigger>
+          <TabsTrigger value="insights" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none">AI분석</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sales">
