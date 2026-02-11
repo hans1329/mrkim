@@ -212,8 +212,6 @@ export function useVoiceAgent() {
       content: m.text,
     }));
 
-    recentContext.push({ role: "user", content: userText });
-
     const response = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
