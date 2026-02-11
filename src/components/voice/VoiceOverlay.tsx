@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Mic, Sparkles, MessageCircle, Loader2, AlertCircle } from "lucide-react";
 import { VoiceDataVisualization } from "@/components/chat/DataVisualization";
@@ -237,24 +237,12 @@ export function VoiceOverlay() {
               </div>
             )}
 
-            {/* 빠른 질문 제안 칩 */}
+            {/* 빠른 질문 제안 칩 - AI 응답의 후속 질문 우선, 없으면 기본 제안 */}
             {isActive && !isProcessing && !isSpeaking && (
-              <div className="mt-4 flex flex-wrap justify-center gap-2 max-w-sm">
-                {[
-                  "오늘 매출 알려줘",
-                  "이번 달 지출 현황",
-                  "직원 급여 정리해줘",
-                  "세금 언제 내야 해?",
-                ].map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() => sendTextDirectly(suggestion)}
-                    className="px-3 py-1.5 rounded-full bg-white/20 text-white/90 text-xs hover:bg-white/30 active:bg-white/40 transition-colors"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
+              <DynamicSuggestionChips
+                lastMessage={lastMessage}
+                onSelect={sendTextDirectly}
+              />
             )}
 
             {/* 활성 상태에서 종료/중단 안내 */}
@@ -278,6 +266,84 @@ export function VoiceOverlay() {
           텍스트로 대화하기
         </Button>
       </div>
+    </div>
+  );
+}
+
+// --- 동적 제안 칩 컴포넌트 ---
+const DEFAULT_SUGGESTIONS = [
+  "오늘 매출 알려줘",
+  "이번 달 지출 현황",
+  "직원 급여 정리해줘",
+  "세금 언제 내야 해?",
+];
+
+/** AI 응답에서 후속 질문을 추출하여 제안 칩으로 변환 */
+function extractFollowUpSuggestions(text: string): string[] {
+  const suggestions: string[] = [];
+  // 한국어 질문 패턴: ~할까요?, ~볼까요?, ~드릴까요?, ~있으세요?, ~싶으세요? 등
+  const questionPattern = /([^.!?\n]*(?:할까요|볼까요|드릴까요|있으세요|싶으세요|알아볼까요|확인해볼까요|정리해드릴까요|비교해볼까요|알려드릴까요)\??)/g;
+  let match;
+  while ((match = questionPattern.exec(text)) !== null) {
+    let q = match[1].trim();
+    // "혹시", "그리고" 등 접속사 제거하고 핵심만 추출
+    q = q.replace(/^(혹시|그리고|그런데|참고로|아,?\s*그리고)\s*/g, "").trim();
+    // 질문을 명령형으로 변환: "수입 내역도 확인해볼까요?" -> "수입 내역 확인해줘"
+    const imperative = convertToImperative(q);
+    if (imperative && imperative.length >= 4 && imperative.length <= 30) {
+      suggestions.push(imperative);
+    }
+  }
+  return suggestions;
+}
+
+function convertToImperative(question: string): string {
+  return question
+    .replace(/\?$/, "")
+    .replace(/도\s+/, " ")
+    .replace(/확인해볼까요/, "확인해줘")
+    .replace(/알아볼까요/, "알아봐줘")
+    .replace(/정리해드릴까요/, "정리해줘")
+    .replace(/비교해볼까요/, "비교해줘")
+    .replace(/알려드릴까요/, "알려줘")
+    .replace(/해볼까요/, "해줘")
+    .replace(/할까요/, "해줘")
+    .replace(/볼까요/, "봐줘")
+    .replace(/드릴까요/, "해줘")
+    .replace(/있으세요/, "알려줘")
+    .replace(/싶으세요/, "해줘")
+    .trim();
+}
+
+function DynamicSuggestionChips({
+  lastMessage,
+  onSelect,
+}: {
+  lastMessage: { role: string; text: string } | null;
+  onSelect: (text: string) => void;
+}) {
+  const suggestions = useMemo(() => {
+    if (lastMessage?.role === "agent" && lastMessage.text) {
+      const extracted = extractFollowUpSuggestions(lastMessage.text);
+      if (extracted.length > 0) {
+        // 추출된 후속 질문 + 기본 제안 중 일부
+        return [...extracted, ...DEFAULT_SUGGESTIONS.slice(0, 4 - extracted.length)];
+      }
+    }
+    return DEFAULT_SUGGESTIONS;
+  }, [lastMessage]);
+
+  return (
+    <div className="mt-4 flex flex-wrap justify-center gap-2 max-w-sm">
+      {suggestions.map((suggestion) => (
+        <button
+          key={suggestion}
+          onClick={() => onSelect(suggestion)}
+          className="px-3 py-1.5 rounded-full bg-white/20 text-white/90 text-xs hover:bg-white/30 active:bg-white/40 transition-colors"
+        >
+          {suggestion}
+        </button>
+      ))}
     </div>
   );
 }
