@@ -124,7 +124,7 @@ export default function Dashboard() {
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-2xl" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/4 blur-xl" />
 
-            <p className="text-xs text-white/70 mb-3">오늘도 김비서가 도와드릴게요</p>
+            
             <div className="relative">
               <AIChatCard />
             </div>
