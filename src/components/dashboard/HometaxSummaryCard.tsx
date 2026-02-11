@@ -209,7 +209,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
               size="sm" 
               onClick={syncTaxInvoices}
               disabled={syncing}
-              className="gap-1.5 h-8 text-xs"
+              className="gap-1.5 h-8 text-xs rounded-full"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
               지금 동기화하기
