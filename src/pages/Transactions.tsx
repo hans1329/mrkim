@@ -22,7 +22,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw } from "lucide-react";
+import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { TransactionClassifier } from "@/components/transactions/TransactionClassifier";
 import { useTransactions, useTransactionStats, useAddTransaction, type TransactionInsert } from "@/hooks/useTransactions";
@@ -55,18 +56,24 @@ export default function Transactions() {
   const cardSync = useCardSync();
   const bankSync = useBankSync();
 
+  const navigate = useNavigate();
+  const cardConnectedId = localStorage.getItem("codef_connected_id");
+  const bankConnectedId = localStorage.getItem("codef_bank_connected_id");
+
   const handleCardSync = () => {
     if (!profile?.card_connected) {
       toast.error("먼저 카드를 연동해주세요");
       return;
     }
 
-    const connectedId = localStorage.getItem("codef_connected_id");
+    const connectedId = cardConnectedId;
     const cardCompanyId = localStorage.getItem("codef_card_company") || "shinhan";
     const cardCompanyName = localStorage.getItem("codef_card_company_name") || "신한카드";
 
     if (!connectedId) {
-      toast.error("카드 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.");
+      toast.error("카드 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.", {
+        action: { label: "재연동", onClick: () => navigate("/onboarding") },
+      });
       return;
     }
 
@@ -96,13 +103,15 @@ export default function Transactions() {
       return;
     }
 
-    const connectedId = localStorage.getItem("codef_bank_connected_id");
+    const connectedId = bankConnectedId;
     const bankId = localStorage.getItem("codef_bank_id") || "shinhan";
     const bankName = localStorage.getItem("codef_bank_name") || "신한은행";
     const accountNo = localStorage.getItem("codef_bank_account_no") || "";
 
     if (!connectedId) {
-      toast.error("은행 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.");
+      toast.error("은행 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.", {
+        action: { label: "재연동", onClick: () => navigate("/onboarding") },
+      });
       return;
     }
 
@@ -181,31 +190,55 @@ export default function Transactions() {
               {isCardConnected && (
                 <div className="flex items-center justify-between rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
                   <p className="text-xs font-medium">💳 카드</p>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleCardSync}
-                    disabled={cardSync.isPending}
-                    className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10"
-                  >
-                    <RefreshCw className={cn("h-3 w-3", cardSync.isPending && "animate-spin")} />
-                    {cardSync.isPending ? "..." : "동기화"}
-                  </Button>
+                  {cardConnectedId ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleCardSync}
+                      disabled={cardSync.isPending}
+                      className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                    >
+                      <RefreshCw className={cn("h-3 w-3", cardSync.isPending && "animate-spin")} />
+                      {cardSync.isPending ? "..." : "동기화"}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => navigate("/onboarding")}
+                      className="h-6 px-2 gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      재연동
+                    </Button>
+                  )}
                 </div>
               )}
               {isAccountConnected && (
                 <div className="flex items-center justify-between rounded-lg bg-green-500/5 border border-green-500/20 px-3 py-2">
                   <p className="text-xs font-medium">🏦 계좌</p>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleBankSync}
-                    disabled={bankSync.isPending}
-                    className="h-6 px-2 gap-1 text-xs text-green-600 hover:text-green-600 hover:bg-green-500/10"
-                  >
-                    <RefreshCw className={cn("h-3 w-3", bankSync.isPending && "animate-spin")} />
-                    {bankSync.isPending ? "..." : "동기화"}
-                  </Button>
+                  {bankConnectedId ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleBankSync}
+                      disabled={bankSync.isPending}
+                      className="h-6 px-2 gap-1 text-xs text-green-600 hover:text-green-600 hover:bg-green-500/10"
+                    >
+                      <RefreshCw className={cn("h-3 w-3", bankSync.isPending && "animate-spin")} />
+                      {bankSync.isPending ? "..." : "동기화"}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => navigate("/onboarding")}
+                      className="h-6 px-2 gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      재연동
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
