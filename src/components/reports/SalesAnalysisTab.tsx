@@ -171,7 +171,7 @@ export function SalesAnalysisTab() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">월별 매출 추이</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-0 pb-4">
           {hasData ? (
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -225,7 +225,7 @@ export function SalesAnalysisTab() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">요일별 평균 매출</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-0 pb-4">
           {hasData ? (
             <div className="h-[180px]">
               <ResponsiveContainer width="100%" height="100%">
