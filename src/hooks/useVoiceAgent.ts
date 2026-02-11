@@ -504,7 +504,7 @@ export function useVoiceAgent() {
     abortRef.current = false;
     sessionActiveRef.current = true;
     processingRef.current = false;
-    suppressSTTRef.current = false;
+    suppressSTTRef.current = true; // ★ 인사말 재생 끝날 때까지 STT 차단
     pendingTranscriptRef.current = "";
     messagesContextRef.current = [];
     setLastMessage(null);
@@ -580,6 +580,10 @@ export function useVoiceAgent() {
 
       console.log("[Session] Greeting done, interrupted:", interrupted, "scribe:", scribeOk);
 
+      // ★ 인사말 재생 완료 후 STT 억제 해제
+      suppressSTTRef.current = false;
+      console.log("[STT] 🔊 Greeting done, STT enabled");
+
       if (!abortRef.current && !interrupted) {
         setStatus(scribeOk ? "listening" : "idle");
         if (!scribeOk) {
@@ -589,6 +593,7 @@ export function useVoiceAgent() {
     } else {
       // TTS 실패 시 바로 Scribe 연결
       setIsTTSPreparing(false);
+      suppressSTTRef.current = false;
       setStatus("listening");
       const scribeOk = await connectScribe();
       if (!scribeOk) {
@@ -652,7 +657,7 @@ export function useVoiceAgent() {
   }, []);
 
   // --- TTS 중단 후 듣기 모드 전환 (세션 유지) ---
-  const interruptAndListen = useCallback(() => {
+  const interruptAndListen = useCallback(async () => {
     const audio = currentAudioRef.current;
     if (audio) {
       audio.pause();
@@ -663,10 +668,16 @@ export function useVoiceAgent() {
     setIsTTSPreparing(false);
     processingRef.current = false;
     pendingTranscriptRef.current = "";
+    suppressSTTRef.current = false;
     if (sessionActiveRef.current) {
       setStatus("listening");
+      // ★ Scribe가 끊겨있으면 재연결
+      if (!scribeConnectionRef.current) {
+        console.log("[Scribe] 🔊 Reconnecting after interrupt...");
+        await connectScribe();
+      }
     }
-  }, []);
+  }, [connectScribe]);
 
   // --- 텍스트 직접 전송 (제안 칩 탭 시 사용) ---
   const sendTextDirectly = useCallback(async (text: string) => {
