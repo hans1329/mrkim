@@ -131,19 +131,19 @@ export function SalesAnalysisTab() {
         <Card>
           <CardContent className="p-3">
             <span className="text-xs text-muted-foreground">총 매출</span>
-            <p className="mt-1 text-base font-bold">{formatCurrency(stats.totalRevenue)}</p>
+            <p className="mt-1 text-base font-bold text-primary">{formatCurrency(stats.totalRevenue)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
             <span className="text-xs text-muted-foreground">월 평균</span>
-            <p className="mt-1 text-base font-bold">{formatCurrency(stats.avgMonthly)}</p>
+            <p className="mt-1 text-base font-bold text-chart-1">{formatCurrency(stats.avgMonthly)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
             <span className="text-xs text-muted-foreground">카드 매출</span>
-            <p className="mt-1 text-base font-bold">{formatCurrency(stats.totalCard)}</p>
+            <p className="mt-1 text-base font-bold text-chart-2">{formatCurrency(stats.totalCard)}</p>
             <p className="text-xs text-muted-foreground">
               {stats.totalRevenue > 0
                 ? Math.round((stats.totalCard / stats.totalRevenue) * 100)
@@ -155,7 +155,7 @@ export function SalesAnalysisTab() {
         <Card>
           <CardContent className="p-3">
             <span className="text-xs text-muted-foreground">현금/이체 매출</span>
-            <p className="mt-1 text-base font-bold">{formatCurrency(stats.totalCash)}</p>
+            <p className="mt-1 text-base font-bold text-chart-3">{formatCurrency(stats.totalCash)}</p>
             <p className="text-xs text-muted-foreground">
               {stats.totalRevenue > 0
                 ? Math.round((stats.totalCash / stats.totalRevenue) * 100)
