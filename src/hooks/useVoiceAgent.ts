@@ -20,8 +20,58 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const CHAT_URL = `${SUPABASE_URL}/functions/v1/chat-ai`;
 const TTS_URL = `${SUPABASE_URL}/functions/v1/elevenlabs-tts`;
 
+/** 숫자를 한국어 읽기로 변환 (예: 4431570 → "사백사십삼만 천오백칠십") */
+function numberToKorean(num: number): string {
+  if (num === 0) return "영";
+  const units = ["", "만", "억", "조"];
+  const smallUnits = ["", "십", "백", "천"];
+  const digits = ["", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"];
+
+  let result = "";
+  let unitIndex = 0;
+  let n = Math.abs(num);
+
+  while (n > 0) {
+    const chunk = n % 10000;
+    if (chunk > 0) {
+      let chunkStr = "";
+      let c = chunk;
+      for (let i = 0; i < 4; i++) {
+        const d = c % 10;
+        if (d > 0) {
+          // "일십", "일백", "일천" → "십", "백", "천" (일 생략)
+          const digitStr = (d === 1 && i > 0) ? "" : digits[d];
+          chunkStr = digitStr + smallUnits[i] + chunkStr;
+        }
+        c = Math.floor(c / 10);
+      }
+      result = chunkStr + units[unitIndex] + " " + result;
+    }
+    n = Math.floor(n / 10000);
+    unitIndex++;
+  }
+
+  return (num < 0 ? "마이너스 " : "") + result.trim();
+}
+
+/** 텍스트 내 숫자+원/건/명/% 패턴을 한글 독음으로 변환 */
+function convertNumbersForTTS(text: string): string {
+  // 쉼표 포함 숫자 + 단위(원, 건, 명, 개, %) 패턴
+  return text.replace(/([\d,]+)\s*(원|건|명|개|%|만원|억원)/g, (_, numStr, unit) => {
+    const num = parseInt(numStr.replace(/,/g, ""), 10);
+    if (isNaN(num)) return _;
+    
+    // "만원", "억원" 단위는 이미 큰 단위 포함
+    if (unit === "만원") return numberToKorean(num * 10000) + "원";
+    if (unit === "억원") return numberToKorean(num * 100000000) + "원";
+    if (unit === "%") return numberToKorean(num) + "퍼센트";
+    
+    return numberToKorean(num) + unit;
+  });
+}
+
 function cleanForTTS(text: string): string {
-  return text
+  let cleaned = text
     .replace(/#{1,6}\s?/g, "")                          // 마크다운 헤더
     .replace(/\*{1,2}([^*]+)\*{1,2}/g, "$1")             // 볼드/이탤릭
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")              // 링크
@@ -29,11 +79,15 @@ function cleanForTTS(text: string): string {
     .replace(/^\d+\.\s+/gm, "")                           // 번호 목록 (1. 2. 3.)
     .replace(/^[-•*]\s+/gm, "")                           // 불릿 목록
     .replace(/\p{Extended_Pictographic}/gu, "")            // 모든 이모지 제거
-    .replace(/(\d),(\d)/g, "$1$2")                         // 숫자 내 쉼표 제거 (4,431,570 → 4431570)
     .replace(/\n{2,}/g, " ")                              // 여러 줄바꿈 → 공백
     .replace(/\n/g, " ")                                  // 단일 줄바꿈 → 공백
     .replace(/\s{2,}/g, " ")                              // 연속 공백 정리
     .trim();
+  
+  // 숫자+단위를 한글 독음으로 변환
+  cleaned = convertNumbersForTTS(cleaned);
+  
+  return cleaned;
 }
 
 /** 한국어 받침 여부 확인 (마지막 글자가 받침이 있는지) */
