@@ -40,7 +40,7 @@ export function BottomNav() {
             activeClassName="text-primary"
           >
             <item.icon className="h-5 w-5" />
-            <span className="text-[10px] font-medium">{item.title}</span>
+            <span className="text-[11px] font-normal">{item.title}</span>
           </NavLink>
         ))}
 
@@ -79,7 +79,7 @@ export function BottomNav() {
             activeClassName="text-primary"
           >
             <item.icon className="h-5 w-5" />
-            <span className="text-[10px] font-medium">{item.title}</span>
+            <span className="text-[11px] font-normal">{item.title}</span>
           </NavLink>
         ))}
       </div>
