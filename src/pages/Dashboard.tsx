@@ -114,7 +114,7 @@ export default function Dashboard() {
   ) : undefined;
 
   return (
-    <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요" stickyHeader={mobileHeader}>
+    <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요!" stickyHeader={mobileHeader}>
       {/* 모바일 전용 네이티브 홈 */}
       {isMobile ? (
         <div ref={scrollRef}>
