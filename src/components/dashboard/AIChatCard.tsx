@@ -271,7 +271,7 @@ export function AIChatCard() {
   return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/15 backdrop-blur-md border-white/20" : "bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] border-primary/30"}`}>
       <CardContent className="p-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <div className="relative">
               <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors overflow-hidden">
