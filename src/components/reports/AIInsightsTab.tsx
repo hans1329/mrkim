@@ -173,8 +173,8 @@ export function AIInsightsTab() {
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
             <Sparkles className="mx-auto h-10 w-10 text-muted-foreground/50" />
-            <p className="mt-4 font-medium">AI 분석 결과가 없습니다</p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-4 text-sm font-medium">AI 분석 결과가 없습니다</p>
+            <p className="mt-1 text-xs text-muted-foreground">
               '갱신' 버튼을 눌러 경영 인사이트를 생성해보세요
             </p>
             <Button
