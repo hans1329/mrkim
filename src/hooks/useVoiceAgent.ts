@@ -63,6 +63,7 @@ export function useVoiceAgent() {
   const persistentAudioRef = useRef<HTMLAudioElement | null>(null);
   // ScribeRealtime 연결을 ref로 관리 (React 훅 아님!)
   const scribeConnectionRef = useRef<RealtimeConnection | null>(null);
+  const suppressSTTRef = useRef(false);
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
@@ -257,6 +258,13 @@ export function useVoiceAgent() {
 
     setStatus("processing");
 
+    // ★ AI 처리+TTS 재생 동안 마이크 트랙을 비활성화하여 STT 입력 차단
+    const connection = scribeConnectionRef.current;
+    const audioCleanup = (connection as any)?._audioCleanup;
+    // MediaStreamTrack을 비활성화하는 대신 ref 플래그로 관리
+    suppressSTTRef.current = true;
+    console.log("[STT] 🔇 Suppressed (processing+speaking)");
+
     try {
       const aiResult = await queryAI(transcript);
 
@@ -270,6 +278,10 @@ export function useVoiceAgent() {
       await fetchAndPlayTTS(aiResult.response, () => {
         setLastMessage(agentMsg);
       });
+
+      // ★ TTS 재생 완료 후 STT 다시 활성화
+      suppressSTTRef.current = false;
+      console.log("[STT] 🔊 Resumed (listening)");
 
       if (pendingTranscriptRef.current && sessionActiveRef.current) {
         const pending = pendingTranscriptRef.current;
@@ -296,6 +308,7 @@ export function useVoiceAgent() {
       }
     } finally {
       processingRef.current = false;
+      suppressSTTRef.current = false;
     }
   }, [queryAI, fetchAndPlayTTS, saveMessageToDB]);
 
@@ -331,7 +344,8 @@ export function useVoiceAgent() {
 
       connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data: PartialTranscriptMessage) => {
         if (data.text && sessionActiveRef.current) {
-          // TTS 재생 중이 아닐 때만 UI 업데이트
+          // processing/speaking 중이면 무시
+          if (suppressSTTRef.current) return;
           if (!currentAudioRef.current) {
             setLastMessage({ role: "user", text: data.text, timestamp: new Date() });
           }
@@ -342,10 +356,9 @@ export function useVoiceAgent() {
         if (data.text && sessionActiveRef.current) {
           console.log("[Scribe] Committed:", data.text);
 
-          // TTS 재생 중에는 스피커→마이크 에코가 사용자 발화로 오인식되므로 무시
-          // (TTS 끝난 후 자동으로 listening 모드로 전환됨)
-          if (currentAudioRef.current) {
-            console.log("[Scribe] ⏭ Ignoring during TTS playback (echo prevention):", data.text);
+          // processing/speaking 중이면 모두 무시
+          if (suppressSTTRef.current) {
+            console.log("[Scribe] ⏭ Ignoring during processing/speaking:", data.text);
             return;
           }
 
