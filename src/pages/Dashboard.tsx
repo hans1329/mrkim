@@ -62,66 +62,62 @@ export default function Dashboard() {
   const [scrolled, setScrolled] = useState(false);
   const scrollRef = useCallback((node: HTMLDivElement | null) => {
     if (!node) return;
-    // 스크롤 컨테이너 찾기 (overflow-auto가 있는 부모)
-    let scrollParent: HTMLElement | null = node.parentElement;
-    while (scrollParent) {
-      const overflow = getComputedStyle(scrollParent).overflowY;
-      if (overflow === "auto" || overflow === "scroll") break;
-      scrollParent = scrollParent.parentElement;
-    }
-    if (!scrollParent) return;
-    const handleScroll = () => setScrolled(scrollParent!.scrollTop > 20);
-    scrollParent.addEventListener("scroll", handleScroll, { passive: true });
+    const scrollContainer = document.getElementById("app-scroll-container");
+    if (!scrollContainer) return;
+    const handleScroll = () => setScrolled(scrollContainer.scrollTop > 20);
+    scrollContainer.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
   }, []);
 
+  // 모바일 헤더를 stickyHeader prop으로 분리하여 스크롤 컨테이너 직속 자식으로 렌더링
+  const mobileHeader = isMobile ? (
+    <div className={cn(
+      "sticky top-0 z-30 px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-3 transition-all duration-300",
+      scrolled
+        ? "bg-background/95 backdrop-blur-md shadow-md"
+        : "bg-transparent"
+    )}>
+      <div className="flex items-center justify-between">
+        <div className="cursor-pointer" onClick={() => navigate("/profile")}>
+          {profileLoading ? (
+            <Skeleton className={cn("h-6 w-32", scrolled ? "bg-muted" : "bg-white/20")} />
+          ) : (
+            <h1 className={cn(
+              "text-lg font-bold transition-colors duration-300",
+              scrolled ? "text-foreground" : "text-white"
+            )}>
+              안녕하세요, {greeting} 👋
+            </h1>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className={cn(
+            "h-9 w-9 transition-colors duration-300",
+            scrolled ? "text-foreground hover:bg-muted" : "text-white/80 hover:text-white hover:bg-white/10"
+          )} onClick={() => navigate("/notifications")}>
+            <div className="relative">
+              <Bell className="h-5 w-5" />
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
+                2
+              </span>
+            </div>
+          </Button>
+          <Button variant="ghost" size="icon" className={cn(
+            "h-9 w-9 transition-colors duration-300",
+            scrolled ? "text-foreground hover:bg-muted" : "text-white/80 hover:text-white hover:bg-white/10"
+          )} onClick={() => navigate("/settings")}>
+            <Settings className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  ) : undefined;
+
   return (
-    <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요">
+    <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요" stickyHeader={mobileHeader}>
       {/* 모바일 전용 네이티브 홈 */}
       {isMobile ? (
         <div ref={scrollRef}>
-          {/* 고정 헤더 - absolute로 콘텐츠 위에 겹침 */}
-          <div className={cn(
-            "sticky top-0 z-30 px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-3 transition-all duration-300",
-            scrolled
-              ? "bg-background/95 backdrop-blur-md shadow-md"
-              : "bg-transparent"
-          )}>
-            <div className="flex items-center justify-between">
-              <div className="cursor-pointer" onClick={() => navigate("/profile")}>
-                {profileLoading ? (
-                  <Skeleton className={cn("h-6 w-32", scrolled ? "bg-muted" : "bg-white/20")} />
-                ) : (
-                  <h1 className={cn(
-                    "text-lg font-bold transition-colors duration-300",
-                    scrolled ? "text-foreground" : "text-white"
-                  )}>
-                    안녕하세요, {greeting} 👋
-                  </h1>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className={cn(
-                  "h-9 w-9 transition-colors duration-300",
-                  scrolled ? "text-foreground hover:bg-muted" : "text-white/80 hover:text-white hover:bg-white/10"
-                )} onClick={() => navigate("/notifications")}>
-                  <div className="relative">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
-                      2
-                    </span>
-                  </div>
-                </Button>
-                <Button variant="ghost" size="icon" className={cn(
-                  "h-9 w-9 transition-colors duration-300",
-                  scrolled ? "text-foreground hover:bg-muted" : "text-white/80 hover:text-white hover:bg-white/10"
-                )} onClick={() => navigate("/settings")}>
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
           {/* 히어로 영역 - 헤더 뒤로 확장 */}
           <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] -mt-[60px] pt-[60px] px-5 pb-8">
             {/* 배경 데코 */}
