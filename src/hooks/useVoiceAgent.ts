@@ -133,15 +133,9 @@ export function useVoiceAgent() {
     (audioBlob: Blob, onPlayStarted?: () => void): Promise<{ interrupted: boolean }> => {
       return new Promise((resolve) => {
         const url = URL.createObjectURL(audioBlob);
-        // 첫 재생은 제스처 컨텍스트 Audio 사용, 이후는 새 Audio 생성
-        // (재사용 시 일부 브라우저에서 시스템 볼륨 무시 이슈)
-        let audio: HTMLAudioElement;
-        if (persistentAudioRef.current) {
-          audio = persistentAudioRef.current;
-          persistentAudioRef.current = null; // 첫 재생 후 소진
-        } else {
-          audio = new Audio();
-        }
+        // 모바일 자동재생 정책 대응: persistent audio를 항상 재사용
+        // (소진하지 않고 계속 같은 엘리먼트 사용 → 제스처 컨텍스트 유지)
+        const audio = persistentAudioRef.current || new Audio();
         audio.src = url;
         currentAudioRef.current = audio;
 
