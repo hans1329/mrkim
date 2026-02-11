@@ -49,7 +49,7 @@ const STATUS_CONFIG = {
 
 export function ConnectorStatusCard() {
   const { data: connectors, isLoading } = useConnectorStatus();
-  const { hometaxConnected, cardConnected, accountConnected } = useConnection();
+  const { hometaxConnected, cardConnected, accountConnected, profile } = useConnection();
   const navigate = useNavigate();
 
   // profiles fallback: connector_instances가 없을 때 카테고리별 연동 상태
@@ -57,6 +57,13 @@ export function ConnectorStatusCard() {
     hometax: hometaxConnected,
     card: cardConnected,
     bank: accountConnected,
+  };
+
+  // profiles fallback: 연동 시점
+  const profileConnectedAt: Record<string, string | null> = {
+    hometax: profile?.hometax_connected_at || null,
+    card: profile?.card_connected_at || null,
+    bank: profile?.account_connected_at || null,
   };
 
   if (isLoading) {
@@ -141,8 +148,10 @@ export function ConnectorStatusCard() {
               <div className="flex items-center justify-between pl-[42px]">
                 <p className="text-[10px] text-muted-foreground">
                   {instance?.last_sync_at
-                    ? formatDistanceToNow(new Date(instance.last_sync_at), { addSuffix: true, locale: ko })
-                    : isConnected ? "동기화 기록 없음" : "미연동"}
+                    ? formatDistanceToNow(new Date(instance.last_sync_at), { addSuffix: true, locale: ko }) + " 동기화"
+                    : isFallbackConnected && profileConnectedAt[connector.category]
+                      ? formatDistanceToNow(new Date(profileConnectedAt[connector.category]!), { addSuffix: true, locale: ko }) + " 연동"
+                      : isConnected ? "연동 완료" : "미연동"}
                 </p>
                 {isConnected || instance ? (
                   <Button
