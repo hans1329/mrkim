@@ -130,29 +130,20 @@ export function SalesAnalysisTab() {
       <div className="grid grid-cols-2 gap-3">
         <Card>
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-success" />
-              <span className="text-xs text-muted-foreground">총 매출</span>
-            </div>
-            <p className="mt-1 text-lg font-bold">{formatCurrency(stats.totalRevenue)}</p>
+            <span className="text-xs text-muted-foreground">총 매출</span>
+            <p className="mt-1 text-base font-bold">{formatCurrency(stats.totalRevenue)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-primary" />
-              <span className="text-xs text-muted-foreground">월 평균</span>
-            </div>
-            <p className="mt-1 text-lg font-bold">{formatCurrency(stats.avgMonthly)}</p>
+            <span className="text-xs text-muted-foreground">월 평균</span>
+            <p className="mt-1 text-base font-bold">{formatCurrency(stats.avgMonthly)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-chart-1" />
-              <span className="text-xs text-muted-foreground">카드 매출</span>
-            </div>
-            <p className="mt-1 text-lg font-bold">{formatCurrency(stats.totalCard)}</p>
+            <span className="text-xs text-muted-foreground">카드 매출</span>
+            <p className="mt-1 text-base font-bold">{formatCurrency(stats.totalCard)}</p>
             <p className="text-xs text-muted-foreground">
               {stats.totalRevenue > 0
                 ? Math.round((stats.totalCard / stats.totalRevenue) * 100)
@@ -163,11 +154,8 @@ export function SalesAnalysisTab() {
         </Card>
         <Card>
           <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <Banknote className="h-4 w-4 text-chart-2" />
-              <span className="text-xs text-muted-foreground">현금/이체 매출</span>
-            </div>
-            <p className="mt-1 text-lg font-bold">{formatCurrency(stats.totalCash)}</p>
+            <span className="text-xs text-muted-foreground">현금/이체 매출</span>
+            <p className="mt-1 text-base font-bold">{formatCurrency(stats.totalCash)}</p>
             <p className="text-xs text-muted-foreground">
               {stats.totalRevenue > 0
                 ? Math.round((stats.totalCash / stats.totalRevenue) * 100)
