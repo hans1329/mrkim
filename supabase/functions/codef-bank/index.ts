@@ -548,16 +548,31 @@ async function handleGetTransactions(
     const rawTransactions = data.data?.resTrHistoryList || [];
     
     // 거래 데이터 정규화
-    const transactions = rawTransactions.map((tx: any) => ({
-      transactionDate: tx.resAccountTrDate || "",
-      transactionTime: tx.resAccountTrTime || null,
-      amount: Math.abs(parseInt(tx.resAccountOut || tx.resAccountIn || "0", 10)),
-      type: tx.resAccountOut && parseInt(tx.resAccountOut, 10) > 0 ? "expense" : "income",
-      description: tx.resAccountDesc || "",
-      balance: tx.resAfterTranBalance || "0",
-      transactionId: tx.resAccountTrSeq || `${tx.resAccountTrDate}_${tx.resAccountTrTime}_${Math.random().toString(36).substr(2, 9)}`,
-      memo: tx.resAccountMemo || "",
-    }));
+    const transactions = rawTransactions.map((tx: any) => {
+      const outAmount = parseInt(tx.resAccountOut || "0", 10);
+      const inAmount = parseInt(tx.resAccountIn || "0", 10);
+      const isExpense = outAmount > 0;
+      const amount = isExpense ? outAmount : inAmount;
+
+      // 설명: 적요 > 메모 > 비고 > 거래상대 순으로 fallback
+      const description = (tx.resAccountDesc || "").trim()
+        || (tx.resAccountMemo || "").trim()
+        || (tx.resAccountNote || "").trim()
+        || (tx.resAccountCounterpartName || "").trim()
+        || "";
+
+      return {
+        transactionDate: tx.resAccountTrDate || "",
+        transactionTime: tx.resAccountTrTime || null,
+        amount: Math.abs(amount),
+        type: isExpense ? "expense" : "income",
+        description,
+        balance: tx.resAfterTranBalance || "0",
+        transactionId: tx.resAccountTrSeq || `${tx.resAccountTrDate}_${tx.resAccountTrTime}_${Math.random().toString(36).substr(2, 9)}`,
+        memo: tx.resAccountMemo || "",
+        counterpartName: (tx.resAccountCounterpartName || "").trim(),
+      };
+    });
 
     return new Response(
       JSON.stringify({

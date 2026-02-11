@@ -124,15 +124,17 @@ export function useBankSync() {
       }
 
       // 4. 거래 데이터 변환 및 자동 분류
-      const insertData = newTransactions.map((tx) => {
-        const classification = classifyTransaction(tx.description);
+      const insertData = newTransactions.map((tx: any) => {
+        // 설명 우선순위: description > counterpartName > "은행 거래"
+        const desc = tx.description || tx.counterpartName || "은행 거래";
+        const classification = classifyTransaction(desc);
         const maskedAccount = accountNo ? `****${accountNo.slice(-4)}` : undefined;
         
         return {
           user_id: userData.user.id,
           transaction_date: formatDate(tx.transactionDate),
           transaction_time: tx.transactionTime,
-          description: tx.description || "은행 거래",
+          description: desc,
           amount: tx.amount,
           type: tx.type,
           source_type: "bank" as const,
@@ -145,6 +147,7 @@ export function useBankSync() {
           external_tx_id: tx.transactionId,
           synced_at: new Date().toISOString(),
           memo: tx.memo || null,
+          merchant_name: tx.counterpartName || null,
         };
       });
 
