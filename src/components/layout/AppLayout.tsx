@@ -125,7 +125,7 @@ export function AppLayout({
                   </div>
                   <Button variant="ghost" size="icon" className="relative h-9 w-9 [&_svg]:!size-5" onClick={() => navigate("/notifications")}>
                     <Bell />
-                    <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                    <span className="absolute right-0 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
                       2
                     </span>
                   </Button>
