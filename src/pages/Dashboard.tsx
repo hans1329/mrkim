@@ -63,7 +63,7 @@ export default function Dashboard() {
       {isMobile ? (
         <div className="space-y-0">
           {/* 히어로 영역 - 풀블리드 그라데이션 */}
-          <div className="relative bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] px-5 pt-[calc(env(safe-area-inset-top)+16px)] pb-6">
+          <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] px-5 pt-[calc(env(safe-area-inset-top)+16px)] pb-6">
             {/* 배경 데코 */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-2xl" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/4 blur-xl" />

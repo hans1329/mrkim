@@ -129,7 +129,7 @@ export function AppLayout({
             )}
 
             {/* Main Content - 홈에서는 헤더 없이 풀블리드 */}
-            <main className={showBackButton ? "p-4 pb-24" : "pb-24"}>
+            <main className={showBackButton ? "p-4 pb-24 overflow-x-hidden" : "pb-24 overflow-x-hidden"}>
               {children}
             </main>
           </div>
