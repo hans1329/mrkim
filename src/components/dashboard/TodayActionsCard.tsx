@@ -9,6 +9,7 @@ import { CheckCircle2, Clock, AlertTriangle, ChevronRight, MessageCircle, Calend
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChat } from "@/contexts/ChatContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type ActionPriority = "urgent" | "warning" | "normal";
 type ActionStatus = "pending" | "completed" | "postponed";
@@ -58,6 +59,7 @@ interface TodayActionsCardProps {
 export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps) {
   const navigate = useNavigate();
   const { openChat } = useChat();
+  const isMobile = useIsMobile();
   const { profile, loading } = useProfile();
   const [items, setItems] = useState<ActionItem[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
@@ -331,7 +333,10 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
                 <div
                   key={item.id}
                   className={cn(
-                    "rounded-lg border border-border/50 p-3 transition-all bg-muted/50"
+                    "rounded-lg border p-3 transition-all",
+                    isMobile
+                      ? "border-border/50 bg-muted/50"
+                      : cn("border", config.border, config.bg)
                   )}
                 >
                   <div className="flex items-start gap-3">
