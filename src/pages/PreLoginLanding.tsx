@@ -125,7 +125,7 @@ const PreLoginLandingContent = () => {
             <div className="space-y-5 text-center lg:text-left">
               
               
-              <h1 className="text-2xl lg:text-5xl font-black leading-tight">
+              <h1 className="text-3xl lg:text-5xl font-black leading-tight">
                 사장님은 <span className="text-primary">말로</span><br />
                 <span className="text-primary">명령만</span> 하세요!
               </h1>
