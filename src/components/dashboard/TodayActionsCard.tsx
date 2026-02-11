@@ -330,15 +330,13 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
               return (
                 <div
                   key={item.id}
-                  className={cn(
-                    "rounded-lg border border-border/50 p-3 transition-all bg-muted/50"
-                  )}
+                  className="py-3 first:pt-0 last:pb-0 border-b border-border/30 last:border-b-0"
                 >
                   <div className="flex items-start gap-3">
                     <div className={cn("mt-0.5 shrink-0", item.id === "connection" ? "text-primary" : config.color)}>
                       <Icon className="h-4 w-4" />
                     </div>
-                    <div className="flex-1 min-w-0 space-y-2">
+                    <div className="flex-1 min-w-0 space-y-1.5">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm">{item.title}</span>
                         {item.dueText && (
@@ -350,7 +348,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         {item.description}
                       </p>
-                      <div className="flex items-center gap-2 pt-1">
+                      <div className="flex items-center gap-2 pt-0.5">
                         <Button
                           size="sm"
                           variant={item.priority === "urgent" ? "default" : "outline"}
