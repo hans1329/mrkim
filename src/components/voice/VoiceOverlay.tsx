@@ -183,7 +183,16 @@ export function VoiceOverlay() {
                 )}
               >
                 {isProcessing ? (
-                  <Loader2 className="h-12 w-12 animate-spin" />
+                  secretaryAvatarUrl ? (
+                    <div className="relative h-full w-full">
+                      <img src={secretaryAvatarUrl} alt={secretaryName} className="h-full w-full rounded-full object-cover opacity-70" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="h-10 w-10 animate-spin text-white" />
+                      </div>
+                    </div>
+                  ) : (
+                    <Loader2 className="h-12 w-12 animate-spin" />
+                  )
                 ) : isSpeaking && isTTSPreparing ? (
                   <Loader2 className="h-12 w-12 animate-spin opacity-70" />
                 ) : isSpeaking ? (
