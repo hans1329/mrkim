@@ -637,6 +637,7 @@ serve(async (req) => {
       ]);
       const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
       console.log(`${classified.dataSource} data response (1 API call)`);
+      return new Response(JSON.stringify({ response, visualization }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 데이터 없음
