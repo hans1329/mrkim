@@ -42,7 +42,7 @@ export default function Engine() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">김비서 AI 엔진 아키텍처</h1>
-              <p className="text-muted-foreground text-sm">v1.6 · 2026-02-10 업데이트</p>
+              <p className="text-muted-foreground text-sm">v1.7 · 2026-02-11 업데이트</p>
             </div>
           </div>
         </div>
@@ -203,10 +203,33 @@ export default function Engine() {
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   <Badge variant="outline" className="bg-blue-500/10">🔊 ElevenLabs TTS</Badge>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  voiceMode=true → 구어체 2~3문장, 마크다운/이모지 제거, 숫자 한글 표현
-                </p>
-              </div>
+                 <p className="text-xs text-muted-foreground mt-2">
+                   voiceMode=true → 구어체 2~3문장, 마크다운/이모지 제거, 숫자 한글 표현
+                 </p>
+               </div>
+
+               {/* v1.7 신규: 음성 UX 개선사항 */}
+               <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
+                 <p className="text-xs font-medium mb-3">🆕 v1.7 음성 UX 개선 (2026-02-11)</p>
+                 <div className="space-y-2 text-xs text-muted-foreground">
+                   <div className="flex items-start gap-2">
+                     <Badge variant="secondary" className="text-[10px] shrink-0">자동 세션</Badge>
+                     <p>오버레이 진입 시 자동으로 세션 시작 (기존: "버튼을 눌러 시작하세요" 대기 화면 제거)</p>
+                   </div>
+                   <div className="flex items-start gap-2">
+                     <Badge variant="secondary" className="text-[10px] shrink-0">STT 억제</Badge>
+                     <p>AI 처리(processing) + TTS 재생(speaking) 중 <code className="bg-muted px-1 rounded">suppressSTTRef</code> 플래그로 음성 인식 완전 차단. 기존에는 committed transcript만 무시했으나, partial transcript까지 포함하여 에코/오인식 원천 방지</p>
+                   </div>
+                   <div className="flex items-start gap-2">
+                     <Badge variant="secondary" className="text-[10px] shrink-0">동적 제안 칩</Badge>
+                     <p>AI 응답 텍스트에서 후속 질문("~확인해볼까요?", "~알려드릴까요?" 등)을 자동 추출하여 명령형 칩으로 변환. <code className="bg-muted px-1 rounded">extractFollowUpSuggestions()</code> + <code className="bg-muted px-1 rounded">convertToImperative()</code></p>
+                   </div>
+                   <div className="flex items-start gap-2">
+                     <Badge variant="secondary" className="text-[10px] shrink-0">불투명 배경</Badge>
+                     <p>음성 오버레이 배경의 투명도 제거 → 불투명 브랜드 블루 그라데이션으로 통일</p>
+                   </div>
+                 </div>
+               </div>
 
               <div className="grid md:grid-cols-3 gap-4">
                 {/* STT */}
