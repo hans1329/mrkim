@@ -103,19 +103,22 @@ serve(async (req) => {
         .map(([cat, amount]) => ({ category: cat, amount })),
     };
 
-    // 4. AI 분석 요청
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "AI 키가 설정되지 않았습니다" }), {
+    // 4. AI 분석 요청 (Gemini 2.0 Flash 직접 호출)
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) {
+      return new Response(JSON.stringify({ error: "GEMINI_API_KEY가 설정되지 않았습니다" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent";
+
     const systemPrompt = `당신은 소상공인 사업자를 위한 AI 경영 비서 '김비서'입니다. 
 제공된 재무 데이터를 분석하여 실행 가능한 경영 인사이트를 제공해주세요.
 
-분석 결과는 반드시 tool call로 반환해주세요.`;
+분석 결과는 반드시 아래 JSON 형식으로 반환해주세요:
+{"insights": [{"type": "suggestion|warning|positive|action", "priority": "high|medium|low", "title": "인사이트 제목 (20자 이내)", "description": "상세 설명 (100자 이내)", "impact": "예상 영향"}]}`;
 
     const userPrompt = `다음은 사용자의 최근 3개월 경영 데이터입니다:
 
@@ -137,70 +140,42 @@ ${deposits.map(d => `  - ${d.name}: ${d.amount?.toLocaleString()}원 / 목표: $
 📂 주요 지출 카테고리:
 ${Array.from(categoryStats.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([cat, amt]) => `- ${cat}: ${amt.toLocaleString()}원`).join('\n')}
 
-위 데이터를 분석하여 3~5개의 핵심 인사이트를 제공해주세요.
-- suggestion: 개선 제안
-- warning: 주의 필요 사항
-- positive: 긍정적 지표
-- action: 즉시 실행 필요`;
+위 데이터를 분석하여 3~5개의 핵심 인사이트를 JSON 형식으로 제공해주세요.`;
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
+    const geminiBody = {
+      contents: [
+        { role: "user", parts: [{ text: systemPrompt }] },
+        { role: "model", parts: [{ text: '네, JSON 형식으로 인사이트를 분석하겠습니다.' }] },
+        { role: "user", parts: [{ text: userPrompt }] },
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+        responseMimeType: "application/json",
       },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "provide_insights",
-              description: "경영 인사이트 목록을 반환합니다",
-              parameters: {
-                type: "object",
-                properties: {
-                  insights: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        type: { type: "string", enum: ["suggestion", "warning", "positive", "action"] },
-                        priority: { type: "string", enum: ["high", "medium", "low"] },
-                        title: { type: "string", description: "인사이트 제목 (20자 이내)" },
-                        description: { type: "string", description: "상세 설명 (100자 이내)" },
-                        impact: { type: "string", description: "예상 영향 (예: +₩500,000/월, -15% 비용 등)" },
-                      },
-                      required: ["type", "priority", "title", "description"],
-                    },
-                  },
-                },
-                required: ["insights"],
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "provide_insights" } },
-      }),
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+      ],
+    };
+
+    const aiResponse = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(geminiBody),
     });
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("AI gateway error:", aiResponse.status, errorText);
+      console.error("Gemini API error:", aiResponse.status, errorText);
       
       if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "요청 한도 초과, 잠시 후 다시 시도해주세요" }), {
+        return new Response(JSON.stringify({ error: "Gemini API 요청 한도 초과, 잠시 후 다시 시도해주세요" }), {
           status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "크레딧 부족, 충전이 필요합니다" }), {
-          status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -213,15 +188,23 @@ ${Array.from(categoryStats.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5).ma
 
     const aiData = await aiResponse.json();
     
-    // Tool call 결과 파싱
+    // Gemini 응답에서 JSON 파싱
     let insights: Insight[] = [];
-    const toolCalls = aiData.choices?.[0]?.message?.tool_calls;
-    if (toolCalls && toolCalls.length > 0) {
+    const responseText = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (responseText) {
       try {
-        const args = JSON.parse(toolCalls[0].function.arguments);
-        insights = args.insights || [];
+        const parsed = JSON.parse(responseText);
+        insights = parsed.insights || [];
       } catch (e) {
-        console.error("Failed to parse tool call:", e);
+        console.error("Failed to parse Gemini JSON response:", e);
+        // JSON 파싱 실패 시 텍스트에서 JSON 추출 시도
+        const jsonMatch = responseText.match(/\{[\s\S]*"insights"[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            const fallbackParsed = JSON.parse(jsonMatch[0]);
+            insights = fallbackParsed.insights || [];
+          } catch { /* ignore */ }
+        }
       }
     }
 
