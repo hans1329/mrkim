@@ -274,12 +274,12 @@ export function AIChatCard() {
   return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/15 backdrop-blur-md border-white/20" : "bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] border-primary/30"}`}>
       <CardContent className="p-4">
         {/* Header */}
-        <div className="mb-2">
-          <p className="text-xs text-white/60 tracking-wide">당신의 경영 비서</p>
+        <div className="mb-2 flex items-baseline gap-1.5">
+          <p className="text-xs text-white/60 tracking-wide shrink-0">당신의 경영 비서</p>
           {profileLoading || realStats.isLoading ? (
-            <Skeleton className="h-3.5 w-40 bg-white/20 mt-1" />
+            <Skeleton className="h-3.5 w-32 bg-white/20" />
           ) : (
-            <p className="text-xs text-white/80 mt-0.5">{placeholder}</p>
+            <p className="text-xs text-white/80 truncate">{placeholder}</p>
           )}
         </div>
         <div className="flex items-center justify-between mb-4">
