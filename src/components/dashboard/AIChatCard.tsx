@@ -293,13 +293,13 @@ export function AIChatCard() {
         </div>
 
         {/* Response/Briefing Area */}
-        {(displayMessage || isTyping) && <div className={`mb-4 rounded-xl backdrop-blur-sm p-2.5 border ${isBriefingDisplay ? "bg-sky-400/15 border-sky-300/30" : "bg-white/15 border-white/20"}`}>
+        {(displayMessage || isTyping) && <div className={`mb-4 rounded-xl backdrop-blur-sm p-2.5 border ${isBriefingDisplay ? "bg-emerald-400/15 border-emerald-300/25" : "bg-white/15 border-white/20"}`}>
             {isTyping ? <div className="flex items-center gap-2">
-                <Sparkles className="h-3.5 w-3.5 animate-pulse text-sky-200" />
+                <Sparkles className="h-3.5 w-3.5 animate-pulse text-emerald-200" />
                 <span className="text-xs text-white/70">답변 중...</span>
               </div> : <div className="flex items-center justify-between gap-2 cursor-pointer" onClick={openChat}>
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {isBriefingDisplay && <Clock className="h-3.5 w-3.5 text-sky-200 shrink-0" />}
+                  {isBriefingDisplay && <Clock className="h-3.5 w-3.5 text-emerald-200 shrink-0" />}
                   <p className="text-xs text-white/90 flex-1 line-clamp-2">{displayMessage}</p>
                 </div>
                 <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={e => {
