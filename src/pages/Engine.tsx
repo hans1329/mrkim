@@ -42,7 +42,7 @@ export default function Engine() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">김비서 AI 엔진 아키텍처</h1>
-              <p className="text-muted-foreground text-sm">v1.7 · 2026-02-11 업데이트</p>
+              <p className="text-muted-foreground text-sm">v1.8 · 2026-02-11 업데이트</p>
             </div>
           </div>
         </div>
@@ -208,25 +208,33 @@ export default function Engine() {
                  </p>
                </div>
 
-               {/* v1.7 신규: 음성 UX 개선사항 */}
+               {/* v1.8 신규: 음성 UX + 알림 개선사항 */}
                <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
-                 <p className="text-xs font-medium mb-3">🆕 v1.7 음성 UX 개선 (2026-02-11)</p>
+                 <p className="text-xs font-medium mb-3">🆕 v1.8 음성 & 알림 개선 (2026-02-11)</p>
                  <div className="space-y-2 text-xs text-muted-foreground">
                    <div className="flex items-start gap-2">
-                     <Badge variant="secondary" className="text-[10px] shrink-0">자동 세션</Badge>
-                     <p>오버레이 진입 시 자동으로 세션 시작 (기존: "버튼을 눌러 시작하세요" 대기 화면 제거)</p>
+                     <Badge variant="secondary" className="text-[10px] shrink-0">Persistent Audio</Badge>
+                     <p>모바일 자동재생 정책 우회를 위해 세션 시작 시 언락된 단일 Audio 객체를 전 세션에서 재사용. 응답마다 <code className="bg-muted px-1 rounded">src</code>만 교체하여 추가 사용자 개입 없이 연속 발화 보장</p>
                    </div>
                    <div className="flex items-start gap-2">
-                     <Badge variant="secondary" className="text-[10px] shrink-0">STT 억제</Badge>
-                     <p>AI 처리(processing) + TTS 재생(speaking) 중 <code className="bg-muted px-1 rounded">suppressSTTRef</code> 플래그로 음성 인식 완전 차단. 기존에는 committed transcript만 무시했으나, partial transcript까지 포함하여 에코/오인식 원천 방지</p>
+                     <Badge variant="secondary" className="text-[10px] shrink-0">STT 라이프사이클</Badge>
+                     <p>비서 인사 → 마이크 허용 → 사용자 입력 → 응답 시작 시 STT 차단 → 음성 출력 완료 즉시 활성화. <code className="bg-muted px-1 rounded">suppressSTTRef</code> 플래그로 에코/오인식 원천 차단</p>
                    </div>
                    <div className="flex items-start gap-2">
-                     <Badge variant="secondary" className="text-[10px] shrink-0">동적 제안 칩</Badge>
-                     <p>AI 응답 텍스트에서 후속 질문("~확인해볼까요?", "~알려드릴까요?" 등)을 자동 추출하여 명령형 칩으로 변환. <code className="bg-muted px-1 rounded">extractFollowUpSuggestions()</code> + <code className="bg-muted px-1 rounded">convertToImperative()</code></p>
+                     <Badge variant="secondary" className="text-[10px] shrink-0">숫자 독음 변환</Badge>
+                     <p>TTS 전처리 시 숫자+단위(원, 건, 명 등)를 한글 독음으로 변환 (예: 4,430,000원 → 사백사십삼만 원). 답변 속도 1.1배, maxOutputTokens 8192</p>
                    </div>
                    <div className="flex items-start gap-2">
-                     <Badge variant="secondary" className="text-[10px] shrink-0">불투명 배경</Badge>
-                     <p>음성 오버레이 배경의 투명도 제거 → 불투명 브랜드 블루 그라데이션으로 통일</p>
+                     <Badge variant="secondary" className="text-[10px] shrink-0">에러 내성</Badge>
+                     <p>5자 미만 잡음 무시, 3회 연속 에러 시 세션 자동 종료(서킷 브레이커), 에러 후 2초 STT 강제 차단</p>
+                   </div>
+                   <div className="flex items-start gap-2">
+                     <Badge variant="secondary" className="text-[10px] shrink-0">탭 인터럽트</Badge>
+                     <p>AI 발화 중 마이크 버튼 탭으로 즉시 중단 + 듣기 모드 전환. 스피커 에코에 의한 자가 중단 방지를 위해 발화 중 committed transcript 무시</p>
+                   </div>
+                   <div className="flex items-start gap-2">
+                     <Badge variant="secondary" className="text-[10px] shrink-0">알림 자동 생성</Badge>
+                     <p>대시보드 접속 시 + 동기화 완료/실패 시 <code className="bg-muted px-1 rounded">notifications</code> 테이블에 자동 삽입. 중복 방지(하루 1회), 세금 마감·미분류 거래·지출 변동·동기화 결과 알림</p>
                    </div>
                  </div>
                </div>
@@ -1128,10 +1136,12 @@ export default function Engine() {
                   { step: 11, name: "동기화 오케스트레이터 (sync-orchestrator)", priority: "완료", color: "bg-green-500" },
                   { step: 12, name: "pg_cron 자동 스케줄링 (6시간 주기)", priority: "완료", color: "bg-green-500" },
                   { step: 13, name: "연동 완료 시 즉시 동기화 트리거", priority: "완료", color: "bg-green-500" },
-                  { step: 14, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
-                  { step: 15, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
-                  { step: 16, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
-                  { step: 17, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
+                  { step: 14, name: "알림 자동 생성 (대시보드 + 동기화)", priority: "완료", color: "bg-green-500" },
+                  { step: 15, name: "음성 Persistent Audio + STT 라이프사이클", priority: "완료", color: "bg-green-500" },
+                  { step: 16, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
+                  { step: 17, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
+                  { step: 18, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
+                  { step: 19, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
                 ].map((item) => (
                   <div key={item.step} className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
