@@ -121,7 +121,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [checkAuth, invalidateProfile, queryClient, refetchInstances]);
 
-  // connector_instances에서 카테고리별 연동 상태 파생
+  // connector_instances에서 카테고리별 연동 상태 파생 (profiles 플래그 fallback)
   const derivedStatus = useMemo(() => {
     const connected = new Set<string>();
     for (const inst of connectorInstances) {
@@ -130,12 +130,16 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         if (category) connected.add(category);
       }
     }
+
+    // connector_instances가 비어있으면 profiles 플래그를 fallback으로 사용
+    const useProfileFallback = connectorInstances.length === 0 && profile;
+
     return {
-      hometax: connected.has("hometax"),
-      card: connected.has("card"),
-      account: connected.has("account"),
+      hometax: connected.has("hometax") || (useProfileFallback ? !!profile?.hometax_connected : false),
+      card: connected.has("card") || (useProfileFallback ? !!profile?.card_connected : false),
+      account: connected.has("account") || (useProfileFallback ? !!profile?.account_connected : false),
     };
-  }, [connectorInstances]);
+  }, [connectorInstances, profile]);
 
   // 프로필 업데이트
   const updateProfile = useCallback(async (updates: Partial<Profile>, showToast = true): Promise<boolean> => {
