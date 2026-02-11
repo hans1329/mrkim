@@ -406,10 +406,6 @@ export function useVoiceAgent() {
     suppressSTTRef.current = true;
     console.log("[STT] 🔇 Suppressed (from processing start)");
 
-    // ★ 마이크 물리적 비활성화 (모바일 AGC/볼륨 간섭 방지)
-    disconnectScribe();
-    console.log("[Scribe] 🔇 Disconnected for TTS playback");
-
     const userMsg: VoiceMessage = { role: "user", text: transcript, timestamp: new Date() };
     messagesContextRef.current = [...messagesContextRef.current, userMsg];
     setLastMessage(userMsg);
@@ -433,16 +429,7 @@ export function useVoiceAgent() {
         setLastMessage(agentMsg);
       });
 
-      // ★ TTS 완료 후 마이크 재연결
-      if (sessionActiveRef.current && !abortRef.current) {
-        console.log("[Scribe] 🔊 Reconnecting after TTS...");
-        const scribeOk = await connectScribe();
-        if (!scribeOk) {
-          console.error("[Scribe] ❌ Reconnection failed");
-          setLastError("마이크 재연결에 실패했습니다.");
-        }
-      }
-
+      // ★ TTS 완료 후 STT 재개
       suppressSTTRef.current = false;
       console.log("[STT] 🔊 Resumed (listening)");
 
@@ -474,12 +461,7 @@ export function useVoiceAgent() {
         setLastMessage(errorMsg);
         saveMessageToDB("assistant", errorMsg.text);
 
-        // ★ 에러 시에도 마이크 재연결
-        if (sessionActiveRef.current && !abortRef.current) {
-          await connectScribe();
-        }
-
-        // ★ 에러 후 잠시 STT 억제 유지 (에코 방지)
+        // ★ 에러 시에도 STT 재개
         setTimeout(() => {
           suppressSTTRef.current = false;
         }, 2000);
@@ -489,7 +471,7 @@ export function useVoiceAgent() {
     } finally {
       processingRef.current = false;
     }
-  }, [queryAI, fetchAndPlayTTS, saveMessageToDB, disconnectScribe, connectScribe]);
+  }, [queryAI, fetchAndPlayTTS, saveMessageToDB]);
 
   // ref를 항상 최신 handleCommittedTranscript로 동기화
   handleCommittedTranscriptRef.current = handleCommittedTranscript;
@@ -562,30 +544,32 @@ export function useVoiceAgent() {
 
     if (abortRef.current) return;
 
-    // 2. 인사말 재생 → 끝나면 Scribe 연결 (병렬 X, 순차)
-    // ★ 핵심: 인사말 재생 중 마이크가 꺼져있어 에코 원천 차단
+    // 2. 인사말 재생 + Scribe 연결 병렬 (STT 플래그로 에코 차단)
     messagesContextRef.current = [greetingMsg];
 
     if (greetingAudioBlob) {
       setIsTTSPreparing(false);
-      console.log("[Session] 2. Playing greeting...");
+      console.log("[Session] 2. Playing greeting + connecting Scribe (parallel)...");
 
-      await playAudioBlob(greetingAudioBlob, () => {
+      const playPromise = playAudioBlob(greetingAudioBlob, () => {
         setLastMessage(greetingMsg);
       });
+      const scribePromise = connectScribe();
 
-      if (abortRef.current) return;
+      const { interrupted } = await playPromise;
+      const scribeOk = await scribePromise;
 
-      // ★ 재생 완료 후에만 Scribe(마이크) 연결
-      console.log("[Session] 3. Greeting done, connecting Scribe...");
+      console.log("[Session] Greeting done, interrupted:", interrupted, "scribe:", scribeOk);
+
+      // ★ 인사말 재생 완료 후 STT 억제 해제
       suppressSTTRef.current = false;
-      const scribeOk = await connectScribe();
-      if (!abortRef.current) {
+      console.log("[STT] 🔊 Greeting done, STT enabled");
+
+      if (!abortRef.current && !interrupted) {
         setStatus(scribeOk ? "listening" : "idle");
         if (!scribeOk) sessionActiveRef.current = false;
       }
     } else {
-      // TTS 실패 시 바로 Scribe 연결
       setIsTTSPreparing(false);
       suppressSTTRef.current = false;
       setStatus("listening");
@@ -651,7 +635,7 @@ export function useVoiceAgent() {
   }, []);
 
   // --- TTS 중단 후 듣기 모드 전환 (세션 유지) ---
-  const interruptAndListen = useCallback(async () => {
+  const interruptAndListen = useCallback(() => {
     const audio = currentAudioRef.current;
     if (audio) {
       audio.pause();
@@ -665,13 +649,8 @@ export function useVoiceAgent() {
     suppressSTTRef.current = false;
     if (sessionActiveRef.current) {
       setStatus("listening");
-      // ★ Scribe가 끊겨있으면 재연결
-      if (!scribeConnectionRef.current) {
-        console.log("[Scribe] 🔊 Reconnecting after interrupt...");
-        await connectScribe();
-      }
     }
-  }, [connectScribe]);
+  }, []);
 
   // --- 텍스트 직접 전송 (제안 칩 탭 시 사용) ---
   const sendTextDirectly = useCallback(async (text: string) => {
