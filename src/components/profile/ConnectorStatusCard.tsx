@@ -117,64 +117,51 @@ export function ConnectorStatusCard() {
           return (
             <div
               key={connector.id}
-              className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
+              className="flex items-center gap-2.5 p-3 rounded-lg bg-muted/50"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 shrink-0">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
                 <Icon className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{connector.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {connector.description}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium truncate">{connector.name}</p>
+                  {isConnected ? (
+                    <Badge variant={statusInfo!.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0">
+                      {StatusIcon && <StatusIcon className="h-2.5 w-2.5" />}
+                      {statusInfo!.label}
+                    </Badge>
+                  ) : statusInfo ? (
+                    <Badge variant={statusInfo.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0">
+                      {StatusIcon && <StatusIcon className="h-2.5 w-2.5" />}
+                      {statusInfo.label}
+                    </Badge>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  {instance?.last_sync_at && (
+                    <p className="text-[10px] text-muted-foreground">
+                      {formatDistanceToNow(new Date(instance.last_sync_at), {
+                        addSuffix: true,
+                        locale: ko,
+                      })}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="shrink-0 text-right space-y-1">
-                {isConnected ? (
-                  <>
-                    <Badge variant={statusInfo!.variant} className="text-xs gap-1">
-                      {StatusIcon && <StatusIcon className="h-3 w-3" />}
-                      {statusInfo!.label}
-                    </Badge>
-                    {instance?.last_sync_at && (
-                      <p className="text-[10px] text-muted-foreground">
-                        {formatDistanceToNow(new Date(instance.last_sync_at), {
-                          addSuffix: true,
-                          locale: ko,
-                        })}
-                      </p>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-5 px-1.5 text-[10px] text-muted-foreground hover:text-primary"
-                      onClick={() => {
-                        const step = CATEGORY_TO_STEP[connector.category];
-                        if (step) navigate(`/onboarding?step=${step}`);
-                      }}
-                    >
-                      <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
-                      재연동
-                    </Button>
-                  </>
-                ) : instance ? (
-                  <>
-                    <Badge variant={statusInfo!.variant} className="text-xs gap-1">
-                      {StatusIcon && <StatusIcon className="h-3 w-3" />}
-                      {statusInfo!.label}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-5 px-1.5 text-[10px] text-muted-foreground hover:text-primary"
-                      onClick={() => {
-                        const step = CATEGORY_TO_STEP[connector.category];
-                        if (step) navigate(`/onboarding?step=${step}`);
-                      }}
-                    >
-                      <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
-                      재연동
-                    </Button>
-                  </>
+              <div className="shrink-0">
+                {isConnected || instance ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-muted-foreground hover:text-primary"
+                    onClick={() => {
+                      const step = CATEGORY_TO_STEP[connector.category];
+                      if (step) navigate(`/onboarding?step=${step}`);
+                    }}
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    재연동
+                  </Button>
                 ) : (
                   <Badge
                     variant="outline"
@@ -184,7 +171,7 @@ export function ConnectorStatusCard() {
                       if (step) navigate(`/onboarding?step=${step}`);
                     }}
                   >
-                    미연동 →
+                    연동 →
                   </Badge>
                 )}
               </div>
