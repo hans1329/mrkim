@@ -29,7 +29,7 @@ import { TransactionClassifier } from "@/components/transactions/TransactionClas
 import { useTransactions, useTransactionStats, useAddTransaction, type TransactionInsert } from "@/hooks/useTransactions";
 import { useCardSync } from "@/hooks/useCardSync";
 import { useBankSync } from "@/hooks/useBankSync";
-import { useProfile } from "@/hooks/useProfile";
+import { useConnection } from "@/contexts/ConnectionContext";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
@@ -51,7 +51,7 @@ export default function Transactions() {
   });
 
   const { data: stats, isLoading: isStatsLoading } = useTransactionStats();
-  const { profile } = useProfile();
+  const { profile, cardConnected, accountConnected } = useConnection();
   const addTransaction = useAddTransaction();
   const cardSync = useCardSync();
   const bankSync = useBankSync();
@@ -61,7 +61,7 @@ export default function Transactions() {
   const bankConnectedId = localStorage.getItem("codef_bank_connected_id");
 
   const handleCardSync = () => {
-    if (!profile?.card_connected) {
+    if (!cardConnected) {
       toast.error("먼저 카드를 연동해주세요");
       return;
     }
@@ -98,7 +98,7 @@ export default function Transactions() {
   };
 
   const handleBankSync = () => {
-    if (!profile?.account_connected) {
+    if (!accountConnected) {
       toast.error("먼저 은행 계좌를 연동해주세요");
       return;
     }
@@ -169,8 +169,8 @@ export default function Transactions() {
   };
 
   const isEmpty = !isLoading && (!transactions || transactions.length === 0);
-  const isCardConnected = profile?.card_connected;
-  const isAccountConnected = profile?.account_connected;
+  const isCardConnected = cardConnected;
+  const isAccountConnected = accountConnected;
 
   return (
     <MainLayout title="매출/매입" subtitle="거래 내역을 관리하세요" showBackButton>
