@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { TodaySummarySection } from "@/components/dashboard/TodaySummarySection";
 import { IntegratedConnectionCard } from "@/components/dashboard/IntegratedConnectionCard";
@@ -58,51 +58,79 @@ export default function Dashboard() {
   const userName = profileLoading ? "" : (profile?.nickname || profile?.name || null);
   const greeting = userName ? `${userName}님` : "사장님";
 
+  // 스크롤 감지 - 헤더 배경 전환용
+  const [scrolled, setScrolled] = useState(false);
+  const scrollRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    // 스크롤 컨테이너 찾기 (overflow-auto가 있는 부모)
+    let scrollParent: HTMLElement | null = node.parentElement;
+    while (scrollParent) {
+      const overflow = getComputedStyle(scrollParent).overflowY;
+      if (overflow === "auto" || overflow === "scroll") break;
+      scrollParent = scrollParent.parentElement;
+    }
+    if (!scrollParent) return;
+    const handleScroll = () => setScrolled(scrollParent!.scrollTop > 20);
+    scrollParent.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+  }, []);
+
   return (
     <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요">
       {/* 모바일 전용 네이티브 홈 */}
       {isMobile ? (
-        <div className="-mx-0">
-          {/* 히어로 + 스티키 헤더 통합 영역 */}
-          <div className="relative bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)]">
+        <div ref={scrollRef}>
+          {/* 고정 헤더 - absolute로 콘텐츠 위에 겹침 */}
+          <div className={cn(
+            "sticky top-0 z-30 px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-3 transition-all duration-300",
+            scrolled
+              ? "bg-background/95 backdrop-blur-md shadow-md"
+              : "bg-transparent"
+          )}>
+            <div className="flex items-center justify-between">
+              <div className="cursor-pointer" onClick={() => navigate("/profile")}>
+                {profileLoading ? (
+                  <Skeleton className={cn("h-6 w-32", scrolled ? "bg-muted" : "bg-white/20")} />
+                ) : (
+                  <h1 className={cn(
+                    "text-lg font-bold transition-colors duration-300",
+                    scrolled ? "text-foreground" : "text-white"
+                  )}>
+                    안녕하세요, {greeting} 👋
+                  </h1>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className={cn(
+                  "h-9 w-9 transition-colors duration-300",
+                  scrolled ? "text-foreground hover:bg-muted" : "text-white/80 hover:text-white hover:bg-white/10"
+                )} onClick={() => navigate("/notifications")}>
+                  <div className="relative">
+                    <Bell className="h-5 w-5" />
+                    <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
+                      2
+                    </span>
+                  </div>
+                </Button>
+                <Button variant="ghost" size="icon" className={cn(
+                  "h-9 w-9 transition-colors duration-300",
+                  scrolled ? "text-foreground hover:bg-muted" : "text-white/80 hover:text-white hover:bg-white/10"
+                )} onClick={() => navigate("/settings")}>
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* 히어로 영역 - 헤더 뒤로 확장 */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] -mt-[60px] pt-[60px] px-5 pb-8">
             {/* 배경 데코 */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-2xl" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/4 blur-xl" />
 
-            {/* 상단 인사 바 */}
-            <div className="px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-1">
-              <div className="flex items-center justify-between">
-                <div className="cursor-pointer" onClick={() => navigate("/profile")}>
-                  {profileLoading ? (
-                    <Skeleton className="h-6 w-32 bg-white/20" />
-                  ) : (
-                    <h1 className="text-lg font-bold text-white">
-                      안녕하세요, {greeting} 👋
-                    </h1>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10" onClick={() => navigate("/notifications")}>
-                    <div className="relative">
-                      <Bell className="h-5 w-5" />
-                      <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
-                        2
-                      </span>
-                    </div>
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/10" onClick={() => navigate("/settings")}>
-                    <Settings className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* 히어로 콘텐츠 */}
-            <div className="px-5 pb-8 relative">
-              <p className="text-xs text-white/70 mb-3">오늘도 김비서가 도와드릴게요</p>
-              <div className="relative">
-                <AIChatCard />
-              </div>
+            <p className="text-xs text-white/70 mb-3">오늘도 김비서가 도와드릴게요</p>
+            <div className="relative">
+              <AIChatCard />
             </div>
           </div>
 
