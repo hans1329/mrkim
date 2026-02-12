@@ -46,7 +46,7 @@ serve(async (req) => {
 
     // ElevenLabs TTS API 호출
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}?output_format=mp3_44100_128`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}?output_format=mp3_22050_32`,
       {
         method: "POST",
         headers: {
@@ -57,10 +57,10 @@ serve(async (req) => {
           text,
           model_id: "eleven_multilingual_v2",
           voice_settings: {
-            stability: 0.4,          // 안정성 확보로 끊김 방지 (0.25→0.4)
-            similarity_boost: 0.7,   // 자연스러운 변주 허용 (0.65→0.7)
-            style: 0.5,              // 감정 표현 적절히 (0.65→0.5)
-            use_speaker_boost: true,
+            stability: 0.4,
+            similarity_boost: 0.7,
+            style: 0.5,
+            use_speaker_boost: false,
             speed: 1.1,
           },
         }),
