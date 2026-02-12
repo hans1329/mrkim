@@ -102,22 +102,43 @@ export function useCardSync() {
         return { synced: 0, skipped: 0, errors: 0 };
       }
 
-      // 2. 기존 거래와 중복 체크 (approval_no 기준)
+      // 2. 기존 거래와 중복 체크 (external_tx_id + 복합키 기반)
       const approvalNos = transactions
         .map((tx) => tx.approvalNo)
         .filter((no) => no && no.length > 0);
 
-      const { data: existingTxs } = await supabase
+      // external_tx_id 기반 체크
+      const { data: existingByTxId } = await supabase
         .from("transactions")
         .select("external_tx_id")
         .in("external_tx_id", approvalNos);
 
-      const existingIds = new Set(existingTxs?.map((t) => t.external_tx_id) || []);
+      const existingIds = new Set(existingByTxId?.map((t) => t.external_tx_id) || []);
 
-      // 3. 새 거래만 필터링
-      const newTransactions = transactions.filter(
-        (tx) => tx.approvalNo && !existingIds.has(tx.approvalNo)
+      // 복합키 기반 체크 (재연동 시 approvalNo가 달라질 수 있음)
+      const dateRange = transactions.map((tx) => tx.transactionDate);
+      const uniqueDates = [...new Set(dateRange)];
+      const { data: existingByComposite } = await supabase
+        .from("transactions")
+        .select("transaction_date, amount, description, source_type")
+        .eq("source_type", "card")
+        .in("transaction_date", uniqueDates);
+
+      const compositeKeys = new Set(
+        (existingByComposite || []).map(
+          (t) => `${t.transaction_date}|${t.amount}|${t.description}|${t.source_type}`
+        )
       );
+
+      // 3. 새 거래만 필터링 (두 가지 중복 체크 모두 통과해야 함)
+      const newTransactions = transactions.filter((tx) => {
+        if (!tx.approvalNo) return false;
+        if (existingIds.has(tx.approvalNo)) return false;
+        const desc = tx.description || tx.merchantName || "카드 결제";
+        const key = `${tx.transactionDate}|${tx.amount}|${desc}|card`;
+        if (compositeKeys.has(key)) return false;
+        return true;
+      });
 
       if (newTransactions.length === 0) {
         return { synced: 0, skipped: transactions.length, errors: 0 };
