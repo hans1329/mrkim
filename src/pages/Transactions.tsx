@@ -289,6 +289,13 @@ export default function Transactions() {
             </div>
           )}
 
+          {/* 데이터 기간 표시 */}
+          {stats?.dateFrom && stats?.dateTo && (
+            <p className="text-xs text-muted-foreground text-right">
+              📅 {stats.dateFrom.replace(/-/g, '.')} ~ {stats.dateTo.replace(/-/g, '.')}
+            </p>
+          )}
+
           {/* 요약 카드 */}
           <div className="space-y-2">
             {/* 매출/지출 - 2열 */}

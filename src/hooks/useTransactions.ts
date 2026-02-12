@@ -108,11 +108,16 @@ export function useTransactionStats() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("transactions")
-        .select("type, amount, category, category_icon");
+        .select("type, amount, category, category_icon, transaction_date");
 
       if (error) throw error;
 
-      const transactions = data as Pick<Transaction, "type" | "amount" | "category" | "category_icon">[];
+      const transactions = data as Pick<Transaction, "type" | "amount" | "category" | "category_icon" | "transaction_date">[];
+
+      // 데이터 기간 계산
+      const dates = transactions.map((t) => t.transaction_date).filter(Boolean).sort();
+      const dateFrom = dates[0] || null;
+      const dateTo = dates[dates.length - 1] || null;
 
       const totalIncome = transactions
         .filter((t) => t.type === "income")
@@ -139,6 +144,8 @@ export function useTransactionStats() {
         totalIncome,
         totalExpense,
         netProfit: totalIncome - totalExpense,
+        dateFrom,
+        dateTo,
         categoryStats: Array.from(categoryStats.entries())
           .map(([category, data]) => ({ category, ...data }))
           .sort((a, b) => b.amount - a.amount),
