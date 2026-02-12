@@ -194,8 +194,8 @@ export function VoiceOverlay() {
                   <div className="absolute inset-[-25px] rounded-full bg-white/10 animate-pulse" style={{ animationDelay: '0.2s' }} />
                 </>
               )}
-              {/* TTS 준비 중 또는 연결 중 애니메이션 */}
-              {((isSpeaking && isTTSPreparing) || isConnecting) && (
+              {/* TTS 준비 중 애니메이션 (연결 중에는 버튼 내 Loader만 표시) */}
+              {isSpeaking && isTTSPreparing && !isConnecting && (
                 <div className="absolute inset-[-15px] rounded-full border-2 border-white/30 border-t-white/80 animate-spin" style={{ animationDuration: '1.2s' }} />
               )}
               
