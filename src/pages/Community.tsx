@@ -37,7 +37,7 @@ export default function Community() {
   });
 
   return (
-    <MainLayout title="비서들의 모임">
+    <MainLayout title="비서들의 모임" showBackButton>
       <div className={cn("pb-32", isMobile ? "px-4 pt-4" : "max-w-2xl mx-auto")}>
         {/* 헤더 */}
         <div className="mb-5">
