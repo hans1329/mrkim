@@ -547,28 +547,31 @@ export function useVoiceAgent() {
 
     if (abortRef.current) return;
 
-    // 2. 인사말 재생 + Scribe 연결 병렬 (STT 플래그로 에코 차단)
+    // 2. 인사말 재생 먼저, 완료 후 Scribe 연결 (에코 방지)
     messagesContextRef.current = [greetingMsg];
 
     if (greetingAudioBlob) {
       setIsTTSPreparing(false);
-      console.log("[Session] 2. Playing greeting + connecting Scribe (parallel)...");
+      console.log("[Session] 2. Playing greeting first, then connecting Scribe...");
 
-      const playPromise = playAudioBlob(greetingAudioBlob, () => {
+      // ★ 인사말 먼저 재생 완료 → 그 다음 Scribe 연결 (에코 완전 차단)
+      const { interrupted } = await playAudioBlob(greetingAudioBlob, () => {
         setLastMessage(greetingMsg);
       });
-      const scribePromise = connectScribe();
 
-      const { interrupted } = await playPromise;
-      const scribeOk = await scribePromise;
+      if (abortRef.current || interrupted) return;
 
-      console.log("[Session] Greeting done, interrupted:", interrupted, "scribe:", scribeOk);
+      // 인사말 재생 완료 후 Scribe 연결
+      console.log("[Session] Greeting done, now connecting Scribe...");
+      const scribeOk = await connectScribe();
 
-      // ★ 인사말 재생 완료 → STT 즉시 활성화
+      console.log("[Session] Scribe connected:", scribeOk);
+
+      // ★ Scribe 연결 완료 → STT 활성화
       suppressSTTRef.current = false;
-      console.log("[STT] 🔊 Greeting done, STT enabled");
+      console.log("[STT] 🔊 Greeting done + Scribe ready, STT enabled");
 
-      if (!abortRef.current && !interrupted) {
+      if (!abortRef.current) {
         setStatus(scribeOk ? "listening" : "idle");
         if (!scribeOk) sessionActiveRef.current = false;
       }
