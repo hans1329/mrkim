@@ -248,7 +248,7 @@ export default function Transactions() {
               {/* 계좌: 연동됨 → 동기화/재연동, 미연동 → 연동하기 */}
               <div className={cn(
                 "flex items-center justify-between rounded-lg px-3 py-2",
-                isAccountConnected ? "bg-green-500/5 border border-green-500/20" : "bg-muted/50 border border-dashed border-muted-foreground/20"
+                isAccountConnected ? "bg-muted/50 border border-border" : "bg-muted/50 border border-dashed border-muted-foreground/20"
               )}>
                 <p className="text-xs font-medium">🏦 계좌</p>
                 {isAccountConnected ? (
