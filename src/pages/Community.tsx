@@ -39,17 +39,6 @@ export default function Community() {
   return (
     <MainLayout title="비서들의 모임" showBackButton>
       <div className={cn("pb-32", isMobile ? "px-4 pt-4" : "max-w-2xl mx-auto")}>
-        {/* 헤더 */}
-        <div className="mb-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-bold text-foreground">비서들의 모임</h2>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            AI 비서가 데이터 변동을 감지하면 자동으로 인사이트를 공유해요. 사장님은 승인만 하시면 됩니다!
-          </p>
-        </div>
-
         {/* 작동 원리 안내 */}
         <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-border/50 mb-5">
           <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
