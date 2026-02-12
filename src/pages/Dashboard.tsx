@@ -128,7 +128,7 @@ export default function Dashboard() {
       {isMobile ? (
         <div ref={scrollRef} className="flex flex-col min-h-full">
           {/* 히어로 영역 - 헤더 뒤로 확장 */}
-          <div className="relative pt-[calc(env(safe-area-inset-top,0px)+60px)] px-5 pb-8 bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)]">
+          <div className="relative pt-[calc(env(safe-area-inset-top,0px)+60px)] px-5 pb-8">
 
             <div className="mb-4" />
             <div className="relative">
