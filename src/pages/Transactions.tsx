@@ -204,10 +204,14 @@ export default function Transactions() {
           {/* 동기화 배너 - 카드/계좌 한 행 */}
           {(isCardConnected || isAccountConnected) && (
             <div className="grid grid-cols-2 gap-2">
-              {isCardConnected && (
-                <div className="flex items-center justify-between rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
-                  <p className="text-xs font-medium">💳 카드</p>
-                  {cardConnectedId ? (
+              {/* 카드: 연동됨 → 동기화/재연동, 미연동 → 연동하기 */}
+              <div className={cn(
+                "flex items-center justify-between rounded-lg px-3 py-2",
+                isCardConnected ? "bg-primary/5 border border-primary/20" : "bg-muted/50 border border-dashed border-muted-foreground/20"
+              )}>
+                <p className="text-xs font-medium">💳 카드</p>
+                {isCardConnected ? (
+                  cardConnectedId ? (
                     <Button
                       size="sm"
                       variant="ghost"
@@ -228,13 +232,27 @@ export default function Transactions() {
                       <ExternalLink className="h-3 w-3" />
                       재연동
                     </Button>
-                  )}
-                </div>
-              )}
-              {isAccountConnected && (
-                <div className="flex items-center justify-between rounded-lg bg-green-500/5 border border-green-500/20 px-3 py-2">
-                  <p className="text-xs font-medium">🏦 계좌</p>
-                  {bankConnectedId ? (
+                  )
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => navigate("/onboarding?step=card")}
+                    className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                  >
+                    <LinkIcon className="h-3 w-3" />
+                    연동
+                  </Button>
+                )}
+              </div>
+              {/* 계좌: 연동됨 → 동기화/재연동, 미연동 → 연동하기 */}
+              <div className={cn(
+                "flex items-center justify-between rounded-lg px-3 py-2",
+                isAccountConnected ? "bg-green-500/5 border border-green-500/20" : "bg-muted/50 border border-dashed border-muted-foreground/20"
+              )}>
+                <p className="text-xs font-medium">🏦 계좌</p>
+                {isAccountConnected ? (
+                  bankConnectedId ? (
                     <Button
                       size="sm"
                       variant="ghost"
@@ -255,9 +273,19 @@ export default function Transactions() {
                       <ExternalLink className="h-3 w-3" />
                       재연동
                     </Button>
-                  )}
-                </div>
-              )}
+                  )
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => navigate("/onboarding?step=account")}
+                    className="h-6 px-2 gap-1 text-xs text-green-600 hover:text-green-600 hover:bg-green-500/10"
+                  >
+                    <LinkIcon className="h-3 w-3" />
+                    연동
+                  </Button>
+                )}
+              </div>
             </div>
           )}
 
