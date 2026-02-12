@@ -1,9 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { Users, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 export function CommunityBanner() {
   const navigate = useNavigate();
+  const { isEnabled, isLoading } = useSiteSettings();
+
+  if (isLoading || !isEnabled("community_banner")) return null;
 
   return (
     <button

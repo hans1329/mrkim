@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { toast } from "sonner";
-import { Settings, Smartphone, Eye, EyeOff, Banknote } from "lucide-react";
+import { Settings, Smartphone, Eye, EyeOff, Banknote, Users } from "lucide-react";
 
 export default function AdminSiteSettings() {
   const { settings, isLoading, updateSetting } = useSiteSettings();
@@ -34,6 +34,12 @@ export default function AdminSiteSettings() {
       icon: Banknote,
       title: "급할 때 빌리기 카드",
       description: "자금관리 페이지에 대출 신청 카드를 표시합니다",
+    },
+    {
+      key: "community_banner",
+      icon: Users,
+      title: "비서들의 모임 배너",
+      description: "대시보드 하단에 비서들의 모임 배너를 표시합니다",
     },
   ];
 
