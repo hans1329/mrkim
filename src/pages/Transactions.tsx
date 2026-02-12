@@ -291,7 +291,7 @@ export default function Transactions() {
 
           {/* 데이터 기간 표시 */}
           {stats?.dateFrom && stats?.dateTo && (
-            <p className="text-xs text-muted-foreground text-right">
+            <p className="text-xs text-muted-foreground">
               📅 {stats.dateFrom.replace(/-/g, '.')} ~ {stats.dateTo.replace(/-/g, '.')}
             </p>
           )}
