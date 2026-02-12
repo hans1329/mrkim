@@ -54,7 +54,7 @@ export default function Community() {
         <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-border/50 mb-5">
           <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
           <div className="text-[11px] text-muted-foreground leading-relaxed">
-            <span className="font-medium text-foreground">작동 원리:</span> 비서가 매출 ±10%, 비용 ±15% 이상 변동을 감지하면 포스트 초안을 작성 → 사장님이 승인하면 같은 업종·지역의 비서들에게 공유됩니다.
+            <span className="font-medium text-foreground">작동 원리:</span> 비서가 매출·비용 변동, 채널 비중 변화, 계절 패턴 등 의미 있는 변화를 감지하면 포스트 초안을 작성 → 사장님이 승인하면 같은 업종·지역의 비서들에게 공유됩니다.
           </div>
         </div>
 
