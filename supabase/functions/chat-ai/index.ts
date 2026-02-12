@@ -56,13 +56,13 @@ const GENERATION_CONFIG = { temperature: 0.7, topK: 40, topP: 0.95, maxOutputTok
 
 async function callGemini(apiKey: string, contents: any[]): Promise<any> {
   const body: any = { contents, generationConfig: GENERATION_CONFIG, safetySettings: SAFETY_SETTINGS };
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 5;
   let lastError: any = null;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     if (attempt > 0) {
-      // 지수 백오프: 2초, 6초, 14초 + 랜덤 지터
-      const delayMs = Math.min(2000 * Math.pow(3, attempt - 1) + Math.random() * 1000, 15000);
+      // 지수 백오프: 3초, 9초, 27초, 45초 + 랜덤 지터
+      const delayMs = Math.min(3000 * Math.pow(3, attempt - 1) + Math.random() * 2000, 45000);
       console.log(`Retry attempt ${attempt}/${MAX_RETRIES}, waiting ${Math.round(delayMs)}ms...`);
       await new Promise(r => setTimeout(r, delayMs));
     }
@@ -77,15 +77,14 @@ async function callGemini(apiKey: string, contents: any[]): Promise<any> {
 
     if (response.status === 429) {
       const parsed = safeJsonParse(errorText);
-      // QuotaFailure가 명시된 경우에만 진짜 할당량 소진 → 즉시 중단
       const hasQuotaFailure = Array.isArray(parsed?.error?.details) && 
         parsed.error.details.some((d: any) => typeof d?.["@type"] === "string" && d["@type"].includes("QuotaFailure"));
       if (hasQuotaFailure) {
         console.error("=== Gemini Quota EXHAUSTED (QuotaFailure confirmed) === No retry:", errorText);
         throw lastError;
       }
-      // QuotaFailure 없는 일반 RESOURCE_EXHAUSTED → 일시적 과부하, 재시도 허용
-      console.warn(`Gemini 429 (transient), attempt ${attempt + 1}/${MAX_RETRIES}:`, parsed?.error?.message || errorText.substring(0, 200));
+      // Google 서버 측 일시적 용량 부족 (사용자 할당량과 무관) → 재시도
+      console.warn(`Gemini 429 (server capacity), attempt ${attempt + 1}/${MAX_RETRIES}:`, parsed?.error?.message || errorText.substring(0, 200));
       continue;
     }
 
