@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Building2,
   Bell,
@@ -40,6 +41,7 @@ import {
   Loader2,
   Save,
   Pencil,
+  Trash2,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -58,6 +60,7 @@ export default function Settings() {
   const [businessRegNumber, setBusinessRegNumber] = useState("");
   const [businessType, setBusinessType] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeletingSyncData, setIsDeletingSyncData] = useState(false);
 
   // 프로필 로드 시 초기값 설정
   useEffect(() => {
@@ -382,6 +385,62 @@ export default function Settings() {
                     }}
                   >
                     초기화 및 다시 시작
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  disabled={isDeletingSyncData}
+                >
+                  {isDeletingSyncData ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3 w-3" />
+                  )}
+                  연동 데이터 삭제
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>연동 데이터를 삭제하시겠습니까?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    카드·계좌에서 동기화된 <strong>모든 거래 내역</strong>이 영구 삭제됩니다. 
+                    수동으로 입력한 거래는 유지되며, 연동 상태는 변경되지 않습니다.
+                    <br /><br />
+                    이 작업은 되돌릴 수 없습니다.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>취소</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={async () => {
+                      setIsDeletingSyncData(true);
+                      try {
+                        const { data: userData } = await supabase.auth.getUser();
+                        if (!userData.user) throw new Error("로그인 필요");
+
+                        const { error } = await supabase
+                          .from("transactions")
+                          .delete()
+                          .eq("user_id", userData.user.id)
+                          .not("synced_at", "is", null);
+
+                        if (error) throw error;
+                        toast.success("연동 데이터가 삭제되었습니다");
+                      } catch (error: any) {
+                        toast.error(error.message || "삭제에 실패했습니다");
+                      } finally {
+                        setIsDeletingSyncData(false);
+                      }
+                    }}
+                  >
+                    삭제
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
