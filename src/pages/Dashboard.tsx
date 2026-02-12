@@ -12,6 +12,7 @@ import { EmployeeSummaryCard } from "@/components/dashboard/EmployeeSummaryCard"
 import { AutoTransferCard } from "@/components/dashboard/AutoTransferCard";
 import { DepositCard } from "@/components/dashboard/DepositCard";
 import { RecentTransactionsCard } from "@/components/dashboard/RecentTransactionsCard";
+import { CommunityBanner } from "@/components/dashboard/CommunityBanner";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useChat } from "@/contexts/ChatContext";
@@ -179,6 +180,7 @@ export default function Dashboard() {
                 <DepositCard isLoggedOut />
                 <AutoTransferCard isLoggedOut />
                 <AlertCard isLoggedOut />
+                <CommunityBanner />
               </>
             )}
 
@@ -196,6 +198,7 @@ export default function Dashboard() {
                 <DepositCard />
                 <AutoTransferCard />
                 <AlertCard />
+                <CommunityBanner />
               </>
             )}
           </div>
@@ -234,6 +237,7 @@ export default function Dashboard() {
               </div>
             </>
           )}
+          <CommunityBanner />
 
           {isLoggedInButNotConnected && <IntegratedConnectionCard />}
 

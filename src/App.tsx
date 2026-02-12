@@ -27,6 +27,7 @@ import Onboarding from "./pages/Onboarding";
 import DesignGuide from "./pages/DesignGuide";
 import Engine from "./pages/Engine";
 import NotFound from "./pages/NotFound";
+import Community from "./pages/Community";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 // Admin pages
@@ -74,6 +75,7 @@ const App = () => (
                   <Route path="/engine" element={<Engine />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="/community" element={<Community />} />
                   {/* Admin Routes */}
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminDashboard />} />
