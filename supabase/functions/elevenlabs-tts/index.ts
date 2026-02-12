@@ -46,7 +46,7 @@ serve(async (req) => {
 
     // ElevenLabs TTS API 호출
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}?output_format=mp3_22050_32`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}?output_format=mp3_44100_128`,
       {
         method: "POST",
         headers: {
