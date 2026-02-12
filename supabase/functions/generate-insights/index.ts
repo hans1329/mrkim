@@ -112,7 +112,7 @@ serve(async (req) => {
       });
     }
 
-    const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+    const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
     const systemPrompt = `당신은 소상공인 사업자를 위한 AI 경영 비서 '김비서'입니다. 
 제공된 재무 데이터를 분석하여 실행 가능한 경영 인사이트를 제공해주세요.
