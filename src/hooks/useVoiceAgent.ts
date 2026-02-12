@@ -28,6 +28,7 @@ export function useVoiceAgent() {
   const messagesContextRef = useRef<VoiceMessage[]>([]);
   const toolCallActiveRef = useRef(false);
   const waitingFirstMessageRef = useRef(false);
+  const pendingVisualizationRef = useRef<VisualizationData | null>(null);
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
@@ -186,6 +187,11 @@ export function useVoiceAgent() {
           return "죄송합니다, 데이터를 조회하지 못했습니다. 잠시 후 다시 시도해주세요.";
         }
 
+        // 시각화 데이터 저장 (다음 agent_response에 연결)
+        if (data.visualization) {
+          pendingVisualizationRef.current = data.visualization;
+        }
+
         // 마크다운/이모지 제거하여 음성 최적화
         const cleaned = data.response
           .replace(/#{1,6}\s?/g, "")
@@ -254,7 +260,11 @@ export function useVoiceAgent() {
     if (message.type === "agent_response") {
       const agentText = message.agent_response_event?.agent_response;
       if (agentText) {
-        const agentMsg: VoiceMessage = { role: "agent", text: agentText, timestamp: new Date() };
+        // query_business에서 저장해둔 시각화 데이터 연결
+        const visualization = pendingVisualizationRef.current;
+        pendingVisualizationRef.current = null;
+        
+        const agentMsg: VoiceMessage = { role: "agent", text: agentText, timestamp: new Date(), visualization };
         messagesContextRef.current = [...messagesContextRef.current, agentMsg];
         setLastMessage(agentMsg);
         saveMessageToDB("assistant", agentText);
