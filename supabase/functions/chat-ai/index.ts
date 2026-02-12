@@ -43,6 +43,44 @@ function buildGemini429Message(geminiErrorJson: any): { message: string; retryAf
 
 const fmt = (n: number) => n.toLocaleString("ko-KR");
 
+// ============ 요청 간 레이트 리미터 (동일 isolate 내) ============
+
+const MIN_INTERVAL_MS = 800; // 요청 간 최소 간격 (ms)
+let lastGeminiCallTime = 0;
+const pendingQueue: Array<() => void> = [];
+let processing = false;
+
+async function waitForSlot(): Promise<void> {
+  const now = Date.now();
+  const elapsed = now - lastGeminiCallTime;
+  if (elapsed >= MIN_INTERVAL_MS && !processing) {
+    // 슬롯 즉시 사용 가능
+    lastGeminiCallTime = Date.now();
+    return;
+  }
+  // 큐에 대기
+  return new Promise<void>((resolve) => {
+    pendingQueue.push(resolve);
+    if (!processing) drainQueue();
+  });
+}
+
+async function drainQueue() {
+  if (processing) return;
+  processing = true;
+  while (pendingQueue.length > 0) {
+    const elapsed = Date.now() - lastGeminiCallTime;
+    const waitMs = Math.max(0, MIN_INTERVAL_MS - elapsed);
+    if (waitMs > 0) {
+      await new Promise(r => setTimeout(r, waitMs));
+    }
+    lastGeminiCallTime = Date.now();
+    const next = pendingQueue.shift();
+    if (next) next();
+  }
+  processing = false;
+}
+
 // ============ 공통 Gemini 호출 ============
 
 const SAFETY_SETTINGS = [
@@ -65,6 +103,9 @@ async function callGemini(apiKey: string, contents: any[]): Promise<any> {
       console.log(`Retry attempt ${attempt}/${MAX_RETRIES}, waiting ${Math.round(delayMs)}ms...`);
       await new Promise(r => setTimeout(r, delayMs));
     }
+    // 레이트 리미터: 요청 간 최소 간격 보장
+    await waitForSlot();
+    console.log(`Gemini API call (attempt ${attempt + 1}/${MAX_RETRIES}), slot acquired`);
     const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

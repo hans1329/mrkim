@@ -8,6 +8,19 @@ const corsHeaders = {
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
+// ============ 요청 간 레이트 리미터 ============
+const MIN_INTERVAL_MS = 800;
+let lastGeminiCallTime = 0;
+
+async function waitForSlot(): Promise<void> {
+  const now = Date.now();
+  const elapsed = now - lastGeminiCallTime;
+  if (elapsed < MIN_INTERVAL_MS) {
+    await new Promise(r => setTimeout(r, MIN_INTERVAL_MS - elapsed));
+  }
+  lastGeminiCallTime = Date.now();
+}
+
 // 서비스 안내 전용 시스템 프롬프트
 const SERVICE_SYSTEM_PROMPT = `당신은 김비서 서비스 안내 담당입니다.
 
@@ -84,6 +97,9 @@ serve(async (req) => {
       role: "user",
       parts: [{ text: message }],
     });
+
+    // 레이트 리미터: 요청 간 최소 간격 보장
+    await waitForSlot();
 
     // Gemini API 호출
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
