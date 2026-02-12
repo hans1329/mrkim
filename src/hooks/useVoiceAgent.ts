@@ -27,6 +27,7 @@ export function useVoiceAgent() {
   const sessionActiveRef = useRef(false);
   const messagesContextRef = useRef<VoiceMessage[]>([]);
   const toolCallActiveRef = useRef(false);
+  const waitingFirstMessageRef = useRef(false);
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
@@ -213,7 +214,10 @@ export function useVoiceAgent() {
     console.log("[Conv] ✅ Connected to ElevenLabs agent");
     setIsConnecting(false);
     setLastError(null);
-    setVoiceStatus("speaking"); // Agent speaks first message
+    // 첫 인사말이 곧 시작되므로 "speaking" 상태를 유지하고
+    // listening으로 전환하지 않음 (waitingFirstMessageRef로 제어)
+    waitingFirstMessageRef.current = true;
+    setVoiceStatus("speaking");
     sessionActiveRef.current = true;
   }, []);
 
@@ -301,6 +305,11 @@ export function useVoiceAgent() {
     if (toolCallActiveRef.current) {
       setVoiceStatus("processing");
     } else if (conversation.isSpeaking) {
+      // 에이전트가 실제로 말하기 시작하면 waitingFirstMessage 해제
+      waitingFirstMessageRef.current = false;
+      setVoiceStatus("speaking");
+    } else if (waitingFirstMessageRef.current) {
+      // 첫 인사말 대기 중 - speaking 상태 유지 (listening으로 전환 방지)
       setVoiceStatus("speaking");
     } else {
       setVoiceStatus("listening");
@@ -373,6 +382,7 @@ export function useVoiceAgent() {
     console.log("[Session] ⏹ Ending session");
     sessionActiveRef.current = false;
     toolCallActiveRef.current = false;
+    waitingFirstMessageRef.current = false;
 
     try {
       await conversation.endSession();
