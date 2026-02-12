@@ -145,21 +145,25 @@ export function AIChatCard() {
         // 오늘 거래, 이번달 거래, 대화 기록을 병렬로 조회
         const [todayResult, monthlyResult, chatResult] = await Promise.all([supabase.from("transactions").select("amount, type").eq("user_id", user.id).eq("transaction_date", todayStr), supabase.from("transactions").select("amount, type").eq("user_id", user.id).gte("transaction_date", monthStart).lte("transaction_date", todayStr), supabase.from("chat_messages").select("id").eq("user_id", user.id).limit(1)]);
 
-        // 오늘 통계
+        // 오늘 통계 (transfer_in은 매출에서 제외)
         let todayIncome = 0;
         let todayExpense = 0;
         if (todayResult.data) {
           todayResult.data.forEach(tx => {
-            if (tx.type === "income") todayIncome += Number(tx.amount);else if (tx.type === "expense") todayExpense += Number(tx.amount);
+            if (tx.type === "income") todayIncome += Number(tx.amount);
+            else if (tx.type === "expense") todayExpense += Number(tx.amount);
+            // transfer_in은 매출/지출 모두 제외
           });
         }
 
-        // 이번달 통계
+        // 이번달 통계 (transfer_in은 매출에서 제외)
         let monthlyIncome = 0;
         let monthlyExpense = 0;
         if (monthlyResult.data) {
           monthlyResult.data.forEach(tx => {
-            if (tx.type === "income") monthlyIncome += Number(tx.amount);else if (tx.type === "expense") monthlyExpense += Number(tx.amount);
+            if (tx.type === "income") monthlyIncome += Number(tx.amount);
+            else if (tx.type === "expense") monthlyExpense += Number(tx.amount);
+            // transfer_in은 매출/지출 모두 제외
           });
         }
 
