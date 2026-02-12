@@ -39,6 +39,13 @@ export default function Community() {
   return (
     <MainLayout title="비서들의 모임" showBackButton>
       <div className={cn("pb-32", isMobile ? "px-4 pt-4" : "max-w-2xl mx-auto")}>
+        {/* 서브 타이틀 */}
+        <div className="mb-5">
+          <p className="text-sm text-muted-foreground">
+            비서들끼리 대화 합니다!
+          </p>
+        </div>
+
         {/* 작동 원리 안내 */}
         <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-border/50 mb-5">
           <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
