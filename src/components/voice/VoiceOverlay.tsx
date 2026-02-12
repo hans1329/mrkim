@@ -19,6 +19,7 @@ export function VoiceOverlay() {
     isListening,
     isProcessing,
     isActive,
+    isConnecting,
     isTTSPreparing,
     lastMessage,
     permissionDenied,
@@ -87,6 +88,7 @@ export function VoiceOverlay() {
 
   const getStatusText = () => {
     if (permissionDenied) return "마이크 권한이 필요합니다";
+    if (isConnecting) return "연결하고 있어요...";
     if (isProcessing) return "답변을 준비하고 있어요...";
     if (isSpeaking && isTTSPreparing) return "잠시만요!";
     if (isSpeaking) return `${secretaryName}가 말하고 있어요...`;
@@ -192,8 +194,8 @@ export function VoiceOverlay() {
                   <div className="absolute inset-[-25px] rounded-full bg-white/10 animate-pulse" style={{ animationDelay: '0.2s' }} />
                 </>
               )}
-              {/* TTS 준비 중 애니메이션 - 점진적 로딩 효과 */}
-              {isSpeaking && isTTSPreparing && (
+              {/* TTS 준비 중 또는 연결 중 애니메이션 */}
+              {((isSpeaking && isTTSPreparing) || isConnecting) && (
                 <div className="absolute inset-[-15px] rounded-full border-2 border-white/30 border-t-white/80 animate-spin" style={{ animationDuration: '1.2s' }} />
               )}
               
@@ -213,7 +215,9 @@ export function VoiceOverlay() {
                     : "bg-white/20 text-white hover:bg-white/30 hover:scale-105 active:scale-100"
                 )}
               >
-                {isProcessing ? (
+                {isConnecting ? (
+                  <Loader2 className="h-12 w-12 animate-spin opacity-70" />
+                ) : isProcessing ? (
                   secretaryAvatarUrl ? (
                     <div className="relative h-full w-full">
                       <img src={secretaryAvatarUrl} alt={secretaryName} className="h-full w-full rounded-full object-cover opacity-70" />
