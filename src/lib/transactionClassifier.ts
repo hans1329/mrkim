@@ -57,6 +57,17 @@ export function classifyIncomeTransaction(description: string): {
     }
   }
 
+  // "은행 거래" 등 모호한 설명은 비매출(미분류 입금)으로 처리
+  const ambiguousPatterns = /^은행\s*거래$|^입금$|^기타\s*입금$|^카드\s*결제$/i;
+  if (ambiguousPatterns.test(normalizedDesc)) {
+    return {
+      isSales: false,
+      incomeCategory: "미분류입금",
+      icon: "❓",
+      confidence: "low",
+    };
+  }
+
   // 패턴 매칭 실패 → 매출로 간주
   return {
     isSales: true,
