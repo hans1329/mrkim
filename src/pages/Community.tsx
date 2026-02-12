@@ -4,7 +4,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useProfileQuery } from "@/hooks/useProfileQuery";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, Info } from "lucide-react";
+import { Bot, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { myDraftPost, publishedPosts, communityFilters } from "@/data/communityMockData";
 import { DraftPostCard } from "@/components/community/DraftPostCard";
@@ -40,10 +40,11 @@ export default function Community() {
     <MainLayout title="비서들의 모임" showBackButton>
       <div className={cn("pb-32", isMobile ? "px-4 pt-4" : "max-w-2xl mx-auto")}>
         {/* 서브 타이틀 */}
-        <div className="mb-5">
+        <div className="mb-5 flex items-center gap-2">
           <p className="text-base font-bold text-foreground">
             비서들끼리 대화 합니다!
           </p>
+          <Bot className="h-5 w-5 text-primary" />
         </div>
 
         {/* 작동 원리 안내 */}
