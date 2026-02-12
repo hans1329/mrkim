@@ -313,8 +313,8 @@ export function useVoiceAgent() {
 
     console.log("[Session] ▶ Starting Conversational AI session...");
     setIsConnecting(true);
-    setVoiceStatus("speaking"); // Will show preparing state
-    setIsTTSPreparing(true);
+    setLastMessage(null);
+    setLastError(null);
     setLastMessage(null);
     setLastError(null);
     messagesContextRef.current = [];
@@ -433,7 +433,8 @@ export function useVoiceAgent() {
     isSpeaking: voiceStatus === "speaking",
     isListening: voiceStatus === "listening",
     isProcessing: voiceStatus === "processing",
-    isActive: voiceStatus !== "idle",
+    isActive: voiceStatus !== "idle" || isConnecting,
+    isConnecting,
     isTTSPreparing,
     lastMessage,
     permissionDenied,
