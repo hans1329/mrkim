@@ -107,6 +107,7 @@ export function useVoiceAgent() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const [isTTSPreparing, setIsTTSPreparing] = useState(false);
+  const [volume, setVolumeState] = useState(1);
 
   const abortRef = useRef(false);
   const messagesContextRef = useRef<VoiceMessage[]>([]);
@@ -136,9 +137,10 @@ export function useVoiceAgent() {
         const url = URL.createObjectURL(audioBlob);
         // 모바일 자동재생 정책 대응: persistent audio를 항상 재사용
         // (소진하지 않고 계속 같은 엘리먼트 사용 → 제스처 컨텍스트 유지)
-        const audio = persistentAudioRef.current || new Audio();
-        audio.src = url;
-        currentAudioRef.current = audio;
+      const audio = persistentAudioRef.current || new Audio();
+      audio.src = url;
+      audio.volume = volume;
+      currentAudioRef.current = audio;
 
         audio.onended = () => {
           currentAudioRef.current = null;
@@ -658,6 +660,17 @@ export function useVoiceAgent() {
     handleCommittedTranscript(text);
   }, [handleCommittedTranscript]);
 
+  const setVolume = useCallback((v: number) => {
+    const clamped = Math.max(0, Math.min(1, v));
+    setVolumeState(clamped);
+    if (persistentAudioRef.current) {
+      persistentAudioRef.current.volume = clamped;
+    }
+    if (currentAudioRef.current) {
+      currentAudioRef.current.volume = clamped;
+    }
+  }, []);
+
   return {
     status,
     isSpeaking: status === "speaking",
@@ -668,6 +681,8 @@ export function useVoiceAgent() {
     lastMessage,
     permissionDenied,
     lastError,
+    volume,
+    setVolume,
     startSession,
     endSession,
     interruptAndListen,
