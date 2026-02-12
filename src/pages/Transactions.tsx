@@ -72,7 +72,7 @@ export default function Transactions() {
 
     if (!connectedId) {
       toast.error("카드 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.", {
-        action: { label: "재연동", onClick: () => navigate("/onboarding") },
+        action: { label: "재연동", onClick: () => navigate("/onboarding?step=card&reconnect=true") },
       });
       return;
     }
@@ -110,7 +110,7 @@ export default function Transactions() {
 
     if (!connectedId) {
       toast.error("은행 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.", {
-        action: { label: "재연동", onClick: () => navigate("/onboarding") },
+        action: { label: "재연동", onClick: () => navigate("/onboarding?step=account&reconnect=true") },
       });
       return;
     }
@@ -222,7 +222,7 @@ export default function Transactions() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => navigate("/onboarding")}
+                      onClick={() => navigate("/onboarding?step=card&reconnect=true")}
                       className="h-6 px-2 gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
                       <ExternalLink className="h-3 w-3" />
@@ -249,7 +249,7 @@ export default function Transactions() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => navigate("/onboarding")}
+                      onClick={() => navigate("/onboarding?step=account&reconnect=true")}
                       className="h-6 px-2 gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
                       <ExternalLink className="h-3 w-3" />

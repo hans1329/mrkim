@@ -59,8 +59,9 @@ export default function Onboarding() {
   const [showAccountFlow, setShowAccountFlow] = useState(false);
   const [connectionResult, setConnectionResult] = useState<any>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
-  const [businessNumber, setBusinessNumber] = useState(""); // 설정에서 가져온 사업자등록번호
-  const [showBusinessNumberModal, setShowBusinessNumberModal] = useState(false); // 사업자등록번호 입력 모달
+  const [businessNumber, setBusinessNumber] = useState("");
+  const [showBusinessNumberModal, setShowBusinessNumberModal] = useState(false);
+  const isReconnect = searchParams.get("reconnect") === "true";
   
   // 페이지 진입 시 DB에서 연결 상태 확인 후 로컬 상태에 반영
   useEffect(() => {
@@ -346,6 +347,7 @@ export default function Onboarding() {
               onSkip={handleSkip}
               stepNumber={2}
               totalSteps={3}
+              isReconnectMode={isReconnect}
             />
           )}
           {currentStep === "card" && showCardFlow && (
@@ -373,6 +375,7 @@ export default function Onboarding() {
               onSkip={handleSkip}
               stepNumber={3}
               totalSteps={3}
+              isReconnectMode={isReconnect}
             />
           )}
           {currentStep === "account" && showAccountFlow && (
@@ -715,6 +718,7 @@ function ConnectionStep({
   stepNumber,
   totalSteps,
   connectionResult,
+  isReconnectMode = false,
 }: {
   title: string;
   description: string;
@@ -727,6 +731,7 @@ function ConnectionStep({
   stepNumber: number;
   totalSteps: number;
   connectionResult?: any;
+  isReconnectMode?: boolean;
 }) {
   return (
     <div className="space-y-6">
@@ -834,10 +839,30 @@ function ConnectionStep({
         transition={{ delay: 0.35, duration: 0.4 }}
       >
         {isConnected ? (
-          <Button onClick={onNext} size="lg" className="w-full gap-2 h-12">
-            다음
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          <div className="space-y-2">
+            <Button onClick={onNext} size="lg" className="w-full gap-2 h-12">
+              다음
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            {isReconnectMode && (
+              <Button 
+                variant="outline" 
+                onClick={onConnect} 
+                size="lg" 
+                className="w-full gap-2 h-11 text-sm"
+                disabled={isConnecting}
+              >
+                {isConnecting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    재연결 중...
+                  </>
+                ) : (
+                  "다시 연결하기"
+                )}
+              </Button>
+            )}
+          </div>
         ) : (
           <>
             <Button 
