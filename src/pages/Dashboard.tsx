@@ -126,7 +126,7 @@ export default function Dashboard() {
     <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요!" stickyHeader={mobileHeader}>
       {/* 모바일 전용 네이티브 홈 */}
       {isMobile ? (
-        <div ref={scrollRef}>
+        <div ref={scrollRef} className="flex flex-col min-h-full">
           {/* 히어로 영역 - 헤더 뒤로 확장 */}
           <div className="relative pt-[calc(env(safe-area-inset-top,0px)+60px)] px-5 pb-8">
 
@@ -155,7 +155,7 @@ export default function Dashboard() {
           </div>
 
           {/* 히어로 아래 콘텐츠 - 흰 배경 */}
-          <div className="bg-background pb-4">
+          <div className="bg-background flex-1 pb-4">
 
           {/* 연동 상태 배너 */}
           <div className="px-4 pt-4">
