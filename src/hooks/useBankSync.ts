@@ -18,6 +18,7 @@ interface SyncResult {
   synced: number;
   skipped: number;
   errors: number;
+  updated?: number;
 }
 
 export function useBankSync() {
@@ -111,47 +112,90 @@ export function useBankSync() {
       // external_tx_id 기반 체크
       const { data: existingByTxId } = await supabase
         .from("transactions")
-        .select("external_tx_id")
+        .select("id, external_tx_id, type, category, is_manually_classified")
         .in("external_tx_id", txIds);
 
-      const existingIds = new Set(existingByTxId?.map((t) => t.external_tx_id) || []);
+      const existingTxIdMap = new Map(
+        (existingByTxId || []).map((t) => [t.external_tx_id, t])
+      );
 
       // 복합키 기반 체크 (재연동 시 transactionId가 달라질 수 있음)
       const dateRange = transactions.map((tx) => formatDate(tx.transactionDate));
       const uniqueDates = [...new Set(dateRange)];
       const { data: existingByComposite } = await supabase
         .from("transactions")
-        .select("transaction_date, amount, description, source_type")
+        .select("id, transaction_date, amount, description, source_type, type, category, is_manually_classified")
         .eq("source_type", "bank")
         .in("transaction_date", uniqueDates);
 
-      const compositeKeys = new Set(
+      const compositeMap = new Map(
         (existingByComposite || []).map(
-          (t) => `${t.transaction_date}|${t.amount}|${t.description}|${t.source_type}`
+          (t) => [`${t.transaction_date}|${t.amount}|${t.description}|${t.source_type}`, t]
         )
       );
 
-      // 3. 새 거래만 필터링 (두 가지 중복 체크 모두 통과해야 함)
-      const newTransactions = transactions.filter((tx) => {
-        if (!tx.transactionId) return false;
-        if (existingIds.has(tx.transactionId)) return false;
+      // 3. 분류: 새 거래 vs 기존 거래(분류 업데이트 대상)
+      const newTransactions: BankTransaction[] = [];
+      const updateTargets: { id: string; type: string; category: string; category_icon: string; classification_confidence: string }[] = [];
+
+      for (const tx of transactions) {
+        if (!tx.transactionId) continue;
         const desc = tx.description || tx.counterpartName || "은행 거래";
         const key = `${formatDate(tx.transactionDate)}|${tx.amount}|${desc}|bank`;
-        if (compositeKeys.has(key)) return false;
-        return true;
-      });
 
-      if (newTransactions.length === 0) {
-        return { synced: 0, skipped: transactions.length, errors: 0 };
+        // 기존 거래 찾기 (external_tx_id 또는 복합키)
+        const existingByExternalId = existingTxIdMap.get(tx.transactionId);
+        const existingByKey = compositeMap.get(key);
+        const existing = existingByExternalId || existingByKey;
+
+        if (existing) {
+          // 수동 분류된 건은 건드리지 않음
+          if (existing.is_manually_classified) continue;
+
+          // 입금 거래의 분류가 달라졌으면 업데이트
+          if (tx.type === "income") {
+            const incomeResult = classifyIncomeTransaction(desc);
+            const newType = incomeResult.isSales ? "income" : "transfer_in";
+            if (existing.type !== newType || existing.category !== incomeResult.incomeCategory) {
+              updateTargets.push({
+                id: existing.id,
+                type: newType,
+                category: incomeResult.incomeCategory,
+                category_icon: incomeResult.icon,
+                classification_confidence: incomeResult.confidence,
+              });
+            }
+          }
+        } else {
+          newTransactions.push(tx);
+        }
       }
 
-      // 4. 거래 데이터 변환 및 자동 분류
+      // 4. 기존 거래 분류 업데이트
+      let updated = 0;
+      for (const target of updateTargets) {
+        const { error } = await supabase
+          .from("transactions")
+          .update({
+            type: target.type,
+            category: target.category,
+            category_icon: target.category_icon,
+            classification_confidence: target.classification_confidence,
+            synced_at: new Date().toISOString(),
+          })
+          .eq("id", target.id);
+        if (!error) updated++;
+      }
+
+      if (newTransactions.length === 0) {
+        return { synced: 0, skipped: transactions.length - updateTargets.length, errors: 0, updated };
+      }
+
+      // 5. 새 거래 데이터 변환 및 자동 분류
       const insertData = newTransactions.map((tx: any) => {
-        // 설명 우선순위: description > counterpartName > "은행 거래"
         const desc = tx.description || tx.counterpartName || "은행 거래";
         const maskedAccount = accountNo ? `****${accountNo.slice(-4)}` : undefined;
 
-        // 입금(income)인 경우: 매출 vs 비매출 분류
         if (tx.type === "income") {
           const incomeResult = classifyIncomeTransaction(desc);
           return {
@@ -174,7 +218,6 @@ export function useBankSync() {
           };
         }
 
-        // 지출(expense)인 경우: 기존 비용 카테고리 분류
         const classification = classifyTransaction(desc);
         return {
           user_id: userData.user.id,
@@ -197,7 +240,7 @@ export function useBankSync() {
         };
       });
 
-      // 5. DB에 저장
+      // 6. DB에 저장
       const { error: insertError } = await supabase
         .from("transactions")
         .insert(insertData);
@@ -209,8 +252,9 @@ export function useBankSync() {
 
       return {
         synced: newTransactions.length,
-        skipped: transactions.length - newTransactions.length,
+        skipped: transactions.length - newTransactions.length - updateTargets.length,
         errors: 0,
+        updated,
       };
     },
     onSuccess: () => {
