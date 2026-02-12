@@ -155,7 +155,7 @@ export default function Dashboard() {
           </div>
 
           {/* 히어로 아래 콘텐츠 - 흰 배경 */}
-          <div className="bg-background flex-1 pb-24">
+          <div className="bg-background flex-1 pb-24 min-h-screen">
 
           {/* 연동 상태 배너 */}
           <div className="px-4 pt-4">
