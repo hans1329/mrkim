@@ -56,13 +56,12 @@ const GENERATION_CONFIG = { temperature: 0.7, topK: 40, topP: 0.95, maxOutputTok
 
 async function callGemini(apiKey: string, contents: any[]): Promise<any> {
   const body: any = { contents, generationConfig: GENERATION_CONFIG, safetySettings: SAFETY_SETTINGS };
-  const MAX_RETRIES = 5;
+  const MAX_RETRIES = 3;
   let lastError: any = null;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     if (attempt > 0) {
-      // 지수 백오프: 3초, 9초, 27초, 45초 + 랜덤 지터
-      const delayMs = Math.min(3000 * Math.pow(3, attempt - 1) + Math.random() * 2000, 45000);
+      const delayMs = Math.min(2000 * Math.pow(2, attempt - 1) + Math.random() * 1000, 10000);
       console.log(`Retry attempt ${attempt}/${MAX_RETRIES}, waiting ${Math.round(delayMs)}ms...`);
       await new Promise(r => setTimeout(r, delayMs));
     }
