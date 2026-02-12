@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { classifyTransaction } from "@/lib/transactionClassifier";
+import { classifyTransaction, classifyIncomeTransaction } from "@/lib/transactionClassifier";
 
 interface BankTransaction {
   transactionDate: string;
@@ -127,9 +127,33 @@ export function useBankSync() {
       const insertData = newTransactions.map((tx: any) => {
         // 설명 우선순위: description > counterpartName > "은행 거래"
         const desc = tx.description || tx.counterpartName || "은행 거래";
-        const classification = classifyTransaction(desc);
         const maskedAccount = accountNo ? `****${accountNo.slice(-4)}` : undefined;
-        
+
+        // 입금(income)인 경우: 매출 vs 비매출 분류
+        if (tx.type === "income") {
+          const incomeResult = classifyIncomeTransaction(desc);
+          return {
+            user_id: userData.user.id,
+            transaction_date: formatDate(tx.transactionDate),
+            transaction_time: tx.transactionTime,
+            description: desc,
+            amount: tx.amount,
+            type: incomeResult.isSales ? "income" : "transfer_in",
+            source_type: "bank" as const,
+            source_name: bankName,
+            source_account: maskedAccount,
+            category: incomeResult.incomeCategory,
+            category_icon: incomeResult.icon,
+            classification_confidence: incomeResult.confidence,
+            external_tx_id: tx.transactionId,
+            synced_at: new Date().toISOString(),
+            memo: tx.memo || null,
+            merchant_name: tx.counterpartName || null,
+          };
+        }
+
+        // 지출(expense)인 경우: 기존 비용 카테고리 분류
+        const classification = classifyTransaction(desc);
         return {
           user_id: userData.user.id,
           transaction_date: formatDate(tx.transactionDate),

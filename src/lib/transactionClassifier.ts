@@ -7,6 +7,65 @@ export interface CategoryRule {
   icon: string;
 }
 
+// ========== 입금(income) 중 비매출 분류 규칙 ==========
+// 매칭되면 비매출(non-sales)로 처리, 매칭 안 되면 매출(sales)로 간주
+export interface IncomeClassificationRule {
+  pattern: RegExp;
+  incomeCategory: string; // "이체입금" | "대출금" | "환불" | "이자수익" | "보험금" | "기타입금"
+  icon: string;
+}
+
+export const INCOME_NON_SALES_RULES: IncomeClassificationRule[] = [
+  // 계좌이체 / 자금이동
+  { pattern: /이체|자금이체|타행이체|계좌이체|자동이체|인터넷이체|모바일이체|당행이체|무통장|지급이체/i, incomeCategory: "이체입금", icon: "🔄" },
+  // 대출
+  { pattern: /대출|융자|신용대출|마이너스|한도대출|주택담보|전세자금|사업자대출/i, incomeCategory: "대출금", icon: "🏦" },
+  // 환불/취소
+  { pattern: /환불|반품|취소|캔슬|리펀드|refund|cancel/i, incomeCategory: "환불", icon: "↩️" },
+  // 이자
+  { pattern: /이자|이자지급|예금이자|적금이자|정기예금|보통예금.*이자/i, incomeCategory: "이자수익", icon: "💰" },
+  // 보험금
+  { pattern: /보험금|보험.*지급|실손|실비|보상금/i, incomeCategory: "보험금", icon: "🛡️" },
+  // 정부지원/보조금
+  { pattern: /보조금|지원금|장려금|근로장려|자녀장려|재난지원|소상공인|고용유지|국세환급|세금환급|부가세환급/i, incomeCategory: "정부지원금", icon: "🏛️" },
+  // 급여 (사업주 본인 급여가 입금되는 경우는 거의 없지만)
+  { pattern: /급여|월급|상여|보너스|퇴직금|성과급/i, incomeCategory: "급여입금", icon: "💵" },
+  // 내부 자금이동 (같은 명의 계좌 간)
+  { pattern: /본인|자기앞|자기계좌|내계좌/i, incomeCategory: "내부이체", icon: "🔁" },
+];
+
+/**
+ * 입금 거래가 실제 매출인지 비매출인지 분류
+ * @returns isSales: true면 매출, false면 비매출
+ */
+export function classifyIncomeTransaction(description: string): {
+  isSales: boolean;
+  incomeCategory: string;
+  icon: string;
+  confidence: "high" | "medium" | "low";
+} {
+  const normalizedDesc = description.trim().toLowerCase();
+
+  for (const rule of INCOME_NON_SALES_RULES) {
+    if (rule.pattern.test(normalizedDesc)) {
+      return {
+        isSales: false,
+        incomeCategory: rule.incomeCategory,
+        icon: rule.icon,
+        confidence: "high",
+      };
+    }
+  }
+
+  // 패턴 매칭 실패 → 매출로 간주
+  return {
+    isSales: true,
+    incomeCategory: "매출",
+    icon: "💵",
+    confidence: "medium",
+  };
+}
+
 // 상호명 패턴 → 비용 카테고리 매핑
 export const CATEGORY_RULES: CategoryRule[] = [
   // 식비/복리후생 - 음식점
