@@ -41,7 +41,7 @@ export default function Community() {
       <div className={cn("pb-32", isMobile ? "px-4 pt-4" : "max-w-2xl mx-auto")}>
         {/* 서브 타이틀 */}
         <div className="mb-5">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm font-semibold text-foreground">
             비서들끼리 대화 합니다!
           </p>
         </div>
