@@ -57,6 +57,62 @@ export function useVoiceAgent() {
     return (code - 0xAC00) % 28 !== 0;
   }
 
+  // --- 숫자를 한글 독음으로 변환 (TTS 끊김 방지) ---
+  function convertNumbersToKorean(text: string): string {
+    const units = ["", "만", "억", "조"];
+    const digits = ["", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"];
+
+    function numberToKorean(num: number): string {
+      if (num === 0) return "영";
+      if (num < 0) return "마이너스 " + numberToKorean(-num);
+
+      let result = "";
+      let unitIndex = 0;
+      let remaining = Math.floor(num);
+
+      while (remaining > 0) {
+        const chunk = remaining % 10000;
+        if (chunk > 0) {
+          let chunkStr = "";
+          const thousands = Math.floor(chunk / 1000);
+          const hundreds = Math.floor((chunk % 1000) / 100);
+          const tens = Math.floor((chunk % 100) / 10);
+          const ones = chunk % 10;
+
+          if (thousands > 0) chunkStr += (thousands === 1 ? "" : digits[thousands]) + "천";
+          if (hundreds > 0) chunkStr += (hundreds === 1 ? "" : digits[hundreds]) + "백";
+          if (tens > 0) chunkStr += (tens === 1 ? "" : digits[tens]) + "십";
+          if (ones > 0) chunkStr += digits[ones];
+
+          result = chunkStr + units[unitIndex] + " " + result;
+        }
+        remaining = Math.floor(remaining / 10000);
+        unitIndex++;
+      }
+
+      return result.trim();
+    }
+
+    // 콤마가 포함된 숫자 + 단위(원, %, 건 등) 변환
+    return text.replace(/(\d{1,3}(,\d{3})*|\d+)(\.\d+)?\s*(원|만원|억원|%|건|명|개)/g, (match, intPart, _comma, decPart, unit) => {
+      const num = parseInt(intPart.replace(/,/g, ""), 10);
+      
+      if (unit === "%") {
+        return numberToKorean(num) + (decPart ? "점" + decPart.slice(1).split("").map((d: string) => digits[parseInt(d)] || d).join("") : "") + " 퍼센트";
+      }
+      if (unit === "만원") {
+        return numberToKorean(num) + "만 원";
+      }
+      if (unit === "억원") {
+        return numberToKorean(num) + "억 원";
+      }
+
+      const korean = numberToKorean(num);
+      const unitMap: Record<string, string> = { "원": " 원", "건": " 건", "명": " 명", "개": " 개" };
+      return korean + (unitMap[unit] || ` ${unit}`);
+    });
+  }
+
   // --- System prompt ---
   const systemPrompt = useMemo(() => {
     const genderDescription = secretaryGender === "male"
@@ -195,14 +251,16 @@ export function useVoiceAgent() {
           pendingVisualizationRef.current = data.visualization;
         }
 
-        // 마크다운/이모지 제거하여 음성 최적화
-        const cleaned = data.response
-          .replace(/#{1,6}\s?/g, "")
-          .replace(/\*{1,2}([^*]+)\*{1,2}/g, "$1")
-          .replace(/\p{Extended_Pictographic}/gu, "")
-          .replace(/^[-•*]\s+/gm, "")
-          .replace(/\n{2,}/g, "\n")
-          .trim();
+        // 마크다운/이모지 제거 + 숫자를 한글 독음으로 변환하여 음성 최적화
+        const cleaned = convertNumbersToKorean(
+          data.response
+            .replace(/#{1,6}\s?/g, "")
+            .replace(/\*{1,2}([^*]+)\*{1,2}/g, "$1")
+            .replace(/\p{Extended_Pictographic}/gu, "")
+            .replace(/^[-•*]\s+/gm, "")
+            .replace(/\n{2,}/g, "\n")
+            .trim()
+        );
 
         console.log("[VoiceClientTool] query_business response:", cleaned.substring(0, 100));
         
