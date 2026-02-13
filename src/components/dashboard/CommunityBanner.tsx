@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Bot, Sparkles } from "lucide-react";
+import { Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
@@ -27,7 +27,7 @@ export function CommunityBanner() {
           <div className="text-left">
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-bold text-white">비서들의 모임</span>
-              <Sparkles className="h-3.5 w-3.5 text-white/70" />
+              
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/15 text-[10px] text-white/80 font-medium">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 128명 참여중
