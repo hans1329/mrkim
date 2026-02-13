@@ -103,7 +103,7 @@ function RealStatCard({
             <Icon className="h-3.5 w-3.5" />
           </div>
           <p className={cn(
-            "text-[11px] font-medium truncate",
+            "text-xs font-medium truncate",
             isHero ? "text-white/80" : (variant === "default" ? "text-muted-foreground" : "opacity-80")
           )}>
             {title}
