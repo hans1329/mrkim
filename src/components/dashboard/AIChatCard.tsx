@@ -278,7 +278,7 @@ export function AIChatCard() {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 shadow-lg hover:bg-primary/20 transition-colors overflow-hidden">
+              <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg hover:bg-muted transition-colors overflow-hidden">
                 {secretaryAvatarUrl ? <img src={secretaryAvatarUrl} alt={secretaryName || "비서"} className="h-full w-auto object-contain" /> : <Bot className="h-8 w-8 text-primary" />}
               </button>
               <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 flex items-center justify-center bg-muted rounded-full">
