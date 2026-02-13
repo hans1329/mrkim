@@ -319,8 +319,17 @@ export function useVoiceAgent() {
   useEffect(() => {
     // 연결 시도 중에는 voiceStatus를 건드리지 않음
     if (isConnecting) return;
-    // 인터럽트 상태에서는 상태 동기화를 완전히 무시
-    if (interruptedRef.current) return;
+
+    // 인터럽트 상태: isSpeaking이 false가 될 때까지 대기 후 해제
+    if (interruptedRef.current) {
+      if (!conversation.isSpeaking) {
+        // 발화가 실제로 끝남 → 볼륨 복원, 인터럽트 해제
+        interruptedRef.current = false;
+        conversation.setVolume({ volume });
+        // 이미 listening 상태이므로 추가 전환 불필요
+      }
+      return;
+    }
 
     if (conversation.status === "disconnected") {
       if (speakingDebounceRef.current) {
@@ -448,58 +457,22 @@ export function useVoiceAgent() {
     messagesContextRef.current = [];
   }, [conversation]);
 
-  // --- Interrupt (버튼으로 에이전트 발화 중단 → 세션 재시작) ---
-  const interruptAndListen = useCallback(async () => {
-    console.log("[Voice] Interrupt: ending session and restarting");
-    // 인터럽트 플래그 설정 → useEffect가 상태를 건드리지 않음
+  // --- Interrupt (버튼으로 에이전트 발화 중단) ---
+  const interruptAndListen = useCallback(() => {
+    console.log("[Voice] Interrupt: muting agent, switching to listening");
+    // 인터럽트 플래그 → useEffect 상태 동기화 완전 차단
     interruptedRef.current = true;
     // 디바운스 타이머 취소
     if (speakingDebounceRef.current) {
       clearTimeout(speakingDebounceRef.current);
       speakingDebounceRef.current = null;
     }
+    // 에이전트 볼륨 0 → 즉시 무음
+    conversation.setVolume({ volume: 0 });
     setIsTTSPreparing(false);
     setVoiceStatus("listening");
     setMicMuted(false);
-
-    // 세션 종료 후 즉시 재시작하여 실제 발화를 끊음
-    try {
-      await conversation.endSession();
-    } catch (e) {
-      console.error("[Voice] Interrupt endSession error:", e);
-    }
-
-    // 짧은 딜레이 후 재연결
-    setTimeout(async () => {
-      interruptedRef.current = false;
-      try {
-        const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
-        if (error) throw new Error(error.message);
-        const token = data?.token as string | undefined;
-        const signedUrl = (data?.signedUrl || data?.signed_url) as string | undefined;
-        if (!token && !signedUrl) throw new Error("토큰 없음");
-
-        if (token) {
-          await conversation.startSession({
-            conversationToken: token,
-            connectionType: "webrtc",
-            overrides,
-          });
-        } else {
-          await conversation.startSession({
-            signedUrl: signedUrl!,
-            connectionType: "websocket",
-            overrides,
-          });
-        }
-        sessionActiveRef.current = true;
-      } catch (e) {
-        console.error("[Voice] Interrupt restart error:", e);
-        setVoiceStatus("idle");
-        toast.error("재연결에 실패했습니다.");
-      }
-    }, 300);
-  }, [conversation, overrides]);
+  }, [conversation]);
 
   // --- Reset permission ---
   const resetPermission = useCallback(() => {
