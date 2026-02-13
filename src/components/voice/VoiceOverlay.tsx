@@ -76,8 +76,8 @@ export function VoiceOverlay() {
   const handleMicClick = () => {
     if (isProcessing) return;
     
-    // 말하는 중이거나 TTS 준비 중이면 중단하고 듣기 모드로 전환
-    if (isSpeaking || isTTSPreparing) {
+    // TTS 재생 중이면 중단하고 듣기 모드로 전환
+    if (isSpeaking) {
       interruptAndListen();
       return;
     }
