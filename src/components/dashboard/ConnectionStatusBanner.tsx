@@ -355,7 +355,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           <Button
             size="sm"
             variant={isUrgent ? "destructive" : "default"}
-            className="h-7 text-xs mt-2"
+            className="h-8 text-xs mt-3 rounded-full px-4"
             onClick={() => navigate(currentAlert.route)}
           >
             {currentAlert.actionLabel}
