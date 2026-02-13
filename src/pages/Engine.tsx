@@ -42,7 +42,7 @@ export default function Engine() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">김비서 AI 엔진 아키텍처</h1>
-              <p className="text-muted-foreground text-sm">v1.8 · 2026-02-11 업데이트</p>
+              <p className="text-muted-foreground text-sm">v2.0 · 2026-02-13 업데이트</p>
             </div>
           </div>
         </div>
@@ -124,18 +124,19 @@ export default function Engine() {
                 </div>
 
                 {/* 음성 채널 */}
-                <div className="p-4 rounded-lg border bg-card">
+                <div className="p-4 rounded-lg border-2 border-purple-500/30 bg-card">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="p-2 rounded-full bg-purple-500/10">
                       <Headphones className="h-4 w-4 text-purple-500" />
                     </div>
                     <h4 className="font-semibold">음성 채널</h4>
+                    <Badge className="text-[10px] bg-green-500/10 text-green-600 border-green-500/20">v2.0</Badge>
                   </div>
                   <div className="space-y-2 text-sm text-muted-foreground">
-                    <p>• <strong>Scribe STT</strong> → chat-ai → <strong>TTS</strong></p>
-                    <p>• 실시간 음성 대화</p>
-                    <p>• voiceMode 구어체 응답</p>
-                    <p>• 텍스트 채팅과 로직 일관성</p>
+                    <p>• <strong>ElevenLabs Conversational AI</strong></p>
+                    <p>• WebRTC 실시간 양방향 음성</p>
+                    <p>• Client Tool로 DB 데이터 조회</p>
+                    <p>• 데이터 시각화 연동</p>
                   </div>
                   <Badge className="mt-3" variant="outline">로그인 사용자</Badge>
                 </div>
@@ -183,81 +184,108 @@ export default function Engine() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Volume2 className="h-5 w-5 text-purple-500" />
-                음성 응답 엔진
+                음성 대화 엔진 v2.0
+                <Badge className="text-[10px] bg-green-500/10 text-green-600 border-green-500/20">NEW</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                ElevenLabs Conversational AI 대신 <strong>Scribe STT → chat-ai → TTS 파이프라인</strong>을 채택한 이유:
-                <code className="text-xs bg-muted px-1 rounded ml-1">chat-ai</code> 내에서 실시간 DB 데이터(6대 소스)에 직접 접근하고,
-                텍스트 채팅과 완벽한 로직 일관성을 유지하기 위함.
+                <strong>ElevenLabs Conversational AI (WebRTC)</strong> 기반 통합 음성 대화 시스템.
+                기존 Scribe STT → chat-ai → TTS 3단계 파이프라인을 대체하여 <strong>단일 WebRTC 세션</strong>으로 
+                저지연 양방향 음성 대화를 구현합니다.
               </p>
 
-              {/* 3단계 파이프라인 */}
+              {/* 아키텍처 개요 */}
               <div className="p-4 rounded-lg bg-purple-500/5 border border-purple-500/20">
-                <p className="text-xs font-medium mb-3">🎙️ 음성 대화 파이프라인</p>
+                <p className="text-xs font-medium mb-3">🎙️ v2.0 음성 대화 아키텍처</p>
                 <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <Badge variant="outline" className="bg-purple-500/10">🎤 Scribe STT</Badge>
+                  <Badge variant="outline" className="bg-purple-500/10">🎤 사용자 음성</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">ElevenLabs Agent (WebRTC)</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="outline" className="bg-blue-500/10">Client Tool: query_business</Badge>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   <Badge variant="secondary">chat-ai (Gemini)</Badge>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <Badge variant="outline" className="bg-blue-500/10">🔊 ElevenLabs TTS</Badge>
+                  <Badge variant="outline" className="bg-green-500/10">🔊 AI 음성 응답</Badge>
                 </div>
-                 <p className="text-xs text-muted-foreground mt-2">
-                   voiceMode=true → 구어체 2~3문장, 마크다운/이모지 제거, 숫자 한글 표현
-                 </p>
-               </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  STT/TTS가 ElevenLabs Agent 내부에서 처리되므로 별도 Edge Function 호출 없이 실시간 대화가 가능합니다.
+                  데이터 조회만 <code className="bg-muted px-1 rounded">query_business</code> Client Tool → <code className="bg-muted px-1 rounded">chat-ai</code>를 경유합니다.
+                </p>
+              </div>
 
-               {/* v1.8 신규: 음성 UX + 알림 개선사항 */}
-               <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
-                 <p className="text-xs font-medium mb-3">🆕 v1.8 음성 & 알림 개선 (2026-02-11)</p>
-                 <div className="space-y-2 text-xs text-muted-foreground">
-                   <div className="flex items-start gap-2">
-                     <Badge variant="secondary" className="text-[10px] shrink-0">Persistent Audio</Badge>
-                     <p>모바일 자동재생 정책 우회를 위해 세션 시작 시 언락된 단일 Audio 객체를 전 세션에서 재사용. 응답마다 <code className="bg-muted px-1 rounded">src</code>만 교체하여 추가 사용자 개입 없이 연속 발화 보장</p>
-                   </div>
-                   <div className="flex items-start gap-2">
-                     <Badge variant="secondary" className="text-[10px] shrink-0">STT 라이프사이클</Badge>
-                     <p>비서 인사 → 마이크 허용 → 사용자 입력 → 응답 시작 시 STT 차단 → 음성 출력 완료 즉시 활성화. <code className="bg-muted px-1 rounded">suppressSTTRef</code> 플래그로 에코/오인식 원천 차단</p>
-                   </div>
-                   <div className="flex items-start gap-2">
-                     <Badge variant="secondary" className="text-[10px] shrink-0">숫자 독음 변환</Badge>
-                     <p>TTS 전처리 시 숫자+단위(원, 건, 명 등)를 한글 독음으로 변환 (예: 4,430,000원 → 사백사십삼만 원). 답변 속도 1.1배, maxOutputTokens 8192</p>
-                   </div>
-                   <div className="flex items-start gap-2">
-                     <Badge variant="secondary" className="text-[10px] shrink-0">에러 내성</Badge>
-                     <p>5자 미만 잡음 무시, 3회 연속 에러 시 세션 자동 종료(서킷 브레이커), 에러 후 2초 STT 강제 차단</p>
-                   </div>
-                   <div className="flex items-start gap-2">
-                     <Badge variant="secondary" className="text-[10px] shrink-0">탭 인터럽트</Badge>
-                     <p>AI 발화 중 마이크 버튼 탭으로 즉시 중단 + 듣기 모드 전환. 스피커 에코에 의한 자가 중단 방지를 위해 발화 중 committed transcript 무시</p>
-                   </div>
-                   <div className="flex items-start gap-2">
-                     <Badge variant="secondary" className="text-[10px] shrink-0">알림 자동 생성</Badge>
-                     <p>대시보드 접속 시 + 동기화 완료/실패 시 <code className="bg-muted px-1 rounded">notifications</code> 테이블에 자동 삽입. 중복 방지(하루 1회), 세금 마감·미분류 거래·지출 변동·동기화 결과 알림</p>
-                   </div>
-                 </div>
-               </div>
+              {/* v1.x → v2.0 비교 */}
+              <div className="p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                <p className="text-xs font-medium mb-3">📊 v1.x → v2.0 변경점 비교</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-2">항목</th>
+                        <th className="text-left py-2 px-2">v1.x (기존)</th>
+                        <th className="text-left py-2 px-2">v2.0 (현재)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-muted-foreground">
+                      <tr className="border-b"><td className="py-1.5 px-2 font-medium">아키텍처</td><td className="py-1.5 px-2">Scribe STT → chat-ai → TTS (3단계)</td><td className="py-1.5 px-2">ElevenLabs Conversational AI (통합)</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2 font-medium">프로토콜</td><td className="py-1.5 px-2">WebSocket (STT) + HTTP (AI, TTS)</td><td className="py-1.5 px-2">WebRTC (단일 세션)</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2 font-medium">지연 시간</td><td className="py-1.5 px-2">높음 (3개 API 순차 호출)</td><td className="py-1.5 px-2">낮음 (STT→TTS 내장, 데이터 조회만 외부)</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2 font-medium">에코 방지</td><td className="py-1.5 px-2">suppressSTTRef 수동 관리</td><td className="py-1.5 px-2">SDK micMuted + 자동 VAD</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2 font-medium">데이터 조회</td><td className="py-1.5 px-2">chat-ai 직접 호출</td><td className="py-1.5 px-2">Client Tool → chat-ai (voiceMode)</td></tr>
+                      <tr className="border-b"><td className="py-1.5 px-2 font-medium">오디오 재생</td><td className="py-1.5 px-2">Persistent Audio 객체 수동 관리</td><td className="py-1.5 px-2">SDK 내장 재생</td></tr>
+                      <tr><td className="py-1.5 px-2 font-medium">인터럽트</td><td className="py-1.5 px-2">세션 재시작</td><td className="py-1.5 px-2">볼륨 0 소거 + interruptedRef 가드</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
+              {/* 핵심 컴포넌트 */}
               <div className="grid md:grid-cols-3 gap-4">
-                {/* STT */}
+                {/* useVoiceAgent Hook */}
                 <div className="p-4 rounded-lg border">
                   <div className="flex items-center gap-2 mb-3">
                     <Mic className="h-5 w-5 text-purple-500" />
-                    <h4 className="font-semibold text-sm">1단계: STT</h4>
+                    <h4 className="font-semibold text-sm">useVoiceAgent</h4>
                   </div>
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">엔진</span>
-                      <Badge variant="outline" className="text-xs">ElevenLabs Scribe</Badge>
+                      <span className="text-muted-foreground">역할</span>
+                      <span>핵심 상태 관리</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">프로토콜</span>
-                      <span>WebSocket</span>
+                      <span className="text-muted-foreground">SDK 훅</span>
+                      <Badge variant="outline" className="text-xs">useConversation</Badge>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Edge Function</span>
-                      <code className="text-xs bg-muted px-1 rounded">elevenlabs-scribe-token</code>
+                      <span className="text-muted-foreground">상태 머신</span>
+                      <span>idle→listening→processing→speaking</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Client Tools</span>
+                      <code className="text-xs bg-muted px-1 rounded">query_business</code>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ElevenLabs Agent */}
+                <div className="p-4 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Brain className="h-5 w-5 text-blue-500" />
+                    <h4 className="font-semibold text-sm">ElevenLabs Agent</h4>
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">연결</span>
+                      <Badge variant="outline" className="text-xs">WebRTC</Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">토큰</span>
+                      <code className="text-xs bg-muted px-1 rounded">elevenlabs-conversation-token</code>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">오버라이드</span>
+                      <span>프롬프트/인사말/음성</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">언어</span>
@@ -266,55 +294,139 @@ export default function Engine() {
                   </div>
                 </div>
 
-                {/* AI 처리 */}
-                <div className="p-4 rounded-lg border">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Brain className="h-5 w-5 text-blue-500" />
-                    <h4 className="font-semibold text-sm">2단계: AI 처리</h4>
-                  </div>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">엔진</span>
-                      <Badge variant="outline" className="text-xs">Gemini 2.0 Flash</Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Edge Function</span>
-                      <code className="text-xs bg-muted px-1 rounded">chat-ai</code>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">voiceMode</span>
-                      <span>true (구어체)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">데이터</span>
-                      <span>6대 소스 조회</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* TTS */}
+                {/* VoiceOverlay UI */}
                 <div className="p-4 rounded-lg border">
                   <div className="flex items-center gap-2 mb-3">
                     <Volume2 className="h-5 w-5 text-blue-500" />
-                    <h4 className="font-semibold text-sm">3단계: TTS</h4>
+                    <h4 className="font-semibold text-sm">VoiceOverlay UI</h4>
                   </div>
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">모델</span>
-                      <Badge variant="outline" className="text-xs">eleven_multilingual_v2</Badge>
+                      <span className="text-muted-foreground">자동 시작</span>
+                      <span>오버레이 열림 시</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Edge Function</span>
-                      <code className="text-xs bg-muted px-1 rounded">elevenlabs-tts</code>
+                      <span className="text-muted-foreground">인터럽트</span>
+                      <span>마이크 버튼 탭</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">포맷</span>
-                      <span>MP3 44.1kHz</span>
+                      <span className="text-muted-foreground">시각화</span>
+                      <Badge variant="outline" className="text-xs">차트/그래프</Badge>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">전처리</span>
-                      <span>cleanForTTS()</span>
+                      <span className="text-muted-foreground">제안 칩</span>
+                      <span>AI 후속 질문 동적 생성</span>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Client Tool 상세 */}
+              <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                <p className="text-xs font-medium mb-3">🔧 Client Tool: query_business</p>
+                <div className="text-xs text-muted-foreground space-y-2">
+                  <p>ElevenLabs Agent가 매출/지출/세금 등 숫자 질문을 인식하면 자동으로 호출합니다.</p>
+                  <div className="p-3 rounded bg-muted/50 overflow-x-auto">
+                    <pre className="text-xs whitespace-pre-wrap">
+{`query_business(question: string) → string
+  1. supabase.auth.getSession() → userId, accessToken 획득
+  2. fetch("chat-ai", { messages, secretaryName, secretaryTone, voiceMode: true })
+  3. 응답에서 마크다운/이모지 제거 (정규식)
+  4. convertNumbersToKorean() → 숫자를 한글 독음으로 변환
+     예: "4,430,000원" → "사백사십삼만 원"
+  5. visualization 데이터 → pendingVisualizationRef에 보관
+  6. Agent에게 "[조회 결과] ..." 텍스트 반환 → 자연스러운 음성 답변`}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+
+              {/* 상태 관리 */}
+              <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
+                <p className="text-xs font-medium mb-3">🔄 상태 관리 & 안전 장치</p>
+                <div className="space-y-2 text-xs text-muted-foreground">
+                  <div className="flex items-start gap-2">
+                    <Badge variant="secondary" className="text-[10px] shrink-0">상태 머신</Badge>
+                    <p><code className="bg-muted px-1 rounded">idle → listening → processing → speaking</code> 4단계 상태. SDK의 <code className="bg-muted px-1 rounded">isSpeaking</code> + <code className="bg-muted px-1 rounded">toolCallActiveRef</code>로 동기화</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Badge variant="secondary" className="text-[10px] shrink-0">마이크 자동 제어</Badge>
+                    <p>Agent 발화 중 + Tool Call 중 → <code className="bg-muted px-1 rounded">micMuted: true</code>. 발화 종료 후 600ms 디바운스로 listening 전환 (짧은 묵음 구간 UI 깜빡임 방지)</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Badge variant="secondary" className="text-[10px] shrink-0">인터럽트</Badge>
+                    <p>마이크 버튼 탭 → 볼륨 0 소거 + <code className="bg-muted px-1 rounded">interruptedRef</code> 플래그 → SDK isSpeaking false까지 상태 동기화 차단 → 볼륨 복원 후 listening 전환</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Badge variant="secondary" className="text-[10px] shrink-0">waitingFirstMessage</Badge>
+                    <p>연결 직후 또는 Tool Call 완료 직후, 실제 음성 응답이 시작되기 전까지 listening 전환 차단. speaking 상태 유지하여 UX 일관성 보장</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Badge variant="secondary" className="text-[10px] shrink-0">잡음 필터</Badge>
+                    <p>5자 미만 짧은 발화는 무시. 사용자 메시지는 pending으로 보관 후 Agent 응답 시점에 확정 저장</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Badge variant="secondary" className="text-[10px] shrink-0">세션 종료</Badge>
+                    <p>오버레이 닫기 시 <code className="bg-muted px-1 rounded">endSession()</code> 비동기 보장. SDK 재연결 중 disconnect 이벤트는 <code className="bg-muted px-1 rounded">isConnectingRef</code>로 무시</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Badge variant="secondary" className="text-[10px] shrink-0">대화 저장</Badge>
+                    <p>Agent 응답 수신 시 <code className="bg-muted px-1 rounded">chat_messages</code> 테이블에 자동 저장. 텍스트 채팅과 통합 히스토리 관리</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 동적 오버라이드 */}
+              <div className="p-4 rounded-lg border">
+                <p className="text-xs font-medium mb-3">🎭 동적 오버라이드 (사용자 설정 반영)</p>
+                <div className="grid md:grid-cols-3 gap-3 text-xs text-muted-foreground">
+                  <div>
+                    <p className="font-medium text-foreground mb-1">시스템 프롬프트</p>
+                    <ul className="space-y-0.5">
+                      <li>• 비서 이름/성별/말투 반영</li>
+                      <li>• query_business 강제 호출 지시</li>
+                      <li>• 숫자 추측 금지 규칙</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">인사말</p>
+                    <ul className="space-y-0.5">
+                      <li>• 받침 여부에 따른 조사 처리</li>
+                      <li>• 말투별 분기 (polite/friendly/cute)</li>
+                      <li>• 예: "미래에용! 뭘 도와드릴까용?"</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">음성</p>
+                    <ul className="space-y-0.5">
+                      <li>• 성별에 따른 voiceId 자동 선택</li>
+                      <li>• 여성: uyVNoMrnUku1dZyVEXwD</li>
+                      <li>• 남성: ZJCNdZEjYwkOElxugmW2</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* UX 기능 */}
+              <div className="p-4 rounded-lg border">
+                <p className="text-xs font-medium mb-3">✨ 음성 UX 기능</p>
+                <div className="grid md:grid-cols-2 gap-3 text-xs text-muted-foreground">
+                  <div>
+                    <p className="font-medium text-foreground mb-1">시각화 데이터 연동</p>
+                    <p>query_business 응답에 <code className="bg-muted px-1 rounded">visualization</code> 데이터가 포함되면 
+                      <code className="bg-muted px-1 rounded">pendingVisualizationRef</code>에 보관 후 Agent 응답 메시지에 연결하여 VoiceOverlay 하단에 차트/그래프 표시</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">동적 제안 칩</p>
+                    <p>Agent 응답에서 후속 질문(~할까요?, ~볼까요?)을 정규식으로 추출하여 명령형("확인해줘", "알려줘")으로 변환 후 제안 칩으로 노출. 추출 실패 시 기본 4개 제안 표시</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">텍스트 모드 전환</p>
+                    <p>음성 오버레이 상단 "텍스트" 버튼으로 텍스트 채팅으로 즉시 전환. 세션 종료 후 ChatPanel 오픈</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">숫자 독음 변환</p>
+                    <p><code className="bg-muted px-1 rounded">convertNumbersToKorean()</code>: 콤마 포함 숫자+단위를 한글 독음으로 변환. 예: 4,430,000원 → 사백사십삼만 원</p>
                   </div>
                 </div>
               </div>
