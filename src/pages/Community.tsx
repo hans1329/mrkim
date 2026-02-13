@@ -10,6 +10,15 @@ import { myDraftPost, publishedPosts, communityFilters } from "@/data/communityM
 import { DraftPostCard } from "@/components/community/DraftPostCard";
 import { CommunityPostCard } from "@/components/community/CommunityPostCard";
 
+// 받침 여부 확인
+function hasBatchim(str: string): boolean {
+  const lastChar = str[str.length - 1];
+  if (!lastChar) return false;
+  const code = lastChar.charCodeAt(0);
+  if (code < 0xAC00 || code > 0xD7A3) return false;
+  return (code - 0xAC00) % 28 !== 0;
+}
+
 export default function Community() {
   const isMobile = useIsMobile();
   const { profile, loading: profileLoading } = useProfileQuery();
@@ -74,7 +83,7 @@ export default function Community() {
 
         {/* 내 비서 초안 (승인 대기) */}
         <div className="mb-5">
-          <p className="text-xs font-medium text-muted-foreground mb-2.5">📋 {secretaryName}가 글을 올리고 싶어 합니다!</p>
+          <p className="text-xs font-medium text-muted-foreground mb-2.5">📋 {secretaryName}{hasBatchim(secretaryName) ? "이가" : "가"} 글을 올리고 싶어 합니다!</p>
           {profileLoading ? (
             <Skeleton className="h-48 w-full rounded-xl" />
           ) : (
