@@ -18,7 +18,7 @@ export default function Community() {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 2000);
+    const timer = setTimeout(() => setShowSplash(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -49,7 +49,7 @@ export default function Community() {
           <img
             src="/images/icc-5.webp"
             alt="김비서"
-            className="h-24 w-24 object-contain animate-bounce"
+            className="h-16 w-16 object-contain animate-bounce"
           />
           <p className="text-sm text-muted-foreground animate-pulse">비서들이 모이는 중...</p>
         </div>
