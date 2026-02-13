@@ -62,6 +62,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
   const [items, setItems] = useState<ActionItem[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   
+  const secretaryName = profile?.secretary_name || "김비서";
   // 연동 상태 확인
   const isAnyConnected = profile?.hometax_connected || profile?.card_connected || profile?.account_connected;
   
@@ -109,7 +110,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
       if (!isAnyConnected) {
         setItems([{
           id: "connection",
-          title: "김비서에게 데이터 연동하기",
+          title: `${secretaryName}에게 데이터 연동하기`,
           description: "국세청, 카드, 계좌를 연동하면 실시간으로 매출/지출을 분석해드려요.",
           priority: "urgent",
           dueText: "D-0",
@@ -246,7 +247,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
           actionItems.push({
             id: "all-good",
             title: "오늘은 특별히 할 일이 없어요",
-            description: "모든 것이 순조롭습니다. 김비서가 계속 모니터링하고 있어요.",
+            description: `모든 것이 순조롭습니다. ${secretaryName}가 계속 모니터링하고 있어요.`,
             priority: "normal",
             status: "pending",
             icon: CheckCircle2,
@@ -386,7 +387,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
             onClick={() => openChat()}
           >
             <MessageCircle className="h-3.5 w-3.5" />
-            {profile?.secretary_name || "김비서"}에게 더 물어보기
+            {secretaryName}에게 더 물어보기
             <ChevronRight className="h-3 w-3" />
           </button>
         </CardContent>
