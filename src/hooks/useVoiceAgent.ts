@@ -264,7 +264,9 @@ export function useVoiceAgent() {
 
         console.log("[VoiceClientTool] query_business response:", cleaned.substring(0, 100));
         
+        // toolCallActive는 해제하지만, speaking이 시작될 때까지 listening 전환 방지
         toolCallActiveRef.current = false;
+        waitingFirstMessageRef.current = true; // speaking 시작 전까지 listening 차단
         setVoiceStatus("speaking");
 
         return `[조회 결과] 다음 내용을 그대로 자연스럽게 읽어주세요. 추가 숫자를 만들거나 변경하지 마세요: ${cleaned}`;
