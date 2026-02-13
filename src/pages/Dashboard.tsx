@@ -128,7 +128,7 @@ export default function Dashboard() {
       {isMobile ? (
         <div ref={scrollRef} className="flex flex-col min-h-full">
           {/* 히어로 영역 - 헤더 뒤로 확장 */}
-          <div className="relative pt-[calc(env(safe-area-inset-top,0px)+60px)] px-5 pb-8 bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)]">
+          <div className="relative pt-[calc(env(safe-area-inset-top,0px)+60px)] px-5 pb-8 bg-gradient-to-br from-[hsl(220,70%,50%)] via-[hsl(30,80%,55%)] to-[hsl(270,60%,50%)]">
 
             <div className="mb-4" />
             <div className="relative">
@@ -209,7 +209,7 @@ export default function Dashboard() {
         /* PC 레이아웃 */
         <div className="pc-full-width">
           {/* 히어로 영역 - 파란 배경 풀폭 */}
-          <div className="bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] px-6 pt-6 pb-8">
+          <div className="bg-gradient-to-br from-[hsl(220,70%,50%)] via-[hsl(30,80%,55%)] to-[hsl(270,60%,50%)] px-6 pt-6 pb-8">
             <div className="max-w-6xl mx-auto space-y-6">
               <div className="grid grid-cols-10 gap-6">
                 <section className="col-span-6">
