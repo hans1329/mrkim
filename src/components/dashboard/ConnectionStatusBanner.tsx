@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle, X, ChevronRight, CheckCircle2, Clock, Sparkles } from "lucide-react";
+import { SecretaryInsightCard } from "./SecretaryInsightCard";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -309,9 +310,9 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
     );
   }
 
-  // 연동 완료 + 긴급 알림이 없는 경우: 표시 안 함
+  // 연동 완료 + 긴급 알림이 없는 경우: AI 비서 한마디 표시
   if (visibleAlerts.length === 0) {
-    return null;
+    return <SecretaryInsightCard isHero={isHero} />;
   }
 
   // 연동 완료 + 긴급 알림 있는 경우: 긴급 알림 배너
