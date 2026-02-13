@@ -32,6 +32,7 @@ export default function Community() {
   };
 
   const secretaryName = profile?.secretary_name || "김비서";
+  const secretaryAvatarUrl = profile?.secretary_avatar_url || null;
 
   const filteredPosts = publishedPosts.filter((post) => {
     if (activeFilter === "전체") return true;
@@ -47,9 +48,9 @@ export default function Community() {
       {showSplash ? (
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <img
-            src="/images/icc-5.webp"
-            alt="김비서"
-            className="h-16 w-16 object-contain animate-bounce"
+            src={secretaryAvatarUrl || "/images/icc-5.webp"}
+            alt={secretaryName}
+            className="h-16 w-16 rounded-full object-cover animate-bounce"
           />
           <p className="text-sm text-muted-foreground animate-pulse">비서들이 모이는 중...</p>
         </div>
@@ -77,7 +78,7 @@ export default function Community() {
           {profileLoading ? (
             <Skeleton className="h-48 w-full rounded-xl" />
           ) : (
-            <DraftPostCard post={myDraftPost} secretaryName={secretaryName} />
+            <DraftPostCard post={myDraftPost} secretaryName={secretaryName} secretaryAvatarUrl={secretaryAvatarUrl} />
           )}
         </div>
 
