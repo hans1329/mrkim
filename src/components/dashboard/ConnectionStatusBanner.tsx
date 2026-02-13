@@ -316,7 +316,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
   const currentAlert = visibleAlerts[0];
 
   return (
-    <div className="rounded-xl bg-card border border-destructive/30 p-4 mb-4 min-h-[180px] flex flex-col justify-center shadow-sm">
+    <div className="rounded-xl bg-white/80 backdrop-blur-md border border-destructive/25 p-4 mb-4 min-h-[180px] flex flex-col justify-center shadow-sm">
       <div className="flex items-start gap-3">
         <div className="shrink-0 mt-0.5">
           <div className="h-8 w-8 rounded-full bg-destructive/20 flex items-center justify-center">
