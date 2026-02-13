@@ -20,6 +20,7 @@ import { useConnection } from "@/contexts/ConnectionContext";
 import { Bell, Settings, Receipt, Users, Wallet, TrendingUp, FileText, CreditCard } from "lucide-react";
 import { useNotificationGenerator } from "@/hooks/useNotificationGenerator";
 import { useNotifications } from "@/hooks/useNotifications";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { cn, josa } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,6 +53,7 @@ export default function Dashboard() {
 
   // 대시보드 접속 시 실데이터 기반 알림 자동 생성
   useNotificationGenerator();
+  usePushNotifications();
   const { unreadCount } = useNotifications();
   
   useEffect(() => {

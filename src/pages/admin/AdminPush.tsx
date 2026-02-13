@@ -88,20 +88,55 @@ export default function AdminPush() {
 
   const handleSave = async (sendNow: boolean = false) => {
     try {
+      const status = sendNow ? "sent" : formData.scheduled_at ? "scheduled" : "draft";
       const payload = {
         title: formData.title,
         message: formData.message,
         target_type: formData.target_type,
         scheduled_at: formData.scheduled_at || null,
-        status: sendNow ? "sent" : formData.scheduled_at ? "scheduled" : "draft",
-        sent_at: sendNow ? new Date().toISOString() : null,
+        status: sendNow ? "draft" : status, // will be updated by edge function if sending
+        sent_at: null,
         created_by: userId,
       };
 
-      const { error } = await supabase.from("push_campaigns").insert(payload);
+      const { data: campaign, error } = await supabase
+        .from("push_campaigns")
+        .insert(payload)
+        .select("id")
+        .single();
       if (error) throw error;
 
-      toast.success(sendNow ? "푸시 알림이 발송되었습니다" : "캠페인이 저장되었습니다");
+      if (sendNow && campaign) {
+        // Call send-push edge function
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL || "https://app.mrkim.today"}/functions/v1/send-push`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
+            },
+            body: JSON.stringify({
+              campaign_id: campaign.id,
+              title: formData.title,
+              body: formData.message,
+              target_type: formData.target_type,
+            }),
+          }
+        );
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "발송 실패");
+
+        toast.success(`푸시 알림 ${result.sent_count}건 발송 완료`);
+      } else {
+        toast.success("캠페인이 저장되었습니다");
+      }
+
       setDialogOpen(false);
       fetchData();
     } catch (error) {
