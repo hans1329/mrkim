@@ -348,11 +348,11 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         {item.description}
                       </p>
-                      <div className="grid grid-cols-2 gap-2 pt-0.5">
+                      <div className={cn("pt-0.5", item.actions.secondary ? "grid grid-cols-2 gap-2" : "")}>
                         <Button
                           size="sm"
                           variant={item.priority === "urgent" ? "default" : "outline"}
-                          className="h-9 text-xs rounded-full w-full"
+                          className="h-9 text-sm rounded-full w-full"
                           onClick={() => {
                             item.actions.primary.action();
                             if (item.id !== "connection") {
@@ -362,17 +362,15 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
                         >
                           {item.actions.primary.label}
                         </Button>
-                        {item.actions.secondary ? (
+                        {item.actions.secondary && (
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-7 text-xs rounded-full w-full"
+                            className="h-9 text-sm rounded-full w-full"
                             onClick={() => handlePostpone(item.id)}
                           >
                             {item.actions.secondary.label}
                           </Button>
-                        ) : (
-                          <div />
                         )}
                       </div>
                     </div>
