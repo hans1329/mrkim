@@ -320,12 +320,23 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
 
   return (
     <div className={cn(
-      "rounded-xl backdrop-blur-md p-4 mb-4 min-h-[180px] flex flex-col justify-center shadow-sm",
+      "relative rounded-xl backdrop-blur-md p-4 mb-4 min-h-[180px] flex flex-col justify-center shadow-sm",
       isUrgent
         ? "bg-white/80 border border-destructive/25"
         : "bg-white/80 border border-primary/25"
     )}>
-      <div className="flex items-start gap-3">
+      {/* 닫기 버튼 - 우상단 */}
+      <button
+        className={cn(
+          "absolute top-3 right-3 h-6 w-6 rounded-full flex items-center justify-center transition-colors",
+          isUrgent ? "bg-destructive/20 hover:bg-destructive/30" : "bg-primary/20 hover:bg-primary/30"
+        )}
+        onClick={() => handleDismissAlert(currentAlert.id)}
+      >
+        <X className={cn("h-3.5 w-3.5", isUrgent ? "text-destructive" : "text-primary")} />
+      </button>
+
+      <div className="flex items-start gap-3 pr-6">
         <div className="shrink-0 mt-0.5">
           <div className={cn(
             "h-8 w-8 rounded-full flex items-center justify-center",
@@ -335,25 +346,12 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           </div>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <h4 className={cn("font-semibold text-sm", isUrgent ? "text-destructive" : "text-primary")}>
-                {currentAlert.title}
-              </h4>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {currentAlert.description}
-              </p>
-            </div>
-            <button
-              className={cn(
-                "h-6 w-6 shrink-0 rounded-full flex items-center justify-center transition-colors",
-                isUrgent ? "bg-destructive/20 hover:bg-destructive/30" : "bg-primary/20 hover:bg-primary/30"
-              )}
-              onClick={() => handleDismissAlert(currentAlert.id)}
-            >
-              <X className={cn("h-3.5 w-3.5", isUrgent ? "text-destructive" : "text-primary")} />
-            </button>
-          </div>
+          <h4 className={cn("font-semibold text-sm", isUrgent ? "text-destructive" : "text-primary")}>
+            {currentAlert.title}
+          </h4>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {currentAlert.description}
+          </p>
           <Button
             size="sm"
             variant={isUrgent ? "destructive" : "default"}
