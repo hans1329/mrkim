@@ -254,18 +254,18 @@ export function AIChatPanel() {
                 >
                   {/* 봇 아바타 */}
                   {message.role === "assistant" && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden shadow-sm">
+                    <div className="flex-shrink-0 w-8 h-8 min-w-[2rem] min-h-[2rem] max-w-[2rem] max-h-[2rem] rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden shadow-sm">
                       {secretaryAvatarUrl ? (
                         <img 
                           src={secretaryAvatarUrl} 
                           alt={secretaryName} 
-                          className="w-full h-full object-cover"
+                          className="w-8 h-8 object-cover"
                         />
                       ) : (
                         <img 
                           src="/images/icc-blue.webp" 
                           alt={secretaryName}
-                          className="w-5 h-5 object-contain"
+                          className="w-5 h-5 max-w-5 max-h-5 object-contain"
                         />
                       )}
                     </div>
