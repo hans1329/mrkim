@@ -176,6 +176,108 @@ function calculateDateRange(tp?: { type: string; startDate?: string; endDate?: s
   }
 }
 
+// ============ 데이터 출처/갱신시각 조회 ============
+
+interface DataSourceMeta {
+  name: string;       // "카드 거래내역", "홈택스 세금계산서" 등
+  syncedAt: string | null;  // ISO timestamp
+  source: string;     // "codef", "manual" 등
+}
+
+async function fetchSyncMetadata(userId: string, authHeader: string, dataSource: string): Promise<DataSourceMeta | null> {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
+
+    const sourceMap: Record<string, { name: string; connectorId?: string; table?: string }> = {
+      transaction: { name: "거래내역", connectorId: "codef-card" },
+      tax_invoice: { name: "홈택스 세금계산서", connectorId: "codef-hometax" },
+      employee: { name: "직원 정보", table: "employees" },
+      deposit: { name: "예치금", table: "deposits" },
+      savings: { name: "저축/투자", table: "savings_accounts" },
+      auto_transfer: { name: "자동이체", table: "auto_transfers" },
+    };
+
+    const meta = sourceMap[dataSource];
+    if (!meta) return null;
+
+    // connector_instances에서 last_sync_at 조회
+    if (meta.connectorId) {
+      const { data: instances } = await sb
+        .from("connector_instances")
+        .select("last_sync_at, status, connector_id")
+        .eq("user_id", userId)
+        .order("last_sync_at", { ascending: false })
+        .limit(5);
+
+      if (instances && instances.length > 0) {
+        // 관련 커넥터 찾기 (card → codef-card, bank → codef-bank, hometax → codef-hometax)
+        const relevantInstance = instances.find(i => 
+          (dataSource === "transaction" && (i.connector_id === "codef-card" || i.connector_id === "codef-bank")) ||
+          (dataSource === "tax_invoice" && i.connector_id === "codef-hometax")
+        ) || instances[0];
+
+        return {
+          name: meta.name,
+          syncedAt: relevantInstance.last_sync_at,
+          source: "codef",
+        };
+      }
+
+      // connector_instances 없으면 profiles fallback
+      const { data: profile } = await sb
+        .from("profiles")
+        .select("card_connected_at, account_connected_at, hometax_connected_at")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (profile) {
+        let connectedAt: string | null = null;
+        if (dataSource === "transaction") connectedAt = profile.card_connected_at || profile.account_connected_at;
+        if (dataSource === "tax_invoice") connectedAt = profile.hometax_connected_at;
+        return { name: meta.name, syncedAt: connectedAt, source: "codef" };
+      }
+    }
+
+    // 수동 등록 데이터: updated_at 기준
+    if (meta.table) {
+      const { data: rows } = await sb
+        .from(meta.table)
+        .select("updated_at")
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+
+      return {
+        name: meta.name,
+        syncedAt: rows?.[0]?.updated_at || null,
+        source: "manual",
+      };
+    }
+
+    return null;
+  } catch (e) {
+    console.error("fetchSyncMetadata error:", e);
+    return null;
+  }
+}
+
+function formatSyncTimestamp(isoString: string | null): string {
+  if (!isoString) return "알 수 없음";
+  const d = new Date(isoString);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "방금 전";
+  if (diffMin < 60) return `${diffMin}분 전`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}시간 전`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 7) return `${diffDay}일 전`;
+  // 날짜 표시
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+
 // ============ 데이터 조회 함수들 ============
 
 // --- 거래내역 (transactions) ---
@@ -674,12 +776,24 @@ serve(async (req) => {
       }
     }
 
-    // 데이터 조회
-    const result = await fetchAndFormatData(classified.dataSource, userId, authHeader, classified.timePeriod);
+    // 데이터 조회 + 출처 메타데이터 병렬 조회
+    const [result, syncMeta] = await Promise.all([
+      fetchAndFormatData(classified.dataSource, userId, authHeader, classified.timePeriod),
+      fetchSyncMetadata(userId, authHeader, classified.dataSource),
+    ]);
+
+    // 출처 정보 구성
+    const sources = syncMeta ? {
+      name: syncMeta.name,
+      syncedAt: syncMeta.syncedAt,
+      syncedAtLabel: formatSyncTimestamp(syncMeta.syncedAt),
+      source: syncMeta.source === "codef" ? "자동 동기화" : "수동 등록",
+    } : null;
 
     if (result && hasActualData(classified.dataSource, result.data)) {
       const visualization = buildVisualization(classified.dataSource, result.data);
-      const dataPrompt = `당신은 "${secretaryName}"입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${result.prompt}`;
+      const sourceNote = syncMeta ? `\n\n📌 이 데이터의 출처: ${syncMeta.name} (${syncMeta.source === "codef" ? "코드에프 자동 동기화" : "수동 등록"}, 갱신: ${formatSyncTimestamp(syncMeta.syncedAt)})` : "";
+      const dataPrompt = `당신은 "${secretaryName}"입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${result.prompt}${sourceNote}`;
       const geminiResult = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: dataPrompt }] },
         { role: "model", parts: [{ text: "네, 실제 데이터를 기반으로 정확하게 답변하겠습니다." }] },
@@ -687,7 +801,7 @@ serve(async (req) => {
       ]);
       const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
       console.log(`${classified.dataSource} data response (1 API call)`);
-      return new Response(JSON.stringify({ response, visualization }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ response, visualization, sources }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 데이터 없음
@@ -699,7 +813,7 @@ serve(async (req) => {
       ...geminiMessages,
     ]);
     const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
-    return new Response(JSON.stringify({ response }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ response, sources }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (error: any) {
     console.error("=== Gemini Error ===", error?.status, error?.body);

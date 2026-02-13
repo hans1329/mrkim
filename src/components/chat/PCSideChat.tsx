@@ -20,6 +20,9 @@ const quickCommands = [
   "오늘 매출 얼마야?",
   "부가세 현황 확인",
   "직원 목록 보여줘",
+  "이번 달 지출 현황",
+  "세금계산서 현황",
+  "예치금 현황",
 ];
 
 export function PCSideChat() {
