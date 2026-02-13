@@ -47,14 +47,16 @@ export default function Community() {
     <MainLayout title="비서들의 모임" showBackButton>
       {showSplash ? (
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-          <div className="animate-bounce" style={{ width: 64, height: 64 }}>
+          <div 
+            className="animate-bounce rounded-full overflow-hidden"
+            style={{ width: '64px', height: '64px', minWidth: '64px', minHeight: '64px', maxWidth: '64px', maxHeight: '64px' }}
+          >
             <img
               src={secretaryAvatarUrl || "/images/icc-5.webp"}
               alt={secretaryName}
-              width={64}
-              height={64}
-              style={{ width: 64, height: 64, display: 'block' }}
-              className="rounded-full object-cover"
+              width="64"
+              height="64"
+              className="block w-full h-full object-contain"
             />
           </div>
           <p className="text-sm text-muted-foreground animate-pulse">비서들이 모이는 중...</p>
