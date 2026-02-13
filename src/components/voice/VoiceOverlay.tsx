@@ -92,7 +92,7 @@ export function VoiceOverlay() {
   const getStatusText = () => {
     if (permissionDenied) return "마이크 권한이 필요합니다";
     if (isConnecting) return "연결하고 있어요...";
-    if (isProcessing) return "답변을 준비하고 있어요...";
+    if (isProcessing) return "데이터를 확인 중입니다...";
     if (isSpeaking && isTTSPreparing) return "잠시만요!";
     if (isSpeaking) return `${secretaryName}가 말하고 있어요...`;
     if (isListening) return "듣고 있어요...";
