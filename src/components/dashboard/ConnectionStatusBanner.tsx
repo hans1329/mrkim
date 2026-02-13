@@ -320,7 +320,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
 
   return (
     <div className={cn(
-      "relative rounded-xl backdrop-blur-md p-4 mb-4 min-h-[180px] flex flex-col justify-between shadow-sm",
+      "relative rounded-xl backdrop-blur-md p-4 mb-4 min-h-[180px] flex flex-col shadow-sm",
       isUrgent
         ? "bg-white/80 border border-destructive/25"
         : "bg-white/80 border border-primary/25"
@@ -355,7 +355,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
         </div>
       </div>
 
-      <div className="flex justify-end mt-3">
+      <div className="flex justify-end mt-auto pt-3">
         <Button
           size="sm"
           variant={isUrgent ? "destructive" : "default"}
