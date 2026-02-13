@@ -170,7 +170,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
       {/* 메인 콘텐츠 - 풀스크린 with expanded width for 2-column layout */}
       <main className="flex-1 overflow-auto relative">
         {/* 사이드바 그림자 오버레이 */}
-        <div className="absolute inset-y-0 left-0 w-3 z-10 pointer-events-none bg-gradient-to-r from-black/10 to-transparent" />
+        <div className="absolute inset-y-0 left-0 w-3 z-10 pointer-events-none bg-gradient-to-r from-black/5 to-transparent" />
         <div className="[&>.pc-full-width]:contents [&>:not(.pc-full-width)]:max-w-6xl [&>:not(.pc-full-width)]:mx-auto [&>:not(.pc-full-width)]:p-6">
           {children}
         </div>
