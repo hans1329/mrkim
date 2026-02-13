@@ -1,6 +1,6 @@
-import { useEffect, useRef, useMemo, useState } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Mic, Sparkles, MessageCircle, Loader2, AlertCircle, Volume2, VolumeX } from "lucide-react";
+import { X, Mic, Sparkles, MessageCircle, Loader2, AlertCircle } from "lucide-react";
 import { VoiceDataVisualization } from "@/components/chat/DataVisualization";
 import { cn } from "@/lib/utils";
 import { useVoice } from "@/contexts/VoiceContext";
@@ -33,7 +33,7 @@ export function VoiceOverlay() {
     sendTextDirectly,
   } = useVoiceAgent();
 
-  const [showVolume, setShowVolume] = useState(false);
+  
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryAvatarUrl = profile?.secretary_avatar_url || null;
@@ -125,11 +125,12 @@ export function VoiceOverlay() {
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
-            size="icon"
-            onClick={() => setShowVolume(v => !v)}
-            className="text-white hover:bg-white/20"
+            size="sm"
+            onClick={handleSwitchToChat}
+            className="text-white hover:bg-white/20 gap-1.5"
           >
-            {volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+            <MessageCircle className="h-4 w-4" />
+            <span className="text-xs">텍스트</span>
           </Button>
           <Button
             variant="ghost"
@@ -142,22 +143,7 @@ export function VoiceOverlay() {
         </div>
       </div>
 
-      {/* 볼륨 슬라이더 */}
-      {showVolume && (
-        <div className="flex items-center gap-3 px-6 py-2 animate-fade-in">
-          <VolumeX className="h-4 w-4 text-white/60 shrink-0" />
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            value={volume}
-            onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="w-full h-1.5 rounded-full appearance-none bg-white/30 accent-white [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md"
-          />
-          <Volume2 className="h-4 w-4 text-white/60 shrink-0" />
-        </div>
-      )}
+
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 relative overflow-y-auto">
@@ -311,17 +297,8 @@ export function VoiceOverlay() {
         )}
       </div>
 
-      {/* Footer */}
-      <div className="pb-[calc(env(safe-area-inset-bottom)+80px)] px-6 flex flex-col items-center gap-3">
-        <Button
-          variant="ghost"
-          onClick={handleSwitchToChat}
-          className="text-white/70 hover:text-white hover:bg-white/20 gap-2 border border-white/30"
-        >
-          <MessageCircle className="h-4 w-4" />
-          텍스트로 대화하기
-        </Button>
-      </div>
+      {/* Footer spacer for bottom nav */}
+      <div className="pb-[calc(env(safe-area-inset-bottom)+80px)]" />
     </div>
   );
 }
