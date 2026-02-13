@@ -29,6 +29,7 @@ export function useVoiceAgent() {
   const toolCallActiveRef = useRef(false);
   const waitingFirstMessageRef = useRef(false);
   const pendingVisualizationRef = useRef<VisualizationData | null>(null);
+  const isConnectingRef = useRef(false);
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
@@ -219,9 +220,8 @@ export function useVoiceAgent() {
   const handleConnect = useCallback(() => {
     console.log("[Conv] ✅ Connected to ElevenLabs agent");
     setIsConnecting(false);
+    isConnectingRef.current = false;
     setLastError(null);
-    // 첫 인사말이 곧 시작되므로 "speaking" 상태를 유지하고
-    // listening으로 전환하지 않음 (waitingFirstMessageRef로 제어)
     waitingFirstMessageRef.current = true;
     setVoiceStatus("speaking");
     sessionActiveRef.current = true;
@@ -229,6 +229,14 @@ export function useVoiceAgent() {
 
   const handleDisconnect = useCallback((details: any) => {
     console.log("[Conv] Disconnected:", details);
+
+    // SDK 내부 재연결(retry) 중 발생하는 disconnect 이벤트는 무시
+    // → isConnecting이 true인 동안은 상태를 초기화하지 않음
+    if (isConnectingRef.current) {
+      console.log("[Conv] Ignoring disconnect during connection attempt (SDK retry)");
+      return;
+    }
+
     const wasActive = sessionActiveRef.current;
     sessionActiveRef.current = false;
     setIsConnecting(false);
@@ -236,9 +244,8 @@ export function useVoiceAgent() {
     toolCallActiveRef.current = false;
 
     if (wasActive) {
-      // Unexpected disconnect
       const reason = details?.reason || details?.context?.reason;
-      if (reason) {
+      if (reason && reason !== "user") {
         setLastError(`연결이 종료되었습니다. (${reason})`);
       }
     }
@@ -332,6 +339,7 @@ export function useVoiceAgent() {
 
     console.log("[Session] ▶ Starting Conversational AI session...");
     setIsConnecting(true);
+    isConnectingRef.current = true;
     setLastMessage(null);
     setLastError(null);
     setLastMessage(null);
@@ -374,6 +382,7 @@ export function useVoiceAgent() {
     } catch (error: any) {
       console.error("[Session] ❌ Failed to start:", error);
       setIsConnecting(false);
+      isConnectingRef.current = false;
       setIsTTSPreparing(false);
       setVoiceStatus("idle");
 
@@ -393,6 +402,7 @@ export function useVoiceAgent() {
     sessionActiveRef.current = false;
     toolCallActiveRef.current = false;
     waitingFirstMessageRef.current = false;
+    isConnectingRef.current = false;
 
     try {
       await conversation.endSession();
