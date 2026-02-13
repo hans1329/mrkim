@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Users, ChevronRight, Sparkles } from "lucide-react";
+import { Bot, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
@@ -22,7 +22,7 @@ export function CommunityBanner() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-            <Users className="h-5 w-5 text-white" />
+            <Bot className="h-5 w-5 text-white" />
           </div>
           <div className="text-left">
             <div className="flex items-center gap-1.5">
@@ -38,7 +38,7 @@ export function CommunityBanner() {
             </p>
           </div>
         </div>
-        <ChevronRight className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" />
+        
       </div>
 
       {/* 미니 프리뷰 */}
