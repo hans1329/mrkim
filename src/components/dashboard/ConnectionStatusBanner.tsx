@@ -24,6 +24,7 @@ interface UrgentAlert {
   description: string;
   actionLabel: string;
   route: string;
+  daysLeft?: number;
 }
 
 // 실제 데이터 기반 긴급 알림 생성
@@ -61,6 +62,7 @@ function generateRealAlerts(
       description: `${nearest.d.month}월 ${nearest.d.day}일까지 ${nearest.d.label}를 완료해야 합니다.`,
       actionLabel: "확인하기",
       route: "/reports?tab=tax",
+      daysLeft: nearest.diff,
     });
   }
 
@@ -314,19 +316,28 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
 
   // 연동 완료 + 긴급 알림 있는 경우: 긴급 알림 배너
   const currentAlert = visibleAlerts[0];
+  const isUrgent = currentAlert.daysLeft !== undefined && currentAlert.daysLeft <= 10;
 
   return (
-    <div className="rounded-xl bg-white/80 backdrop-blur-md border border-destructive/25 p-4 mb-4 min-h-[180px] flex flex-col justify-center shadow-sm">
+    <div className={cn(
+      "rounded-xl backdrop-blur-md p-4 mb-4 min-h-[180px] flex flex-col justify-center shadow-sm",
+      isUrgent
+        ? "bg-white/80 border border-destructive/25"
+        : "bg-white/80 border border-primary/25"
+    )}>
       <div className="flex items-start gap-3">
         <div className="shrink-0 mt-0.5">
-          <div className="h-8 w-8 rounded-full bg-destructive/20 flex items-center justify-center">
-            <AlertTriangle className="h-4 w-4 text-destructive" />
+          <div className={cn(
+            "h-8 w-8 rounded-full flex items-center justify-center",
+            isUrgent ? "bg-destructive/20" : "bg-primary/20"
+          )}>
+            <AlertTriangle className={cn("h-4 w-4", isUrgent ? "text-destructive" : "text-primary")} />
           </div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h4 className="font-semibold text-sm text-destructive">
+              <h4 className={cn("font-semibold text-sm", isUrgent ? "text-destructive" : "text-primary")}>
                 {currentAlert.title}
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -334,15 +345,18 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
               </p>
             </div>
             <button
-              className="h-6 w-6 shrink-0 rounded-full bg-foreground/20 flex items-center justify-center hover:bg-foreground/30 transition-colors"
+              className={cn(
+                "h-6 w-6 shrink-0 rounded-full flex items-center justify-center transition-colors",
+                isUrgent ? "bg-destructive/20 hover:bg-destructive/30" : "bg-primary/20 hover:bg-primary/30"
+              )}
               onClick={() => handleDismissAlert(currentAlert.id)}
             >
-              <X className="h-3.5 w-3.5 text-white" />
+              <X className={cn("h-3.5 w-3.5", isUrgent ? "text-destructive" : "text-primary")} />
             </button>
           </div>
           <Button
             size="sm"
-            variant="destructive"
+            variant={isUrgent ? "destructive" : "default"}
             className="h-7 text-xs mt-2"
             onClick={() => navigate(currentAlert.route)}
           >
@@ -353,7 +367,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
       </div>
       
       {visibleAlerts.length > 1 && (
-        <div className="mt-2 pt-2 border-t border-destructive/20">
+        <div className={cn("mt-2 pt-2 border-t", isUrgent ? "border-destructive/20" : "border-primary/20")}>
           <span className="text-xs text-muted-foreground">
             +{visibleAlerts.length - 1}개의 알림이 더 있습니다
           </span>
