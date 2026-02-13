@@ -74,7 +74,7 @@ export default function Community() {
 
         {/* 내 비서 초안 (승인 대기) */}
         <div className="mb-5">
-          <p className="text-xs font-medium text-muted-foreground mb-2.5">📋 승인 대기 중인 초안</p>
+          <p className="text-xs font-medium text-muted-foreground mb-2.5">📋 {secretaryName}가 글을 올리고 싶어 합니다!</p>
           {profileLoading ? (
             <Skeleton className="h-48 w-full rounded-xl" />
           ) : (
