@@ -1,22 +1,13 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, Wallet, PiggyBank, Link2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { formatCurrency } from "@/data/mockData";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-interface SummaryStats {
-  todayIncome: number;
-  todayExpense: number;
-  monthlyIncome: number;
-  monthlyExpense: number;
-  isLoading: boolean;
-}
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 // 연동되지 않은 상태의 플레이스홀더 카드
 function EmptyStatCard({
@@ -162,89 +153,16 @@ interface TodaySummarySectionProps {
 export function TodaySummarySection({ isLoggedOut = false, isHero = false }: TodaySummarySectionProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  // ConnectionContext에서 캐시된 프로필 사용 (중복 API 호출 방지)
   const { profile, profileLoading } = useConnection();
-  const [stats, setStats] = useState<SummaryStats>({
-    todayIncome: 0,
-    todayExpense: 0,
-    monthlyIncome: 0,
-    monthlyExpense: 0,
-    isLoading: true,
-  });
+  
+  // React Query 캐싱 적용
+  const { data: stats, isLoading: statsLoading } = useDashboardStats(!isLoggedOut);
 
-  // 연동 상태 확인
   const isAnyConnected = profile?.hometax_connected || profile?.card_connected || profile?.account_connected;
-  const isAllLoading = profileLoading || stats.isLoading;
+  const isAllLoading = profileLoading || statsLoading;
 
-  // 실제 거래 데이터 불러오기
-  useEffect(() => {
-    const fetchStats = async () => {
-      // 로그아웃 상태면 로딩 종료
-      if (isLoggedOut) {
-        setStats(prev => ({ ...prev, isLoading: false }));
-        return;
-      }
-
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setStats(prev => ({ ...prev, isLoading: false }));
-          return;
-        }
-
-        const today = new Date();
-        const todayStr = today.toISOString().split("T")[0];
-        const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
-
-        const [todayResult, monthlyResult] = await Promise.all([
-          supabase
-            .from("transactions")
-            .select("amount, type")
-            .eq("user_id", user.id)
-            .eq("transaction_date", todayStr),
-          supabase
-            .from("transactions")
-            .select("amount, type")
-            .eq("user_id", user.id)
-            .gte("transaction_date", monthStart)
-            .lte("transaction_date", todayStr),
-        ]);
-
-        let todayIncome = 0, todayExpense = 0;
-        if (todayResult.data) {
-          todayResult.data.forEach((tx) => {
-            if (tx.type === "income") todayIncome += Number(tx.amount);
-            else if (tx.type === "expense") todayExpense += Number(tx.amount);
-          });
-        }
-
-        let monthlyIncome = 0, monthlyExpense = 0;
-        if (monthlyResult.data) {
-          monthlyResult.data.forEach((tx) => {
-            if (tx.type === "income") monthlyIncome += Number(tx.amount);
-            else if (tx.type === "expense") monthlyExpense += Number(tx.amount);
-          });
-        }
-
-        setStats({
-          todayIncome,
-          todayExpense,
-          monthlyIncome,
-          monthlyExpense,
-          isLoading: false,
-        });
-      } catch (error) {
-        console.error("Failed to fetch summary stats:", error);
-        setStats(prev => ({ ...prev, isLoading: false }));
-      }
-    };
-
-    fetchStats();
-  }, [isLoggedOut]);
-
-  const monthlyProfit = stats.monthlyIncome - stats.monthlyExpense;
-  // 매출 또는 지출 중 하나라도 있으면 데이터 있음으로 판단
-  const hasAnyData = stats.todayIncome > 0 || stats.todayExpense > 0 || stats.monthlyIncome > 0 || stats.monthlyExpense > 0;
+  const monthlyProfit = (stats?.monthlyIncome ?? 0) - (stats?.monthlyExpense ?? 0);
+  const hasAnyData = (stats?.todayIncome ?? 0) > 0 || (stats?.todayExpense ?? 0) > 0 || (stats?.monthlyIncome ?? 0) > 0 || (stats?.monthlyExpense ?? 0) > 0;
 
   // 로그아웃 상태: 목업 데이터 표시
   if (isLoggedOut) {
@@ -252,32 +170,10 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
       <section>
         <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
         <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
-          <RealStatCard
-            title="오늘 매출"
-            value={formatCurrency(1250000)}
-            icon={TrendingUp}
-            variant="primary"
-            isHero={isHero}
-          />
-          <RealStatCard
-            title="오늘 지출"
-            value={formatCurrency(320000)}
-            icon={TrendingDown}
-            isHero={isHero}
-          />
-          <RealStatCard
-            title="이번 달 지출"
-            value={formatCurrency(4850000)}
-            icon={Wallet}
-            isHero={isHero}
-          />
-          <RealStatCard
-            title="이번 달 순이익"
-            value={formatCurrency(8750000)}
-            icon={PiggyBank}
-            variant="success"
-            isHero={isHero}
-          />
+          <RealStatCard title="오늘 매출" value={formatCurrency(1250000)} icon={TrendingUp} variant="primary" isHero={isHero} />
+          <RealStatCard title="오늘 지출" value={formatCurrency(320000)} icon={TrendingDown} isHero={isHero} />
+          <RealStatCard title="이번 달 지출" value={formatCurrency(4850000)} icon={Wallet} isHero={isHero} />
+          <RealStatCard title="이번 달 순이익" value={formatCurrency(8750000)} icon={PiggyBank} variant="success" isHero={isHero} />
         </div>
       </section>
     );
@@ -298,7 +194,7 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
     );
   }
 
-  // 로그인 + 미연동: 연동 유도 UI
+  // 로그인 + 미연동
   if (!isAnyConnected) {
     return (
       <section>
@@ -316,10 +212,7 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
                   한눈에 확인할 수 있어요
                 </p>
               </div>
-              <Button 
-                onClick={() => navigate("/onboarding")}
-                className="gap-2 rounded-full"
-              >
+              <Button onClick={() => navigate("/onboarding")} className="gap-2 rounded-full">
                 <Sparkles className="h-4 w-4" />
                 연동 시작하기
               </Button>
@@ -330,7 +223,7 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
     );
   }
 
-  // 연동은 되었지만 데이터가 없는 경우
+  // 연동 + 데이터 없음
   if (!hasAnyData) {
     return (
       <section>
@@ -349,36 +242,14 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
   }
 
   // 실제 데이터 표시
-    return (
-      <section>
-        <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
+  return (
+    <section>
+      <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
       <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
-        <RealStatCard
-          title="오늘 매출"
-          value={stats.todayIncome > 0 ? formatCurrency(stats.todayIncome) : "₩0"}
-          icon={TrendingUp}
-          variant="primary"
-          isHero={isHero}
-        />
-        <RealStatCard
-          title="오늘 지출"
-          value={stats.todayExpense > 0 ? formatCurrency(stats.todayExpense) : "₩0"}
-          icon={TrendingDown}
-          isHero={isHero}
-        />
-        <RealStatCard
-          title="이번 달 지출"
-          value={stats.monthlyExpense > 0 ? formatCurrency(stats.monthlyExpense) : "₩0"}
-          icon={Wallet}
-          isHero={isHero}
-        />
-        <RealStatCard
-          title="이번 달 순이익"
-          value={formatCurrency(monthlyProfit)}
-          icon={PiggyBank}
-          variant="success"
-          isHero={isHero}
-        />
+        <RealStatCard title="오늘 매출" value={stats!.todayIncome > 0 ? formatCurrency(stats!.todayIncome) : "₩0"} icon={TrendingUp} variant="primary" isHero={isHero} />
+        <RealStatCard title="오늘 지출" value={stats!.todayExpense > 0 ? formatCurrency(stats!.todayExpense) : "₩0"} icon={TrendingDown} isHero={isHero} />
+        <RealStatCard title="이번 달 지출" value={stats!.monthlyExpense > 0 ? formatCurrency(stats!.monthlyExpense) : "₩0"} icon={Wallet} isHero={isHero} />
+        <RealStatCard title="이번 달 순이익" value={formatCurrency(monthlyProfit)} icon={PiggyBank} variant="success" isHero={isHero} />
       </div>
     </section>
   );

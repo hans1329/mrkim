@@ -16,8 +16,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn, josa } from "@/lib/utils";
 import { useConnection } from "@/contexts/ConnectionContext";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnclassifiedCount } from "@/hooks/useDashboardStats";
 
 interface UrgentAlert {
   id: string;
@@ -28,17 +29,10 @@ interface UrgentAlert {
   daysLeft?: number;
 }
 
-// 실제 데이터 기반 긴급 알림 생성
-function generateRealAlerts(
-  unclassifiedCount: number,
-  navigate: ReturnType<typeof useNavigate>
-): UrgentAlert[] {
+function generateRealAlerts(unclassifiedCount: number): UrgentAlert[] {
   const alerts: UrgentAlert[] = [];
   const now = new Date();
-  const month = now.getMonth() + 1; // 1-12
-  const day = now.getDate();
 
-  // 가장 가까운 세금 마감일 표시
   const taxDeadlines = [
     { month: 1, day: 25, label: "부가세 신고" },
     { month: 5, day: 31, label: "종합소득세 신고" },
@@ -67,7 +61,6 @@ function generateRealAlerts(
     });
   }
 
-  // 미분류 거래 알림
   if (unclassifiedCount > 0) {
     alerts.push({
       id: "unclassified",
@@ -88,37 +81,20 @@ interface ConnectionStatusBannerProps {
 
 export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: ConnectionStatusBannerProps) {
   const navigate = useNavigate();
-  // ConnectionContext에서 캐시된 프로필 사용 (중복 API 호출 방지)
-  const { profile, profileLoading: loading } = useConnection();
-  const [alerts, setAlerts] = useState<UrgentAlert[]>([]);
+  const { profile, profileLoading: loading, isLoggedIn } = useConnection();
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const secretaryName = profile?.secretary_name || "김비서";
 
-  // 실제 데이터 기반 알림 생성
-  useEffect(() => {
-    if (isLoggedOut || loading) return;
-    
-    const fetchUnclassifiedCount = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      
-      const { count } = await supabase
-        .from("transactions")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .is("category", null);
-      
-      const realAlerts = generateRealAlerts(count || 0, navigate);
-      setAlerts(realAlerts);
-    };
-    
-    fetchUnclassifiedCount();
-  }, [isLoggedOut, loading, navigate]);
+  // React Query 캐싱 적용
+  const { data: unclassifiedCount = 0 } = useUnclassifiedCount(!isLoggedOut && !loading && isLoggedIn);
 
-  // React Query가 캐싱과 refetch를 자동 관리하므로 별도의 visibility/focus 핸들러 불필요
+  // 알림 생성 (메모이제이션)
+  const alerts = useMemo(() => {
+    if (isLoggedOut || loading) return [];
+    return generateRealAlerts(unclassifiedCount);
+  }, [isLoggedOut, loading, unclassifiedCount]);
 
-  // 연동 시작 버튼 핸들러 - 로그인 여부 확인
   const handleStartConnection = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
@@ -129,11 +105,9 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
   };
 
   const handleLoginConfirm = () => {
-    // AlertDialogAction이 자동으로 다이얼로그를 닫으므로 상태 변경 불필요
     navigate("/login?redirect=/onboarding");
   };
 
-  // 프로필에서 실제 연동 상태 가져오기
   const connections = [
     { key: "hometax", label: "국세청", connected: profile?.hometax_connected ?? false },
     { key: "card", label: "카드", connected: profile?.card_connected ?? false },
@@ -145,14 +119,13 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
   const isFullyConnected = connectedCount === totalConnections;
   const progressPercent = (connectedCount / totalConnections) * 100;
 
-  // 긴급 알림 (연동 완료 시에만)
   const visibleAlerts = alerts.filter(alert => !dismissedAlerts.includes(alert.id));
 
   const handleDismissAlert = (id: string) => {
     setDismissedAlerts(prev => [...prev, id]);
   };
 
-  // 로그아웃 상태: 항상 연동 배너 표시 (목업 상태)
+  // 로그아웃 상태
   if (isLoggedOut) {
     return (
       <div className={cn(
@@ -175,7 +148,6 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           연동하면 {josa(secretaryName, "이/가")} 실시간으로 사업 현황을 분석해드려요
         </p>
 
-        {/* 연동 상태 표시 - 모두 미연동 */}
         <div className="flex items-center gap-2 mb-3">
           {connections.map((conn) => (
             <div
@@ -191,7 +163,6 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           ))}
         </div>
 
-        {/* 진행률 바 */}
         <div className="mb-3">
           <Progress value={0} className={cn("h-1.5", isHero && "[&]:bg-white/20 [&>div]:bg-white/60")} />
         </div>
@@ -206,7 +177,6 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           <ChevronRight className="h-3 w-3" />
         </Button>
 
-        {/* 로그인 필요 다이얼로그 */}
         <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -228,7 +198,6 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
     );
   }
 
-  // 로딩 중일 때 스켈레톤 표시
   if (loading) {
     return (
       <div className="rounded-xl bg-muted/50 border p-4 mb-4">
@@ -248,7 +217,6 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
     );
   }
 
-  // 연동이 완료되지 않은 경우: 연동 상태 배너
   if (!isFullyConnected) {
     return (
       <div className={cn(
@@ -271,7 +239,6 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           연동하면 {josa(secretaryName, "이/가")} 실시간으로 사업 현황을 분석해드려요
         </p>
 
-        {/* 연동 상태 표시 */}
         <div className="flex items-center gap-2 mb-3">
           {connections.map((conn) => (
             <div
@@ -293,7 +260,6 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           ))}
         </div>
 
-        {/* 진행률 바 */}
         <div className="mb-3">
           <Progress value={progressPercent} className={cn("h-1.5", isHero && "[&]:bg-white/20 [&>div]:bg-white/60")} />
         </div>
@@ -311,12 +277,10 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
     );
   }
 
-  // 연동 완료 + 긴급 알림이 없는 경우: AI 비서 한마디 표시
   if (visibleAlerts.length === 0) {
     return <SecretaryInsightCard isHero={isHero} />;
   }
 
-  // 연동 완료 + 긴급 알림 있는 경우: 긴급 알림 배너
   const currentAlert = visibleAlerts[0];
   const isUrgent = currentAlert.daysLeft !== undefined && currentAlert.daysLeft <= 10;
 
@@ -327,7 +291,6 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
         ? "bg-white/80 border border-destructive/25"
         : "bg-white/80 border border-primary/25"
     )}>
-      {/* 닫기 버튼 - 우상단 */}
       <button
         className={cn(
           "absolute top-3 right-3 h-6 w-6 rounded-full flex items-center justify-center transition-colors",
