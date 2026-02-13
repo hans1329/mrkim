@@ -188,7 +188,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
 
         {/* 진행률 바 */}
         <div className="mb-3">
-          <Progress value={0} className="h-1.5" />
+          <Progress value={0} className={cn("h-1.5", isHero && "[&]:bg-white/20 [&>div]:bg-white/60")} />
         </div>
 
         <Button
@@ -289,7 +289,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
 
         {/* 진행률 바 */}
         <div className="mb-3">
-          <Progress value={progressPercent} className="h-1.5" />
+          <Progress value={progressPercent} className={cn("h-1.5", isHero && "[&]:bg-white/20 [&>div]:bg-white/60")} />
         </div>
 
         <Button
