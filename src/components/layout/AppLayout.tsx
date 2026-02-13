@@ -101,7 +101,7 @@ export function AppLayout({
       {/* 앱 영역 */}
       <div className="w-full h-full lg:w-[580px] xl:w-[640px] lg:flex-shrink-0" style={{ paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
         <div className="relative flex h-full max-w-xl flex-col shadow-2xl lg:max-w-none mx-auto overflow-hidden bg-primary">
-          <div className={`flex-1 overflow-auto ${stickyHeader ? "[background:linear-gradient(to_bottom,hsl(var(--primary))_50%,hsl(var(--background))_50%)]" : "bg-background"}`} id="app-scroll-container" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+          <div className={`flex-1 overflow-auto ${stickyHeader ? "[background:linear-gradient(to_bottom,hsl(var(--primary))_50%,hsl(var(--background))_50%)]" : "bg-background"}`} id="app-scroll-container">
             {/* 커스텀 sticky 헤더 (홈 등) - scroll container 직속 자식 */}
             {stickyHeader}
 
@@ -134,15 +134,13 @@ export function AppLayout({
             )}
 
             {/* Main Content */}
-            <main className={showBackButton ? "p-4 pb-4 overflow-x-hidden" : stickyHeader ? "overflow-x-hidden relative -mt-[calc(env(safe-area-inset-top,0px)+60px)]" : "pb-4 overflow-x-hidden"}>
+            <main className={showBackButton ? "p-4 pb-4 overflow-x-hidden" : stickyHeader ? "overflow-x-hidden" : "pb-4 overflow-x-hidden"}>
               {children}
             </main>
           </div>
 
           {/* Bottom Navigation */}
-          <div className="bg-background" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-            <BottomNav />
-          </div>
+          <BottomNav />
 
           {/* Voice Overlay - 전체화면 음성 UI */}
           <VoiceOverlay />
