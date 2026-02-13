@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import { cn, josa } from "@/lib/utils";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,6 +93,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
   const [alerts, setAlerts] = useState<UrgentAlert[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const secretaryName = profile?.secretary_name || "김비서";
 
   // 실제 데이터 기반 알림 생성
   useEffect(() => {
@@ -171,7 +172,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
         </div>
           
         <p className={cn("text-xs font-normal mb-3", isHero ? "text-white/70" : "text-muted-foreground")}>
-          연동하면 김비서가 실시간으로 사업 현황을 분석해드려요
+          연동하면 {josa(secretaryName, "이/가")} 실시간으로 사업 현황을 분석해드려요
         </p>
 
         {/* 연동 상태 표시 - 모두 미연동 */}
@@ -267,7 +268,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
         </div>
           
         <p className={cn("text-xs font-normal mb-3", isHero ? "text-white/70" : "text-muted-foreground")}>
-          연동하면 김비서가 실시간으로 사업 현황을 분석해드려요
+          연동하면 {josa(secretaryName, "이/가")} 실시간으로 사업 현황을 분석해드려요
         </p>
 
         {/* 연동 상태 표시 */}

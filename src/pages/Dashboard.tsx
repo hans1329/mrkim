@@ -20,7 +20,7 @@ import { useConnection } from "@/contexts/ConnectionContext";
 import { Bell, Settings, Receipt, Users, Wallet, TrendingUp, FileText, CreditCard } from "lucide-react";
 import { useNotificationGenerator } from "@/hooks/useNotificationGenerator";
 import { useNotifications } from "@/hooks/useNotifications";
-import { cn } from "@/lib/utils";
+import { cn, josa } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -64,6 +64,7 @@ export default function Dashboard() {
   
   const userName = profileLoading ? "" : (profile?.nickname || profile?.name || null);
   const greeting = userName ? `${userName}님` : "사장님";
+  const secretaryName = profileLoading ? "비서" : (profile?.secretary_name || "김비서");
 
   // 스크롤 감지 - 헤더 배경 전환용
   const [scrolled, setScrolled] = useState(false);
@@ -123,7 +124,7 @@ export default function Dashboard() {
   ) : undefined;
 
   return (
-    <MainLayout title={greeting} subtitle="오늘도 김비서가 도와드릴게요!" stickyHeader={mobileHeader}>
+    <MainLayout title={greeting} subtitle={`오늘도 ${josa(secretaryName, "이/가")} 도와드릴게요!`} stickyHeader={mobileHeader}>
       {/* 모바일 전용 네이티브 홈 */}
       {isMobile ? (
         <div ref={scrollRef} className="flex flex-col min-h-full">

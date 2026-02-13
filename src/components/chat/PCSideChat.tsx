@@ -215,7 +215,7 @@ export function PCSideChat() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="김비서에게 명령하세요..."
+            placeholder="비서에게 명령하세요..."
             className="flex-1"
             disabled={isTyping || !!pendingConfirmation}
           />
