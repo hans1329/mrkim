@@ -31,6 +31,7 @@ export function useVoiceAgent() {
   const waitingFirstMessageRef = useRef(false);
   const pendingVisualizationRef = useRef<VisualizationData | null>(null);
   const isConnectingRef = useRef(false);
+  const interruptedRef = useRef(false);
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
@@ -336,8 +337,9 @@ export function useVoiceAgent() {
       }
       setVoiceStatus("processing");
       setMicMuted(true);
-    } else if (conversation.isSpeaking) {
+    } else if (conversation.isSpeaking && !interruptedRef.current) {
       // 에이전트가 말하기 시작 → 즉시 speaking으로 전환, 디바운스 취소
+      // 단, 사용자가 인터럽트한 경우에는 무시
       if (speakingDebounceRef.current) {
         clearTimeout(speakingDebounceRef.current);
         speakingDebounceRef.current = null;
@@ -349,8 +351,8 @@ export function useVoiceAgent() {
       setVoiceStatus("speaking");
       setMicMuted(true);
     } else {
-      // isSpeaking이 false로 바뀌어도 오디오 청크 사이 갭일 수 있으므로
-      // 디바운스 후에만 listening으로 전환
+      // isSpeaking이 false → 인터럽트 플래그 해제 + 디바운스 후 listening 전환
+      interruptedRef.current = false;
       if (!speakingDebounceRef.current) {
         speakingDebounceRef.current = setTimeout(() => {
           speakingDebounceRef.current = null;
@@ -447,7 +449,14 @@ export function useVoiceAgent() {
 
   // --- Interrupt (버튼으로 에이전트 발화 중단) ---
   const interruptAndListen = useCallback(() => {
-    console.log("[Voice] Interrupt: muting agent output + unmuting mic");
+    console.log("[Voice] Interrupt: muting agent + switching to listening");
+    // 인터럽트 플래그 설정 → useEffect가 speaking으로 되돌리지 않음
+    interruptedRef.current = true;
+    // 디바운스 타이머 취소
+    if (speakingDebounceRef.current) {
+      clearTimeout(speakingDebounceRef.current);
+      speakingDebounceRef.current = null;
+    }
     // 에이전트 출력 볼륨을 0으로 → 즉시 무음
     conversation.setVolume({ volume: 0 });
     // 마이크 활성화 → 사용자 입력 가능 상태로 전환
@@ -458,7 +467,7 @@ export function useVoiceAgent() {
     // 잠시 후 원래 볼륨 복원 (다음 응답을 위해)
     setTimeout(() => {
       conversation.setVolume({ volume });
-    }, 500);
+    }, 800);
   }, [conversation, volume]);
 
   // --- Reset permission ---
