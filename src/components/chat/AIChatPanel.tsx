@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Bot, Send, X, MessageCircle, Sparkles, RotateCcw, History, Plus } from "lucide-react";
+import { Bot, Send, X, MessageCircle, Sparkles, RotateCcw, History, Plus, Database, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { DataVisualization } from "./DataVisualization";
@@ -23,12 +23,24 @@ import { useAIChat } from "@/hooks/useAIChat";
 import { ChatSessionList } from "./ChatSessionList";
 import { isToday } from "date-fns";
 
-const quickCommands = [
+const quickCommandGroups = [
+  { label: "📊 매출/지출", commands: ["오늘 매출 얼마야?", "이번 달 지출 현황", "지난달 매출 비교"] },
+  { label: "💰 세금", commands: ["부가세 현황 확인", "세금계산서 현황", "이번 분기 부가세"] },
+  { label: "👥 직원", commands: ["직원 목록 보여줘", "이번 달 급여 총액", "직원 현황 요약"] },
+  { label: "🏦 자금", commands: ["예치금 현황", "적금 현황 확인", "자동이체 목록"] },
+  { label: "📋 종합", commands: ["이번 달 경영 현황 알려줘", "할 일 뭐 있어?", "오늘 브리핑해줘"] },
+];
+
+// 플랫 목록 (기본 표시용)
+const defaultQuickCommands = [
   "오늘 매출 얼마야?",
   "부가세 현황 확인",
   "직원 목록 보여줘",
   "이번 달 경영 현황 알려줘",
   "할 일 뭐 있어?",
+  "이번 달 지출 현황",
+  "세금계산서 현황",
+  "예치금 현황",
 ];
 
 export function AIChatPanel() {
@@ -286,6 +298,18 @@ export function AIChatPanel() {
                           {message.visualization && (
                             <DataVisualization data={message.visualization} />
                           )}
+                          {/* 데이터 출처 표시 */}
+                          {message.sources && (
+                            <div className="mt-2 pt-1.5 border-t border-border/30 flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
+                              <Database className="h-2.5 w-2.5 flex-shrink-0" />
+                              <span>{message.sources.name}</span>
+                              <span className="text-muted-foreground/40">·</span>
+                              <span>{message.sources.source}</span>
+                              <span className="text-muted-foreground/40">·</span>
+                              <RefreshCw className="h-2.5 w-2.5 flex-shrink-0" />
+                              <span>{message.sources.syncedAtLabel}</span>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <p className="whitespace-pre-wrap text-sm">{message.content}</p>
@@ -319,7 +343,7 @@ export function AIChatPanel() {
           {!isViewingPastSession && (
             <div className="border-t px-4 py-2">
               <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                {quickCommands.map((cmd) => (
+                {defaultQuickCommands.map((cmd) => (
                   <Button
                     key={cmd}
                     variant="outline"
