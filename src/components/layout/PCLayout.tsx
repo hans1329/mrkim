@@ -51,11 +51,11 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
     <div className="flex h-screen w-full overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/10">
       {/* 좌측 네비게이션 사이드바 */}
       <aside className={cn(
-        "flex-shrink-0 border-r bg-card/50 backdrop-blur-sm flex flex-col transition-all duration-300",
+        "flex-shrink-0 border-r border-white/10 bg-primary/90 backdrop-blur-md flex flex-col transition-all duration-300 text-white",
         collapsed ? "w-16" : "w-64"
       )}>
         {/* 로고 영역 */}
-        <div className={cn("border-b", collapsed ? "p-3" : "p-6")}>
+        <div className={cn("border-b border-white/15", collapsed ? "p-3" : "p-6")}>
           <div 
             className="cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => navigate("/profile")}
@@ -70,7 +70,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
             />
             {!collapsed && (
               <>
-                <h1 className="text-lg font-bold text-foreground leading-tight">
+                <h1 className="text-lg font-bold text-white leading-tight">
                   {title?.includes("안녕하세요,") ? (
                     <>
                       안녕하세요,<br />
@@ -78,7 +78,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
                     </>
                   ) : title}
                 </h1>
-                {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+                {subtitle && <p className="text-xs text-white/60">{subtitle}</p>}
               </>
             )}
           </div>
@@ -93,10 +93,10 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
                   to={item.url}
                   end={item.url === "/"}
                   className={cn(
-                    "flex items-center rounded-xl text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+                    "flex items-center rounded-xl text-white/70 transition-all hover:bg-white/15 hover:text-white",
                     collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
                   )}
-                  activeClassName="bg-primary/10 text-primary font-medium"
+                  activeClassName="bg-white/20 text-white font-medium"
                 >
                   <item.icon className="h-5 w-5 flex-shrink-0" />
                   {!collapsed && <span>{item.title}</span>}
@@ -112,15 +112,15 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
         </nav>
 
         {/* 하단 유틸리티 */}
-        <div className={cn("border-t space-y-1", collapsed ? "p-2" : "p-4")}>
+        <div className={cn("border-t border-white/15 space-y-1", collapsed ? "p-2" : "p-4")}>
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
-                className={cn(
-                  "w-full text-muted-foreground hover:bg-primary hover:text-white",
-                  collapsed ? "justify-center p-3" : "justify-start gap-3"
-                )}
+                  className={cn(
+                    "w-full text-white/70 hover:bg-white/15 hover:text-white",
+                    collapsed ? "justify-center p-3" : "justify-start gap-3"
+                  )}
                 onClick={() => navigate("/notifications")}
               >
                 <div className="relative flex-shrink-0">
@@ -139,10 +139,10 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
-                className={cn(
-                  "w-full text-muted-foreground hover:bg-primary hover:text-white",
-                  collapsed ? "justify-center p-3" : "justify-start gap-3"
-                )}
+                  className={cn(
+                    "w-full text-white/70 hover:bg-white/15 hover:text-white",
+                    collapsed ? "justify-center p-3" : "justify-start gap-3"
+                  )}
                 onClick={() => navigate("/settings")}
               >
                 <Settings className="h-5 w-5 flex-shrink-0" />
@@ -156,10 +156,10 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
-                className={cn(
-                  "w-full text-muted-foreground hover:bg-primary hover:text-white",
-                  collapsed ? "justify-center p-3" : "justify-start gap-3"
-                )}
+                  className={cn(
+                    "w-full text-white/70 hover:bg-white/15 hover:text-white",
+                    collapsed ? "justify-center p-3" : "justify-start gap-3"
+                  )}
                 onClick={() => navigate("/help")}
               >
                 <HelpCircle className="h-5 w-5 flex-shrink-0" />
@@ -173,7 +173,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           <Button
             variant="ghost"
             className={cn(
-              "w-full text-muted-foreground hover:bg-primary hover:text-white",
+              "w-full text-white/70 hover:bg-white/15 hover:text-white",
               collapsed ? "justify-center p-3" : "justify-start gap-3"
             )}
             onClick={() => setCollapsed(!collapsed)}
