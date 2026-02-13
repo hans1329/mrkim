@@ -292,8 +292,8 @@ export function AIChatCard() {
               <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg hover:bg-muted transition-colors overflow-hidden">
                 <img src={profileImgSrc} alt={secretaryName || "비서"} className={secretaryAvatarUrl ? "h-full w-auto object-contain" : "h-10 w-10 object-contain"} loading="eager" decoding="async" />
               </button>
-              <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 flex items-center justify-center bg-muted rounded-full">
-                <Settings className="h-2.5 w-2.5 text-muted-foreground" />
+              <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 flex items-center justify-center bg-muted rounded-full">
+                <Settings className="h-3 w-3 text-muted-foreground" />
               </div>
             </div>
             <div>
