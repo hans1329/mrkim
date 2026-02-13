@@ -140,7 +140,9 @@ export function AppLayout({
           </div>
 
           {/* Bottom Navigation */}
-          <BottomNav />
+          <div className="flex-shrink-0 bg-background">
+            <BottomNav />
+          </div>
 
           {/* Voice Overlay - 전체화면 음성 UI */}
           <VoiceOverlay />
