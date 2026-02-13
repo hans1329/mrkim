@@ -223,6 +223,7 @@ export function useVoiceAgent() {
     console.log("[Conv] ✅ Connected to ElevenLabs agent");
     setIsConnecting(false);
     isConnectingRef.current = false;
+    interruptedRef.current = false;
     setLastError(null);
     waitingFirstMessageRef.current = true;
     setVoiceStatus("speaking");
@@ -318,6 +319,8 @@ export function useVoiceAgent() {
   useEffect(() => {
     // 연결 시도 중에는 voiceStatus를 건드리지 않음
     if (isConnecting) return;
+    // 인터럽트 상태에서는 상태 동기화를 완전히 무시
+    if (interruptedRef.current) return;
 
     if (conversation.status === "disconnected") {
       if (speakingDebounceRef.current) {
@@ -337,9 +340,8 @@ export function useVoiceAgent() {
       }
       setVoiceStatus("processing");
       setMicMuted(true);
-    } else if (conversation.isSpeaking && !interruptedRef.current) {
+    } else if (conversation.isSpeaking) {
       // 에이전트가 말하기 시작 → 즉시 speaking으로 전환, 디바운스 취소
-      // 단, 사용자가 인터럽트한 경우에는 무시
       if (speakingDebounceRef.current) {
         clearTimeout(speakingDebounceRef.current);
         speakingDebounceRef.current = null;
@@ -351,8 +353,7 @@ export function useVoiceAgent() {
       setVoiceStatus("speaking");
       setMicMuted(true);
     } else {
-      // isSpeaking이 false → 인터럽트 플래그 해제 + 디바운스 후 listening 전환
-      interruptedRef.current = false;
+      // isSpeaking이 false → 디바운스 후 listening 전환
       if (!speakingDebounceRef.current) {
         speakingDebounceRef.current = setTimeout(() => {
           speakingDebounceRef.current = null;
@@ -447,28 +448,58 @@ export function useVoiceAgent() {
     messagesContextRef.current = [];
   }, [conversation]);
 
-  // --- Interrupt (버튼으로 에이전트 발화 중단) ---
-  const interruptAndListen = useCallback(() => {
-    console.log("[Voice] Interrupt: muting agent + switching to listening");
-    // 인터럽트 플래그 설정 → useEffect가 speaking으로 되돌리지 않음
+  // --- Interrupt (버튼으로 에이전트 발화 중단 → 세션 재시작) ---
+  const interruptAndListen = useCallback(async () => {
+    console.log("[Voice] Interrupt: ending session and restarting");
+    // 인터럽트 플래그 설정 → useEffect가 상태를 건드리지 않음
     interruptedRef.current = true;
     // 디바운스 타이머 취소
     if (speakingDebounceRef.current) {
       clearTimeout(speakingDebounceRef.current);
       speakingDebounceRef.current = null;
     }
-    // 에이전트 출력 볼륨을 0으로 → 즉시 무음
-    conversation.setVolume({ volume: 0 });
-    // 마이크 활성화 → 사용자 입력 가능 상태로 전환
-    setMicMuted(false);
     setIsTTSPreparing(false);
     setVoiceStatus("listening");
-    
-    // 잠시 후 원래 볼륨 복원 (다음 응답을 위해)
-    setTimeout(() => {
-      conversation.setVolume({ volume });
-    }, 800);
-  }, [conversation, volume]);
+    setMicMuted(false);
+
+    // 세션 종료 후 즉시 재시작하여 실제 발화를 끊음
+    try {
+      await conversation.endSession();
+    } catch (e) {
+      console.error("[Voice] Interrupt endSession error:", e);
+    }
+
+    // 짧은 딜레이 후 재연결
+    setTimeout(async () => {
+      interruptedRef.current = false;
+      try {
+        const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
+        if (error) throw new Error(error.message);
+        const token = data?.token as string | undefined;
+        const signedUrl = (data?.signedUrl || data?.signed_url) as string | undefined;
+        if (!token && !signedUrl) throw new Error("토큰 없음");
+
+        if (token) {
+          await conversation.startSession({
+            conversationToken: token,
+            connectionType: "webrtc",
+            overrides,
+          });
+        } else {
+          await conversation.startSession({
+            signedUrl: signedUrl!,
+            connectionType: "websocket",
+            overrides,
+          });
+        }
+        sessionActiveRef.current = true;
+      } catch (e) {
+        console.error("[Voice] Interrupt restart error:", e);
+        setVoiceStatus("idle");
+        toast.error("재연결에 실패했습니다.");
+      }
+    }, 300);
+  }, [conversation, overrides]);
 
   // --- Reset permission ---
   const resetPermission = useCallback(() => {
