@@ -52,9 +52,12 @@ export function VoiceOverlay() {
 
   // (removed: no longer need message scroll)
 
-  const handleClose = () => {
-    if (isActive) {
-      endSession();
+  const handleClose = async () => {
+    // 연결 중이든 활성 상태든 무조건 세션 종료
+    try {
+      await endSession();
+    } catch (e) {
+      console.error("[VoiceOverlay] endSession error on close:", e);
     }
     resetPermission();
     closeVoice();
