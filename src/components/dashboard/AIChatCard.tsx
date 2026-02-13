@@ -293,7 +293,7 @@ export function AIChatCard() {
                 <img src={profileImgSrc} alt={secretaryName || "비서"} className={secretaryAvatarUrl ? "h-full w-auto object-contain" : "h-10 w-10 object-contain"} loading="eager" decoding="async" />
               </button>
               <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 flex items-center justify-center bg-muted rounded-full">
-                <Settings className="h-3 w-3 text-muted-foreground" />
+                <Settings className="h-3 w-3 text-muted-foreground/50" />
               </div>
             </div>
             <div>
