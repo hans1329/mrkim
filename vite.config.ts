@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "icon-192.svg", "icon-512.svg"],
+      includeAssets: ["favicon.ico", "images/icc-5.webp"],
       manifest: {
         name: "김비서 - AI 경영 비서",
         short_name: "김비서",
@@ -29,15 +29,15 @@ export default defineConfig(({ mode }) => ({
         theme_color: "#3B82F6",
         icons: [
           {
-            src: "/icon-192.svg",
+            src: "/images/icc-5.webp",
             sizes: "192x192",
-            type: "image/svg+xml",
+            type: "image/webp",
             purpose: "any maskable",
           },
           {
-            src: "/icon-512.svg",
+            src: "/images/icc-5.webp",
             sizes: "512x512",
-            type: "image/svg+xml",
+            type: "image/webp",
             purpose: "any maskable",
           },
         ],
