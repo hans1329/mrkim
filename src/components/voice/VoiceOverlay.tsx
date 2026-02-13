@@ -297,8 +297,6 @@ export function VoiceOverlay() {
         )}
       </div>
 
-      {/* Footer spacer for bottom nav */}
-      <div className="pb-[calc(env(safe-area-inset-bottom)+80px)]" />
     </div>
   );
 }
