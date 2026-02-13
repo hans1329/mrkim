@@ -19,7 +19,7 @@ export function DepositCard({ isLoggedOut = false }: DepositCardProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-primary">₩3,250,000</p>
+            <p className="text-lg md:text-2xl font-bold text-primary">₩3,250,000</p>
             <p className="text-xs text-muted-foreground">총 적립금</p>
           </div>
           <div className="space-y-3">
