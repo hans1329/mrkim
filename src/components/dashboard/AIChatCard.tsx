@@ -272,7 +272,7 @@ export function AIChatCard() {
   };
   const displayMessage = response || (showBriefing ? briefingMessage : null);
   const isBriefingDisplay = !response && showBriefing;
-  return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/70 backdrop-blur-md border-white/40" : "bg-card border-border"}`}>
+  return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/90 backdrop-blur-md border-border/50" : "bg-card border-border"}`}>
       <CardContent className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
