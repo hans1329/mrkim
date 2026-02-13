@@ -34,8 +34,6 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
     vatPayable,
   } = useTaxInvoices();
 
-  const isConnected = profile?.hometax_connected;
-
   // 로그아웃 상태: 목업 데이터 표시
   if (isLoggedOut) {
     return (
@@ -52,7 +50,6 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
           </div>
         </CardHeader>
         <CardContent className="space-y-2.5 pt-0">
-          {/* 매출/매입 요약 목업 */}
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-lg p-2.5 bg-muted/50">
               <div className="flex items-center gap-1.5 mb-1.5">
@@ -75,8 +72,6 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
               <p className="text-[10px] text-muted-foreground mt-0.5">28건</p>
             </div>
           </div>
-
-          {/* 부가세 예상 목업 */}
           <div className="rounded-lg p-2.5 bg-muted/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -111,39 +106,6 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
             <Skeleton className="h-[72px] rounded-lg" />
           </div>
           <Skeleton className="h-16 rounded-lg" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // 미연결 상태
-  if (!isConnected) {
-    return (
-      <Card className="border-dashed">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            홈택스 연동
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-6">
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-              <Building2 className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              홈택스를 연동하면 세금계산서 현황을<br />
-              자동으로 확인할 수 있어요
-            </p>
-            <Button 
-              size="sm" 
-              onClick={() => navigate("/onboarding")}
-              className="gap-1.5 rounded-full h-9 text-sm w-full max-w-[200px]"
-            >
-              연동하기
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
         </CardContent>
       </Card>
     );
