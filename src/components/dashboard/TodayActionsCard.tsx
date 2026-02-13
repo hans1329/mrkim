@@ -388,7 +388,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
             onClick={() => openChat()}
           >
             <MessageCircle className="h-3.5 w-3.5" />
-            김비서에게 더 물어보기
+            {profile?.secretary_name || "김비서"}에게 더 물어보기
             <ChevronRight className="h-3 w-3" />
           </button>
         </CardContent>
