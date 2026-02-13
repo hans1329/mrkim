@@ -152,7 +152,8 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
   if (isLoggedOut) {
     return (
       <div className={cn(
-        "rounded-xl p-4 mb-4",
+        "rounded-xl p-4",
+        !isHero && "mb-4",
         isHero 
           ? "bg-white/15 backdrop-blur-md border border-white/20" 
           : "bg-card border border-border shadow-sm"
@@ -247,7 +248,8 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
   if (!isFullyConnected) {
     return (
       <div className={cn(
-        "rounded-xl p-4 mb-4",
+        "rounded-xl p-4",
+        !isHero && "mb-4",
         isHero 
           ? "bg-white/15 backdrop-blur-md border border-white/20" 
           : "bg-card border border-border shadow-sm"

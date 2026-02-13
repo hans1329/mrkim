@@ -211,10 +211,12 @@ export default function Dashboard() {
           {/* 히어로 영역 - 파란 배경 */}
           <div className="bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] -m-6 mb-0 px-6 pt-6 pb-8">
             <div className="max-w-6xl mx-auto space-y-6">
-              <ConnectionStatusBanner isLoggedOut={isLoggedOut} isHero />
-              <section>
-                <AIChatCard />
-              </section>
+              <div className="grid grid-cols-2 gap-6">
+                <ConnectionStatusBanner isLoggedOut={isLoggedOut} isHero />
+                <section>
+                  <AIChatCard />
+                </section>
+              </div>
               <TodaySummarySection isLoggedOut={isLoggedOut} isHero />
             </div>
           </div>
