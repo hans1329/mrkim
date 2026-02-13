@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Clock, AlertTriangle, ChevronRight, MessageCircle, CalendarClock, Link2, TrendingUp, TrendingDown, FileText, Tags } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, josa } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChat } from "@/contexts/ChatContext";
 
@@ -247,7 +247,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
           actionItems.push({
             id: "all-good",
             title: "오늘은 특별히 할 일이 없어요",
-            description: `모든 것이 순조롭습니다. ${secretaryName}가 계속 모니터링하고 있어요.`,
+            description: `모든 것이 순조롭습니다. ${josa(secretaryName, "이/가")} 계속 모니터링하고 있어요.`,
             priority: "normal",
             status: "pending",
             icon: CheckCircle2,

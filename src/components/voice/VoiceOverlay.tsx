@@ -2,7 +2,7 @@ import { useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Mic, Sparkles, MessageCircle, Loader2, AlertCircle } from "lucide-react";
 import { VoiceDataVisualization } from "@/components/chat/DataVisualization";
-import { cn } from "@/lib/utils";
+import { cn, josa } from "@/lib/utils";
 import { useVoice } from "@/contexts/VoiceContext";
 import { useChat } from "@/contexts/ChatContext";
 import { useVoiceAgent } from "@/hooks/useVoiceAgent";
@@ -94,7 +94,7 @@ export function VoiceOverlay() {
     if (isConnecting) return "연결하고 있어요...";
     if (isProcessing) return "데이터를 확인 중입니다...";
     if (isSpeaking && isTTSPreparing) return "잠시만요!";
-    if (isSpeaking) return `${secretaryName}가 말하고 있어요...`;
+    if (isSpeaking) return `${josa(secretaryName, "이/가")} 말하고 있어요...`;
     if (isListening) return "듣고 있어요...";
     if (!isActive) return "버튼을 눌러 시작하세요";
     return "준비 중...";

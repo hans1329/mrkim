@@ -30,7 +30,7 @@ export function WelcomeModal({ open, userName, onStart }: WelcomeModalProps) {
               가입을 축하합니다! 🎉
             </h2>
             <p className="text-primary-foreground/80">
-              {userName ? `${userName}님, ` : ""}김비서와 함께<br />
+              {userName ? `${userName}님, ` : ""}AI 비서와 함께<br />
               더 스마트한 사업 관리를 시작하세요
             </p>
           </div>

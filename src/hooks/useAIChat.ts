@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfileQuery } from "./useProfileQuery";
 import { toast } from "sonner";
+import { josa } from "@/lib/utils";
 import { format, isToday, isYesterday, startOfDay } from "date-fns";
 import { ko } from "date-fns/locale";
 import type { VisualizationData } from "@/components/chat/DataVisualization";
@@ -50,7 +51,7 @@ export function useAIChat() {
    const getPlaceholderText = useCallback(() => {
      // 첫 대화인 경우 (세션도 없고 메시지도 없음)
      if (sessions.length === 0 && messages.length === 0 && !isLoadingSessions) {
-       return `${secretaryName}와 대화를 시작해보세요!`;
+       return `${josa(secretaryName, "와/과")} 대화를 시작해보세요!`;
      }
 
      if (!profile) return `${secretaryName}에게 명령하세요...`;

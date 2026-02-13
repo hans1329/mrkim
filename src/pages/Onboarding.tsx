@@ -52,7 +52,7 @@ const stepIndex = (step: OnboardingStep) => steps.findIndex((s) => s.key === ste
 export default function Onboarding() {
   const navigate = useNavigate();
   const { currentStep, connections, goToStep, connectService: connectLocal, setConnections, completeOnboarding, resetOnboarding } = useOnboarding();
-  const { connectService: connectToDb, refetch: refetchConnection } = useConnection();
+  const { connectService: connectToDb, refetch: refetchConnection, profile } = useConnection();
   const [searchParams] = useSearchParams();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showCardFlow, setShowCardFlow] = useState(false);
@@ -62,6 +62,7 @@ export default function Onboarding() {
   const [businessNumber, setBusinessNumber] = useState("");
   const [showBusinessNumberModal, setShowBusinessNumberModal] = useState(false);
   const isReconnect = searchParams.get("reconnect") === "true";
+  const secretaryName = profile?.secretary_name || "김비서";
   
   // 페이지 진입 시 DB에서 연결 상태 확인 후 로컬 상태에 반영
   useEffect(() => {
@@ -472,7 +473,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         </h1>
         <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">
           사업 데이터를 연결하면<br />
-          김비서가 더 정확하게 도와드려요
+          AI 비서가 더 정확하게 도와드려요
         </p>
       </motion.div>
 

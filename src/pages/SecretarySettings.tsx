@@ -340,7 +340,7 @@ export default function SecretarySettings() {
                   <p className="text-xs font-medium mb-2">경험치 획득 방법</p>
                   <ul className="text-xs space-y-1 text-muted-foreground">
                     <li>• 매일 브리핑 확인 +10 XP</li>
-                    <li>• 김비서와 대화 +5 XP</li>
+                    <li>• 비서와 대화 +5 XP</li>
                     <li>• 제안 승인 +50 XP</li>
                     <li>• 계좌/카드 연동 +100 XP</li>
                     <li>• 정확도 피드백 +30 XP</li>

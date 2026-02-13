@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bot, Send, Sparkles, Mic, RotateCcw, Clock, Settings } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
+import { josa } from "@/lib/utils";
 import { useChat } from "@/contexts/ChatContext";
 import { useVoice } from "@/contexts/VoiceContext";
 import { useProfileQuery } from "@/hooks/useProfileQuery";
@@ -265,7 +266,7 @@ export function AIChatCard() {
       }
       return "이번 달은 아직 거래 내역이 없어요.";
     }
-    return `자세한 내용은 ${secretaryName}와 대화해보세요!`;
+    return `자세한 내용은 ${josa(secretaryName, "와/과")} 대화해보세요!`;
   };
   const handleQuickAsk = async (question: string) => {
     setInput("");
