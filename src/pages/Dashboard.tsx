@@ -207,9 +207,9 @@ export default function Dashboard() {
       ) : (
         /* PC 레이아웃은 기존 유지 */
         /* PC 레이아웃 */
-        <div>
-          {/* 히어로 영역 - 파란 배경 */}
-          <div className="bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] -m-6 mb-0 px-6 pt-6 pb-8">
+        <div className="pc-full-width">
+          {/* 히어로 영역 - 파란 배경 풀폭 */}
+          <div className="bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] px-6 pt-6 pb-8">
             <div className="max-w-6xl mx-auto space-y-6">
               <div className="grid grid-cols-10 gap-6">
                 <section className="col-span-6">
@@ -224,7 +224,7 @@ export default function Dashboard() {
           </div>
 
           {/* 히어로 아래 콘텐츠 */}
-          <div className="space-y-6 pt-6">
+          <div className="max-w-6xl mx-auto p-6 space-y-6">
 
           {isLoggedOut && (
             <>

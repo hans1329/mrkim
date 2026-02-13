@@ -169,7 +169,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
 
       {/* 메인 콘텐츠 - 풀스크린 with expanded width for 2-column layout */}
       <main className="flex-1 overflow-auto relative">
-        <div className="max-w-6xl mx-auto p-6">
+        <div className="[&>.pc-full-width]:contents [&>:not(.pc-full-width)]:max-w-6xl [&>:not(.pc-full-width)]:mx-auto [&>:not(.pc-full-width)]:p-6">
           {children}
         </div>
 
