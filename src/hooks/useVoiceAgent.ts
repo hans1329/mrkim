@@ -311,10 +311,12 @@ export function useVoiceAgent() {
 
   // --- Sync voiceStatus from conversation state ---
   useEffect(() => {
+    // 연결 시도 중에는 voiceStatus를 건드리지 않음
+    // → handleConnect 콜백이 직접 상태를 관리
+    if (isConnecting) return;
+
     if (conversation.status === "disconnected") {
-      if (!isConnecting) {
-        setVoiceStatus("idle");
-      }
+      setVoiceStatus("idle");
       return;
     }
 
