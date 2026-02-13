@@ -352,16 +352,19 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           <p className="text-xs text-muted-foreground mt-0.5">
             {currentAlert.description}
           </p>
-          <Button
-            size="sm"
-            variant={isUrgent ? "destructive" : "default"}
-            className="h-8 text-xs mt-3 rounded-full px-4"
-            onClick={() => navigate(currentAlert.route)}
-          >
-            {currentAlert.actionLabel}
-            <ChevronRight className="h-3 w-3 ml-1" />
-          </Button>
         </div>
+      </div>
+
+      <div className="flex justify-end mt-3">
+        <Button
+          size="sm"
+          variant={isUrgent ? "destructive" : "default"}
+          className="h-8 text-xs rounded-full px-4"
+          onClick={() => navigate(currentAlert.route)}
+        >
+          {currentAlert.actionLabel}
+          <ChevronRight className="h-3 w-3 ml-1" />
+        </Button>
       </div>
       
       {visibleAlerts.length > 1 && (
