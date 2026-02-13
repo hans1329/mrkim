@@ -410,6 +410,7 @@ export function useVoiceAgent() {
       console.error("[Session] endSession error:", e);
     }
 
+    setIsConnecting(false);
     setVoiceStatus("idle");
     setLastMessage(null);
     setIsTTSPreparing(false);
