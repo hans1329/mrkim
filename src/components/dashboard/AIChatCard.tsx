@@ -272,61 +272,61 @@ export function AIChatCard() {
   };
   const displayMessage = response || (showBriefing ? briefingMessage : null);
   const isBriefingDisplay = !response && showBriefing;
-  return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/15 backdrop-blur-md border-white/20" : "bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] border-primary/30"}`}>
+  return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/90 backdrop-blur-md border-border/50" : "bg-card border-border"}`}>
       <CardContent className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg hover:bg-white/30 transition-colors overflow-hidden">
-                {secretaryAvatarUrl ? <img src={secretaryAvatarUrl} alt={secretaryName || "비서"} className="h-full w-auto object-contain" /> : <Bot className="h-8 w-8 text-white" />}
+              <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 shadow-lg hover:bg-primary/20 transition-colors overflow-hidden">
+                {secretaryAvatarUrl ? <img src={secretaryAvatarUrl} alt={secretaryName || "비서"} className="h-full w-auto object-contain" /> : <Bot className="h-8 w-8 text-primary" />}
               </button>
-              <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 flex items-center justify-center bg-black/20 rounded-full">
-                <Settings className="h-2.5 w-2.5 text-white/70" />
+              <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 flex items-center justify-center bg-muted rounded-full">
+                <Settings className="h-2.5 w-2.5 text-muted-foreground" />
               </div>
             </div>
             <div>
-              <p className="text-[11px] text-white/60 tracking-wide mb-0.5">당신의 경영 비서</p>
-              {secretaryName ? <h3 className="font-bold text-white">{secretaryName}</h3> : <Skeleton className="h-5 w-16 bg-white/30" />}
+              <p className="text-[11px] text-muted-foreground tracking-wide mb-0.5">당신의 경영 비서</p>
+              {secretaryName ? <h3 className="font-bold text-foreground">{secretaryName}</h3> : <Skeleton className="h-5 w-16" />}
             </div>
           </div>
-          <Button variant="secondary" size="sm" onClick={openVoice} className="gap-1.5 bg-white/20 hover:bg-white/30 text-white border border-white/40 backdrop-blur-sm">
+          <Button variant="secondary" size="sm" onClick={openVoice} className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 border-0">
             <Mic className="h-4 w-4" />
             대화
           </Button>
         </div>
 
         {/* Response/Briefing Area */}
-        {(displayMessage || isTyping) && <div className={`mb-4 rounded-xl backdrop-blur-sm p-2.5 border ${isBriefingDisplay ? "bg-emerald-400/15 border-emerald-300/25" : "bg-white/15 border-white/20"}`}>
+        {(displayMessage || isTyping) && <div className={`mb-4 rounded-xl p-2.5 border ${isBriefingDisplay ? "bg-success/10 border-success/20" : "bg-muted border-border"}`}>
             {isTyping ? <div className="flex items-center gap-2">
-                <Sparkles className="h-3.5 w-3.5 animate-pulse text-emerald-200" />
-                <span className="text-xs text-white/70">답변 중...</span>
+                <Sparkles className="h-3.5 w-3.5 animate-pulse text-success" />
+                <span className="text-xs text-muted-foreground">답변 중...</span>
               </div> : <div className="flex items-center justify-between gap-2 cursor-pointer" onClick={openChat}>
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {isBriefingDisplay && <Clock className="h-3.5 w-3.5 text-emerald-200 shrink-0" />}
-                  <p className="text-xs text-white/90 flex-1 line-clamp-2">{displayMessage}</p>
+                  {isBriefingDisplay && <Clock className="h-3.5 w-3.5 text-success shrink-0" />}
+                  <p className="text-xs text-foreground/80 flex-1 line-clamp-2">{displayMessage}</p>
                 </div>
                 <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={e => {
             e.stopPropagation();
             setResponse(null);
             setShowBriefing(false);
           }}>
-                  <RotateCcw className="h-3.5 w-3.5 text-white/70" />
+                  <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
                 </Button>
               </div>}
           </div>}
 
         {/* Input */}
         <form onSubmit={handleSubmit} className="flex gap-2 mb-3 mt-3">
-          <Input value={input} onChange={e => setInput(e.target.value)} placeholder="비서에게 요청해주세요!" className="flex-1 bg-white/25 border-0 text-sm font-medium opacity-100 disabled:opacity-70 placeholder:text-xs placeholder:font-normal placeholder:text-white/50 placeholder:leading-normal focus-visible:ring-white/30 leading-normal caret-white [&:not(:disabled)]:opacity-100" style={input ? { color: 'rgba(255,255,255,1)', WebkitTextFillColor: 'rgba(255,255,255,1)', opacity: 1 } : { color: 'rgba(255,255,255,0.5)', WebkitTextFillColor: 'rgba(255,255,255,0.5)', opacity: 1 }} disabled={isTyping || profileLoading || realStats.isLoading} />
-          <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm">
+          <Input value={input} onChange={e => setInput(e.target.value)} placeholder="비서에게 요청해주세요!" className="flex-1 bg-muted border-border text-sm font-medium placeholder:text-xs placeholder:font-normal placeholder:text-muted-foreground placeholder:leading-normal focus-visible:ring-primary/30 leading-normal text-foreground" disabled={isTyping || profileLoading || realStats.isLoading} />
+          <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="bg-primary hover:bg-primary/90 text-primary-foreground border-0">
             <Send className="h-4 w-4" />
           </Button>
         </form>
 
         {/* Quick Prompts */}
         <div className="flex flex-wrap gap-1">
-          {quickPrompts.map(prompt => <button key={prompt} type="button" className="text-xs px-1.5 text-white/70 hover:text-white transition-colors disabled:opacity-50" onClick={() => handleQuickAsk(prompt)} disabled={isTyping}>
+          {quickPrompts.map(prompt => <button key={prompt} type="button" className="text-xs px-1.5 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50" onClick={() => handleQuickAsk(prompt)} disabled={isTyping}>
               #{prompt}
             </button>)}
         </div>
