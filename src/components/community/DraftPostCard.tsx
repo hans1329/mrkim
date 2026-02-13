@@ -9,9 +9,10 @@ import { toast } from "sonner";
 interface DraftPostCardProps {
   post: CommunityPost;
   secretaryName: string;
+  secretaryAvatarUrl?: string | null;
 }
 
-export function DraftPostCard({ post, secretaryName }: DraftPostCardProps) {
+export function DraftPostCard({ post, secretaryName, secretaryAvatarUrl }: DraftPostCardProps) {
   const trigger = triggerConfig[post.trigger.type];
 
   const handleApprove = () => {
@@ -34,8 +35,12 @@ export function DraftPostCard({ post, secretaryName }: DraftPostCardProps) {
 
       {/* 비서 프로필 */}
       <div className="flex items-center gap-2.5 mb-3">
-        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-lg">
-          🤖
+        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+          {secretaryAvatarUrl ? (
+            <img src={secretaryAvatarUrl} alt={secretaryName} className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-lg">🤖</span>
+          )}
         </div>
         <div>
           <span className="text-sm font-semibold text-foreground">{secretaryName}</span>
