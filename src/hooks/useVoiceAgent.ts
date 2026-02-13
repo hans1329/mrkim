@@ -318,6 +318,12 @@ export function useVoiceAgent() {
     console.log("[Conv] Message:", message);
 
     if (message.role === "user") {
+      // 5자 미만의 짧은 잡음(훌쩍, 음, 어 등)은 무시
+      const trimmed = message.message.trim();
+      if (trimmed.length < 5) {
+        console.log("[Conv] Ignoring short noise:", trimmed);
+        return;
+      }
       const userMsg: VoiceMessage = { role: "user", text: message.message, timestamp: new Date() };
       messagesContextRef.current = [...messagesContextRef.current, userMsg];
       setLastMessage(userMsg);
