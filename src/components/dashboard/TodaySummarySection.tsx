@@ -109,7 +109,7 @@ function RealStatCard({
             {title}
           </p>
         </div>
-        <p className="text-lg font-bold leading-tight pl-0.5">{value}</p>
+        <p className="text-sm md:text-lg font-bold leading-tight pl-0.5">{value}</p>
         {(subtitle || trend) && (
           <div className="flex items-center gap-1 mt-0.5 pl-0.5">
             {trend && (
