@@ -194,7 +194,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
 
         <Button
           size="sm"
-          className={cn("h-10 text-xs md:text-sm gap-1 rounded-full", isHero && "bg-white text-primary hover:bg-white/90")}
+          className={cn("h-10 gap-1 rounded-full", isHero && "bg-white text-primary hover:bg-white/90")}
           onClick={handleStartConnection}
         >
           <Sparkles className="h-3.5 w-3.5" />
@@ -296,7 +296,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
 
         <Button
           size="sm"
-          className={cn("h-10 text-xs md:text-sm gap-1 rounded-full", isHero && "bg-white text-primary hover:bg-white/90")}
+          className={cn("h-10 gap-1 rounded-full", isHero && "bg-white text-primary hover:bg-white/90")}
           onClick={handleStartConnection}
         >
           <Sparkles className="h-3.5 w-3.5" />
