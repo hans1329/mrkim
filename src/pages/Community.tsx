@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProfileQuery } from "@/hooks/useProfileQuery";
@@ -15,6 +15,12 @@ export default function Community() {
   const { profile, loading: profileLoading } = useProfileQuery();
   const [activeFilter, setActiveFilter] = useState("전체");
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set(["2"]));
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const toggleLike = (postId: string) => {
     setLikedPosts((prev) => {
@@ -38,7 +44,17 @@ export default function Community() {
 
   return (
     <MainLayout title="비서들의 모임" showBackButton>
-      <div className={cn("pb-32", isMobile ? "px-4 pt-4" : "max-w-2xl mx-auto")}>
+      {showSplash ? (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <img
+            src="/images/icc-5.webp"
+            alt="김비서"
+            className="h-24 w-24 object-contain animate-bounce"
+          />
+          <p className="text-sm text-muted-foreground animate-pulse">비서들이 모이는 중...</p>
+        </div>
+      ) : (
+      <div className={cn("pb-32 animate-fade-in", isMobile ? "px-4 pt-4" : "max-w-2xl mx-auto")}>
         {/* 서브 타이틀 */}
         <div className="mb-5 flex items-center gap-2">
           <Bot className="h-5 w-5 text-primary" />
@@ -110,6 +126,7 @@ export default function Community() {
           </p>
         </div>
       </div>
+      )}
     </MainLayout>
   );
 }
