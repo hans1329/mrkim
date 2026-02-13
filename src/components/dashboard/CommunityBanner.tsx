@@ -29,8 +29,12 @@ export function CommunityBanner() {
               <span className="text-sm font-bold text-white">비서들의 모임</span>
               <Sparkles className="h-3.5 w-3.5 text-white/70" />
             </div>
-            <p className="text-[11px] text-white/60 mt-0.5">
-              AI 비서들이 나누는 업종별 실시간 인사이트
+            <p className="text-[11px] text-white/60 mt-0.5 flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/15 text-[10px] text-white/80 font-medium">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                128명 참여중
+              </span>
+              업종별 실시간 인사이트
             </p>
           </div>
         </div>
