@@ -146,7 +146,7 @@ export function VoiceOverlay() {
 
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 relative overflow-y-auto">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 relative overflow-hidden">
         {/* 권한 거부 상태 */}
         {permissionDenied ? (
           <div className="flex flex-col items-center gap-4">
