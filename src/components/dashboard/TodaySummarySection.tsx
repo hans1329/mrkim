@@ -81,7 +81,7 @@ function RealStatCard({
   isHero?: boolean;
 }) {
   const variantStyles = {
-    default: isHero ? "bg-white/15 backdrop-blur-md border-white/20 text-white" : "bg-card",
+    default: isHero ? "bg-white/15 backdrop-blur-md border border-red-400/50 text-white" : "bg-card border border-red-400/50",
     primary: isHero ? "bg-white/25 backdrop-blur-md border border-green-400/60 text-white" : "bg-primary text-primary-foreground border border-green-400/60",
     success: isHero ? "bg-white/25 backdrop-blur-md border border-green-400/60 text-white" : "bg-success text-success-foreground border border-green-400/60",
   };
