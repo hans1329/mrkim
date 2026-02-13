@@ -82,8 +82,8 @@ function RealStatCard({
 }) {
   const variantStyles = {
     default: isHero ? "bg-white/15 backdrop-blur-md border-white/20 text-white" : "bg-card",
-    primary: isHero ? "bg-white/25 backdrop-blur-md border-white/30 text-white" : "bg-primary text-primary-foreground",
-    success: isHero ? "bg-white/25 backdrop-blur-md border-white/30 text-white" : "bg-success text-success-foreground",
+    primary: isHero ? "bg-white/25 backdrop-blur-md border-white/30 text-white" : "bg-primary text-primary-foreground border border-emerald-400/50",
+    success: isHero ? "bg-white/25 backdrop-blur-md border-white/30 text-white" : "bg-success text-success-foreground border border-emerald-400/50",
   };
 
   const iconVariantStyles = {
