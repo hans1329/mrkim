@@ -23,6 +23,7 @@ export function useVoiceAgent() {
   const [isTTSPreparing, setIsTTSPreparing] = useState(false);
   const [volume, setVolumeState] = useState(0.7);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [micMuted, setMicMuted] = useState(false);
 
   const sessionActiveRef = useRef(false);
   const messagesContextRef = useRef<VoiceMessage[]>([]);
@@ -303,6 +304,7 @@ export function useVoiceAgent() {
   // --- useConversation hook ---
   const conversation = useConversation({
     clientTools,
+    micMuted,
     onConnect: handleConnect,
     onDisconnect: handleDisconnect,
     onMessage: handleMessage,
@@ -323,15 +325,20 @@ export function useVoiceAgent() {
     // Connected
     if (toolCallActiveRef.current) {
       setVoiceStatus("processing");
+      setMicMuted(true);
     } else if (conversation.isSpeaking) {
-      // 에이전트가 실제로 말하기 시작하면 waitingFirstMessage 해제
+      // 에이전트가 실제로 말하기 시작하면 waitingFirstMessage 해제 + 마이크 뮤트
       waitingFirstMessageRef.current = false;
       setVoiceStatus("speaking");
+      setMicMuted(true);
     } else if (waitingFirstMessageRef.current) {
       // 첫 인사말 대기 중 - speaking 상태 유지 (listening으로 전환 방지)
       setVoiceStatus("speaking");
+      setMicMuted(true);
     } else {
+      // 듣기 모드 - 마이크 활성화
       setVoiceStatus("listening");
+      setMicMuted(false);
     }
   }, [conversation.status, conversation.isSpeaking, isConnecting]);
 
@@ -419,13 +426,21 @@ export function useVoiceAgent() {
     messagesContextRef.current = [];
   }, [conversation]);
 
-  // --- Interrupt (탭하여 중단) ---
+  // --- Interrupt (버튼으로 에이전트 발화 중단) ---
   const interruptAndListen = useCallback(() => {
-    // Conversational AI에서는 사용자가 말하면 자동으로 인터럽트됨
-    // 여기서는 수동으로 status만 업데이트 (ElevenLabs가 자체 처리)
-    console.log("[Voice] Interrupt requested");
+    console.log("[Voice] Interrupt: muting agent output + unmuting mic");
+    // 에이전트 출력 볼륨을 0으로 → 즉시 무음
+    conversation.setVolume({ volume: 0 });
+    // 마이크 활성화 → 사용자 입력 가능 상태로 전환
+    setMicMuted(false);
     setIsTTSPreparing(false);
-  }, []);
+    setVoiceStatus("listening");
+    
+    // 잠시 후 원래 볼륨 복원 (다음 응답을 위해)
+    setTimeout(() => {
+      conversation.setVolume({ volume });
+    }, 500);
+  }, [conversation, volume]);
 
   // --- Reset permission ---
   const resetPermission = useCallback(() => {
