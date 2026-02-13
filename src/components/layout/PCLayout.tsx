@@ -19,7 +19,7 @@ import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
 import { AIChatPanel } from "@/components/chat/AIChatPanel";
 import { FloatingVoiceButton } from "@/components/voice/FloatingVoiceButton";
 const chaltteokImage = "/images/icc-4.webp";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 const navItems = [
   { title: "홈", url: "/", icon: LayoutDashboard },
@@ -87,87 +87,64 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
         {/* 네비게이션 메뉴 */}
         <nav className={cn("flex-1 space-y-1", collapsed ? "p-2" : "p-4")}>
           {navItems.map((item) => (
-            <Tooltip key={item.title} delayDuration={0}>
-              <TooltipTrigger asChild>
-                <NavLink
-                  to={item.url}
-                  end={item.url === "/"}
-                  className={cn(
-                    "flex items-center rounded-xl text-white/70 transition-all hover:bg-white/15 hover:text-white",
-                    collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
-                  )}
-                  activeClassName="bg-white/20 text-white font-medium"
-                >
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
-                  {!collapsed && <span>{item.title}</span>}
-                </NavLink>
-              </TooltipTrigger>
-              {collapsed && (
-                <TooltipContent side="right">
-                  {item.title}
-                </TooltipContent>
+            <NavLink
+              key={item.title}
+              to={item.url}
+              end={item.url === "/"}
+              className={cn(
+                "flex items-center rounded-xl text-white/70 transition-all hover:bg-white/15 hover:text-white",
+                collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
               )}
-            </Tooltip>
+              activeClassName="bg-white/20 text-white font-medium"
+            >
+              <item.icon className="h-5 w-5 flex-shrink-0" />
+              {!collapsed && <span>{item.title}</span>}
+            </NavLink>
           ))}
         </nav>
 
         {/* 하단 유틸리티 */}
         <div className={cn("border-t border-white/15 space-y-1", collapsed ? "p-2" : "p-4")}>
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                  className={cn(
-                    "w-full text-white/70 hover:bg-white/15 hover:text-white",
-                    collapsed ? "justify-center p-3" : "justify-start gap-3"
-                  )}
-                onClick={() => navigate("/notifications")}
-              >
-                <div className="relative flex-shrink-0">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
-                    2
-                  </span>
-                </div>
-                {!collapsed && <span>알림</span>}
-              </Button>
-            </TooltipTrigger>
-            {collapsed && <TooltipContent side="right">알림</TooltipContent>}
-          </Tooltip>
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full text-white/70 hover:bg-white/15 hover:text-white",
+              collapsed ? "justify-center p-3" : "justify-start gap-3"
+            )}
+            onClick={() => navigate("/notifications")}
+          >
+            <div className="relative flex-shrink-0">
+              <Bell className="h-5 w-5" />
+              <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                2
+              </span>
+            </div>
+            {!collapsed && <span>알림</span>}
+          </Button>
 
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                  className={cn(
-                    "w-full text-white/70 hover:bg-white/15 hover:text-white",
-                    collapsed ? "justify-center p-3" : "justify-start gap-3"
-                  )}
-                onClick={() => navigate("/settings")}
-              >
-                <Settings className="h-5 w-5 flex-shrink-0" />
-                {!collapsed && <span>설정</span>}
-              </Button>
-            </TooltipTrigger>
-            {collapsed && <TooltipContent side="right">설정</TooltipContent>}
-          </Tooltip>
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full text-white/70 hover:bg-white/15 hover:text-white",
+              collapsed ? "justify-center p-3" : "justify-start gap-3"
+            )}
+            onClick={() => navigate("/settings")}
+          >
+            <Settings className="h-5 w-5 flex-shrink-0" />
+            {!collapsed && <span>설정</span>}
+          </Button>
 
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                  className={cn(
-                    "w-full text-white/70 hover:bg-white/15 hover:text-white",
-                    collapsed ? "justify-center p-3" : "justify-start gap-3"
-                  )}
-                onClick={() => navigate("/help")}
-              >
-                <HelpCircle className="h-5 w-5 flex-shrink-0" />
-                {!collapsed && <span>도움말</span>}
-              </Button>
-            </TooltipTrigger>
-            {collapsed && <TooltipContent side="right">도움말</TooltipContent>}
-          </Tooltip>
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full text-white/70 hover:bg-white/15 hover:text-white",
+              collapsed ? "justify-center p-3" : "justify-start gap-3"
+            )}
+            onClick={() => navigate("/help")}
+          >
+            <HelpCircle className="h-5 w-5 flex-shrink-0" />
+            {!collapsed && <span>도움말</span>}
+          </Button>
 
           {/* 사이드바 접기/펼치기 버튼 */}
           <Button
