@@ -311,34 +311,53 @@ export function useVoiceAgent() {
     onError: handleError,
   });
 
-  // --- Sync voiceStatus from conversation state ---
+  // --- Sync voiceStatus from conversation state (디바운스 적용) ---
+  const speakingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     // 연결 시도 중에는 voiceStatus를 건드리지 않음
-    // → handleConnect 콜백이 직접 상태를 관리
     if (isConnecting) return;
 
     if (conversation.status === "disconnected") {
+      if (speakingDebounceRef.current) {
+        clearTimeout(speakingDebounceRef.current);
+        speakingDebounceRef.current = null;
+      }
       setVoiceStatus("idle");
+      setMicMuted(false);
       return;
     }
 
     // Connected
     if (toolCallActiveRef.current) {
+      if (speakingDebounceRef.current) {
+        clearTimeout(speakingDebounceRef.current);
+        speakingDebounceRef.current = null;
+      }
       setVoiceStatus("processing");
       setMicMuted(true);
     } else if (conversation.isSpeaking) {
-      // 에이전트가 실제로 말하기 시작하면 waitingFirstMessage 해제 + 마이크 뮤트
+      // 에이전트가 말하기 시작 → 즉시 speaking으로 전환, 디바운스 취소
+      if (speakingDebounceRef.current) {
+        clearTimeout(speakingDebounceRef.current);
+        speakingDebounceRef.current = null;
+      }
       waitingFirstMessageRef.current = false;
       setVoiceStatus("speaking");
       setMicMuted(true);
     } else if (waitingFirstMessageRef.current) {
-      // 첫 인사말 대기 중 - speaking 상태 유지 (listening으로 전환 방지)
       setVoiceStatus("speaking");
       setMicMuted(true);
     } else {
-      // 듣기 모드 - 마이크 활성화
-      setVoiceStatus("listening");
-      setMicMuted(false);
+      // isSpeaking이 false로 바뀌어도 오디오 청크 사이 갭일 수 있으므로
+      // 디바운스 후에만 listening으로 전환
+      if (!speakingDebounceRef.current) {
+        speakingDebounceRef.current = setTimeout(() => {
+          speakingDebounceRef.current = null;
+          setVoiceStatus("listening");
+          setMicMuted(false);
+        }, 600);
+      }
     }
   }, [conversation.status, conversation.isSpeaking, isConnecting]);
 
