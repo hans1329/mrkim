@@ -108,7 +108,7 @@ export function useVoiceAgent() {
       }
 
       const korean = numberToKorean(num);
-      const unitMap: Record<string, string> = { "원": " 원", "건": " 건", "명": " 명", "개": " 개" };
+      const unitMap: Record<string, string> = { "원": "원", "건": "건", "명": "명", "개": "개" };
       return korean + (unitMap[unit] || ` ${unit}`);
     });
   }
