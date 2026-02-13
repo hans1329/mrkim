@@ -208,10 +208,14 @@ export default function Dashboard() {
         /* PC 레이아웃은 기존 유지 */
         <div className="space-y-6">
           <ConnectionStatusBanner isLoggedOut={isLoggedOut} />
-          <section>
-            <AIChatCard />
-          </section>
-          <TodaySummarySection isLoggedOut={isLoggedOut} />
+          
+          {/* 히어로 영역 - 파란 배경 + 글래스모피즘 */}
+          <div className="rounded-2xl bg-gradient-to-br from-primary via-primary to-[hsl(230,70%,50%)] p-6 space-y-6 text-primary-foreground">
+            <section>
+              <AIChatCard />
+            </section>
+            <TodaySummarySection isLoggedOut={isLoggedOut} isHero />
+          </div>
 
           {isLoggedOut && (
             <>
