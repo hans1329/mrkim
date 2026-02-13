@@ -263,8 +263,9 @@ export function useElevenLabsConversation() {
     setLastError(null);
 
     try {
-      // 마이크 권한 요청
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      // 마이크 권한 확인 후 즉시 스트림 해제 (SDK가 자체 스트림 생성)
+      const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      permissionStream.getTracks().forEach(track => track.stop());
 
       // Edge Function에서 WebRTC token(우선) 또는 signed URL(폴백) 가져오기
       const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
