@@ -80,9 +80,10 @@ function generateRealAlerts(
 
 interface ConnectionStatusBannerProps {
   isLoggedOut?: boolean;
+  isHero?: boolean;
 }
 
-export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatusBannerProps) {
+export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: ConnectionStatusBannerProps) {
   const navigate = useNavigate();
   // ConnectionContext에서 캐시된 프로필 사용 (중복 API 호출 방지)
   const { profile, profileLoading: loading } = useConnection();
@@ -150,17 +151,22 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
   // 로그아웃 상태: 항상 연동 배너 표시 (목업 상태)
   if (isLoggedOut) {
     return (
-      <div className="rounded-xl bg-card border border-border p-4 mb-4 shadow-sm">
+      <div className={cn(
+        "rounded-xl p-4 mb-4",
+        isHero 
+          ? "bg-white/15 backdrop-blur-md border border-white/20" 
+          : "bg-card border border-border shadow-sm"
+      )}>
         <div className="flex items-center gap-2 mb-1">
-          <h4 className="font-semibold text-sm">
+          <h4 className={cn("font-semibold text-sm", isHero && "text-white")}>
             데이터 연동을 완료해주세요
           </h4>
-          <span className="text-xs text-muted-foreground">
+          <span className={cn("text-xs", isHero ? "text-white/70" : "text-muted-foreground")}>
             0/{totalConnections}
           </span>
         </div>
           
-        <p className="text-xs text-muted-foreground mb-3">
+        <p className={cn("text-xs mb-3", isHero ? "text-white/70" : "text-muted-foreground")}>
           연동하면 김비서가 실시간으로 사업 현황을 분석해드려요
         </p>
 
@@ -169,7 +175,10 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
           {connections.map((conn) => (
             <div
               key={conn.key}
-              className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground"
+              className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
+                isHero ? "bg-white/20 text-white/80" : "bg-muted text-muted-foreground"
+              )}
             >
               <Clock className="h-3 w-3" />
               {conn.label}
@@ -184,7 +193,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
 
         <Button
           size="sm"
-          className="h-8 text-xs gap-1 rounded-full"
+          className={cn("h-8 text-xs gap-1 rounded-full", isHero && "bg-white text-primary hover:bg-white/90")}
           onClick={handleStartConnection}
         >
           <Sparkles className="h-3.5 w-3.5" />
@@ -237,17 +246,22 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
   // 연동이 완료되지 않은 경우: 연동 상태 배너
   if (!isFullyConnected) {
     return (
-      <div className="rounded-xl bg-card border border-border p-4 mb-4 shadow-sm">
+      <div className={cn(
+        "rounded-xl p-4 mb-4",
+        isHero 
+          ? "bg-white/15 backdrop-blur-md border border-white/20" 
+          : "bg-card border border-border shadow-sm"
+      )}>
         <div className="flex items-center gap-2 mb-1">
-          <h4 className="font-semibold text-sm">
+          <h4 className={cn("font-semibold text-sm", isHero && "text-white")}>
             데이터 연동을 완료해주세요
           </h4>
-          <span className="text-xs text-muted-foreground">
+          <span className={cn("text-xs", isHero ? "text-white/70" : "text-muted-foreground")}>
             {connectedCount}/{totalConnections}
           </span>
         </div>
           
-        <p className="text-xs text-muted-foreground mb-3">
+        <p className={cn("text-xs mb-3", isHero ? "text-white/70" : "text-muted-foreground")}>
           연동하면 김비서가 실시간으로 사업 현황을 분석해드려요
         </p>
 
@@ -259,8 +273,8 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
               className={cn(
                 "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
                 conn.connected 
-                  ? "bg-success text-success-foreground" 
-                  : "bg-muted text-muted-foreground"
+                  ? (isHero ? "bg-white/30 text-white" : "bg-success text-success-foreground")
+                  : (isHero ? "bg-white/20 text-white/80" : "bg-muted text-muted-foreground")
               )}
             >
               {conn.connected ? (
@@ -280,7 +294,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false }: ConnectionStatus
 
         <Button
           size="sm"
-          className="h-8 text-xs gap-1 rounded-full"
+          className={cn("h-8 text-xs gap-1 rounded-full", isHero && "bg-white text-primary hover:bg-white/90")}
           onClick={handleStartConnection}
         >
           <Sparkles className="h-3.5 w-3.5" />
