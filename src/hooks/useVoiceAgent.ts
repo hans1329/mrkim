@@ -314,24 +314,33 @@ export function useVoiceAgent() {
     }
   }, []);
 
+  // 에이전트 응답이 뒤따르는 사용자 발화만 기록하기 위한 pending 메시지
+  const pendingUserMsgRef = useRef<VoiceMessage | null>(null);
+
   const handleMessage = useCallback((message: { message: string; source: "user" | "ai"; role: "user" | "agent" }) => {
     console.log("[Conv] Message:", message);
 
     if (message.role === "user") {
-      // 5자 미만의 짧은 잡음(훌쩍, 음, 어 등)은 무시
+      // 5자 미만의 짧은 잡음은 무시
       const trimmed = message.message.trim();
       if (trimmed.length < 5) {
         console.log("[Conv] Ignoring short noise:", trimmed);
         return;
       }
-      const userMsg: VoiceMessage = { role: "user", text: message.message, timestamp: new Date() };
-      messagesContextRef.current = [...messagesContextRef.current, userMsg];
-      setLastMessage(userMsg);
-      saveMessageToDB("user", message.message);
+      // 즉시 저장하지 않고 pending으로 보관 (에이전트 응답 시 확정)
+      pendingUserMsgRef.current = { role: "user", text: message.message, timestamp: new Date() };
+      setLastMessage(pendingUserMsgRef.current);
     }
 
     if (message.role === "agent") {
-      // query_business에서 저장해둔 시각화 데이터 연결
+      // pending 사용자 메시지가 있으면 에이전트 응답 전에 확정 저장
+      const pendingUser = pendingUserMsgRef.current;
+      if (pendingUser) {
+        messagesContextRef.current = [...messagesContextRef.current, pendingUser];
+        saveMessageToDB("user", pendingUser.text);
+        pendingUserMsgRef.current = null;
+      }
+
       const visualization = pendingVisualizationRef.current;
       pendingVisualizationRef.current = null;
       
