@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Bot, Send, Sparkles, Mic, RotateCcw, Clock, Settings } from "lucide-rea
 import { formatCurrency } from "@/data/mockData";
 import { useChat } from "@/contexts/ChatContext";
 import { useVoice } from "@/contexts/VoiceContext";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfileQuery } from "@/hooks/useProfileQuery";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 interface RealTimeStats {
@@ -102,7 +102,7 @@ export function AIChatCard() {
   const {
     profile,
     loading: profileLoading
-  } = useProfile();
+  } = useProfileQuery();
   const isMobile = useIsMobile();
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<string | null>(null);
@@ -120,6 +120,17 @@ export function AIChatCard() {
   // 설정한 비서 이름과 아바타 사용 (로딩 중에는 undefined)
   const secretaryName = profileLoading ? undefined : profile?.secretary_name || "김비서";
   const secretaryAvatarUrl = profileLoading ? undefined : profile?.secretary_avatar_url || null;
+  const profileImgSrc = secretaryAvatarUrl || "/images/icc-5.webp";
+
+  // 이미지 프리로딩 & 캐싱
+  const preloadedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!preloadedRef.current.has(profileImgSrc)) {
+      const img = new Image();
+      img.src = profileImgSrc;
+      preloadedRef.current.add(profileImgSrc);
+    }
+  }, [profileImgSrc]);
 
   // 실제 거래 데이터 불러오기
   useEffect(() => {
@@ -279,7 +290,7 @@ export function AIChatCard() {
           <div className="flex items-center gap-3">
             <div className="relative">
               <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg hover:bg-muted transition-colors overflow-hidden">
-                {secretaryAvatarUrl ? <img src={secretaryAvatarUrl} alt={secretaryName || "비서"} className="h-full w-auto object-contain" /> : <img src="/images/icc-5.webp" alt={secretaryName || "비서"} className="h-10 w-10 object-contain" />}
+                <img src={profileImgSrc} alt={secretaryName || "비서"} className={secretaryAvatarUrl ? "h-full w-auto object-contain" : "h-10 w-10 object-contain"} loading="eager" decoding="async" />
               </button>
               <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 flex items-center justify-center bg-muted rounded-full">
                 <Settings className="h-2.5 w-2.5 text-muted-foreground" />
