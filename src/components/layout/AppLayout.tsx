@@ -100,14 +100,17 @@ export function AppLayout({
 
       {/* 앱 영역 */}
       <div className="w-full h-full lg:w-[580px] xl:w-[640px] lg:flex-shrink-0" style={{ paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
-        <div className="relative flex h-full max-w-xl flex-col shadow-2xl lg:max-w-none mx-auto overflow-hidden bg-primary">
-          <div className={`flex-1 overflow-auto ${stickyHeader ? "[background:linear-gradient(to_bottom,hsl(var(--primary))_50%,hsl(var(--background))_50%)]" : "bg-background"}`} id="app-scroll-container" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <div className="relative flex h-full max-w-xl flex-col shadow-2xl lg:max-w-none mx-auto overflow-hidden bg-background">
+          {/* Safe area top bar with primary color */}
+          {stickyHeader && <div className="flex-shrink-0 bg-primary" style={{ height: 'env(safe-area-inset-top, 0px)' }} />}
+          {!stickyHeader && <div className="flex-shrink-0 bg-background" style={{ height: 'env(safe-area-inset-top, 0px)' }} />}
+          <div className={`flex-1 overflow-auto ${stickyHeader ? "[background:linear-gradient(to_bottom,hsl(var(--primary))_50%,hsl(var(--background))_50%)]" : "bg-background"}`} id="app-scroll-container">
             {/* 커스텀 sticky 헤더 (홈 등) - scroll container 직속 자식 */}
             {stickyHeader}
 
             {/* 서브페이지 전용 미니 헤더 (뒤로가기 있을 때만) */}
             {!stickyHeader && showHeader && showBackButton && (
-              <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-4 py-1 pt-[calc(env(safe-area-inset-top)+4px)]">
+              <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-4 py-1 pt-1">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" className="h-9 w-9 -ml-2" onClick={() => {
