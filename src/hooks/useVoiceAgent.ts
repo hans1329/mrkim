@@ -254,44 +254,25 @@ export function useVoiceAgent() {
     }
   }, []);
 
-  const handleMessage = useCallback((message: any) => {
-    console.log("[Conv] Message:", message.type, message);
+  const handleMessage = useCallback((message: { message: string; source: "user" | "ai"; role: "user" | "agent" }) => {
+    console.log("[Conv] Message:", message);
 
-    if (message.type === "user_transcript") {
-      const userText = message.user_transcription_event?.user_transcript;
-      if (userText) {
-        const userMsg: VoiceMessage = { role: "user", text: userText, timestamp: new Date() };
-        messagesContextRef.current = [...messagesContextRef.current, userMsg];
-        setLastMessage(userMsg);
-        saveMessageToDB("user", userText);
-      }
+    if (message.role === "user") {
+      const userMsg: VoiceMessage = { role: "user", text: message.message, timestamp: new Date() };
+      messagesContextRef.current = [...messagesContextRef.current, userMsg];
+      setLastMessage(userMsg);
+      saveMessageToDB("user", message.message);
     }
 
-    if (message.type === "agent_response") {
-      const agentText = message.agent_response_event?.agent_response;
-      if (agentText) {
-        // query_business에서 저장해둔 시각화 데이터 연결
-        const visualization = pendingVisualizationRef.current;
-        pendingVisualizationRef.current = null;
-        
-        const agentMsg: VoiceMessage = { role: "agent", text: agentText, timestamp: new Date(), visualization };
-        messagesContextRef.current = [...messagesContextRef.current, agentMsg];
-        setLastMessage(agentMsg);
-        saveMessageToDB("assistant", agentText);
-      }
-    }
-
-    if (message.type === "agent_response_correction") {
-      const corrected = message.agent_response_correction_event?.corrected_agent_response;
-      if (corrected) {
-        const correctedMsg: VoiceMessage = { role: "agent", text: corrected, timestamp: new Date() };
-        // Replace last agent message
-        const msgs = messagesContextRef.current;
-        if (msgs.length > 0 && msgs[msgs.length - 1].role === "agent") {
-          msgs[msgs.length - 1] = correctedMsg;
-        }
-        setLastMessage(correctedMsg);
-      }
+    if (message.role === "agent") {
+      // query_business에서 저장해둔 시각화 데이터 연결
+      const visualization = pendingVisualizationRef.current;
+      pendingVisualizationRef.current = null;
+      
+      const agentMsg: VoiceMessage = { role: "agent", text: message.message, timestamp: new Date(), visualization };
+      messagesContextRef.current = [...messagesContextRef.current, agentMsg];
+      setLastMessage(agentMsg);
+      saveMessageToDB("assistant", message.message);
     }
   }, [saveMessageToDB]);
 
