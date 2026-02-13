@@ -60,8 +60,8 @@ export default function SecretarySettings() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromChat = searchParams.get("from") === "chat";
-  const { profile, loading, updating, updateProfile } = useProfile();
-  const { updateProfileCache } = useProfileQuery();
+  const { updating, updateProfile } = useProfile();
+  const { profile, loading, updateProfileCache } = useProfileQuery();
   
   const [speakingStyle, setSpeakingStyle] = useState("friendly");
   const [briefingFrequency, setBriefingFrequency] = useState("daily");
