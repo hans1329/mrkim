@@ -301,7 +301,7 @@ export function AIChatCard() {
               {secretaryName ? <h3 className="font-bold text-foreground">{secretaryName}</h3> : <Skeleton className="h-5 w-16" />}
             </div>
           </div>
-          <Button variant="secondary" size="sm" onClick={openVoice} className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 border-0">
+          <Button variant="secondary" size="sm" onClick={openVoice} className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 border-0 rounded-full">
             <Mic className="h-4 w-4" />
             대화
           </Button>
@@ -329,8 +329,8 @@ export function AIChatCard() {
 
         {/* Input */}
         <form onSubmit={handleSubmit} className="flex gap-2 mb-3 mt-3">
-          <Input value={input} onChange={e => setInput(e.target.value)} placeholder="비서에게 요청해주세요!" className="flex-1 bg-muted border-border text-sm font-medium placeholder:text-xs placeholder:font-normal placeholder:text-muted-foreground placeholder:leading-normal focus-visible:ring-primary/30 leading-normal text-foreground" disabled={isTyping || profileLoading || realStats.isLoading} />
-          <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="bg-primary hover:bg-primary/90 text-primary-foreground border-0">
+          <Input value={input} onChange={e => setInput(e.target.value)} placeholder="비서에게 요청해주세요!" className="flex-1 bg-muted border-border text-sm font-medium placeholder:text-xs placeholder:font-normal placeholder:text-muted-foreground placeholder:leading-normal focus-visible:ring-primary/30 leading-normal text-foreground rounded-full" disabled={isTyping || profileLoading || realStats.isLoading} />
+          <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 rounded-full h-9 w-9 shrink-0">
             <Send className="h-4 w-4" />
           </Button>
         </form>
