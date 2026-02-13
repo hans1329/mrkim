@@ -167,7 +167,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           </span>
         </div>
           
-        <p className={cn("text-xs mb-3", isHero ? "text-white/70" : "text-muted-foreground")}>
+        <p className={cn("text-xs font-normal mb-3", isHero ? "text-white/70" : "text-muted-foreground")}>
           연동하면 김비서가 실시간으로 사업 현황을 분석해드려요
         </p>
 
@@ -263,7 +263,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           </span>
         </div>
           
-        <p className={cn("text-xs mb-3", isHero ? "text-white/70" : "text-muted-foreground")}>
+        <p className={cn("text-xs font-normal mb-3", isHero ? "text-white/70" : "text-muted-foreground")}>
           연동하면 김비서가 실시간으로 사업 현황을 분석해드려요
         </p>
 
