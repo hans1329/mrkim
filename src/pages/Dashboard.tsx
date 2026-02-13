@@ -237,7 +237,6 @@ export default function Dashboard() {
               </div>
             </>
           )}
-          <CommunityBanner />
 
           {isLoggedInButNotConnected && <IntegratedConnectionCard />}
 
@@ -265,6 +264,8 @@ export default function Dashboard() {
               </div>
             </>
           )}
+
+          <CommunityBanner />
         </div>
       )}
     </MainLayout>
