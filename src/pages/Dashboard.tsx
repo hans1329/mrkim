@@ -13,6 +13,7 @@ import { AutoTransferCard } from "@/components/dashboard/AutoTransferCard";
 import { DepositCard } from "@/components/dashboard/DepositCard";
 import { RecentTransactionsCard } from "@/components/dashboard/RecentTransactionsCard";
 import { CommunityBanner } from "@/components/dashboard/CommunityBanner";
+import { SecretaryInsightCard } from "@/components/dashboard/SecretaryInsightCard";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useChat } from "@/contexts/ChatContext";
@@ -157,9 +158,10 @@ export default function Dashboard() {
           {/* 히어로 아래 콘텐츠 - 흰 배경 */}
           <div className="bg-background flex-1 pb-24 min-h-screen">
 
-          {/* 연동 상태 배너 */}
-          <div className="px-4 pt-4">
+          {/* 연동 상태 배너 / AI 한마디 */}
+          <div className="px-4 pt-4 space-y-3">
             <ConnectionStatusBanner isLoggedOut={isLoggedOut} />
+            {isAnyConnected && <SecretaryInsightCard />}
           </div>
 
           {/* 오늘의 요약 */}
@@ -217,6 +219,7 @@ export default function Dashboard() {
                 </section>
                 <div className="col-span-4">
                   <ConnectionStatusBanner isLoggedOut={isLoggedOut} isHero />
+                  <SecretaryInsightCard isHero />
                 </div>
               </div>
               <TodaySummarySection isLoggedOut={isLoggedOut} isHero />
