@@ -40,23 +40,27 @@ export function VoiceOverlay() {
 
   // 오버레이가 열릴 때 자동 세션 시작, 닫힐 때 세션 종료
   const wasOpenRef = useRef(isOpen);
+  const endSessionRef = useRef(endSession);
+  const startSessionRef = useRef(startSession);
+  endSessionRef.current = endSession;
+  startSessionRef.current = startSession;
+
   useEffect(() => {
     if (!wasOpenRef.current && isOpen && !isActive) {
-      startSession();
+      startSessionRef.current();
     }
-    // 닫힐 때 안전망: handleClose/handleSwitchToChat에서 이미 종료했어도 이중 호출 안전
     if (wasOpenRef.current && !isOpen) {
-      endSession();
+      endSessionRef.current();
     }
     wasOpenRef.current = isOpen;
-  }, [isOpen, isActive, endSession, startSession]);
+  }, [isOpen, isActive]);
 
   // 컴포넌트 언마운트 시 세션 강제 종료
   useEffect(() => {
     return () => {
-      endSession();
+      endSessionRef.current();
     };
-  }, [endSession]);
+  }, []);
 
   // (removed: no longer need message scroll)
 
