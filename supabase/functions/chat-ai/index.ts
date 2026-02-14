@@ -631,17 +631,40 @@ interface Visualization {
   chart?: { type: "bar"; data: VisChartItem[]; title: string };
 }
 
-function buildVisualization(dataSource: DataSource, data: any): Visualization | null {
+function buildVisualization(dataSource: DataSource, data: any, question?: string): Visualization | null {
   switch (dataSource) {
     case "transaction": {
-      const stats: VisStat[] = [
-        { label: "총 수입", value: data.totalIncome, format: "currency", color: "blue" },
-        { label: "총 지출", value: data.totalExpense, format: "currency", color: "red" },
-        { label: "순이익", value: data.totalIncome - data.totalExpense, format: "currency", color: "green" },
-      ];
-      const chart = data.topCategories?.length > 0 ? {
+      const q = (question || "").toLowerCase();
+      // 질문 맥락에 따라 관련 스탯만 표시
+      const askingIncome = /매출|수입|수익|벌/.test(q);
+      const askingExpense = /지출|비용|결제|소비|쓴/.test(q);
+      const askingCategory = /카테고리|분류|항목|어디/.test(q);
+      const isGeneral = /현황|브리핑|요약|정리|어때|전체/.test(q) || (!askingIncome && !askingExpense);
+
+      const stats: VisStat[] = [];
+      if (isGeneral || askingIncome) {
+        stats.push({ label: "총 수입", value: data.totalIncome, format: "currency", color: "blue" });
+      }
+      if (isGeneral || askingExpense) {
+        stats.push({ label: "총 지출", value: data.totalExpense, format: "currency", color: "red" });
+      }
+      if (isGeneral) {
+        stats.push({ label: "순이익", value: data.totalIncome - data.totalExpense, format: "currency", color: "green" });
+      }
+      // 수입만 물어봤을 때 건수 표시
+      if (askingIncome && !isGeneral) {
+        stats.push({ label: "수입 건수", value: data.incomeCount, format: "count" });
+      }
+      // 지출만 물어봤을 때 건수 표시
+      if (askingExpense && !isGeneral) {
+        stats.push({ label: "지출 건수", value: data.expenseCount, format: "count" });
+      }
+
+      // 카테고리 차트: 지출 관련이거나 카테고리를 물어봤을 때만
+      const showChart = askingExpense || askingCategory || isGeneral;
+      const chart = showChart && data.topCategories?.length > 0 ? {
         type: "bar" as const,
-        title: "카테고리별 지출",
+        title: askingExpense ? `${data.periodLabel || ""} 카테고리별 지출` : "카테고리별 지출",
         data: data.topCategories.slice(0, 5).map((c: any) => ({ label: c.category, value: c.amount })),
       } : undefined;
       return { stats, chart };
@@ -791,7 +814,7 @@ serve(async (req) => {
     } : null;
 
     if (result && hasActualData(classified.dataSource, result.data)) {
-      const visualization = buildVisualization(classified.dataSource, result.data);
+      const visualization = buildVisualization(classified.dataSource, result.data, lastMsg);
       const sourceNote = syncMeta ? `\n\n📌 이 데이터의 출처: ${syncMeta.name} (${syncMeta.source === "codef" ? "코드에프 자동 동기화" : "수동 등록"}, 갱신: ${formatSyncTimestamp(syncMeta.syncedAt)})` : "";
       const dataPrompt = `당신은 "${secretaryName}"입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${result.prompt}${sourceNote}`;
       const geminiResult = await callGemini(GEMINI_API_KEY, [
