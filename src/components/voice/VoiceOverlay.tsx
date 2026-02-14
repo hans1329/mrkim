@@ -335,12 +335,12 @@ interface ParsedItem {
 
 function parseListItems(text: string): ParsedItem[] {
   const items: ParsedItem[] = [];
-  // 숫자 번호 패턴: "1. 타이틀 - 설명" 또는 "1. 타이틀: 설명" 또는 "1. 타이틀, 설명"
+
+  // 1) 숫자 번호 패턴: "1. 타이틀 - 설명"
   const numbered = text.match(/\d+[.)]\s*([^\n]+)/g);
   if (numbered && numbered.length >= 2) {
     for (const line of numbered) {
       const cleaned = line.replace(/^\d+[.)]\s*/, "").trim();
-      // "타이틀 - 설명", "타이틀: 설명", "타이틀, 설명" 분리
       const sepMatch = cleaned.match(/^([^:\-,–]+)\s*[:\-–,]\s*(.+)$/);
       if (sepMatch) {
         items.push({ title: sepMatch[1].trim(), description: sepMatch[2].trim() });
@@ -348,13 +348,43 @@ function parseListItems(text: string): ParsedItem[] {
         items.push({ title: cleaned, description: "" });
       }
     }
+    return items.slice(0, 5);
   }
-  return items.slice(0, 5); // 최대 5개
+
+  // 2) 따옴표로 감싼 이름 추출: '마구로센', "스시오마카세" 등
+  const quoted = [...text.matchAll(/[''""]([^''""\n]{2,20})[''""](?:[을를이가은는도의에서]|\s)/g)];
+  if (quoted.length > 0) {
+    for (const m of quoted) {
+      const name = m[1].trim();
+      // 이름 뒤의 문장에서 설명 추출
+      const afterIdx = (m.index ?? 0) + m[0].length;
+      const afterText = text.slice(afterIdx);
+      // 첫 번째 문장 종결까지를 설명으로
+      const descMatch = afterText.match(/^([^.!?\n]{0,80}[.!?]?)/);
+      const desc = descMatch ? descMatch[1].trim().replace(/^[을를이가은는도의에서]\s*/, "") : "";
+      items.push({ title: name, description: desc });
+    }
+    return items.slice(0, 5);
+  }
+
+  // 3) "추천" + 장소/가게 이름 패턴 (따옴표 없이도)
+  const recommendMatch = text.match(/(?:추천[^.]*?)\s+([가-힣A-Za-z0-9]{2,15})[을를이가은는]/);
+  if (recommendMatch) {
+    const name = recommendMatch[1];
+    // 전체 텍스트에서 핵심 설명 추출
+    const descParts: string[] = [];
+    const features = text.match(/(?:신선|맛있|분위기|가성비|인기|유명|깔끔|친절|특별)[^.!?]{0,30}[.!?]?/g);
+    if (features) descParts.push(...features.slice(0, 2));
+    items.push({ title: name, description: descParts.join(" ").trim() });
+    return items;
+  }
+
+  return [];
 }
 
 function TextSummaryCards({ text }: { text: string }) {
   const items = useMemo(() => parseListItems(text), [text]);
-  if (items.length < 2) return null;
+  if (items.length < 1) return null;
 
   return (
     <div className="mt-3 w-full max-w-[85%] flex flex-col gap-2 animate-fade-in">
