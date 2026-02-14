@@ -727,7 +727,7 @@ function buildVisualization(dataSource: DataSource, data: any, question?: string
 
 // ============ 일일 할당량 ============
 
-const DAILY_MESSAGE_LIMIT = 30;
+const DAILY_MESSAGE_LIMIT = 100;
 
 async function checkDailyQuota(userId: string, authHeader: string): Promise<{ used: number; remaining: number; limit: number }> {
   const defaultQuota = { used: 0, remaining: DAILY_MESSAGE_LIMIT, limit: DAILY_MESSAGE_LIMIT };
