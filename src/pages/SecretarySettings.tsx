@@ -35,6 +35,13 @@ const genderOptions = [
   { id: "male", label: "남성", icon: "👨" },
 ];
 
+const maleVoiceOptions = [
+  { id: "PDoCXqBQFGsvfO0hNkEs", label: "차분한 남성" },
+  { id: "YBRudLRm83BV5Mazcr42", label: "밝은 남성" },
+  { id: "nbrxrAz3eYm9NgojrmFK", label: "중후한 남성" },
+  { id: "OEaq3WGNtNvFJ5co9mJE", label: "부드러운 남성" },
+];
+
 const speakingStyles = [
   { id: "polite", label: "격식체", example: "오늘 매출은 234만원입니다." },
   { id: "friendly", label: "친근체", example: "오늘 매출 234만원이에요!" },
@@ -69,6 +76,7 @@ export default function SecretarySettings() {
   const [secretaryName, setSecretaryName] = useState("김비서");
   const [secretaryGender, setSecretaryGender] = useState("female");
   const [secretaryAvatarUrl, setSecretaryAvatarUrl] = useState<string | null>(null);
+  const [secretaryVoiceId, setSecretaryVoiceId] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -80,7 +88,7 @@ export default function SecretarySettings() {
       setSpeakingStyle(profile.secretary_tone || "friendly");
       setBriefingFrequency(profile.briefing_frequency || "daily");
       setSecretaryAvatarUrl(profile.secretary_avatar_url || null);
-      
+      setSecretaryVoiceId(profile.secretary_voice_id || null);
       if (profile.priority_metrics && Array.isArray(profile.priority_metrics)) {
         setSelectedMetrics(profile.priority_metrics);
       }
@@ -165,6 +173,7 @@ export default function SecretarySettings() {
       briefing_frequency: briefingFrequency,
       priority_metrics: selectedMetrics,
       secretary_avatar_url: secretaryAvatarUrl,
+      secretary_voice_id: secretaryGender === "male" ? (secretaryVoiceId || maleVoiceOptions[0].id) : null,
     });
     
     const success = await updateProfile({
@@ -174,6 +183,7 @@ export default function SecretarySettings() {
       briefing_frequency: briefingFrequency,
       priority_metrics: selectedMetrics,
       secretary_avatar_url: secretaryAvatarUrl,
+      secretary_voice_id: secretaryGender === "male" ? (secretaryVoiceId || maleVoiceOptions[0].id) : null,
     }, false);
     
     console.log("Save result:", success);
@@ -187,6 +197,7 @@ export default function SecretarySettings() {
         briefing_frequency: briefingFrequency,
         priority_metrics: selectedMetrics,
         secretary_avatar_url: secretaryAvatarUrl,
+        secretary_voice_id: secretaryGender === "male" ? (secretaryVoiceId || maleVoiceOptions[0].id) : null,
       });
       toast.success(`${secretaryName} 설정이 저장되었습니다`);
       // 채팅에서 왔으면 채팅 열린 상태로 돌아가기
@@ -323,9 +334,29 @@ export default function SecretarySettings() {
                   </Button>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground">
+               <p className="text-xs text-muted-foreground">
                 💡 음성 브리핑과 전화 알림 시 해당 성별의 목소리가 사용됩니다
               </p>
+
+              {/* 남성 음성 선택 */}
+              {secretaryGender === "male" && (
+                <div className="space-y-2 mt-3">
+                  <Label>남성 음성 선택</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {maleVoiceOptions.map((voice) => (
+                      <Button
+                        key={voice.id}
+                        variant={(secretaryVoiceId || maleVoiceOptions[0].id) === voice.id ? "default" : "outline"}
+                        size="sm"
+                        className="justify-center"
+                        onClick={() => setSecretaryVoiceId(voice.id)}
+                      >
+                        {voice.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* 레벨 표시 */}

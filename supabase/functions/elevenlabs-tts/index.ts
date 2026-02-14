@@ -12,8 +12,8 @@ const KOREAN_VOICES = {
     friendly: "uyVNoMrnUku1dZyVEXwD",
   },
   male: {
-    default: "ZJCNdZEjYwkOElxugmW2",  // 한국어 남성 네이티브
-    friendly: "ZJCNdZEjYwkOElxugmW2",
+    default: "PDoCXqBQFGsvfO0hNkEs",  // 한국어 남성 네이티브
+    friendly: "PDoCXqBQFGsvfO0hNkEs",
   }
 };
 

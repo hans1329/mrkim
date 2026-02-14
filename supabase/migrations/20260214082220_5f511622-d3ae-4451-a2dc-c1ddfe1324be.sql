@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN secretary_voice_id text DEFAULT NULL;

@@ -36,6 +36,7 @@ export function useVoiceAgent() {
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
   const secretaryGender = profile?.secretary_gender || "female";
+  const secretaryVoiceId = profile?.secretary_voice_id || null;
 
   // Stable refs for clientTools callback
   const secretaryNameRef = useRef(secretaryName);
@@ -175,10 +176,11 @@ export function useVoiceAgent() {
 
   // --- Voice ID ---
   const voiceId = useMemo(() => {
+    if (secretaryVoiceId) return secretaryVoiceId;
     return secretaryGender === "male"
-      ? "ZJCNdZEjYwkOElxugmW2"
+      ? "PDoCXqBQFGsvfO0hNkEs"
       : "uyVNoMrnUku1dZyVEXwD";
-  }, [secretaryGender]);
+  }, [secretaryGender, secretaryVoiceId]);
 
   // --- Overrides ---
   const overrides = useMemo(() => ({

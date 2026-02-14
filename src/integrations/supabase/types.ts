@@ -629,6 +629,7 @@ export type Database = {
           secretary_phone: string | null
           secretary_phone_verified: boolean | null
           secretary_tone: string | null
+          secretary_voice_id: string | null
           updated_at: string
           user_id: string
         }
@@ -656,6 +657,7 @@ export type Database = {
           secretary_phone?: string | null
           secretary_phone_verified?: boolean | null
           secretary_tone?: string | null
+          secretary_voice_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -683,6 +685,7 @@ export type Database = {
           secretary_phone?: string | null
           secretary_phone_verified?: boolean | null
           secretary_tone?: string | null
+          secretary_voice_id?: string | null
           updated_at?: string
           user_id?: string
         }
