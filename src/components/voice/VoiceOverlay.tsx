@@ -31,6 +31,7 @@ export function VoiceOverlay() {
     interruptAndListen,
     resetPermission,
     sendTextDirectly,
+    quota,
   } = useVoiceAgent();
 
   
@@ -138,7 +139,9 @@ export function VoiceOverlay() {
             </div>
           <div>
             <h3 className="font-semibold text-white">{secretaryName}</h3>
-            <p className="text-xs text-white/70">음성 대화</p>
+            <p className="text-xs text-white/70">
+              {quota ? `오늘 ${quota.remaining}/${quota.limit}회 남음` : "음성 대화"}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">

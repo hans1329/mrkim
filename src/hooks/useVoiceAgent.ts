@@ -4,6 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
 import type { VisualizationData } from "@/components/chat/DataVisualization";
+import { startOfDay } from "date-fns";
+
+export interface QuotaInfo {
+  used: number;
+  remaining: number;
+  limit: number;
+}
 
 export interface VoiceMessage {
   role: "user" | "agent";
@@ -24,6 +31,7 @@ export function useVoiceAgent() {
   const [volume, setVolumeState] = useState(0.7);
   const [isConnecting, setIsConnecting] = useState(false);
   const [micMuted, setMicMuted] = useState(false);
+  const [quota, setQuota] = useState<QuotaInfo | null>(null);
 
   const sessionActiveRef = useRef(false);
   const messagesContextRef = useRef<VoiceMessage[]>([]);
@@ -126,7 +134,7 @@ export function useVoiceAgent() {
       cute: "귀엽고 캐주얼한",
     }[secretaryTone] || "전문적이고 격식있는";
 
-    return `당신은 '${secretaryName}'입니다. 소상공인 사장님을 위한 AI 경영 비서로, 음성으로 대화합니다.
+    return `당신은 '${secretaryName}'입니다. 소상공인 사장님을 위한 AI 비서로, 음성으로 대화합니다.
 
 ## 성격
 - ${genderDescription}를 사용합니다
@@ -135,8 +143,9 @@ export function useVoiceAgent() {
 - 음성 대화이므로 이모지는 사용하지 않습니다
 
 ## 역할
-- 매출, 지출, 세금 관련 질문에 답변합니다
-- 사업 운영 조언을 제공합니다
+- 사장님이 물어보는 모든 질문에 성실하게 답변합니다
+- 매출, 지출, 세금 등 사업 관련 질문에 답변합니다
+- 맛집 추천, 날씨, 건강, 일반 상식 등 어떤 주제든 자유롭게 답변합니다
 - 일상적인 대화도 자연스럽게 응대합니다
 - 자기소개 시 "${secretaryName}입니다"라고 말합니다
 
@@ -157,9 +166,9 @@ export function useVoiceAgent() {
    - 자연스러운 구어체로 변환하여 전달
    - 핵심 숫자와 요약만 간결하게 전달
 
-## 제한
-- 민감한 금융 결정은 전문가 상담을 권유합니다
-- 모르는 정보는 솔직히 인정합니다
+## 주의사항
+- 가짜 매출/지출 숫자는 절대 만들지 마세요
+- 불법 행위 조장, 혐오 표현만 정중히 거절
 - 음성 대화에 맞게 짧고 자연스럽게 응답합니다`;
   }, [secretaryGender, secretaryName, secretaryTone]);
 
@@ -194,6 +203,31 @@ export function useVoiceAgent() {
     },
   }), [firstMessage, systemPrompt, voiceId]);
 
+  // --- 할당량 로드 ---
+  const loadQuota = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const todayStart = startOfDay(new Date()).toISOString();
+      const { count, error } = await supabase
+        .from("chat_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("role", "user")
+        .gte("created_at", todayStart);
+      if (!error && count !== null) {
+        const limit = 30;
+        setQuota({ used: count, remaining: Math.max(0, limit - count), limit });
+      }
+    } catch (e) {
+      console.error("Failed to load voice quota:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadQuota();
+  }, [loadQuota]);
+
   // --- DB 저장 ---
   const saveMessageToDB = useCallback(async (role: "user" | "assistant", content: string) => {
     try {
@@ -204,6 +238,10 @@ export function useVoiceAgent() {
         role,
         content,
       });
+      // 사용자 메시지 저장 후 할당량 갱신
+      if (role === "user") {
+        setQuota(prev => prev ? { ...prev, used: prev.used + 1, remaining: Math.max(0, prev.remaining - 1) } : prev);
+      }
     } catch (error) {
       console.error("Failed to save voice message:", error);
     }
@@ -599,5 +637,6 @@ export function useVoiceAgent() {
     interruptAndListen,
     resetPermission,
     sendTextDirectly,
+    quota,
   };
 }
