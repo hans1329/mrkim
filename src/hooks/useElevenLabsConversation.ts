@@ -86,12 +86,14 @@ export function useElevenLabsConversation() {
     return `안녕하세요, ${secretaryName}입니다. 무엇을 도와드릴까요?`;
   }, [secretaryName]);
 
-  // 성별에 따른 한국어 음성 선택
+  // 성별/사용자 선택에 따른 한국어 음성 선택
+  const secretaryVoiceId = profile?.secretary_voice_id || null;
   const voiceId = useMemo(() => {
+    if (secretaryVoiceId) return secretaryVoiceId;
     return secretaryGender === "male" 
-      ? "ZJCNdZEjYwkOElxugmW2"  // 남성 한국어 음성
+      ? "PDoCXqBQFGsvfO0hNkEs"  // 남성 한국어 음성 기본
       : "uyVNoMrnUku1dZyVEXwD"; // 여성 한국어 음성
-  }, [secretaryGender]);
+  }, [secretaryGender, secretaryVoiceId]);
 
   const overrides = useMemo(() => {
     return {

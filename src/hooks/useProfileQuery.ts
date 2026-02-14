@@ -18,6 +18,7 @@ export interface Profile {
   secretary_avatar_url: string | null;
   secretary_gender: string | null;
   secretary_tone: string | null;
+  secretary_voice_id: string | null;
   briefing_frequency: string | null;
   priority_metrics: string[] | null;
   // 연동 상태
