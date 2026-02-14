@@ -21,7 +21,8 @@ import {
   Receipt,
   Save,
   HelpCircle,
-  Loader2
+  Loader2,
+  Volume2
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProfile } from "@/hooks/useProfile";
@@ -78,6 +79,8 @@ export default function SecretarySettings() {
   const [secretaryAvatarUrl, setSecretaryAvatarUrl] = useState<string | null>(null);
   const [secretaryVoiceId, setSecretaryVoiceId] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // DB 데이터로 초기화
@@ -343,17 +346,63 @@ export default function SecretarySettings() {
                 <div className="space-y-2 mt-3">
                   <Label>남성 음성 선택</Label>
                   <div className="grid grid-cols-2 gap-2">
-                    {maleVoiceOptions.map((voice) => (
-                      <Button
-                        key={voice.id}
-                        variant={(secretaryVoiceId || maleVoiceOptions[0].id) === voice.id ? "default" : "outline"}
-                        size="sm"
-                        className="justify-center"
-                        onClick={() => setSecretaryVoiceId(voice.id)}
-                      >
-                        {voice.label}
-                      </Button>
-                    ))}
+                    {maleVoiceOptions.map((voice) => {
+                      const isSelected = (secretaryVoiceId || maleVoiceOptions[0].id) === voice.id;
+                      const isPreviewing = previewingVoiceId === voice.id;
+                      return (
+                        <Button
+                          key={voice.id}
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          className="justify-center gap-1.5"
+                          disabled={isPreviewing}
+                          onClick={async () => {
+                            setSecretaryVoiceId(voice.id);
+                            // 미리듣기
+                            try {
+                              if (previewAudioRef.current) {
+                                previewAudioRef.current.pause();
+                                previewAudioRef.current = null;
+                              }
+                              setPreviewingVoiceId(voice.id);
+                              const greeting = `안녕하세요, ${secretaryName}입니다.`;
+                              const res = await fetch(
+                                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+                                {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                    apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                                    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                                  },
+                                  body: JSON.stringify({ text: greeting, voiceId: voice.id }),
+                                }
+                              );
+                              if (!res.ok) throw new Error("TTS failed");
+                              const blob = await res.blob();
+                              const url = URL.createObjectURL(blob);
+                              const audio = new Audio(url);
+                              previewAudioRef.current = audio;
+                              audio.onended = () => {
+                                setPreviewingVoiceId(null);
+                                URL.revokeObjectURL(url);
+                              };
+                              await audio.play();
+                            } catch (e) {
+                              console.error("Voice preview error:", e);
+                              setPreviewingVoiceId(null);
+                            }
+                          }}
+                        >
+                          {isPreviewing ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Volume2 className="h-3.5 w-3.5" />
+                          )}
+                          {voice.label}
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
