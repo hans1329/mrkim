@@ -7,6 +7,10 @@ import { useProfileQuery } from "@/hooks/useProfileQuery";
 
 const DEFAULT_ICON = "/images/icc-5.webp";
 
+// 기본 아이콘 프리로딩
+const preloadIcon = new Image();
+preloadIcon.src = DEFAULT_ICON;
+
 const leftNav = [
   { title: "홈", url: "/", icon: LayoutDashboard },
   { title: "매출/매입", url: "/transactions", icon: Receipt },
@@ -63,6 +67,7 @@ export function BottomNav() {
                   : "h-9 w-9 object-contain"
               )}
               loading="eager"
+              fetchPriority="high"
             />
           </button>
         </div>
