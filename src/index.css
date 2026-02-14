@@ -71,7 +71,7 @@
     @apply border-border;
   }
 
-  html, body {
+  html, body, #root {
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
     overflow: hidden;
