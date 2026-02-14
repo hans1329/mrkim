@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { toast } from "sonner";
-import { Settings, Smartphone, Eye, EyeOff, Banknote, Users } from "lucide-react";
+import { Settings, Smartphone, Eye, EyeOff, Banknote, Users, MessageSquare } from "lucide-react";
 
 export default function AdminSiteSettings() {
-  const { settings, isLoading, updateSetting } = useSiteSettings();
+  const { settings, isLoading, getSetting, updateSetting } = useSiteSettings();
+  const [quotaInput, setQuotaInput] = useState<string | null>(null);
 
   const handleToggle = async (key: string, currentEnabled: boolean) => {
     try {
@@ -21,6 +25,26 @@ export default function AdminSiteSettings() {
       toast.error("설정 저장에 실패했습니다");
     }
   };
+
+  const handleQuotaSave = async () => {
+    const num = Number(quotaInput ?? currentQuotaLimit);
+    if (!num || num < 1 || num > 10000) {
+      toast.error("1~10000 사이의 숫자를 입력해주세요");
+      return;
+    }
+    try {
+      await updateSetting.mutateAsync({
+        key: "daily_chat_quota",
+        value: { limit: num },
+      });
+      setQuotaInput(null);
+      toast.success("할당량이 저장되었습니다");
+    } catch {
+      toast.error("할당량 저장에 실패했습니다");
+    }
+  };
+
+  const currentQuotaLimit = (getSetting("daily_chat_quota") as { limit?: number } | null)?.limit ?? 100;
 
   const settingsList = [
     {
@@ -124,6 +148,42 @@ export default function AdminSiteSettings() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              AI 채팅 할당량
+            </CardTitle>
+            <CardDescription>
+              사용자별 일일 AI 채팅 메시지 횟수를 설정합니다
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-10 w-full" />
+            ) : (
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  min={1}
+                  max={10000}
+                  value={quotaInput ?? currentQuotaLimit}
+                  onChange={(e) => setQuotaInput(e.target.value)}
+                  className="w-32"
+                />
+                <span className="text-sm text-muted-foreground">회 / 일</span>
+                <Button
+                  size="sm"
+                  onClick={handleQuotaSave}
+                  disabled={updateSetting.isPending || quotaInput === null}
+                >
+                  저장
+                </Button>
               </div>
             )}
           </CardContent>

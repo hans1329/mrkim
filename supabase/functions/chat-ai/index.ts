@@ -727,10 +727,26 @@ function buildVisualization(dataSource: DataSource, data: any, question?: string
 
 // ============ 일일 할당량 ============
 
-const DAILY_MESSAGE_LIMIT = 100;
+const DEFAULT_DAILY_LIMIT = 100;
+
+async function getDailyLimit(authHeader: string): Promise<number> {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb) return DEFAULT_DAILY_LIMIT;
+    const { data, error } = await sb
+      .from("site_settings")
+      .select("value")
+      .eq("key", "daily_chat_quota")
+      .maybeSingle();
+    if (error || !data) return DEFAULT_DAILY_LIMIT;
+    const val = data.value as { limit?: number } | null;
+    return val?.limit ?? DEFAULT_DAILY_LIMIT;
+  } catch { return DEFAULT_DAILY_LIMIT; }
+}
 
 async function checkDailyQuota(userId: string, authHeader: string): Promise<{ used: number; remaining: number; limit: number }> {
-  const defaultQuota = { used: 0, remaining: DAILY_MESSAGE_LIMIT, limit: DAILY_MESSAGE_LIMIT };
+  const limit = await getDailyLimit(authHeader);
+  const defaultQuota = { used: 0, remaining: limit, limit };
   if (!userId) return defaultQuota;
   try {
     const sb = createSupabaseClient(authHeader);
@@ -745,7 +761,7 @@ async function checkDailyQuota(userId: string, authHeader: string): Promise<{ us
       .gte("created_at", startOfDay);
     if (error) return defaultQuota;
     const used = count || 0;
-    return { used, remaining: Math.max(0, DAILY_MESSAGE_LIMIT - used), limit: DAILY_MESSAGE_LIMIT };
+    return { used, remaining: Math.max(0, limit - used), limit };
   } catch { return defaultQuota; }
 }
 
