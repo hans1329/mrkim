@@ -32,7 +32,7 @@ export function AppLayout({
   const navigate = useNavigate();
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden justify-center bg-card lg:gap-8 lg:px-8">
+    <div className="flex h-full overflow-hidden justify-center bg-card lg:gap-8 lg:px-8">
       {/* PC 좌측 마케팅 영역 */}
       <div className="hidden lg:flex lg:w-[480px] xl:w-[560px] lg:flex-col lg:justify-center lg:relative">
         <div className="relative z-10 p-8 space-y-6">
@@ -139,8 +139,8 @@ export function AppLayout({
             </main>
           </div>
 
-          {/* Bottom safe-area 흰색 커버 - 회색 배경이 비치는 것 방지 */}
-          <div className="absolute bottom-0 left-0 right-0 z-10 bg-card" style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
+
+
 
           {/* Bottom Navigation - 플로팅 */}
           <div className="absolute bottom-0 left-0 right-0 z-20">
