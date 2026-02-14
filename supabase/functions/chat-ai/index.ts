@@ -725,6 +725,30 @@ function buildVisualization(dataSource: DataSource, data: any, question?: string
   }
 }
 
+// ============ 일일 할당량 ============
+
+const DAILY_MESSAGE_LIMIT = 30;
+
+async function checkDailyQuota(userId: string, authHeader: string): Promise<{ used: number; remaining: number; limit: number }> {
+  const defaultQuota = { used: 0, remaining: DAILY_MESSAGE_LIMIT, limit: DAILY_MESSAGE_LIMIT };
+  if (!userId) return defaultQuota;
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb) return defaultQuota;
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+    const { count, error } = await sb
+      .from("chat_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("role", "user")
+      .gte("created_at", startOfDay);
+    if (error) return defaultQuota;
+    const used = count || 0;
+    return { used, remaining: Math.max(0, DAILY_MESSAGE_LIMIT - used), limit: DAILY_MESSAGE_LIMIT };
+  } catch { return defaultQuota; }
+}
+
 // ============ 메인 핸들러 ============
 
 serve(async (req) => {
@@ -736,6 +760,19 @@ serve(async (req) => {
 
     const { messages, secretaryName = "김비서", secretaryTone = "polite", secretaryGender = "female", userId, voiceMode = false } = await req.json();
     if (!messages || messages.length === 0) throw new Error("Messages array is required");
+
+    // ━━━ 일일 할당량 확인 ━━━
+    const authHeader = req.headers.get("Authorization") || "";
+    const quota = await checkDailyQuota(userId, authHeader);
+    console.log("Daily quota:", quota);
+
+    if (quota.remaining <= 0) {
+      return new Response(JSON.stringify({
+        error: `오늘의 대화 횟수(${quota.limit}회)를 모두 사용했습니다. 내일 다시 이용해주세요!`,
+        code: "DAILY_QUOTA_EXCEEDED",
+        quota,
+      }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const toneMap: Record<string, string> = {
       polite: `존댓말(합쇼체)을 사용하세요.
@@ -782,9 +819,9 @@ serve(async (req) => {
     const classified = classifyByKeyword(lastMsg);
     console.log("Classification:", { needsData: classified.needsData, source: classified.dataSource, period: classified.timePeriod?.type });
 
-    // ━━━ Case 1: 데이터 불필요 → 단순 대화 ━━━
+    // ━━━ Case 1: 데이터 불필요 → 자유 대화 ━━━
     if (!classified.needsData || !classified.dataSource) {
-      const systemPrompt = `당신은 "${secretaryName}"입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${voiceInst}\n\n## 자기소개 규칙\n- "이름이 뭐야?", "넌 누구야?", "너 이름은?" 같은 질문에는 반드시 "${secretaryName}"이라고 대답하세요.\n- 자기소개: "${secretaryName}이에요! 사장님의 AI 경영 비서예요."\n\n## 성격\n- 따뜻하고 친근한 비서, 사장님을 진심으로 응원${voiceMode ? "\n- 이모지 대신 말투로 감정 표현" : "\n- 가끔 이모지를 적절히 사용"}\n\n## 주의사항\n- 가짜 숫자를 절대 만들지 마세요\n- 불법/위험 요청만 정중히 거절`;
+      const systemPrompt = `당신은 "${secretaryName}"입니다. 소상공인 사장님의 AI 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${voiceInst}\n\n## 자기소개 규칙\n- "이름이 뭐야?", "넌 누구야?", "너 이름은?" 같은 질문에는 반드시 "${secretaryName}"이라고 대답하세요.\n- 자기소개: "${secretaryName}이에요! 사장님의 AI 비서예요."\n\n## 성격\n- 따뜻하고 친근한 비서, 사장님을 진심으로 응원${voiceMode ? "\n- 이모지 대신 말투로 감정 표현" : "\n- 가끔 이모지를 적절히 사용"}\n\n## 대화 범위\n- 사장님이 궁금한 건 무엇이든 대화할 수 있습니다\n- 경영, 세금, 마케팅, 일상 잡담, 고민 상담, 일반 상식 등 자유롭게 답변\n- 단, 가짜 매출/지출 숫자는 절대 만들지 마세요 (실제 데이터 조회가 필요)\n- 불법 행위 조장, 혐오 표현만 정중히 거절`;
       const result = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: systemPrompt }] },
         { role: "model", parts: [{ text: "네, 알겠습니다." }] },
@@ -792,11 +829,10 @@ serve(async (req) => {
       ]);
       const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "무엇을 도와드릴까요?";
       console.log("Direct response (no data)");
-      return new Response(JSON.stringify({ response }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ response, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ━━━ Case 2: 데이터 필요 → 연동 확인 + 조회 ━━━
-    const authHeader = req.headers.get("Authorization") || "";
 
     // 연동 확인 (내부 데이터는 스킵)
     if (classified.requiresConnection) {
@@ -804,8 +840,7 @@ serve(async (req) => {
       const missingSource = checkConnectionForSource(classified.requiresConnection, connStatus);
       if (missingSource) {
         return new Response(
-          JSON.stringify({ response: buildConnectionRequiredResponse(missingSource, voiceMode), requiresConnection: true }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ response: buildConnectionRequiredResponse(missingSource, voiceMode), requiresConnection: true, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }),
         );
       }
     }
@@ -835,7 +870,7 @@ serve(async (req) => {
       ]);
       const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
       console.log(`${classified.dataSource} data response (1 API call)`);
-      return new Response(JSON.stringify({ response, visualization, sources }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ response, visualization, sources, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 데이터 없음
@@ -847,7 +882,7 @@ serve(async (req) => {
       ...geminiMessages,
     ]);
     const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
-    return new Response(JSON.stringify({ response, sources }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ response, sources, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (error: any) {
     console.error("=== Gemini Error ===", error?.status, error?.body);
