@@ -61,7 +61,8 @@ export function AIChatPanel() {
     loadMessagesByDate,
     secretaryName,
     secretaryAvatarUrl,
-     getPlaceholderText,
+    getPlaceholderText,
+    quota,
   } = useAIChat();
   const [input, setInput] = useState("");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -157,7 +158,7 @@ export function AIChatPanel() {
               <div>
                 <h3 className="font-semibold text-primary-foreground">{secretaryName}</h3>
                 <p className="text-xs text-primary-foreground/70">
-                  {isViewingPastSession ? "지난 대화 보기" : "AI 경영 비서"}
+                  {isViewingPastSession ? "지난 대화 보기" : quota ? `오늘 ${quota.remaining}/${quota.limit}회 남음` : "AI 비서"}
                 </p>
               </div>
             </div>

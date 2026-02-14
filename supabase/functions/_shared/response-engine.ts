@@ -284,13 +284,13 @@ export function buildConnectionRequiredResponse(
 
 export function buildOutOfScopeResponse(channel: "text" | "voice" | "service"): string {
   if (channel === "voice") {
-    return "사장님, 그건 제가 도와드리기 어려운 부분이에요. 혹시 다른 업무 관련해서 도움이 필요하시면 말씀해주세요!";
+    return "사장님, 그건 제가 잘 모르는 부분이에요. 다른 궁금한 거 있으시면 편하게 말씀해주세요!";
   }
 
-  return `사장님, 그건 제가 도와드리기 어려운 부분이에요 😅
+  return `사장님, 그 부분은 제가 정확한 답변을 드리기 어려울 수 있어요 😅
 
-혹시 다른 업무 관련해서 도움이 필요하시면 편하게 말씀해주세요! 
-매출 확인, 세금 안내, 직원 관리 등 경영에 필요한 건 뭐든 도와드릴게요. 💼`;
+다른 궁금한 점이 있으시면 편하게 말씀해주세요! 
+경영 관련 질문은 물론, 다른 이야기도 좋아요~ 💬`;
 }
 
 // ============ 429 에러 처리 ============

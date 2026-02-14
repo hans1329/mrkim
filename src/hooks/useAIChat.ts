@@ -23,6 +23,12 @@ export interface ChatMessage {
   sources?: DataSourceInfo | null;
 }
 
+export interface QuotaInfo {
+  used: number;
+  remaining: number;
+  limit: number;
+}
+
 export interface ChatSession {
   date: Date;
   dateLabel: string;
@@ -49,6 +55,7 @@ export function useAIChat() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [showSessionList, setShowSessionList] = useState(false);
+  const [quota, setQuota] = useState<QuotaInfo | null>(null);
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
@@ -316,6 +323,7 @@ export function useAIChat() {
       const assistantContent = data.response || "죄송합니다, 응답을 생성하지 못했습니다.";
       const visualization = data.visualization || null;
       const sources = data.sources || null;
+      if (data.quota) setQuota(data.quota);
       
       // AI 응답 저장
       const assistantMessageId = await saveMessage("assistant", assistantContent);
@@ -393,6 +401,7 @@ export function useAIChat() {
     secretaryName,
     secretaryGender,
     secretaryAvatarUrl,
-     getPlaceholderText,
+    getPlaceholderText,
+    quota,
   };
 }
