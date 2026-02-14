@@ -146,7 +146,7 @@ const Landing = () => {
         <div className="relative flex max-w-xl flex-col bg-transparent lg:max-w-none mx-auto">
           <div className="flex-1">
             {/* Landing Content */}
-            <div className="p-4 pb-8">
+            <div className="p-4 pb-8" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
               {/* Hero Image with Title Overlay */}
               <div className="relative mb-6 animate-fade-in">
                 <img 

@@ -99,7 +99,7 @@ export default function Signup() {
   return (
     <div className="min-h-screen bg-primary flex flex-col">
       {/* 상단 뒤로가기 버튼 */}
-      <div className="p-4">
+      <div className="p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
         <Button
           variant="ghost"
           size="icon"

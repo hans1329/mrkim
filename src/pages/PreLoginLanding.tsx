@@ -100,7 +100,7 @@ const PreLoginLandingContent = () => {
   }];
   return <div className="min-h-screen flex flex-col text-[15px] lg:text-[15px]">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src={logo} alt="김비서 로고" className="h-6 w-auto opacity-90" />
