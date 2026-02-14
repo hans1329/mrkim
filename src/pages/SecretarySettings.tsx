@@ -340,7 +340,7 @@ export default function SecretarySettings() {
                   <Button
                     key={option.id}
                     variant={secretaryGender === option.id ? "default" : "outline"}
-                    className="justify-center gap-2"
+                    className="justify-center gap-2 rounded-full"
                     onClick={() => setSecretaryGender(option.id)}
                   >
                     <span>{option.icon}</span>
