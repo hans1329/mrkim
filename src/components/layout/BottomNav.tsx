@@ -26,7 +26,7 @@ export function BottomNav() {
   const imgSrc = avatarUrl || DEFAULT_ICON;
 
   return (
-    <nav className="flex-shrink-0 mx-3 rounded-full bg-white border border-border/50 shadow-[0_-2px_20px_rgba(0,0,0,0.1)]" style={{ marginBottom: `max(0.25rem, env(safe-area-inset-bottom, 0px))` }}>
+    <nav className="flex-shrink-0 mx-3 rounded-full bg-white border border-border/50 shadow-[0_-2px_20px_rgba(0,0,0,0.1)]" style={{ marginBottom: '0.5rem' }}>
       <div className="relative flex h-16 items-center justify-around px-2">
         {/* 좌측 메뉴 */}
         {leftNav.map((item) => (
