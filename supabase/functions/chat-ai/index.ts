@@ -660,11 +660,22 @@ function buildVisualization(dataSource: DataSource, data: any, question?: string
         stats.push({ label: "지출 건수", value: data.expenseCount, format: "count" });
       }
 
+      // 특정 항목/카테고리를 물어봤을 때 1위 카테고리 스탯 강조
+      const askingTop = /가장|최대|제일|큰|많은|높은|1위|탑/.test(q);
+      if ((askingTop || askingCategory) && data.topCategories?.length > 0) {
+        const top = data.topCategories[0];
+        stats.push({ label: `1위: ${top.category}`, value: top.amount, format: "currency", color: "orange" });
+        if (data.topCategories.length > 1) {
+          const second = data.topCategories[1];
+          stats.push({ label: `2위: ${second.category}`, value: second.amount, format: "currency", color: "blue" });
+        }
+      }
+
       // 카테고리 차트: 지출 관련이거나 카테고리를 물어봤을 때만
-      const showChart = askingExpense || askingCategory || isGeneral;
+      const showChart = askingExpense || askingCategory || askingTop || isGeneral;
       const chart = showChart && data.topCategories?.length > 0 ? {
         type: "bar" as const,
-        title: askingExpense ? `${data.periodLabel || ""} 카테고리별 지출` : "카테고리별 지출",
+        title: askingTop ? `${data.periodLabel || ""} 지출 항목 순위` : askingExpense ? `${data.periodLabel || ""} 카테고리별 지출` : "카테고리별 지출",
         data: data.topCategories.slice(0, 5).map((c: any) => ({ label: c.category, value: c.amount })),
       } : undefined;
       return { stats, chart };
