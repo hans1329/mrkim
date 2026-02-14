@@ -90,7 +90,7 @@ function LoginContent() {
     toast.success("로그인 성공!");
     navigate("/");
   };
-  return <div className="min-h-screen bg-primary flex flex-col">
+  return <div className="bg-primary flex flex-col" style={{ minHeight: '100dvh' }}>
       {/* 상단 뒤로가기 버튼 */}
       <div className="p-4">
         <Button variant="ghost" size="icon" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={() => navigate("/intro")}>
