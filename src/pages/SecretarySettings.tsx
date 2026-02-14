@@ -375,7 +375,7 @@ export default function SecretarySettings() {
                                     apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
                                     Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
                                   },
-                                  body: JSON.stringify({ text: greeting, voiceId: voice.id }),
+                                  body: JSON.stringify({ text: greeting, voiceId: voice.id, model_id: "eleven_turbo_v2_5" }),
                                 }
                               );
                               if (!res.ok) throw new Error("TTS failed");

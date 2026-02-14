@@ -29,7 +29,7 @@ serve(async (req) => {
       throw new Error("ELEVENLABS_API_KEY is not configured");
     }
 
-    const { text, voiceId, gender = "female", tone = "default" } = await req.json();
+    const { text, voiceId, gender = "female", tone = "default", model_id } = await req.json();
 
     if (!text || typeof text !== "string") {
       throw new Error("text is required");
@@ -42,11 +42,14 @@ serve(async (req) => {
       selectedVoiceId = genderVoices[tone as keyof typeof genderVoices] || genderVoices.default;
     }
 
-    console.log("Generating TTS:", { textLength: text.length, voiceId: selectedVoiceId });
+    // 모델 선택: 짧은 텍스트나 미리듣기는 터보 모델 사용
+    const selectedModel = model_id || (text.length <= 50 ? "eleven_turbo_v2_5" : "eleven_multilingual_v2");
 
-    // ElevenLabs TTS API 호출
+    console.log("Generating TTS:", { textLength: text.length, voiceId: selectedVoiceId, model: selectedModel });
+
+    // ElevenLabs TTS API 호출 (스트리밍)
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}?output_format=mp3_44100_128`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}/stream?output_format=mp3_22050_32`,
       {
         method: "POST",
         headers: {
@@ -55,7 +58,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           text,
-          model_id: "eleven_multilingual_v2",
+          model_id: selectedModel,
           voice_settings: {
             stability: 0.4,
             similarity_boost: 0.7,
@@ -73,13 +76,12 @@ serve(async (req) => {
       throw new Error(`ElevenLabs TTS error: ${response.status}`);
     }
 
-    // raw 바이너리 오디오를 직접 반환 (base64 인코딩 제거)
-    const audioBuffer = await response.arrayBuffer();
-
-    return new Response(audioBuffer, { 
+    // 스트리밍 응답을 그대로 전달
+    return new Response(response.body, { 
       headers: { 
         ...corsHeaders, 
         "Content-Type": "audio/mpeg",
+        "Transfer-Encoding": "chunked",
         "Cache-Control": "no-cache",
       } 
     });
