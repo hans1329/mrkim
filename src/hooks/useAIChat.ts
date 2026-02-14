@@ -231,8 +231,9 @@ export function useAIChat() {
         .gte("created_at", todayStart);
 
       if (!error && count !== null) {
-        const limit = 100;
-        setQuota({ used: count, remaining: Math.max(0, limit - count), limit });
+        // limit은 서버에서 내려오므로 초기값은 임시로 사용
+        const cachedLimit = quota?.limit ?? 100;
+        setQuota({ used: count, remaining: Math.max(0, cachedLimit - count), limit: cachedLimit });
       }
     } catch (e) {
       console.error("Failed to load quota:", e);

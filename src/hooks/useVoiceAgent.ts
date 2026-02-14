@@ -217,8 +217,8 @@ export function useVoiceAgent() {
         .eq("role", "user")
         .gte("created_at", todayStart);
       if (!error && count !== null) {
-        const limit = 100;
-        setQuota({ used: count, remaining: Math.max(0, limit - count), limit });
+        const cachedLimit = quota?.limit ?? 100;
+        setQuota({ used: count, remaining: Math.max(0, cachedLimit - count), limit: cachedLimit });
       }
     } catch (e) {
       console.error("Failed to load voice quota:", e);
