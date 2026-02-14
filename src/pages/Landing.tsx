@@ -56,7 +56,7 @@ const Landing = () => {
 
   return (
     <ServiceChatProvider>
-    <div className={`flex min-h-screen overflow-y-auto bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-8 lg:px-8 transition-all duration-700 ${
+    <div className={`fixed inset-0 overflow-y-auto flex min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/10 lg:gap-8 lg:px-8 transition-all duration-700 ${
       showResult ? 'justify-center' : 'justify-center lg:justify-center'
     }`}>
       {/* PC 좌측 마케팅 영역 */}
