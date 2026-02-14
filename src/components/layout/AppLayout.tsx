@@ -140,8 +140,8 @@ export function AppLayout({
           </div>
 
 
-          {/* Bottom Navigation - 플로팅 */}
-          <div className="absolute bottom-0 left-0 right-0 z-20">
+          {/* Bottom Navigation - 플로팅 + safe area 커버 */}
+          <div className="absolute bottom-0 left-0 right-0 z-20" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', background: 'linear-gradient(to bottom, transparent 0%, transparent 50%, hsl(var(--card)) 50%)' }}>
             <BottomNav />
           </div>
 
