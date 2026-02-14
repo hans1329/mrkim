@@ -320,7 +320,7 @@ const Landing = () => {
                       </p>
                       
                       <Button 
-                        onClick={() => navigate("/")}
+                        onClick={() => navigate("/intro")}
                         size="lg"
                         variant="secondary"
                         className="w-full h-14 text-lg font-bold gap-2 rounded-xl hover-scale bg-white text-primary hover:bg-white/90"
