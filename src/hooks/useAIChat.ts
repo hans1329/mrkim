@@ -231,7 +231,7 @@ export function useAIChat() {
         .gte("created_at", todayStart);
 
       if (!error && count !== null) {
-        const limit = 30;
+        const limit = 100;
         setQuota({ used: count, remaining: Math.max(0, limit - count), limit });
       }
     } catch (e) {
