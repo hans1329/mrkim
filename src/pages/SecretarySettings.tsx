@@ -43,6 +43,13 @@ const maleVoiceOptions = [
   { id: "OEaq3WGNtNvFJ5co9mJE", label: "부드러운 남성" },
 ];
 
+const femaleVoiceOptions = [
+  { id: "uyVNoMrnUku1dZyVEXwD", label: "차분한 여성" },
+  { id: "zgDzx5jLLCqEp6Fl7Kl7", label: "밝은 여성" },
+  { id: "Lb7qkOn5hF8p7qfCDH8q", label: "중후한 여성" },
+  { id: "xi3rF0t7dg7uN2M0WUhr", label: "부드러운 여성" },
+];
+
 const speakingStyles = [
   { id: "polite", label: "격식체", example: "오늘 매출은 234만원입니다." },
   { id: "friendly", label: "친근체", example: "오늘 매출 234만원이에요!" },
@@ -180,7 +187,7 @@ export default function SecretarySettings() {
       briefing_frequency: briefingFrequency,
       priority_metrics: selectedMetrics,
       secretary_avatar_url: secretaryAvatarUrl,
-      secretary_voice_id: secretaryGender === "male" ? (secretaryVoiceId || maleVoiceOptions[0].id) : null,
+      secretary_voice_id: secretaryGender === "male" ? (secretaryVoiceId || maleVoiceOptions[0].id) : (secretaryVoiceId || femaleVoiceOptions[0].id),
     });
     
     const success = await updateProfile({
@@ -190,7 +197,7 @@ export default function SecretarySettings() {
       briefing_frequency: briefingFrequency,
       priority_metrics: selectedMetrics,
       secretary_avatar_url: secretaryAvatarUrl,
-      secretary_voice_id: secretaryGender === "male" ? (secretaryVoiceId || maleVoiceOptions[0].id) : null,
+      secretary_voice_id: secretaryGender === "male" ? (secretaryVoiceId || maleVoiceOptions[0].id) : (secretaryVoiceId || femaleVoiceOptions[0].id),
     }, false);
     
     console.log("Save result:", success);
@@ -204,7 +211,7 @@ export default function SecretarySettings() {
         briefing_frequency: briefingFrequency,
         priority_metrics: selectedMetrics,
         secretary_avatar_url: secretaryAvatarUrl,
-        secretary_voice_id: secretaryGender === "male" ? (secretaryVoiceId || maleVoiceOptions[0].id) : null,
+        secretary_voice_id: secretaryGender === "male" ? (secretaryVoiceId || maleVoiceOptions[0].id) : (secretaryVoiceId || femaleVoiceOptions[0].id),
       });
       toast.success(`${secretaryName} 설정이 저장되었습니다`);
       // 채팅에서 왔으면 채팅 열린 상태로 돌아가기
@@ -352,6 +359,52 @@ export default function SecretarySettings() {
                   <div className="grid grid-cols-2 gap-2">
                     {maleVoiceOptions.map((voice) => {
                       const isSelected = (secretaryVoiceId || maleVoiceOptions[0].id) === voice.id;
+                      const isPreviewing = previewingVoiceId === voice.id;
+                      return (
+                        <Button
+                          key={voice.id}
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          className="justify-center gap-1.5"
+                          disabled={isPreviewing}
+                          onClick={async () => {
+                            setSecretaryVoiceId(voice.id);
+                            try {
+                              if (previewAudioRef.current) {
+                                previewAudioRef.current.pause();
+                                previewAudioRef.current = null;
+                              }
+                              setPreviewingVoiceId(voice.id);
+                              const audio = new Audio(getVoicePreviewUrl(voice.id));
+                              previewAudioRef.current = audio;
+                              audio.onended = () => setPreviewingVoiceId(null);
+                              await audio.play();
+                            } catch (e) {
+                              console.error("Voice preview error:", e);
+                              setPreviewingVoiceId(null);
+                            }
+                          }}
+                        >
+                          {isPreviewing ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Volume2 className="h-3.5 w-3.5" />
+                          )}
+                          {voice.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 여성 음성 선택 */}
+              {secretaryGender === "female" && (
+                <div className="space-y-2 mt-3">
+                  <Label>여성 음성 선택</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {femaleVoiceOptions.map((voice) => {
+                      const isSelected = (secretaryVoiceId || femaleVoiceOptions[0].id) === voice.id;
                       const isPreviewing = previewingVoiceId === voice.id;
                       return (
                         <Button
