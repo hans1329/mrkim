@@ -374,16 +374,17 @@ export function useVoiceAgent() {
     console.log("[Conv] Message:", message);
 
     if (message.role === "user") {
-      // 5자 미만의 짧은 잡음은 무시
       const trimmed = message.message.trim();
-      if (trimmed.length < 5) {
-        console.log("[Conv] Ignoring short noise:", trimmed);
+
+      // 종료 키워드 감지 → 짧은 잡음 필터보다 우선 처리
+      if (END_SESSION_PATTERNS.test(trimmed)) {
+        scheduleEndByKeyword(trimmed);
         return;
       }
 
-      // 종료 키워드 감지 → 세션 종료
-      if (END_SESSION_PATTERNS.test(trimmed)) {
-        scheduleEndByKeyword(trimmed);
+      // 3자 미만의 짧은 잡음은 무시 (한글 한 글자 = 의미 단위이므로 기준 완화)
+      if (trimmed.length < 3) {
+        console.log("[Conv] Ignoring short noise:", trimmed);
         return;
       }
 
