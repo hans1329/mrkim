@@ -353,16 +353,6 @@ const Landing = () => {
                       다시 계산하기
                     </Button>
                   </div>
-
-                  {/* 김비서 CTA */}
-                  <Button
-                    onClick={() => navigate("/intro")}
-                    className="w-full h-14 text-lg font-bold rounded-full gap-2 hover-scale"
-                  >
-                    <Bot className="h-5 w-5" />
-                    김비서가 경영을 도와드려요!
-                    <ArrowRight className="h-5 w-5" />
-                  </Button>
                 </div>
                 </div>
               )}
