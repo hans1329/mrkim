@@ -32,7 +32,7 @@ export function AppLayout({
   const navigate = useNavigate();
 
   return (
-    <div className="flex h-full overflow-hidden justify-center bg-card lg:gap-8 lg:px-8">
+    <div className="fixed inset-0 flex overflow-hidden justify-center bg-card lg:gap-8 lg:px-8">
       {/* PC 좌측 마케팅 영역 */}
       <div className="hidden lg:flex lg:w-[480px] xl:w-[560px] lg:flex-col lg:justify-center lg:relative">
         <div className="relative z-10 p-8 space-y-6">
@@ -140,8 +140,8 @@ export function AppLayout({
           </div>
 
 
-          {/* Bottom Navigation - 플로팅 + safe area 커버 */}
-          <div className="absolute bottom-0 left-0 right-0 z-20" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', background: 'linear-gradient(to bottom, transparent 0%, transparent 50%, hsl(var(--card)) 50%)' }}>
+          {/* Bottom Navigation - 플로팅 */}
+          <div className="absolute bottom-0 left-0 right-0 z-20" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <BottomNav />
           </div>
 
