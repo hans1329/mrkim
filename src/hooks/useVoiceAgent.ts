@@ -208,8 +208,12 @@ export function useVoiceAgent() {
   // --- 할당량 로드 ---
   const loadQuota = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const [{ data: { user } }, { data: settingsData }] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.from("site_settings").select("value").eq("key", "daily_chat_quota").maybeSingle(),
+      ]);
       if (!user) return;
+      const limit = (settingsData?.value as any)?.limit ?? 100;
       const todayStart = startOfDay(new Date()).toISOString();
       const { count, error } = await supabase
         .from("chat_messages")
@@ -218,8 +222,7 @@ export function useVoiceAgent() {
         .eq("role", "user")
         .gte("created_at", todayStart);
       if (!error && count !== null) {
-        const cachedLimit = quota?.limit ?? 100;
-        setQuota({ used: count, remaining: Math.max(0, cachedLimit - count), limit: cachedLimit });
+        setQuota({ used: count, remaining: Math.max(0, limit - count), limit });
       }
     } catch (e) {
       console.error("Failed to load voice quota:", e);
