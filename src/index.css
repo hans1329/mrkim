@@ -71,26 +71,10 @@
     @apply border-border;
   }
 
-  html, body {
-    overscroll-behavior: none;
-    -webkit-overflow-scrolling: touch;
-    overflow: hidden;
-    height: 100%;
-    width: 100%;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-  }
-
-  #root {
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-  }
-
   html {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
     font-size: 18px;
   }
 
@@ -102,7 +86,16 @@
 
   body {
     @apply bg-card text-foreground;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
   }
 }
 
