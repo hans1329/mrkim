@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from "react";
+import { QuotaExhaustedModal } from "./QuotaExhaustedModal";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +67,7 @@ export function AIChatPanel() {
   } = useAIChat();
   const [input, setInput] = useState("");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showQuotaModal, setShowQuotaModal] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -85,6 +87,10 @@ export function AIChatPanel() {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
+    if (quota && quota.remaining <= 0) {
+      setShowQuotaModal(true);
+      return;
+    }
     const userInput = input;
     setInput("");
     await sendMessage(userInput);
@@ -397,6 +403,13 @@ export function AIChatPanel() {
         </>
       )}
       </div>
+
+      <QuotaExhaustedModal
+        open={showQuotaModal}
+        onClose={() => setShowQuotaModal(false)}
+        secretaryName={secretaryName}
+        secretaryAvatarUrl={secretaryAvatarUrl}
+      />
     </>
   );
 }

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
+import { QuotaExhaustedModal } from "@/components/chat/QuotaExhaustedModal";
 import { Button } from "@/components/ui/button";
 import { X, Mic, Sparkles, MessageCircle, Loader2, AlertCircle, MapPin, Star } from "lucide-react";
 import { VoiceDataVisualization } from "@/components/chat/DataVisualization";
@@ -46,15 +47,22 @@ export function VoiceOverlay() {
   endSessionRef.current = endSession;
   startSessionRef.current = startSession;
 
+  const [showQuotaModal, setShowQuotaModal] = useState(false);
+
   useEffect(() => {
     if (!wasOpenRef.current && isOpen && !isActive) {
-      startSessionRef.current();
+      // 할당량 소진 시 세션 시작 대신 모달 표시
+      if (quota && quota.remaining <= 0) {
+        setShowQuotaModal(true);
+      } else {
+        startSessionRef.current();
+      }
     }
     if (wasOpenRef.current && !isOpen) {
       endSessionRef.current();
     }
     wasOpenRef.current = isOpen;
-  }, [isOpen, isActive]);
+  }, [isOpen, isActive, quota]);
 
   // 컴포넌트 언마운트 시 세션 강제 종료
   useEffect(() => {
@@ -121,6 +129,7 @@ export function VoiceOverlay() {
   };
 
   return (
+    <>
     <div
       className={cn(
         "fixed inset-0 z-50 flex flex-col bg-gradient-to-br from-primary via-primary to-primary transition-all duration-300",
@@ -324,6 +333,17 @@ export function VoiceOverlay() {
       </div>
 
     </div>
+
+    <QuotaExhaustedModal
+      open={showQuotaModal}
+      onClose={() => {
+        setShowQuotaModal(false);
+        closeVoice();
+      }}
+      secretaryName={secretaryName}
+      secretaryAvatarUrl={secretaryAvatarUrl}
+    />
+    </>
   );
 }
 
