@@ -1,6 +1,6 @@
 import { useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Mic, Sparkles, MessageCircle, Loader2, AlertCircle } from "lucide-react";
+import { X, Mic, Sparkles, MessageCircle, Loader2, AlertCircle, MapPin, Star } from "lucide-react";
 import { VoiceDataVisualization } from "@/components/chat/DataVisualization";
 import { cn, josa } from "@/lib/utils";
 import { useVoice } from "@/contexts/VoiceContext";
@@ -298,6 +298,10 @@ export function VoiceOverlay() {
                 {lastMessage.visualization && lastMessage.role === "agent" && (
                   <VoiceDataVisualization data={lastMessage.visualization} />
                 )}
+                {/* 텍스트 요약 카드 (시각화 없을 때 리스트형 답변) */}
+                {!lastMessage.visualization && lastMessage.role === "agent" && (
+                  <TextSummaryCards text={lastMessage.text} />
+                )}
               </div>
             )}
 
@@ -319,6 +323,57 @@ export function VoiceOverlay() {
         )}
       </div>
 
+    </div>
+  );
+}
+
+// --- 텍스트 요약 카드 ---
+interface ParsedItem {
+  title: string;
+  description: string;
+}
+
+function parseListItems(text: string): ParsedItem[] {
+  const items: ParsedItem[] = [];
+  // 숫자 번호 패턴: "1. 타이틀 - 설명" 또는 "1. 타이틀: 설명" 또는 "1. 타이틀, 설명"
+  const numbered = text.match(/\d+[.)]\s*([^\n]+)/g);
+  if (numbered && numbered.length >= 2) {
+    for (const line of numbered) {
+      const cleaned = line.replace(/^\d+[.)]\s*/, "").trim();
+      // "타이틀 - 설명", "타이틀: 설명", "타이틀, 설명" 분리
+      const sepMatch = cleaned.match(/^([^:\-,–]+)\s*[:\-–,]\s*(.+)$/);
+      if (sepMatch) {
+        items.push({ title: sepMatch[1].trim(), description: sepMatch[2].trim() });
+      } else {
+        items.push({ title: cleaned, description: "" });
+      }
+    }
+  }
+  return items.slice(0, 5); // 최대 5개
+}
+
+function TextSummaryCards({ text }: { text: string }) {
+  const items = useMemo(() => parseListItems(text), [text]);
+  if (items.length < 2) return null;
+
+  return (
+    <div className="mt-3 w-full max-w-[85%] flex flex-col gap-2 animate-fade-in">
+      {items.map((item, i) => (
+        <div
+          key={i}
+          className="flex items-start gap-3 rounded-xl bg-white/15 backdrop-blur-sm px-4 py-3"
+        >
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-white text-xs font-bold mt-0.5">
+            {i + 1}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-white leading-snug">{item.title}</p>
+            {item.description && (
+              <p className="text-xs text-white/70 mt-0.5 leading-relaxed">{item.description}</p>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
