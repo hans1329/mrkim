@@ -216,11 +216,35 @@ export function useAIChat() {
     await loadMessagesByDate(new Date());
   }, [loadMessagesByDate]);
 
+  // 초기 할당량 계산
+  const loadQuota = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const todayStart = startOfDay(new Date()).toISOString();
+      const { count, error } = await supabase
+        .from("chat_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("role", "user")
+        .gte("created_at", todayStart);
+
+      if (!error && count !== null) {
+        const limit = 30;
+        setQuota({ used: count, remaining: Math.max(0, limit - count), limit });
+      }
+    } catch (e) {
+      console.error("Failed to load quota:", e);
+    }
+  }, []);
+
   // 초기 로딩
   useEffect(() => {
     loadSessions();
     loadTodayMessages();
-  }, [loadSessions, loadTodayMessages]);
+    loadQuota();
+  }, [loadSessions, loadTodayMessages, loadQuota]);
 
   // 메시지 저장
   const saveMessage = async (role: "user" | "assistant", content: string): Promise<string | null> => {
