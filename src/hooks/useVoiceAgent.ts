@@ -409,10 +409,12 @@ export function useVoiceAgent() {
       const visualization = pendingVisualizationRef.current;
       pendingVisualizationRef.current = null;
       
-      const agentMsg: VoiceMessage = { role: "agent", text: message.message, timestamp: new Date(), visualization };
+      // 감정 태그 제거: [happy], [sad] 등
+      const cleanedText = message.message.replace(/\[(?:happy|sad|angry|excited|neutral|surprised|disgusted|fearful|contemptuous)\]\s*/gi, "").trim();
+      const agentMsg: VoiceMessage = { role: "agent", text: cleanedText, timestamp: new Date(), visualization };
       messagesContextRef.current = [...messagesContextRef.current, agentMsg];
       setLastMessage(agentMsg);
-      saveMessageToDB("assistant", message.message);
+      saveMessageToDB("assistant", cleanedText);
     }
   }, [saveMessageToDB]);
 
