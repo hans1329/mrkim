@@ -11,8 +11,10 @@ const VOICES = [
   { id: "YBRudLRm83BV5Mazcr42", label: "bright-male" },
   { id: "nbrxrAz3eYm9NgojrmFK", label: "deep-male" },
   { id: "OEaq3WGNtNvFJ5co9mJE", label: "soft-male" },
-  // 여성은 현재 단일 음성 사용
-  { id: "uyVNoMrnUku1dZyVEXwD", label: "default-female" },
+  { id: "uyVNoMrnUku1dZyVEXwD", label: "calm-female" },
+  { id: "zgDzx5jLLCqEp6Fl7Kl7", label: "bright-female" },
+  { id: "Lb7qkOn5hF8p7qfCDH8q", label: "deep-female" },
+  { id: "xi3rF0t7dg7uN2M0WUhr", label: "soft-female" },
 ];
 
 const GREETING = "안녕하세요, 반갑습니다.";
