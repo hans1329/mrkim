@@ -107,7 +107,7 @@ export function AppLayout({
 
             {/* 서브페이지 전용 미니 헤더 (뒤로가기 있을 때만) */}
             {!stickyHeader && showHeader && showBackButton && (
-              <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-4 py-1 pt-1">
+              <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-4 py-1" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.25rem)' }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" className="h-9 w-9 -ml-2" onClick={() => {
