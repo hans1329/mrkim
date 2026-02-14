@@ -44,7 +44,8 @@ export function VoiceOverlay() {
     if (!wasOpenRef.current && isOpen && !isActive) {
       startSession();
     }
-    if (wasOpenRef.current && !isOpen && isActive) {
+    // 닫힐 때 안전망: handleClose/handleSwitchToChat에서 이미 종료했어도 이중 호출 안전
+    if (wasOpenRef.current && !isOpen) {
       endSession();
     }
     wasOpenRef.current = isOpen;
@@ -68,8 +69,15 @@ export function VoiceOverlay() {
     startSession();
   };
 
-  const handleSwitchToChat = () => {
-    handleClose();
+  const handleSwitchToChat = async () => {
+    // 음성 세션을 확실히 종료한 후 채팅으로 전환
+    try {
+      await endSession();
+    } catch (e) {
+      console.error("[VoiceOverlay] endSession error on switch:", e);
+    }
+    resetPermission();
+    closeVoice();
     openChat();
   };
 
