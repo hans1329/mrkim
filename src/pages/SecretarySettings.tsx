@@ -81,7 +81,7 @@ export default function SecretarySettings() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
-  const voiceCacheRef = useRef<Map<string, Blob>>(new Map());
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // DB 데이터로 초기화
@@ -107,38 +107,9 @@ export default function SecretarySettings() {
     );
   };
 
-  // 남성 음성 미리 생성 (백그라운드 프리로드)
-  const preloadedNameRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (secretaryGender !== "male") return;
-    const name = secretaryName || "김비서";
-    // 이름이 바뀌면 캐시 초기화 후 재생성
-    if (preloadedNameRef.current === name) return;
-    preloadedNameRef.current = name;
-    voiceCacheRef.current.clear();
-
-    const greeting = `안녕하세요, ${name}입니다.`;
-    maleVoiceOptions.forEach(async (voice) => {
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
-            body: JSON.stringify({ text: greeting, voiceId: voice.id, model_id: "eleven_turbo_v2_5" }),
-          }
-        );
-        if (res.ok) {
-          const blob = await res.blob();
-          voiceCacheRef.current.set(voice.id, blob);
-        }
-      } catch (_) { /* silent */ }
-    });
-  }, [secretaryGender, secretaryName]);
+  // Storage에 사전 생성된 음성 미리듣기 URL 헬퍼
+  const getVoicePreviewUrl = (voiceId: string) =>
+    `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/voice-previews/${voiceId}.mp3`;
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -397,32 +368,9 @@ export default function SecretarySettings() {
                                 previewAudioRef.current = null;
                               }
                               setPreviewingVoiceId(voice.id);
-                              let blob = voiceCacheRef.current.get(voice.id);
-                              if (!blob) {
-                                const greeting = `안녕하세요, ${secretaryName}입니다.`;
-                                const res = await fetch(
-                                  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
-                                  {
-                                    method: "POST",
-                                    headers: {
-                                      "Content-Type": "application/json",
-                                      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                                      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-                                    },
-                                    body: JSON.stringify({ text: greeting, voiceId: voice.id, model_id: "eleven_turbo_v2_5" }),
-                                  }
-                                );
-                                if (!res.ok) throw new Error("TTS failed");
-                                blob = await res.blob();
-                                voiceCacheRef.current.set(voice.id, blob);
-                              }
-                              const url = URL.createObjectURL(blob);
-                              const audio = new Audio(url);
+                              const audio = new Audio(getVoicePreviewUrl(voice.id));
                               previewAudioRef.current = audio;
-                              audio.onended = () => {
-                                setPreviewingVoiceId(null);
-                                URL.revokeObjectURL(url);
-                              };
+                              audio.onended = () => setPreviewingVoiceId(null);
                               await audio.play();
                             } catch (e) {
                               console.error("Voice preview error:", e);
