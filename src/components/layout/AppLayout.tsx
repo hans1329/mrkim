@@ -139,6 +139,9 @@ export function AppLayout({
             </main>
           </div>
 
+          {/* Bottom safe-area 흰색 커버 - 회색 배경이 비치는 것 방지 */}
+          <div className="absolute bottom-0 left-0 right-0 z-10 bg-card" style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
+
           {/* Bottom Navigation - 플로팅 */}
           <div className="absolute bottom-0 left-0 right-0 z-20">
             <BottomNav />
