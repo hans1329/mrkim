@@ -83,8 +83,7 @@ export const classifyIntentTool = {
             "general_advice",       // 일반 조언 (데이터 불필요)
             "service_help",         // 서비스 사용법
             "self_introduction",    // 자기소개/인사
-            "casual_chat",          // 일상 대화
-            "out_of_scope"          // 완전히 범위 외 (부적절/위험)
+            "casual_chat",          // 일상 대화 (맛집, 날씨, 상식 등 모든 주제)
           ],
           description: "분류된 사용자 의도"
         },
@@ -113,10 +112,6 @@ export const classifyIntentTool = {
           },
           description: "조회 기간"
         },
-        rejection_reason: {
-          type: "string",
-          description: "out_of_scope일 경우 거절 사유"
-        }
       },
       required: ["intent", "confidence", "requires_data", "data_sources"]
     }
@@ -137,7 +132,7 @@ export function buildSystemPrompt(context: ResponseContext): string {
   const { secretaryName, secretaryTone, channel } = context;
   const toneInstruction = toneInstructions[secretaryTone] || toneInstructions.polite;
 
-  const basePrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 경영 비서입니다.
+  const basePrompt = `당신은 ${secretaryName}입니다. 소상공인의 AI 비서입니다.
 
 ${toneInstruction}
 
@@ -145,27 +140,20 @@ ${toneInstruction}
 - 따뜻하고 친근한 비서
 - 사장님을 진심으로 응원하는 마음
 - 가끔 이모지를 적절히 사용해서 친근함 표현
-- 딱딱하게 거절하지 않고 부드럽게 대화
 
 ## 자기소개 (self_introduction 의도일 때)
 "안녕하세요!" 또는 "넌 누구야?" 같은 질문에는:
-- 자연스럽게 자기소개 ("안녕하세요, ${secretaryName}예요! 사장님의 경영 비서로 일하고 있어요 😊")
-- 할 수 있는 일 간단히 소개 (매출 확인, 세금 안내, 직원 관리 등)
+- 자연스럽게 자기소개 ("안녕하세요, ${secretaryName}예요! 사장님의 비서로 일하고 있어요 😊")
+- 할 수 있는 일 간단히 소개 (매출 확인, 세금 안내, 직원 관리, 일상 대화 등)
 
-## 일상 대화 (casual_chat 의도일 때)
-"심심해", "힘들다", "오늘 어때?" 같은 일상 대화에는:
-- 공감하며 친근하게 대화 ("사장님 고생이 많으시네요 😊 힘내세요!")
-- 자연스럽게 업무 관련 도움 제안 ("뭔가 도와드릴 일 있으시면 말씀해주세요~")
-
-## 답변 가능한 범위
-- 세금 신고 일정, 부가세/종합소득세 일반 안내
-- 인사/노무 관련 일반 질문
-- 사업 운영 조언
-- 서비스 사용법 안내
+## 대화 범위
+- 사장님이 물어보는 모든 질문에 성실하게 답변하세요
+- 경영, 세금, 일상 잡담, 맛집 추천, 건강, 고민 상담, 일반 상식 등 자유롭게 답변
 
 ## 주의사항
 - 구체적인 금액(매출, 지출, 세금 등)을 묻는 질문에는 가짜 숫자를 만들지 마세요
-- 실제 데이터가 필요한 경우 "데이터 연동이 필요합니다"라고 안내하세요`;
+- 실제 데이터가 필요한 경우 "데이터 연동이 필요합니다"라고 안내하세요
+- 불법 행위 조장, 혐오 표현만 정중히 거절`;
 
   // 채널별 추가 지침
   if (channel === "voice") {
@@ -280,17 +268,16 @@ export function buildConnectionRequiredResponse(
 💡 연동은 약 1분이면 완료됩니다. 지금 바로 진행하시겠어요?`;
 }
 
-// ============ 범위 외 응답 생성 ============
+// ============ 범위 외 응답 생성 (불법/혐오만 해당) ============
 
 export function buildOutOfScopeResponse(channel: "text" | "voice" | "service"): string {
   if (channel === "voice") {
-    return "사장님, 그건 제가 잘 모르는 부분이에요. 다른 궁금한 거 있으시면 편하게 말씀해주세요!";
+    return "사장님, 그 부분은 제가 도움을 드리기 어려워요. 다른 궁금한 거 있으시면 편하게 말씀해주세요!";
   }
 
-  return `사장님, 그 부분은 제가 정확한 답변을 드리기 어려울 수 있어요 😅
+  return `사장님, 그 부분은 제가 도움을 드리기 어려워요 😅
 
-다른 궁금한 점이 있으시면 편하게 말씀해주세요! 
-경영 관련 질문은 물론, 다른 이야기도 좋아요~ 💬`;
+다른 궁금한 점이 있으시면 편하게 말씀해주세요! 💬`;
 }
 
 // ============ 429 에러 처리 ============
