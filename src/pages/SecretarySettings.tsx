@@ -116,7 +116,7 @@ export default function SecretarySettings() {
 
   // Storage에 사전 생성된 음성 미리듣기 URL 헬퍼
   const getVoicePreviewUrl = (voiceId: string) =>
-    `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/voice-previews/${voiceId}.mp3`;
+    `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/voice-previews/${voiceId}.mp3?v=2`;
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
