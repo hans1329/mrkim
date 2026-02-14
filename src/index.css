@@ -98,6 +98,7 @@
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
     font-feature-settings: "rlig" 1, "calt" 1;
+    padding-top: env(safe-area-inset-top, 0px);
   }
 
   #root {
