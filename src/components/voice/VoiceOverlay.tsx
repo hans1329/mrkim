@@ -351,7 +351,24 @@ function parseListItems(text: string): ParsedItem[] {
     return items.slice(0, 5);
   }
 
-  // 2) 따옴표로 감싼 이름 추출: '마구로센', "스시오마카세" 등
+  // 2) 순서형 패턴: "첫 번째는 X이에요", "두 번째는 X입니다", "마지막으로 X"
+  const ordinalRegex = /(?:첫\s*번째|두\s*번째|세\s*번째|네\s*번째|다섯\s*번째|마지막(?:으로)?(?:\s*(?:세|네|다섯)\s*번째)?)[는은]\s*([^.!?]+?)[이가에](?:에요|예요|입니다|랍니다|거든요|고요|요)/g;
+  const ordinalMatches = [...text.matchAll(ordinalRegex)];
+  if (ordinalMatches.length >= 2) {
+    for (const m of ordinalMatches) {
+      const rawName = m[1].trim();
+      // 이름 뒤 문장에서 설명 추출
+      const afterIdx = (m.index ?? 0) + m[0].length;
+      const afterText = text.slice(afterIdx);
+      const descMatch = afterText.match(/^[.\s]*([^.!?\n]{0,100}[.!?]?)/);
+      let desc = descMatch ? descMatch[1].trim() : "";
+      desc = desc.replace(/^\s*[,，]\s*/, "");
+      items.push({ title: rawName, description: desc });
+    }
+    return items.slice(0, 5);
+  }
+
+  // 3) 따옴표로 감싼 이름 추출: '마구로센', "스시오마카세" 등
   const quoted = [...text.matchAll(/[''""]([^''""\n]{2,20})[''""](?:[을를이가은는도의에서]|\s)/g)];
   if (quoted.length > 0) {
     for (const m of quoted) {
@@ -365,23 +382,25 @@ function parseListItems(text: string): ParsedItem[] {
     return items.slice(0, 5);
   }
 
-  // 3) 자연 문장 속 장소/가게명 패턴: "OO 레스토랑은 ...", "OO식당도 ..."
-  // 레스토랑, 식당, 맛집, 카페, 가게, 전문점 등 장소 접미사로 이름 감지
-  const placeSuffix = "(?:레스토랑|식당|맛집|카페|전문점|가게|베이커리|바|펍|비스트로|스시야|초밥집|횟집|고깃집|치킨집|분식집|한식당|일식당|중식당|양식당)";
-  const placeRegex = new RegExp(`([가-힣A-Za-z0-9]{1,15}\\s*${placeSuffix})(?:[은는이가도을를에]|\\s)([^.!?\\n]{0,80}[.!?]?)`, "g");
+  // 4) 고유명사 + 장소 접미사: "스시오마카세 레스토랑은 ..."
+  // 일반 명사(맛집, 좋은 레스토랑 등)를 제외하기 위해 고유명사 패턴 적용
+  const placeSuffix = "(?:레스토랑|식당|카페|전문점|베이커리|비스트로|스시야|초밥집|횟집|고깃집)";
+  const placeRegex = new RegExp(`([가-힣A-Za-z0-9]{2,12}\\s+${placeSuffix}|[A-Za-z][A-Za-z가-힣0-9\\s]{1,14}${placeSuffix})(?:[은는이가도을를에]|\\s)([^.!?\\n]{0,80}[.!?]?)`, "g");
   const placeMatches = [...text.matchAll(placeRegex)];
-  if (placeMatches.length > 0) {
-    for (const m of placeMatches) {
+  // 일반 명사 필터 (역삼동 맛집, 좋은 레스토랑, 분위기 좋은 식당 등 제외)
+  const genericTerms = /^(역삼동|강남|홍대|이태원|잠실|센트럴|좋은|유명한|인기|분위기)\s*(맛집|레스토랑|식당|카페)$/;
+  const filtered = placeMatches.filter(m => !genericTerms.test(m[1].trim()));
+  if (filtered.length > 0) {
+    for (const m of filtered) {
       const name = m[1].trim();
       let desc = m[2].trim().replace(/^[은는이가도을를에서]\s*/, "");
-      // 첫 조사/접속사 정리
       desc = desc.replace(/^\s*[,，]\s*/, "");
       items.push({ title: name, description: desc });
     }
     return items.slice(0, 5);
   }
 
-  // 4) "추천" + 장소/가게 이름 패턴 (따옴표 없이도)
+  // 5) "추천" + 장소/가게 이름 패턴
   const recommendMatch = text.match(/(?:추천[^.]*?)\s+([가-힣A-Za-z0-9]{2,15})[을를이가은는]/);
   if (recommendMatch) {
     const name = recommendMatch[1];
