@@ -92,7 +92,7 @@ function LoginContent() {
   };
   return <div className="bg-primary flex flex-col" style={{ minHeight: '100dvh', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {/* 상단 뒤로가기 버튼 */}
-      <div className="p-4">
+      <div className="p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
         <Button variant="ghost" size="icon" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={() => navigate("/intro")}>
           <ArrowLeft className="h-6 w-6" />
         </Button>
