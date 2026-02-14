@@ -141,7 +141,7 @@ export function AppLayout({
 
 
           {/* Bottom Navigation - 플로팅 */}
-          <div className="absolute bottom-0 left-0 right-0 z-20" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          <div className="absolute bottom-0 left-0 right-0 z-20">
             <BottomNav />
           </div>
 
