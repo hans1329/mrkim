@@ -17,7 +17,7 @@ const VOICES = [
   { id: "xi3rF0t7dg7uN2M0WUhr", label: "soft-female" },
 ];
 
-const GREETING = "안녕하세요, 반갑습니다.";
+const GREETING = "안녕하세요? 반갑습니다. 저는 당신의 경영비서입니다!";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -40,15 +40,8 @@ serve(async (req) => {
     const tasks = VOICES.map(async (voice) => {
       const fileName = `${voice.id}.mp3`;
 
-      // Check if already exists
-      const { data: existing } = await supabase.storage
-        .from("voice-previews")
-        .list("", { search: fileName });
-
-      if (existing && existing.length > 0) {
-        results.push(`${voice.label}: already exists`);
-        return;
-      }
+      // 기존 파일 삭제 (재생성 위해)
+      await supabase.storage.from("voice-previews").remove([fileName]);
 
       // Generate TTS
       const ttsResponse = await fetch(
