@@ -357,6 +357,18 @@ export function useVoiceAgent() {
   // 에이전트 응답이 뒤따르는 사용자 발화만 기록하기 위한 pending 메시지
   const pendingUserMsgRef = useRef<VoiceMessage | null>(null);
 
+  // --- 종료 키워드 감지 ---
+  const END_SESSION_PATTERNS = /^(쉬고\s*있어|그만|끊어|끊을게|종료|그만\s*할[게래]|이제\s*됐어|이제\s*그만|잘\s*가|안녕|다음에\s*봐|수고했어|고마워\s*끊어|바이바이|bye)/i;
+
+  const endSessionForKeywordRef = useRef<(() => Promise<void>) | null>(null);
+
+  // This ref will be set after endSession is defined below
+  const scheduleEndByKeyword = useCallback((trimmed: string) => {
+    console.log("[Conv] 🛑 End keyword detected:", trimmed);
+    toast.info("음성 대화를 종료합니다.");
+    setTimeout(() => endSessionForKeywordRef.current?.(), 1500);
+  }, []);
+
   const handleMessage = useCallback((message: { message: string; source: "user" | "ai"; role: "user" | "agent" }) => {
     console.log("[Conv] Message:", message);
 
@@ -367,6 +379,13 @@ export function useVoiceAgent() {
         console.log("[Conv] Ignoring short noise:", trimmed);
         return;
       }
+
+      // 종료 키워드 감지 → 세션 종료
+      if (END_SESSION_PATTERNS.test(trimmed)) {
+        scheduleEndByKeyword(trimmed);
+        return;
+      }
+
       // 즉시 저장하지 않고 pending으로 보관 (에이전트 응답 시 확정)
       pendingUserMsgRef.current = { role: "user", text: message.message, timestamp: new Date() };
       setLastMessage(pendingUserMsgRef.current);
@@ -567,6 +586,9 @@ export function useVoiceAgent() {
     setMicMuted(false);
     messagesContextRef.current = [];
   }, [conversation]);
+
+  // 종료 키워드 ref 연결
+  endSessionForKeywordRef.current = endSession;
 
   // --- Interrupt (버튼으로 에이전트 발화 중단) ---
   const interruptAndListen = useCallback(() => {
