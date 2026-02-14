@@ -268,7 +268,7 @@ export default function Onboarding() {
       </div>
 
       {/* Header with navigation */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
         <Button
           variant="ghost"
           size="sm"
