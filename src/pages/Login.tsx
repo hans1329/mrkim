@@ -4,10 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Mail, Loader2 } from "lucide-react";
+import { Mail, Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 const iccLogo = "/images/icc-2.webp";
+
+// 로고 이미지 프리로딩
+const preloadLogo = new Image();
+preloadLogo.src = iccLogo;
 import { ServiceChatProvider, useServiceChat } from "@/contexts/ServiceChatContext";
 import { ServiceChatPanel } from "@/components/chat/ServiceChatPanel";
 import { ServiceVoiceOverlay } from "@/components/chat/ServiceVoiceOverlay";
@@ -91,12 +95,8 @@ function LoginContent() {
     navigate("/");
   };
   return <div className="bg-primary flex flex-col fixed inset-0 overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-      {/* 상단 뒤로가기 버튼 */}
-      <div className="p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
-        <Button variant="ghost" size="icon" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={() => navigate("/intro")}>
-          <ArrowLeft className="h-6 w-6" />
-        </Button>
-      </div>
+      {/* 상단 여백 */}
+      <div className="p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }} />
 
       {/* 메인 컨텐츠 */}
       <div className="flex-1 flex flex-col items-center justify-center p-6">
