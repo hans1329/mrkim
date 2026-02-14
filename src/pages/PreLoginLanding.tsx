@@ -98,7 +98,7 @@ const PreLoginLandingContent = () => {
     question: "세무사가 없어도 되나요?",
     answer: "간단한 세금 신고는 김비서가 자동으로 처리해드려요. 복잡한 세무 상담이 필요하시면 협력 세무사를 연결해드릴 수도 있습니다."
   }];
-  return <div className="h-full overflow-y-auto flex flex-col text-[15px] lg:text-[15px]">
+  return <div className="fixed inset-0 overflow-y-auto flex flex-col text-[15px] lg:text-[15px] bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -118,7 +118,7 @@ const PreLoginLandingContent = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden flex-1 flex items-center bg-gradient-to-b from-background via-background to-primary/10">
+      <section className="relative overflow-hidden min-h-[80dvh] flex items-center bg-gradient-to-b from-background via-background to-primary/10">
         <div className="max-w-4xl mx-auto px-4 py-12 lg:py-16">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-center">
             {/* Left: Text Content */}
