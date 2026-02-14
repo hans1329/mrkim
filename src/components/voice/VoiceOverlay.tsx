@@ -356,10 +356,8 @@ function parseListItems(text: string): ParsedItem[] {
   if (quoted.length > 0) {
     for (const m of quoted) {
       const name = m[1].trim();
-      // 이름 뒤의 문장에서 설명 추출
       const afterIdx = (m.index ?? 0) + m[0].length;
       const afterText = text.slice(afterIdx);
-      // 첫 번째 문장 종결까지를 설명으로
       const descMatch = afterText.match(/^([^.!?\n]{0,80}[.!?]?)/);
       const desc = descMatch ? descMatch[1].trim().replace(/^[을를이가은는도의에서]\s*/, "") : "";
       items.push({ title: name, description: desc });
@@ -367,11 +365,26 @@ function parseListItems(text: string): ParsedItem[] {
     return items.slice(0, 5);
   }
 
-  // 3) "추천" + 장소/가게 이름 패턴 (따옴표 없이도)
+  // 3) 자연 문장 속 장소/가게명 패턴: "OO 레스토랑은 ...", "OO식당도 ..."
+  // 레스토랑, 식당, 맛집, 카페, 가게, 전문점 등 장소 접미사로 이름 감지
+  const placeSuffix = "(?:레스토랑|식당|맛집|카페|전문점|가게|베이커리|바|펍|비스트로|스시야|초밥집|횟집|고깃집|치킨집|분식집|한식당|일식당|중식당|양식당)";
+  const placeRegex = new RegExp(`([가-힣A-Za-z0-9]{1,15}\\s*${placeSuffix})(?:[은는이가도을를에]|\\s)([^.!?\\n]{0,80}[.!?]?)`, "g");
+  const placeMatches = [...text.matchAll(placeRegex)];
+  if (placeMatches.length > 0) {
+    for (const m of placeMatches) {
+      const name = m[1].trim();
+      let desc = m[2].trim().replace(/^[은는이가도을를에서]\s*/, "");
+      // 첫 조사/접속사 정리
+      desc = desc.replace(/^\s*[,，]\s*/, "");
+      items.push({ title: name, description: desc });
+    }
+    return items.slice(0, 5);
+  }
+
+  // 4) "추천" + 장소/가게 이름 패턴 (따옴표 없이도)
   const recommendMatch = text.match(/(?:추천[^.]*?)\s+([가-힣A-Za-z0-9]{2,15})[을를이가은는]/);
   if (recommendMatch) {
     const name = recommendMatch[1];
-    // 전체 텍스트에서 핵심 설명 추출
     const descParts: string[] = [];
     const features = text.match(/(?:신선|맛있|분위기|가성비|인기|유명|깔끔|친절|특별)[^.!?]{0,30}[.!?]?/g);
     if (features) descParts.push(...features.slice(0, 2));
