@@ -90,7 +90,7 @@ function LoginContent() {
     toast.success("로그인 성공!");
     navigate("/");
   };
-  return <div className="bg-primary flex flex-col overflow-auto" style={{ minHeight: '100dvh', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+  return <div className="bg-primary flex flex-col h-full overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {/* 상단 뒤로가기 버튼 */}
       <div className="p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
         <Button variant="ghost" size="icon" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={() => navigate("/intro")}>
