@@ -112,7 +112,7 @@ function LoginContent() {
                 onClick={() => openVoice()}
                 className="cursor-pointer hover:scale-105 transition-transform"
               >
-                <img src={iccLogo} alt="김비서" className="h-20 w-auto opacity-95" style={{
+                <img src={iccLogo} alt="김비서" loading="eager" fetchPriority="high" className="h-16 w-auto opacity-95" style={{
                   filter: "drop-shadow(4px 8px 6px rgba(0, 0, 0, 0.3))"
                 }} />
               </button>
