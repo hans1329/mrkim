@@ -29,6 +29,7 @@ export function useVoiceAgent() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [isTTSPreparing, setIsTTSPreparing] = useState(false);
   const [volume, setVolumeState] = useState(0.7);
+  const volumeRef = useRef(0.7);
   const [isConnecting, setIsConnecting] = useState(false);
   const [micMuted, setMicMuted] = useState(false);
   const [quota, setQuota] = useState<QuotaInfo | null>(null);
@@ -442,7 +443,7 @@ export function useVoiceAgent() {
       if (!conversation.isSpeaking) {
         // 발화가 실제로 끝남 → 볼륨 복원, 인터럽트 해제
         interruptedRef.current = false;
-        conversation.setVolume({ volume });
+        conversation.setVolume({ volume: volumeRef.current });
         // 이미 listening 상태이므로 추가 전환 불필요
       }
       return;
@@ -475,6 +476,8 @@ export function useVoiceAgent() {
       waitingFirstMessageRef.current = false;
       setVoiceStatus("speaking");
       setMicMuted(true);
+      // 매 발화 시작마다 볼륨을 명시적으로 복원 (인터럽트 후 0으로 남는 문제 방지)
+      try { conversation.setVolume({ volume: volumeRef.current }); } catch (_) {}
     } else if (waitingFirstMessageRef.current) {
       setVoiceStatus("speaking");
       setMicMuted(true);
@@ -631,6 +634,7 @@ export function useVoiceAgent() {
   const setVolume = useCallback((v: number) => {
     const clamped = Math.max(0, Math.min(1, v));
     setVolumeState(clamped);
+    volumeRef.current = clamped;
     if (conversation.status === "connected") {
       conversation.setVolume({ volume: clamped });
     }
