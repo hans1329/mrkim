@@ -499,17 +499,32 @@ export function useVoiceAgent() {
     toolCallActiveRef.current = false;
     waitingFirstMessageRef.current = false;
     isConnectingRef.current = false;
+    interruptedRef.current = false;
 
+    // 디바운스 타이머 정리
+    if (speakingDebounceRef.current) {
+      clearTimeout(speakingDebounceRef.current);
+      speakingDebounceRef.current = null;
+    }
+
+    // 즉시 볼륨 0으로 → 소리 즉시 차단
+    try {
+      conversation.setVolume({ volume: 0 });
+    } catch (_) {}
+
+    // SDK 세션 종료
     try {
       await conversation.endSession();
     } catch (e) {
       console.error("[Session] endSession error:", e);
     }
 
+    // 상태 완전 초기화
     setIsConnecting(false);
     setVoiceStatus("idle");
     setLastMessage(null);
     setIsTTSPreparing(false);
+    setMicMuted(false);
     messagesContextRef.current = [];
   }, [conversation]);
 

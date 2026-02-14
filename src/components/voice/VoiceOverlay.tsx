@@ -51,6 +51,13 @@ export function VoiceOverlay() {
     wasOpenRef.current = isOpen;
   }, [isOpen, isActive, endSession, startSession]);
 
+  // 컴포넌트 언마운트 시 세션 강제 종료
+  useEffect(() => {
+    return () => {
+      endSession();
+    };
+  }, [endSession]);
+
   // (removed: no longer need message scroll)
 
   const handleClose = async () => {
