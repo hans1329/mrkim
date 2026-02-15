@@ -32,7 +32,7 @@ export function AppLayout({
   const navigate = useNavigate();
 
   return (
-    <div className="fixed inset-0 flex overflow-hidden justify-center bg-card lg:gap-8 lg:px-8">
+    <div className="flex h-[100dvh] overflow-hidden justify-center bg-card lg:gap-8 lg:px-8">
       {/* PC 좌측 마케팅 영역 */}
       <div className="hidden lg:flex lg:w-[480px] xl:w-[560px] lg:flex-col lg:justify-center lg:relative">
         <div className="relative z-10 p-8 space-y-6">
@@ -134,14 +134,14 @@ export function AppLayout({
             )}
 
             {/* Main Content */}
-            <main className={showBackButton ? "p-4 pb-4 overflow-x-hidden" : stickyHeader ? "overflow-x-hidden relative -mt-[calc(env(safe-area-inset-top,0px)+60px)] pb-4" : "pb-4 overflow-x-hidden"}>
+            <main className={showBackButton ? "p-4 pb-24 overflow-x-hidden" : stickyHeader ? "overflow-x-hidden relative -mt-[calc(env(safe-area-inset-top,0px)+60px)] pb-24" : "pb-24 overflow-x-hidden"}>
               {children}
             </main>
           </div>
 
 
-          {/* Bottom Navigation - 하단 고정 */}
-          <div className="flex-shrink-0">
+          {/* Bottom Navigation - fixed 하단 고정 */}
+          <div className="fixed bottom-0 left-0 right-0 z-20 lg:static">
             <BottomNav />
           </div>
 
