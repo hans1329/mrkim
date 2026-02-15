@@ -78,6 +78,7 @@
     overscroll-behavior: none;
     font-size: 18px;
     background: hsl(var(--card));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   @media (min-width: 768px) {
