@@ -99,7 +99,7 @@ export function AppLayout({
       </div>
 
       {/* 앱 영역 */}
-      <div className="w-full h-full lg:w-[580px] xl:w-[640px] lg:flex-shrink-0" style={{ paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
+      <div className="w-full h-full lg:w-[580px] xl:w-[640px] lg:flex-shrink-0" style={{ paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <div className="relative flex h-full max-w-xl flex-col shadow-2xl lg:max-w-none mx-auto overflow-hidden bg-card">
           <div className={`flex-1 overflow-auto ${stickyHeader ? "[background:linear-gradient(to_bottom,hsl(var(--primary))_50%,hsl(var(--background))_50%)]" : "bg-background"}`} id="app-scroll-container">
             {/* 커스텀 sticky 헤더 (홈 등) - scroll container 직속 자식 */}
