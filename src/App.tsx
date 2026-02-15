@@ -8,6 +8,7 @@ import { ChatProvider } from "@/contexts/ChatContext";
 import { VoiceProvider } from "@/contexts/VoiceContext";
 import { ConnectionProvider } from "@/contexts/ConnectionContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { LayoutRoute } from "@/components/layout/LayoutRoute";
 import Index from "./pages/Index";
 import PreLoginLanding from "./pages/PreLoginLanding";
 import Login from "./pages/Login";
@@ -56,28 +57,14 @@ const App = () => (
               <ChatProvider>
                 <VoiceProvider>
                   <Routes>
-                    <Route path="/" element={<Index />} />
+                    {/* 레이아웃 없는 독립 페이지 */}
                     <Route path="/intro" element={<PreLoginLanding />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
-                    <Route path="/transactions" element={<Transactions />} />
-                    <Route path="/employees" element={<Employees />} />
-                    <Route path="/funds" element={<Funds />} />
-                    <Route path="/more" element={<More />} />
-                    <Route path="/reports" element={<Reports />} />
-                    <Route path="/notifications" element={<Notifications />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/financial-services" element={<FinancialServices />} />
                     <Route path="/pitchdeck" element={<PitchDeck />} />
                     <Route path="/landing" element={<Landing />} />
-                    <Route path="/secretary-settings" element={<SecretarySettings />} />
-                    <Route path="/onboarding" element={<Onboarding />} />
-                    <Route path="/design" element={<DesignGuide />} />
-                    <Route path="/engine" element={<Engine />} />
                     <Route path="/privacy" element={<PrivacyPolicy />} />
                     <Route path="/terms" element={<TermsOfService />} />
-                    <Route path="/community" element={<Community />} />
                     {/* Admin Routes */}
                     <Route path="/admin/login" element={<AdminLogin />} />
                     <Route path="/admin" element={<AdminDashboard />} />
@@ -88,6 +75,26 @@ const App = () => (
                     <Route path="/admin/feedback" element={<AdminFeedback />} />
                     <Route path="/admin/api-usage" element={<AdminApiUsage />} />
                     <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
+
+                    {/* 공통 레이아웃 적용 페이지 */}
+                    <Route element={<LayoutRoute />}>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/transactions" element={<Transactions />} />
+                      <Route path="/employees" element={<Employees />} />
+                      <Route path="/funds" element={<Funds />} />
+                      <Route path="/more" element={<More />} />
+                      <Route path="/reports" element={<Reports />} />
+                      <Route path="/notifications" element={<Notifications />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/financial-services" element={<FinancialServices />} />
+                      <Route path="/secretary-settings" element={<SecretarySettings />} />
+                      <Route path="/onboarding" element={<Onboarding />} />
+                      <Route path="/design" element={<DesignGuide />} />
+                      <Route path="/engine" element={<Engine />} />
+                      <Route path="/community" element={<Community />} />
+                    </Route>
+
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
