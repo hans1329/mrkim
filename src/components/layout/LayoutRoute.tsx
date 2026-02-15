@@ -13,7 +13,15 @@ function AnimatedOutlet({ noWrapper }: { noWrapper?: boolean }) {
   }
 
   return (
-    <div key={location.pathname} className="animate-fade-in" style={{ animationDuration: '350ms' }}>
+    <div
+      key={location.pathname}
+      className="animate-fade-in"
+      style={{
+        animationDuration: '350ms',
+        animationDelay: '50ms',
+        animationFillMode: 'both',
+      }}
+    >
       <Outlet />
     </div>
   );
