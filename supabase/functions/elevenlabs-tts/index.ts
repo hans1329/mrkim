@@ -47,9 +47,9 @@ serve(async (req) => {
 
     console.log("Generating TTS:", { textLength: text.length, voiceId: selectedVoiceId, model: selectedModel });
 
-    // ElevenLabs TTS API 호출 (스트리밍)
+    // ElevenLabs TTS API 호출 (스트리밍, 고음질)
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}/stream?output_format=mp3_22050_32`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}/stream?output_format=mp3_44100_128`,
       {
         method: "POST",
         headers: {
@@ -60,10 +60,10 @@ serve(async (req) => {
           text,
           model_id: selectedModel,
           voice_settings: {
-            stability: 0.4,
-            similarity_boost: 0.7,
-            style: 0.5,
-            use_speaker_boost: false,
+            stability: 0.6,
+            similarity_boost: 0.8,
+            style: 0.3,
+            use_speaker_boost: true,
             speed: 1.1,
           },
         }),
