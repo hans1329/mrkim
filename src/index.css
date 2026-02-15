@@ -135,11 +135,14 @@
   }
 
   @keyframes bounce-gentle {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
+    0%, 85%, 100% { transform: translateY(0); }
+    88% { transform: translateY(-4px); }
+    91% { transform: translateY(0); }
+    94% { transform: translateY(-4px); }
+    97% { transform: translateY(0); }
   }
 
   .animate-bounce-gentle {
-    animation: bounce-gentle 2s ease-in-out infinite;
+    animation: bounce-gentle 7s ease-in-out infinite;
   }
 }
