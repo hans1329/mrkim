@@ -72,9 +72,8 @@
   }
 
   html {
-    height: 100%;
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     overscroll-behavior: none;
     font-size: 18px;
@@ -90,8 +89,6 @@
   body {
     @apply text-foreground;
     height: 100%;
-    min-height: 100vh;
-    min-height: 100dvh;
     overflow: hidden;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
@@ -101,8 +98,6 @@
 
   #root {
     height: 100%;
-    min-height: 100vh;
-    min-height: 100dvh;
     overflow: hidden;
   }
 }
