@@ -5,16 +5,15 @@ import { PCLayout } from "./PCLayout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRef, useEffect, useState } from "react";
 
-function AnimatedOutlet() {
+function AnimatedOutlet({ noWrapper }: { noWrapper?: boolean }) {
   const location = useLocation();
-  const [animKey, setAnimKey] = useState(location.pathname);
 
-  useEffect(() => {
-    setAnimKey(location.pathname);
-  }, [location.pathname]);
+  if (noWrapper) {
+    return <Outlet />;
+  }
 
   return (
-    <div key={animKey} className="animate-fade-in" style={{ animationDuration: '200ms' }}>
+    <div key={location.pathname} className="animate-fade-in" style={{ animationDuration: '200ms' }}>
       <Outlet />
     </div>
   );
@@ -27,7 +26,7 @@ function LayoutShell() {
   if (!isMobile) {
     return (
       <PCLayout title={config.title} subtitle={config.subtitle}>
-        <AnimatedOutlet />
+        <AnimatedOutlet noWrapper />
       </PCLayout>
     );
   }
