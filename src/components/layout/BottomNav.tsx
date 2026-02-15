@@ -53,7 +53,7 @@ export function BottomNav() {
           <button
             onClick={openVoice}
             className={cn(
-              "relative -mt-8 flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/30 transition-all active:scale-95 overflow-hidden ring-4 ring-background",
+              "relative -mt-8 flex h-16 w-16 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/30 transition-all active:scale-95 overflow-hidden ring-4 ring-background animate-bounce-gentle",
               (isVoiceOpen || isChatOpen) && "opacity-0 pointer-events-none"
             )}
           >
