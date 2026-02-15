@@ -141,7 +141,7 @@ export function AppLayout({
 
 
           {/* Bottom Navigation - fixed 하단 고정 */}
-          <div className="fixed left-0 right-0 z-20 lg:static" style={{ bottom: '-10px' }}>
+          <div className="fixed left-0 right-0 z-20 lg:static" style={{ bottom: '-5px' }}>
             <BottomNav />
           </div>
 
