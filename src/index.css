@@ -136,12 +136,16 @@
 
   @keyframes bounce-gentle {
     0%, 76%, 100% { transform: translateY(0); }
-    79% { transform: translateY(-7px); }
-    82% { transform: translateY(0); }
-    84% { transform: translateY(-4px); }
-    87% { transform: translateY(0); }
-    89% { transform: translateY(-1.5px); }
-    91% { transform: translateY(0); }
+    79% { transform: translateY(-8px); }
+    81.5% { transform: translateY(0); }
+    83.5% { transform: translateY(-5px); }
+    85.5% { transform: translateY(0); }
+    87% { transform: translateY(-3px); }
+    88.5% { transform: translateY(0); }
+    89.7% { transform: translateY(-1.5px); }
+    90.8% { transform: translateY(0); }
+    91.6% { transform: translateY(-0.5px); }
+    92.3% { transform: translateY(0); }
   }
 
   .animate-bounce-gentle {
