@@ -72,7 +72,8 @@
   }
 
   html {
-    height: 100%;
+    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     overscroll-behavior: none;
     font-size: 18px;
