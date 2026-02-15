@@ -1,7 +1,5 @@
-import { ReactNode } from "react";
-import { AppLayout } from "./AppLayout";
-import { PCLayout } from "./PCLayout";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { ReactNode, useEffect } from "react";
+import { useLayoutConfig } from "@/contexts/LayoutContext";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -13,19 +11,17 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children, title, subtitle, showBackButton, onBack, stickyHeader }: MainLayoutProps) {
-  const isMobile = useIsMobile();
+  const { setConfig } = useLayoutConfig();
 
-  if (!isMobile) {
-    return (
-      <PCLayout title={title} subtitle={subtitle}>
-        {children}
-      </PCLayout>
-    );
-  }
+  useEffect(() => {
+    setConfig({ title, subtitle, showBackButton, onBack, stickyHeader });
+  }, [title, subtitle, showBackButton, setConfig]);
 
-  return (
-    <AppLayout title={title} subtitle={subtitle} showBackButton={showBackButton} onBack={onBack} stickyHeader={stickyHeader}>
-      {children}
-    </AppLayout>
-  );
+  // stickyHeader와 onBack은 의도적으로 deps에서 제외 (매 렌더마다 새 참조 생성되므로)
+  // 초기 마운트 시 한 번만 설정하고, title/subtitle 변경 시 업데이트
+  useEffect(() => {
+    setConfig({ title, subtitle, showBackButton, onBack, stickyHeader });
+  }, [stickyHeader]);
+
+  return <>{children}</>;
 }
