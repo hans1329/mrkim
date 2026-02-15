@@ -80,6 +80,15 @@
     </style>
 
     <div id="root"></div>
+    <script>
+      // Fix iOS PWA bottom white gap: set --app-height immediately
+      (function(){
+        function setH(){document.documentElement.style.setProperty('--app-height',window.innerHeight+'px')}
+        setH();
+        window.addEventListener('resize',setH);
+        window.addEventListener('orientationchange',function(){setTimeout(setH,150)});
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

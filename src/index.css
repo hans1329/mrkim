@@ -72,9 +72,7 @@
   }
 
   html {
-    height: 100vh;
-    height: 100dvh;
-    height: calc(var(--app-height, 100vh));
+    height: var(--app-height, 100vh);
     overflow: hidden;
     overscroll-behavior: none;
     font-size: 18px;
