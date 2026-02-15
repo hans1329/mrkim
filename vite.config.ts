@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => ({
         description: "소상공인을 위한 AI 기반 백오피스 자동화 앱",
         start_url: "/",
         display: "standalone",
-        background_color: "#3B82F6",
+        orientation: "portrait",
         theme_color: "#3B82F6",
         icons: [
           {
