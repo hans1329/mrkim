@@ -72,17 +72,12 @@
   }
 
   html {
+    height: 100vh;
     height: 100dvh;
-    height: 100vh; /* fallback */
+    height: calc(var(--app-height, 100vh));
     overflow: hidden;
     overscroll-behavior: none;
     font-size: 18px;
-  }
-
-  @supports (height: 100dvh) {
-    html {
-      height: 100dvh;
-    }
   }
 
   @media (min-width: 768px) {
