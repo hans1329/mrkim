@@ -72,10 +72,11 @@
   }
 
   html {
-    height: var(--app-height, 100vh);
+    height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
     font-size: 18px;
+    background: hsl(var(--card));
   }
 
   @media (min-width: 768px) {
@@ -85,17 +86,18 @@
   }
 
   body {
-    @apply bg-card text-foreground;
+    @apply text-foreground;
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
     font-feature-settings: "rlig" 1, "calt" 1;
-    /* padding-top removed: each page header handles safe-area-inset-top individually */
+    background: hsl(var(--card));
   }
 
   #root {
-    height: 100%;
+    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
   }
 }
