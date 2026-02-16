@@ -124,7 +124,7 @@ export function VoiceOverlay() {
     if (isSpeaking && isTTSPreparing) return "잠시만요!";
     if (isSpeaking) return `${josa(secretaryName, "이/가")} 말하고 있어요...`;
     if (isListening) return "듣고 있어요...";
-    if (!isActive) return "버튼을 눌러 시작하세요";
+    if (!isActive) return "저를 눌러 대화를 시작하세요!";
     return "준비 중...";
   };
 
@@ -258,8 +258,10 @@ export function VoiceOverlay() {
                   )
                 ) : isListening ? (
                   <Mic className="h-12 w-12" />
+                ) : secretaryAvatarUrl ? (
+                  <img src={secretaryAvatarUrl} alt={secretaryName} className="h-full w-full rounded-full object-cover" />
                 ) : (
-                  <Mic className="h-12 w-12" />
+                  <Sparkles className="h-12 w-12" />
                 )}
               </button>
             </div>
