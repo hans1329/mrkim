@@ -4,7 +4,7 @@ import { LayoutDashboard, Receipt, Users, Wallet, TrendingUp } from "lucide-reac
 import { useVoice } from "@/contexts/VoiceContext";
 import { useChat } from "@/contexts/ChatContext";
 import { useProfileQuery } from "@/hooks/useProfileQuery";
-import { useIsInstalledApp } from "@/hooks/useIsInstalledApp";
+
 
 const DEFAULT_ICON = "/images/icc-5.webp";
 
@@ -26,7 +26,7 @@ export function BottomNav() {
   const { isOpen: isVoiceOpen, openVoice } = useVoice();
   const { isOpen: isChatOpen } = useChat();
   const { profile } = useProfileQuery();
-  const isInstalled = useIsInstalledApp();
+  
   
   const avatarUrl = profile?.secretary_avatar_url || null;
   const imgSrc = avatarUrl || DEFAULT_ICON;
