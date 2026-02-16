@@ -171,6 +171,8 @@ export function useVoiceAgent() {
 - 가짜 매출/지출 숫자는 절대 만들지 마세요
 - 불법 행위 조장, 혐오 표현만 정중히 거절
 - 음성 대화에 맞게 짧고 자연스럽게 응답합니다
+- 감정 표현 태그를 절대 사용하지 마세요: [smile], [laugh], (happy), *sad* 등의 감정 태그, 괄호/대괄호 안 감정 표현은 절대 출력하지 않습니다
+- 텍스트에 영어 감정 단어(smile, laugh, sigh, gasp 등)를 포함하지 마세요
 
 ## 종료 명령 인식
 - 사용자가 "끊어", "그만", "쉬어", "종료", "꺼", "잘 가", "바이바이" 등 대화 종료 의사를 표현하면:
@@ -210,7 +212,7 @@ export function useVoiceAgent() {
     },
     tts: {
       voiceId,
-      speed: 1.15,
+      speed: 1.35,
       stability: 0.7,
       similarity_boost: 0.8,
     },
@@ -430,12 +432,12 @@ export function useVoiceAgent() {
       const visualization = pendingVisualizationRef.current;
       pendingVisualizationRef.current = null;
       
-      // 감정 태그 및 오디오 이벤트 제거: [happy], (sad), *laughs* 등
+      // 감정 태그 및 오디오 이벤트 제거: [smile], (sad), *laughs* 등
       const cleanedText = message.message
         .replace(/\[([^\]]*)\]/g, "$1")
-        .replace(/\((?:sad|happy|laughing?|sighing?|crying|angry|surprised|excited|whisper(?:ing)?|gasping?)\)/gi, "")
-        .replace(/\*(?:sad|happy|laughing?|sighing?|crying|angry|surprised|excited|whisper(?:ing)?|gasping?)\*/gi, "")
-        .replace(/\bsad\b/gi, "")
+        .replace(/\((?:sad|happy|smile|smiling|laughing?|sighing?|crying|angry|surprised|excited|whisper(?:ing)?|gasping?|chuckl(?:e|ing))\)/gi, "")
+        .replace(/\*(?:sad|happy|smile|smiling|laughing?|sighing?|crying|angry|surprised|excited|whisper(?:ing)?|gasping?|chuckl(?:e|ing))\*/gi, "")
+        .replace(/\b(?:smile|laugh|sigh|gasp|chuckle|grin|smiling|laughing|sighing|gasping|chuckling|grinning)\b/gi, "")
         .replace(/\s{2,}/g, " ")
         .trim();
 
