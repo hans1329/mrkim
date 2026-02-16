@@ -379,7 +379,7 @@ export function useVoiceAgent() {
   // 종료 키워드 감지 시 플래그만 세팅 (에이전트 작별 인사 완료 후 끊기)
   const scheduleEndByKeyword = useCallback((trimmed: string) => {
     console.log("[Conv] 🛑 End keyword detected, waiting for farewell:", trimmed);
-    toast.info("작별 인사 후 종료합니다.");
+    // 알림 없이 조용히 종료 대기
     endingByKeywordRef.current = true;
   }, []);
 
