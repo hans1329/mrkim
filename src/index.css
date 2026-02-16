@@ -101,10 +101,7 @@
     overflow: hidden;
   }
 
-  /* PWA standalone 모드: safe area를 레이아웃에서 직접 처리 */
-  body.pwa-standalone {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
+  /* PWA standalone: body padding 없이, 레이아웃 내부에서 safe area 처리 */
 }
 
 @layer utilities {
