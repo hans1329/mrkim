@@ -228,9 +228,11 @@ export function useElevenLabsConversation() {
     if (message.type === "agent_response") {
       const agentText = message.agent_response_event?.agent_response;
       if (agentText) {
+        // ElevenLabs TTS 발음 힌트용 대괄호 제거
+        const cleanedText = agentText.replace(/\[([^\]]*)\]/g, "$1");
         setMessages(prev => [...prev, {
           role: "agent",
-          text: agentText,
+          text: cleanedText,
           timestamp: new Date()
         }]);
       }
