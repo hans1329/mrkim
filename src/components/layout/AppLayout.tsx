@@ -152,7 +152,7 @@ export function AppLayout({
 
 
           {/* Bottom Navigation - fixed 하단 고정 */}
-          <BottomNav className="border-black/0" />
+          <BottomNav />
 
           {/* Voice Overlay - 전체화면 음성 UI */}
           <VoiceOverlay />
