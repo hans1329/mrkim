@@ -178,9 +178,8 @@ export function useVoiceAgent() {
   - 다른 질문이나 추가 안내를 하지 마세요
 
 ## 중단 처리
-- 사용자가 "(중단)"이라고 보내면, 현재 말하고 있던 내용을 즉시 멈추세요
-- 아무 말도 하지 말고 조용히 사용자의 다음 말을 기다리세요
-- "(중단)"에 대해 "네, 알겠습니다" 같은 응답도 하지 마세요`;
+- 사용자가 발화 중 중단 버튼을 누르면 세션이 재연결됩니다
+- 재연결 후 인사말 없이 바로 사용자의 말을 기다리세요`;
   }, [secretaryGender, secretaryName, secretaryTone]);
 
   // --- First message ---
@@ -393,12 +392,6 @@ export function useVoiceAgent() {
 
     if (message.role === "user") {
       const trimmed = message.message.trim();
-
-      // 인터럽트 메시지는 무시 (UI/DB에 저장하지 않음)
-      if (trimmed === "(중단)") {
-        console.log("[Conv] Ignoring interrupt message");
-        return;
-      }
 
       // 종료 키워드 감지 → 짧은 잡음 필터보다 우선 처리
       if (END_SESSION_PATTERNS.test(trimmed)) {
@@ -667,28 +660,49 @@ export function useVoiceAgent() {
   // 종료 키워드 ref 연결
   endSessionForKeywordRef.current = endSession;
 
-  // --- Interrupt (버튼으로 에이전트 발화 중단) ---
-  const interruptAndListen = useCallback(() => {
-    console.log("[Voice] Interrupt: muting agent, switching to listening");
-    // 인터럽트 플래그 → useEffect 상태 동기화 완전 차단
+  // --- Interrupt (버튼으로 에이전트 발화 중단 → 세션 재연결) ---
+  const interruptAndListen = useCallback(async () => {
+    console.log("[Voice] Interrupt: ending session and reconnecting");
     interruptedRef.current = true;
+    
     // 디바운스 타이머 취소
     if (speakingDebounceRef.current) {
       clearTimeout(speakingDebounceRef.current);
       speakingDebounceRef.current = null;
     }
-    // 에이전트 볼륨 0 → 즉시 무음
-    conversation.setVolume({ volume: 0 });
+    
+    // 즉시 볼륨 0 → 소리 차단
+    try { conversation.setVolume({ volume: 0 }); } catch (_) {}
+    
+    // UI 즉시 전환
     setIsTTSPreparing(false);
     setVoiceStatus("listening");
     setMicMuted(false);
-    // interruption 이벤트가 비활성화되어 있으므로, 빈 텍스트를 보내 에이전트 턴을 강제 종료
+    
+    // 세션 종료 (상태 초기화 없이 SDK만 끊기)
+    try { await conversation.endSession(); } catch (_) {}
+    
+    // 짧은 딜레이 후 재연결 (이전 대화 맥락 유지)
+    interruptedRef.current = false;
+    sessionActiveRef.current = true;
+    
     try {
-      conversation.sendUserMessage("(중단)");
+      const { data } = await supabase.functions.invoke("elevenlabs-conversation-token");
+      if (!data?.token) throw new Error("No token");
+      
+      await conversation.startSession({
+        conversationToken: data.token,
+        connectionType: "webrtc",
+        overrides,
+      });
+      console.log("[Voice] ✅ Reconnected after interrupt");
     } catch (e) {
-      console.warn("[Voice] Failed to send interrupt message:", e);
+      console.error("[Voice] Failed to reconnect after interrupt:", e);
+      setVoiceStatus("idle");
+      sessionActiveRef.current = false;
+      toast.error("재연결에 실패했습니다. 다시 시도해주세요.");
     }
-  }, [conversation]);
+  }, [conversation, overrides]);
 
   // --- Reset permission ---
   const resetPermission = useCallback(() => {
