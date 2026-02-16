@@ -409,8 +409,10 @@ export function useVoiceAgent() {
       const visualization = pendingVisualizationRef.current;
       pendingVisualizationRef.current = null;
       
-      // 감정 태그 제거: [happy], [sad] 등
-      const cleanedText = message.message.replace(/\[(?:happy|sad|angry|excited|neutral|surprised|disgusted|fearful|contemptuous)\]\s*/gi, "").trim();
+      // 감정 태그 및 TTS 발음 힌트 대괄호 제거: [happy], [스시마이우] 등
+      const cleanedText = message.message
+        .replace(/\[([^\]]*)\]/g, "$1")
+        .trim();
       const agentMsg: VoiceMessage = { role: "agent", text: cleanedText, timestamp: new Date(), visualization };
       messagesContextRef.current = [...messagesContextRef.current, agentMsg];
       setLastMessage(agentMsg);
