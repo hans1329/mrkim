@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useConversation } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfileQuery } from "@/hooks/useProfileQuery";
 import { toast } from "sonner";
 import type { VisualizationData } from "@/components/chat/DataVisualization";
 import { startOfDay } from "date-fns";
@@ -22,7 +22,7 @@ export interface VoiceMessage {
 type VoiceStatus = "idle" | "listening" | "processing" | "speaking";
 
 export function useVoiceAgent() {
-  const { profile } = useProfile();
+  const { profile } = useProfileQuery();
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("idle");
   const [lastMessage, setLastMessage] = useState<VoiceMessage | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
