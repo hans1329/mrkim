@@ -63,11 +63,11 @@ export function AppLayout({
             <img src={mainIllust2} alt="김비서 일러스트" className="w-72" />
           </div>
           <div className="flex flex-wrap gap-2">
-            {["직원관리", "급여계산", "세무처리", "매출분석", "수익창출"].map(tag => (
-              <span key={tag} className="px-3 py-1 bg-card/80 backdrop-blur-sm rounded-full text-sm text-foreground border border-border/50">
+            {["직원관리", "급여계산", "세무처리", "매출분석", "수익창출"].map((tag) =>
+            <span key={tag} className="px-3 py-1 bg-card/80 backdrop-blur-sm rounded-full text-sm text-foreground border border-border/50">
                 {tag}
               </span>
-            ))}
+            )}
           </div>
           {/* 앱 다운로드 통합 박스 */}
           <div className="relative overflow-hidden p-5 bg-card/95 backdrop-blur-md rounded-3xl border border-border/50 shadow-lg">
@@ -117,19 +117,19 @@ export function AppLayout({
             {stickyHeader}
 
             {/* 서브페이지 전용 미니 헤더 (뒤로가기 있을 때만) */}
-            {!stickyHeader && showHeader && showBackButton && (
-              <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-4 py-1" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.25rem)' }}>
+            {!stickyHeader && showHeader && showBackButton &&
+            <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-4 py-1" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.25rem)' }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" className="h-9 w-9 -ml-2" onClick={() => {
-                      if (onBack) {
-                        onBack();
-                      } else if (window.history.length > 1) {
-                        navigate(-1);
-                      } else {
-                        navigate("/");
-                      }
-                    }}>
+                    if (onBack) {
+                      onBack();
+                    } else if (window.history.length > 1) {
+                      navigate(-1);
+                    } else {
+                      navigate("/");
+                    }
+                  }}>
                       <ChevronLeft className="h-5 w-5" />
                     </Button>
                     <h1 className="text-lg font-bold text-foreground">{title}</h1>
@@ -142,7 +142,7 @@ export function AppLayout({
                   </Button>
                 </div>
               </header>
-            )}
+            }
 
             {/* Main Content */}
             <main className={showBackButton ? "p-4 pb-24 overflow-x-hidden" : stickyHeader ? "overflow-x-hidden relative -mt-[calc(env(safe-area-inset-top,0px)+60px)] pb-24" : "pb-24 overflow-x-hidden"}>
@@ -152,7 +152,7 @@ export function AppLayout({
 
 
           {/* Bottom Navigation - fixed 하단 고정 */}
-          <BottomNav />
+          <BottomNav className="border-black/0" />
 
           {/* Voice Overlay - 전체화면 음성 UI */}
           <VoiceOverlay />
@@ -161,6 +161,6 @@ export function AppLayout({
           <AIChatPanel />
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
