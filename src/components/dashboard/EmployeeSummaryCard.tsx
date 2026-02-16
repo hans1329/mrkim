@@ -72,7 +72,7 @@ export function EmployeeSummaryCard({ isLoggedOut = false }: EmployeeSummaryCard
           <p className="text-xs text-muted-foreground mt-1 mb-3">
             직원 관리 메뉴에서 직원을 추가하세요
           </p>
-          <Button size="sm" variant="outline" onClick={() => navigate("/employees")}>
+          <Button size="sm" variant="outline" className="rounded-full" onClick={() => navigate("/employees")}>
             직원 추가하기
           </Button>
         </div>
