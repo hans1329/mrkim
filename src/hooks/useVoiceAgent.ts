@@ -518,7 +518,19 @@ export function useVoiceAgent() {
 
   // --- Start session ---
   const startSession = useCallback(async () => {
-    if (isConnecting || conversation.status === "connected" || permissionDenied) return;
+    // isConnectingRef를 사용하여 stale closure 방지
+    if (isConnectingRef.current || permissionDenied) return;
+    
+    // 이전 세션이 아직 connected 상태면 먼저 종료
+    if (conversation.status === "connected") {
+      console.log("[Session] Previous session still connected, ending first...");
+      try {
+        conversation.setVolume({ volume: 0 });
+        await conversation.endSession();
+      } catch (_) {}
+      // SDK 상태 전환 대기
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
 
     console.log("[Session] ▶ Starting Conversational AI session...");
     setIsConnecting(true);
