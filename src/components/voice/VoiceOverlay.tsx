@@ -200,6 +200,14 @@ export function VoiceOverlay() {
           <>
             {/* 마이크 버튼 */}
             <div className="relative mb-6">
+              {/* 초기 대기 상태 - 음성 파동 애니메이션 */}
+              {!isActive && !isConnecting && !isProcessing && (
+                <>
+                  <div className="absolute inset-[-12px] rounded-full border-2 border-white/30 animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite]" />
+                  <div className="absolute inset-[-24px] rounded-full border border-white/20 animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite]" style={{ animationDelay: '0.6s' }} />
+                  <div className="absolute inset-[-36px] rounded-full border border-white/10 animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite]" style={{ animationDelay: '1.2s' }} />
+                </>
+              )}
               {/* 펄스 애니메이션 - 듣는 중 */}
               {isListening && (
                 <>
