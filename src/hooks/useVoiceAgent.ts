@@ -360,7 +360,7 @@ export function useVoiceAgent() {
 
     if (wasActive) {
       const reason = details?.reason || details?.context?.reason;
-      if (reason && reason !== "user") {
+      if (reason && reason !== "user" && reason !== "agent") {
         setLastError(`연결이 종료되었습니다. (${reason})`);
       }
     }
