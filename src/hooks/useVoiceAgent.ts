@@ -660,49 +660,11 @@ export function useVoiceAgent() {
   // 종료 키워드 ref 연결
   endSessionForKeywordRef.current = endSession;
 
-  // --- Interrupt (버튼으로 에이전트 발화 중단 → 세션 재연결) ---
+  // --- Interrupt (버튼으로 에이전트 발화 중단 → 세션 종료) ---
   const interruptAndListen = useCallback(async () => {
-    console.log("[Voice] Interrupt: ending session and reconnecting");
-    interruptedRef.current = true;
-    
-    // 디바운스 타이머 취소
-    if (speakingDebounceRef.current) {
-      clearTimeout(speakingDebounceRef.current);
-      speakingDebounceRef.current = null;
-    }
-    
-    // 즉시 볼륨 0 → 소리 차단
-    try { conversation.setVolume({ volume: 0 }); } catch (_) {}
-    
-    // UI 즉시 전환
-    setIsTTSPreparing(false);
-    setVoiceStatus("listening");
-    setMicMuted(false);
-    
-    // 세션 종료 (상태 초기화 없이 SDK만 끊기)
-    try { await conversation.endSession(); } catch (_) {}
-    
-    // 짧은 딜레이 후 재연결 (이전 대화 맥락 유지)
-    interruptedRef.current = false;
-    sessionActiveRef.current = true;
-    
-    try {
-      const { data } = await supabase.functions.invoke("elevenlabs-conversation-token");
-      if (!data?.token) throw new Error("No token");
-      
-      await conversation.startSession({
-        conversationToken: data.token,
-        connectionType: "webrtc",
-        overrides,
-      });
-      console.log("[Voice] ✅ Reconnected after interrupt");
-    } catch (e) {
-      console.error("[Voice] Failed to reconnect after interrupt:", e);
-      setVoiceStatus("idle");
-      sessionActiveRef.current = false;
-      toast.error("재연결에 실패했습니다. 다시 시도해주세요.");
-    }
-  }, [conversation, overrides]);
+    console.log("[Voice] Interrupt: ending session");
+    await endSession();
+  }, [endSession]);
 
   // --- Reset permission ---
   const resetPermission = useCallback(() => {
