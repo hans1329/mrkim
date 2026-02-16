@@ -426,6 +426,13 @@ export function useVoiceAgent() {
         .replace(/\bsad\b/gi, "")
         .replace(/\s{2,}/g, " ")
         .trim();
+
+      // 에이전트 작별 인사 감지 → 종료 플래그 세팅 (isSpeaking false 시 세션 종료)
+      if (endingByKeywordRef.current || /(?:다음에.*불러|또.*찾아|언제든.*불러|좋은\s*하루|안녕히|수고하셨)/.test(cleanedText)) {
+        endingByKeywordRef.current = true;
+        console.log("[Conv] 🏁 Farewell message detected from agent:", cleanedText);
+      }
+
       const agentMsg: VoiceMessage = { role: "agent", text: cleanedText, timestamp: new Date(), visualization };
       messagesContextRef.current = [...messagesContextRef.current, agentMsg];
       setLastMessage(agentMsg);
