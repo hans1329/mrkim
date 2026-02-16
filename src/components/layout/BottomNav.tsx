@@ -32,8 +32,8 @@ export function BottomNav() {
   const imgSrc = avatarUrl || DEFAULT_ICON;
 
   return (
-    <div className="flex-shrink-0 flex items-center justify-center" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', paddingTop: '4px', background: 'transparent' }}>
-    <nav className="mx-2 bg-card shadow-[0_-2px_20px_rgba(0,0,0,0.08)] rounded-[40px] w-full">
+    <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center pointer-events-none" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', paddingTop: '4px' }}>
+    <nav className="mx-2 bg-card shadow-[0_-2px_20px_rgba(0,0,0,0.08)] rounded-[40px] w-full pointer-events-auto">
       <div className="relative flex h-16 items-center justify-around px-2 bg-black/0">
         {/* 좌측 메뉴 */}
         {leftNav.map((item) =>
