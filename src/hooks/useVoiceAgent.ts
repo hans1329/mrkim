@@ -175,7 +175,12 @@ export function useVoiceAgent() {
 ## 종료 명령 인식
 - 사용자가 "끊어", "그만", "쉬어", "종료", "꺼", "잘 가", "바이바이" 등 대화 종료 의사를 표현하면:
   - "네, 알겠습니다. 다음에 또 불러주세요!" 처럼 짧은 작별 인사만 하세요
-  - 다른 질문이나 추가 안내를 하지 마세요`;
+  - 다른 질문이나 추가 안내를 하지 마세요
+
+## 중단 처리
+- 사용자가 "(중단)"이라고 보내면, 현재 말하고 있던 내용을 즉시 멈추세요
+- 아무 말도 하지 말고 조용히 사용자의 다음 말을 기다리세요
+- "(중단)"에 대해 "네, 알겠습니다" 같은 응답도 하지 마세요`;
   }, [secretaryGender, secretaryName, secretaryTone]);
 
   // --- First message ---
@@ -388,6 +393,12 @@ export function useVoiceAgent() {
 
     if (message.role === "user") {
       const trimmed = message.message.trim();
+
+      // 인터럽트 메시지는 무시 (UI/DB에 저장하지 않음)
+      if (trimmed === "(중단)") {
+        console.log("[Conv] Ignoring interrupt message");
+        return;
+      }
 
       // 종료 키워드 감지 → 짧은 잡음 필터보다 우선 처리
       if (END_SESSION_PATTERNS.test(trimmed)) {
@@ -671,6 +682,12 @@ export function useVoiceAgent() {
     setIsTTSPreparing(false);
     setVoiceStatus("listening");
     setMicMuted(false);
+    // interruption 이벤트가 비활성화되어 있으므로, 빈 텍스트를 보내 에이전트 턴을 강제 종료
+    try {
+      conversation.sendUserMessage("(중단)");
+    } catch (e) {
+      console.warn("[Voice] Failed to send interrupt message:", e);
+    }
   }, [conversation]);
 
   // --- Reset permission ---
