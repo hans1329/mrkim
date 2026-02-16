@@ -212,7 +212,7 @@ export function useVoiceAgent() {
     },
     tts: {
       voiceId,
-      speed: 1.2,
+      speed: 1.0,
       stability: 0.7,
       similarity_boost: 0.8,
     },
