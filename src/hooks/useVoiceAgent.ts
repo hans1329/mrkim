@@ -170,7 +170,12 @@ export function useVoiceAgent() {
 ## 주의사항
 - 가짜 매출/지출 숫자는 절대 만들지 마세요
 - 불법 행위 조장, 혐오 표현만 정중히 거절
-- 음성 대화에 맞게 짧고 자연스럽게 응답합니다`;
+- 음성 대화에 맞게 짧고 자연스럽게 응답합니다
+
+## 종료 명령 인식
+- 사용자가 "끊어", "그만", "쉬어", "종료", "꺼", "잘 가", "바이바이" 등 대화 종료 의사를 표현하면:
+  - "네, 알겠습니다. 다음에 또 불러주세요!" 처럼 짧은 작별 인사만 하세요
+  - 다른 질문이나 추가 안내를 하지 마세요`;
   }, [secretaryGender, secretaryName, secretaryTone]);
 
   // --- First message ---
@@ -364,8 +369,9 @@ export function useVoiceAgent() {
   // 에이전트 응답이 뒤따르는 사용자 발화만 기록하기 위한 pending 메시지
   const pendingUserMsgRef = useRef<VoiceMessage | null>(null);
 
-  // --- 종료 키워드 감지 ---
-  const END_SESSION_PATTERNS = /^(쉬고\s*있어|그만|끊어|끊을게|종료|그만\s*할[게래]|이제\s*됐어|이제\s*그만|잘\s*가|안녕|다음에\s*봐|수고했어|고마워\s*끊어|바이바이|bye)/i;
+  // --- 종료 키워드 감지 (STT 오인식 변형 포함) ---
+  const END_SESSION_PATTERNS = /^(쉬고\s*있어|쉬어|그만|끊어|끊을게|끈을|끄[넌는]|꺼|종료|그만\s*할[게래]|이제\s*됐어|이제\s*그만|잘\s*가|안녕|다음에\s*봐|수고했어|고마워\s*끊어|바이바이|bye)/i;
+  // "끊어"→"끈을", "꺼"→"꺼", "쉬어"→"쉬어" 등 STT 오인식 대응
 
   const endSessionForKeywordRef = useRef<(() => Promise<void>) | null>(null);
 
