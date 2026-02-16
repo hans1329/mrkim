@@ -374,12 +374,13 @@ export function useVoiceAgent() {
   // "끊어"→"끈을", "꺼"→"꺼", "쉬어"→"쉬어" 등 STT 오인식 대응
 
   const endSessionForKeywordRef = useRef<(() => Promise<void>) | null>(null);
+  const endingByKeywordRef = useRef(false);
 
-  // This ref will be set after endSession is defined below
+  // 종료 키워드 감지 시 플래그만 세팅 (에이전트 작별 인사 완료 후 끊기)
   const scheduleEndByKeyword = useCallback((trimmed: string) => {
-    console.log("[Conv] 🛑 End keyword detected:", trimmed);
-    toast.info("음성 대화를 종료합니다.");
-    setTimeout(() => endSessionForKeywordRef.current?.(), 1500);
+    console.log("[Conv] 🛑 End keyword detected, waiting for farewell:", trimmed);
+    toast.info("작별 인사 후 종료합니다.");
+    endingByKeywordRef.current = true;
   }, []);
 
   const handleMessage = useCallback((message: { message: string; source: "user" | "ai"; role: "user" | "agent" }) => {
@@ -497,10 +498,17 @@ export function useVoiceAgent() {
       setVoiceStatus("speaking");
       setMicMuted(true);
     } else {
-      // isSpeaking이 false → 디바운스 후 listening 전환
+      // isSpeaking이 false → 디바운스 후 listening 전환 (또는 키워드 종료)
       if (!speakingDebounceRef.current) {
         speakingDebounceRef.current = setTimeout(() => {
           speakingDebounceRef.current = null;
+          // 종료 키워드 대기 중이면 작별 인사 완료로 간주 → 세션 종료
+          if (endingByKeywordRef.current) {
+            endingByKeywordRef.current = false;
+            console.log("[Conv] ✅ Farewell complete, ending session");
+            endSessionForKeywordRef.current?.();
+            return;
+          }
           setVoiceStatus("listening");
           setMicMuted(false);
         }, 600);
@@ -605,6 +613,7 @@ export function useVoiceAgent() {
     waitingFirstMessageRef.current = false;
     isConnectingRef.current = false;
     interruptedRef.current = false;
+    endingByKeywordRef.current = false;
 
     // 디바운스 타이머 정리
     if (speakingDebounceRef.current) {
