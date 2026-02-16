@@ -302,9 +302,17 @@ export function useVoiceAgent() {
           return "죄송합니다, 데이터를 조회하지 못했습니다. 잠시 후 다시 시도해주세요.";
         }
 
-        // 시각화 데이터 저장 (다음 agent_response에 연결)
+        // 시각화 데이터를 즉시 UI에 표시 (에이전트 응답 대기 없이)
         if (data.visualization) {
           pendingVisualizationRef.current = data.visualization;
+          // 도구 호출 완료 즉시 시각화를 lastMessage에 미리 표시
+          setLastMessage(prev => {
+            if (prev) {
+              return { ...prev, visualization: data.visualization };
+            }
+            // pending 사용자 메시지가 없으면 임시 에이전트 메시지로 시각화 표시
+            return { role: "agent", text: "", timestamp: new Date(), visualization: data.visualization };
+          });
         }
 
         // 마크다운/이모지 제거 + 숫자를 한글 독음으로 변환하여 음성 최적화
