@@ -6,7 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+const GEMINI_API_URL_THINKING = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+const GEMINI_API_URL_FAST = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 // ============ 유틸리티 ============
 
@@ -92,7 +93,8 @@ const SAFETY_SETTINGS = [
 
 const GENERATION_CONFIG = { temperature: 0.7, topK: 40, topP: 0.95, maxOutputTokens: 8192 };
 
-async function callGemini(apiKey: string, contents: any[]): Promise<any> {
+async function callGemini(apiKey: string, contents: any[], usefast = false): Promise<any> {
+  const apiUrl = usefast ? GEMINI_API_URL_FAST : GEMINI_API_URL_THINKING;
   const body: any = { contents, generationConfig: GENERATION_CONFIG, safetySettings: SAFETY_SETTINGS };
   const MAX_RETRIES = 3;
   let lastError: any = null;
@@ -103,10 +105,9 @@ async function callGemini(apiKey: string, contents: any[]): Promise<any> {
       console.log(`Retry attempt ${attempt}/${MAX_RETRIES}, waiting ${Math.round(delayMs)}ms...`);
       await new Promise(r => setTimeout(r, delayMs));
     }
-    // 레이트 리미터: 요청 간 최소 간격 보장
     await waitForSlot();
-    console.log(`Gemini API call (attempt ${attempt + 1}/${MAX_RETRIES}), slot acquired`);
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    console.log(`Gemini API call (attempt ${attempt + 1}/${MAX_RETRIES}), model: ${usefast ? "2.0-flash" : "2.5-flash"}, slot acquired`);
+    const response = await fetch(`${apiUrl}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -123,7 +124,6 @@ async function callGemini(apiKey: string, contents: any[]): Promise<any> {
         console.error("=== Gemini Quota EXHAUSTED (QuotaFailure confirmed) === No retry:", errorText);
         throw lastError;
       }
-      // Google 서버 측 일시적 용량 부족 (사용자 할당량과 무관) → 재시도
       console.warn(`Gemini 429 (server capacity), attempt ${attempt + 1}/${MAX_RETRIES}:`, parsed?.error?.message || errorText.substring(0, 200));
       continue;
     }
@@ -842,7 +842,7 @@ serve(async (req) => {
         { role: "user", parts: [{ text: systemPrompt }] },
         { role: "model", parts: [{ text: "네, 알겠습니다." }] },
         ...geminiMessages,
-      ]);
+      ], voiceMode);
       const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "무엇을 도와드릴까요?";
       console.log("Direct response (no data)");
       return new Response(JSON.stringify({ response, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -883,7 +883,7 @@ serve(async (req) => {
         { role: "user", parts: [{ text: dataPrompt }] },
         { role: "model", parts: [{ text: "네, 실제 데이터를 기반으로 정확하게 답변하겠습니다." }] },
         ...geminiMessages,
-      ]);
+      ], voiceMode);
       const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
       console.log(`${classified.dataSource} data response (1 API call)`);
       return new Response(JSON.stringify({ response, visualization, sources, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -896,7 +896,7 @@ serve(async (req) => {
       { role: "user", parts: [{ text: noDataPrompt }] },
       { role: "model", parts: [{ text: "네, 알겠습니다." }] },
       ...geminiMessages,
-    ]);
+    ], voiceMode);
     const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
     return new Response(JSON.stringify({ response, sources, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
