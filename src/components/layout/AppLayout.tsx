@@ -1,5 +1,6 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useIsInstalledApp } from "@/hooks/useIsInstalledApp";
 import { BottomNav } from "./BottomNav";
 import { Bell, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,16 @@ export function AppLayout({
   stickyHeader
 }: AppLayoutProps) {
   const navigate = useNavigate();
+  const isInstalledApp = useIsInstalledApp();
+
+  useEffect(() => {
+    if (isInstalledApp) {
+      document.body.classList.add("pwa-standalone");
+    } else {
+      document.body.classList.remove("pwa-standalone");
+    }
+    return () => document.body.classList.remove("pwa-standalone");
+  }, [isInstalledApp]);
 
   return (
     <div className="flex h-full overflow-hidden justify-center bg-card lg:gap-8 lg:px-8">
@@ -141,7 +152,7 @@ export function AppLayout({
 
 
           {/* Bottom Navigation - fixed 하단 고정 */}
-          <div className="fixed bottom-0 left-0 right-0 z-20 lg:static">
+          <div className="fixed bottom-0 left-0 right-0 z-20 lg:static" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <BottomNav />
           </div>
 

@@ -78,7 +78,6 @@
     overscroll-behavior: none;
     font-size: 18px;
     background: hsl(var(--card));
-    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   @media (min-width: 768px) {
@@ -100,6 +99,11 @@
   #root {
     height: 100%;
     overflow: hidden;
+  }
+
+  /* PWA standalone 모드: safe area를 레이아웃에서 직접 처리 */
+  body.pwa-standalone {
+    padding-top: env(safe-area-inset-top, 0px);
   }
 }
 
