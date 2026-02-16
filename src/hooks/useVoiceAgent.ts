@@ -201,7 +201,7 @@ export function useVoiceAgent() {
     },
     tts: {
       voiceId,
-      speed: 1.15,
+      speed: 1.25,
     },
   }), [firstMessage, systemPrompt, voiceId]);
 
