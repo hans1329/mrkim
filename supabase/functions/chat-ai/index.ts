@@ -106,7 +106,7 @@ async function callGemini(apiKey: string, contents: any[]): Promise<any> {
       await new Promise(r => setTimeout(r, delayMs));
     }
     await waitForSlot();
-    console.log(`Gemini API call (attempt ${attempt + 1}/${MAX_RETRIES}), model: ${usefast ? "2.0-flash" : "2.5-flash"}, slot acquired`);
+    console.log(`Gemini API call (attempt ${attempt + 1}/${MAX_RETRIES}), model: 2.5-flash, slot acquired`);
     const response = await fetch(`${apiUrl}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
