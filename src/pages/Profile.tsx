@@ -223,14 +223,22 @@ export default function Profile() {
   if (!profile) {
     return (
       <MainLayout title="내 프로필" showBackButton>
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">로그인이 필요합니다</p>
-            <Button className="mt-4" onClick={() => navigate("/login")}>
+        <div className="flex-1 flex items-center justify-center min-h-[60vh]">
+          <div className="w-full max-w-xs text-center space-y-4">
+            <img 
+              src="/images/icc-2.webp" 
+              alt="김비서" 
+              className="h-20 w-auto mx-auto opacity-90"
+              style={{ filter: "drop-shadow(2px 4px 4px rgba(0, 0, 0, 0.15))" }}
+            />
+            <p className="text-muted-foreground text-sm">
+              로그인 후 프로필을 확인할 수 있어요
+            </p>
+            <Button className="w-full rounded-full" onClick={() => navigate("/login")}>
               로그인하기
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </MainLayout>
     );
   }
