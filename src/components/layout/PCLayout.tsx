@@ -10,7 +10,8 @@ import {
   Settings,
   HelpCircle,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,7 +19,7 @@ import { NavLink } from "@/components/NavLink";
 import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
 import { AIChatPanel } from "@/components/chat/AIChatPanel";
 import { FloatingVoiceButton } from "@/components/voice/FloatingVoiceButton";
-const chaltteokImage = "/images/icc-4.webp";
+import { useProfileQuery } from "@/hooks/useProfileQuery";
 
 
 const navItems = [
@@ -38,6 +39,8 @@ interface PCLayoutProps {
 export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutProps) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const { profile } = useProfileQuery();
+  const userAvatarUrl = profile?.avatar_url;
 
   // PC에서는 body 스크롤 비활성화 (main만 스크롤)
   useEffect(() => {
@@ -60,14 +63,23 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
             className="cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => navigate("/profile")}
           >
-            <img 
-              src={chaltteokImage} 
-              alt="찰떡이" 
-              className={cn(
-                "object-contain transition-all",
+            {userAvatarUrl ? (
+              <img 
+                src={userAvatarUrl} 
+                alt="프로필" 
+                className={cn(
+                  "rounded-full object-cover transition-all",
+                  collapsed ? "h-10 w-10 mx-auto" : "h-12 w-12 mb-3"
+                )} 
+              />
+            ) : (
+              <div className={cn(
+                "rounded-full bg-white/20 flex items-center justify-center transition-all",
                 collapsed ? "h-10 w-10 mx-auto" : "h-12 w-12 mb-3"
-              )} 
-            />
+              )}>
+                <User className={cn("text-white/80", collapsed ? "h-5 w-5" : "h-6 w-6")} />
+              </div>
+            )}
             {!collapsed && (
               <>
                 <h1 className="text-lg font-bold text-white leading-tight">
