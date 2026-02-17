@@ -228,7 +228,7 @@ export default function Profile() {
             <img 
               src="/images/icc-2.webp" 
               alt="김비서" 
-              className="h-20 w-auto mx-auto opacity-90"
+              className="h-14 w-auto mx-auto opacity-90"
               style={{ filter: "drop-shadow(2px 4px 4px rgba(0, 0, 0, 0.15))" }}
             />
             <p className="text-muted-foreground text-sm">
