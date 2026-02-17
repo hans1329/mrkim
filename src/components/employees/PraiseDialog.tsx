@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Heart, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
@@ -32,7 +31,7 @@ export function PraiseDialog({
   employeePhone,
 }: PraiseDialogProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [comment, setComment] = useState("");
+  
 
   const { data: praises, isLoading } = useEmployeePraises(employeeName, employeePhone);
   const addPraise = useAddPraise();
@@ -44,8 +43,8 @@ export function PraiseDialog({
   };
 
   const handleSubmit = () => {
-    if (selectedTags.length === 0 && !comment.trim()) {
-      toast.error("태그 또는 코멘트를 입력해주세요");
+    if (selectedTags.length === 0) {
+      toast.error("태그를 선택해주세요");
       return;
     }
 
@@ -54,13 +53,12 @@ export function PraiseDialog({
         employee_name: employeeName,
         employee_phone: employeePhone,
         tags: selectedTags,
-        comment: comment.trim() || undefined,
+        comment: undefined,
       },
       {
         onSuccess: () => {
           toast.success("칭찬이 등록되었습니다 🎉");
           setSelectedTags([]);
-          setComment("");
           onOpenChange(false);
         },
         onError: (error) => {
@@ -137,16 +135,6 @@ export function PraiseDialog({
             </div>
           </div>
 
-          {/* 자유 코멘트 */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium">한마디 (선택)</p>
-            <Textarea
-              placeholder="칭찬 한마디를 남겨주세요..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={3}
-            />
-          </div>
         </div>
 
         <DialogFooter>
@@ -155,7 +143,7 @@ export function PraiseDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={addPraise.isPending || (selectedTags.length === 0 && !comment.trim())}
+            disabled={addPraise.isPending || selectedTags.length === 0}
           >
             <ThumbsUp className="mr-1.5 h-4 w-4" />
             {addPraise.isPending ? "등록 중..." : "칭찬 등록"}
