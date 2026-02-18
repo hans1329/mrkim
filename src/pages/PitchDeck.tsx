@@ -131,7 +131,7 @@ export default function PitchDeck() {
         
         <div className="relative z-10 max-w-4xl">
           <Badge className="mb-6 bg-white/10 text-white/90 border-white/20 hover:bg-white/20">
-            Series Seed · 2025
+            Series Seed · 2026
           </Badge>
           
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6">
