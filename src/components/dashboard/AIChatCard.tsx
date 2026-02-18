@@ -62,8 +62,24 @@ const getDueBriefingHour = (briefingTimes: string[]): number | null => {
   return null;
 };
 
-const BRIEFING_PROMPT =
-  "오늘 경영 현황을 간략하게 브리핑해줘. 매출과 지출 현황, 주요 체크포인트를 요약해서 알려줘.";
+// 관심 지표 ID → 한국어 레이블 매핑
+const METRIC_LABELS: Record<string, string> = {
+  sales: "매출/수익",
+  expenses: "지출/비용",
+  employees: "직원 현황",
+  funds: "자금 현황",
+  alerts: "긴급 알림",
+};
+
+// priority_metrics 순서를 반영한 동적 브리핑 프롬프트 생성
+const buildBriefingPrompt = (metrics: string[]): string => {
+  const validMetrics = metrics.filter(m => METRIC_LABELS[m]);
+  if (validMetrics.length === 0) {
+    return "오늘 경영 현황을 간략하게 브리핑해줘. 매출과 지출 현황, 주요 체크포인트를 요약해서 알려줘.";
+  }
+  const priorityList = validMetrics.map((m, i) => `${i + 1}순위: ${METRIC_LABELS[m]}`).join(", ");
+  return `오늘 경영 현황을 간략하게 브리핑해줘. 다음 우선순위 순서로 핵심만 요약해줘: ${priorityList}.`;
+};
 export function AIChatCard() {
   const navigate = useNavigate();
   const {
@@ -235,7 +251,7 @@ export function AIChatCard() {
               'Authorization': `Bearer ${session.access_token}`,
             },
             body: JSON.stringify({
-              messages: [{ role: 'user', content: BRIEFING_PROMPT }],
+              messages: [{ role: 'user', content: buildBriefingPrompt(profile?.priority_metrics || []) }],
               secretaryName: profile?.secretary_name || '김비서',
               secretaryTone: profile?.secretary_tone || 'polite',
               secretaryGender: profile?.secretary_gender || 'female',
