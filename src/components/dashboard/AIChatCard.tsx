@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Sparkles, Mic, RotateCcw, Clock, Settings, Volume2, VolumeX } from "lucide-react";
+import { Send, Sparkles, Mic, Clock, Settings, Volume2, VolumeX, X } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
 import { josa } from "@/lib/utils";
 import { useChat } from "@/contexts/ChatContext";
@@ -457,34 +457,21 @@ export function AIChatCard() {
 
                 {/* 브리핑 액션 */}
                 <div className="flex items-center justify-between px-3 pb-2.5">
-                  {isBriefingDisplay ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5 text-success hover:text-success hover:bg-success/10 rounded-full text-xs h-7 px-3"
-                      onClick={handleBriefingTTS}
-                    >
-                      {isPlayingTTS
-                        ? <><VolumeX className="h-3.5 w-3.5" />재생 중지</>
-                        : <><Volume2 className="h-3.5 w-3.5" />소리로 듣기</>}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5 text-primary hover:bg-primary/10 rounded-full text-xs h-7 px-3"
-                      onClick={openChat}
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />자세히 보기
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-primary hover:bg-primary/10 rounded-full text-xs h-7 px-3"
+                    onClick={openChat}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />비서와 대화하기
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={e => {
                     e.stopPropagation();
                     stopTTS();
                     setResponse(null);
                     setIsBriefingResponse(false);
                   }}>
-                    <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                    <X className="h-3.5 w-3.5 text-muted-foreground" />
                   </Button>
                 </div>
               </div>
@@ -501,21 +488,12 @@ export function AIChatCard() {
         </form>
 
         {/* Quick Prompts */}
-        <div className="flex flex-wrap gap-1 mb-3">
+        <div className="flex flex-wrap gap-1">
           {quickPrompts.map(prompt => <button key={prompt} type="button" className="text-xs px-1.5 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50" onClick={() => handleQuickAsk(prompt)} disabled={isTyping}>
               #{prompt}
             </button>)}
         </div>
-
-        {/* 하단: 비서와 대화하기 */}
-        <Button
-          onClick={openChat}
-          className="w-full gap-2 bg-primary/10 hover:bg-primary/20 text-primary border-0 rounded-full font-medium"
-          variant="ghost"
-        >
-          <Sparkles className="h-4 w-4" />
-          비서와 대화하기
-        </Button>
       </CardContent>
     </Card>;
 }
+
