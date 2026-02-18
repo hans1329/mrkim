@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Sparkles, Mic, Clock, Settings, Volume2, VolumeX, X } from "lucide-react";
+import { Send, Sparkles, Mic, Clock, Settings, Volume2, VolumeX, X, Loader2 } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
 import { josa } from "@/lib/utils";
 import { useChat } from "@/contexts/ChatContext";
@@ -98,6 +98,7 @@ export function AIChatCard() {
   const [isTyping, setIsTyping] = useState(false);
   const [isBriefingResponse, setIsBriefingResponse] = useState(false);
   const [isPlayingTTS, setIsPlayingTTS] = useState(false);
+  const [isTTSLoading, setIsTTSLoading] = useState(false);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const ttsAbortRef = useRef<AbortController | null>(null);
   const [realStats, setRealStats] = useState<RealTimeStats>({
@@ -331,6 +332,7 @@ export function AIChatCard() {
       ttsAudioRef.current = null;
     }
     setIsPlayingTTS(false);
+    setIsTTSLoading(false);
   };
 
   const handleBriefingTTS = async (e: React.MouseEvent) => {
@@ -346,7 +348,7 @@ export function AIChatCard() {
     ttsAbortRef.current = abort;
 
     try {
-      setIsPlayingTTS(true);
+      setIsTTSLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session || abort.signal.aborted) return;
 
@@ -384,14 +386,20 @@ export function AIChatCard() {
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       ttsAudioRef.current = audio;
+      audio.onplay = () => {
+        setIsTTSLoading(false);
+        setIsPlayingTTS(true);
+      };
       audio.onended = () => {
         setIsPlayingTTS(false);
+        setIsTTSLoading(false);
         ttsAudioRef.current = null;
         ttsAbortRef.current = null;
         URL.revokeObjectURL(url);
       };
       audio.onerror = () => {
         setIsPlayingTTS(false);
+        setIsTTSLoading(false);
         ttsAudioRef.current = null;
         ttsAbortRef.current = null;
       };
@@ -400,10 +408,21 @@ export function AIChatCard() {
       if (err?.name === "AbortError") return;
       console.error("TTS playback failed:", err);
       setIsPlayingTTS(false);
+      setIsTTSLoading(false);
     }
   };
 
-  const displayMessage = response;
+  // 화면 표시용 마크다운 제거
+  const displayMessage = response
+    ? response
+        .replace(/\*\*(.*?)\*\*/g, "$1")
+        .replace(/\*(.*?)\*/g, "$1")
+        .replace(/^#+\s/gm, "")
+        .replace(/^\d+\.\s+/gm, "")
+        .replace(/^[-•]\s+/gm, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim()
+    : null;
   const isBriefingDisplay = isBriefingResponse && !!response;
   return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/90 backdrop-blur-md border-border/50" : "bg-card border-border"}`}>
       <CardContent className="p-4">
@@ -445,9 +464,11 @@ export function AIChatCard() {
                 {isBriefingDisplay && (
                   <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-success/15">
                     <div className="flex items-center gap-2">
-                      {isPlayingTTS
-                        ? <Volume2 className="h-3.5 w-3.5 text-success animate-pulse shrink-0" />
-                        : <Clock className="h-3.5 w-3.5 text-success shrink-0" />}
+                      {isTTSLoading && !isPlayingTTS
+                        ? <Loader2 className="h-3.5 w-3.5 text-success animate-spin shrink-0" />
+                        : isPlayingTTS
+                          ? <Volume2 className="h-3.5 w-3.5 text-success animate-pulse shrink-0" />
+                          : <Clock className="h-3.5 w-3.5 text-success shrink-0" />}
                       <span className="text-xs font-bold text-success tracking-wide">오늘의 경영 브리핑</span>
                     </div>
                     <Button
@@ -455,10 +476,13 @@ export function AIChatCard() {
                       size="sm"
                       className="gap-1 text-success hover:text-success hover:bg-success/10 rounded-full text-xs h-7 px-2.5"
                       onClick={handleBriefingTTS}
+                      disabled={isTTSLoading && !isPlayingTTS}
                     >
-                      {isPlayingTTS
-                        ? <><VolumeX className="h-3.5 w-3.5" />중지</>
-                        : <><Volume2 className="h-3.5 w-3.5" />듣기</>}
+                      {isTTSLoading && !isPlayingTTS
+                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />연결 중...</>
+                        : isPlayingTTS
+                          ? <><VolumeX className="h-3.5 w-3.5" />중지</>
+                          : <><Volume2 className="h-3.5 w-3.5" />듣기</>}
                     </Button>
                   </div>
                 )}
