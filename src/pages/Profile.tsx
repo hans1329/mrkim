@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
+import { useQueryClient } from "@tanstack/react-query";
 import { resizeAndCompressImage } from "@/lib/imageUtils";
 import { getRandomAvatarUrl } from "@/lib/utils";
 import {
@@ -36,6 +37,7 @@ import { ConnectorStatusCard } from "@/components/profile/ConnectorStatusCard";
 export default function Profile() {
   const navigate = useNavigate();
   const { profile, loading, updating, updateProfile, updateSecretaryPhone } = useProfile();
+  const queryClient = useQueryClient();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
@@ -108,6 +110,7 @@ export default function Profile() {
         .getPublicUrl(fileName);
 
       await updateProfile({ avatar_url: publicUrl });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast.success("프로필 사진이 변경되었습니다");
     } catch (error) {
       console.error("Avatar upload error:", error);
@@ -128,6 +131,7 @@ export default function Profile() {
       const oldPath = profile.avatar_url.split("/").slice(-2).join("/");
       await supabase.storage.from("user-avatars").remove([oldPath]);
       await updateProfile({ avatar_url: null });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast.success("프로필 사진이 삭제되었습니다");
     } catch (error) {
       console.error("Avatar remove error:", error);
