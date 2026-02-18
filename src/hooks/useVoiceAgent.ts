@@ -41,6 +41,8 @@ export function useVoiceAgent() {
   const pendingVisualizationRef = useRef<VisualizationData | null>(null);
   const isConnectingRef = useRef(false);
   const interruptedRef = useRef(false);
+  // conversation 참조를 콜백에서 사용하기 위한 ref (선언 순서 우회)
+  const conversationRef = useRef<{ setVolume: (opts: { volume: number }) => void } | null>(null);
 
   const secretaryName = profile?.secretary_name || "김비서";
   const secretaryTone = profile?.secretary_tone || "polite";
@@ -354,6 +356,17 @@ export function useVoiceAgent() {
     waitingFirstMessageRef.current = true;
     setVoiceStatus("speaking");
     sessionActiveRef.current = true;
+
+    // 콜드스타트 인사말 깨짐 방지:
+    // 연결 직후 볼륨을 0에서 시작해 점진적으로 fade-in
+    // (WebRTC 재연결 직후 오디오 컨텍스트가 불안정할 때 깨짐 현상 방지)
+    try { conversationRef.current?.setVolume({ volume: 0 }); } catch (_) {}
+    setTimeout(() => {
+      try { conversationRef.current?.setVolume({ volume: 0.3 }); } catch (_) {}
+    }, 150);
+    setTimeout(() => {
+      try { conversationRef.current?.setVolume({ volume: volumeRef.current }); } catch (_) {}
+    }, 350);
   }, []);
 
   const handleDisconnect = useCallback((details: any) => {
@@ -472,7 +485,9 @@ export function useVoiceAgent() {
     onError: handleError,
   });
 
-  // --- Sync voiceStatus from conversation state (디바운스 적용) ---
+  // conversationRef 동기화 (handleConnect에서 선언 순서 우회용)
+  conversationRef.current = conversation;
+
   const speakingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
