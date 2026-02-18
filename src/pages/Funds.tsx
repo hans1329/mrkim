@@ -219,14 +219,25 @@ function AutoTransferDialog({
   };
 
   const handleSubmit = async () => {
-    if (!form.name || !form.recipient) return;
-    if (form.transfer_type === "fixed" && !form.amount) return;
-    if (form.transfer_type === "percentage" && !form.amount_percentage) return;
+    console.log("[AutoTransferDialog] handleSubmit called, form:", JSON.stringify(form));
+    if (!form.name || !form.recipient) {
+      console.log("[AutoTransferDialog] validation failed: name or recipient missing");
+      return;
+    }
+    if (form.transfer_type === "fixed" && !form.amount) {
+      console.log("[AutoTransferDialog] validation failed: amount missing for fixed type");
+      return;
+    }
+    if (form.transfer_type === "percentage" && !form.amount_percentage) {
+      console.log("[AutoTransferDialog] validation failed: amount_percentage missing");
+      return;
+    }
+    console.log("[AutoTransferDialog] validation passed, calling onSubmit...");
     try {
       await onSubmit(form);
       setOpen(false);
-    } catch {
-      // 에러는 useFunds onError에서 처리
+    } catch (e) {
+      console.log("[AutoTransferDialog] onSubmit error:", e);
     }
   };
 
