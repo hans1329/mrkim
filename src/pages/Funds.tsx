@@ -115,6 +115,91 @@ const emptyTransfer: NewAutoTransfer = {
   description: "",
 };
 
+function DepositDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  isPending,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onSubmit: (data: { type: DepositType; name: string; target_amount?: number }) => void;
+  isPending: boolean;
+}) {
+  const [form, setForm] = useState({ type: "emergency" as DepositType, name: "", targetAmount: "" });
+
+  const handleOpen = (v: boolean) => {
+    if (v) setForm({ type: "emergency", name: "", targetAmount: "" });
+    onOpenChange(v);
+  };
+
+  const handleSubmit = () => {
+    if (!form.name) return;
+    onSubmit({
+      type: form.type,
+      name: form.name,
+      target_amount: form.targetAmount ? parseInt(form.targetAmount) : undefined,
+    });
+    handleOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Plus className="mr-1 h-4 w-4" />
+          추가
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>새 예치금 설정</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>유형</Label>
+            <Select
+              value={form.type}
+              onValueChange={(value: DepositType) => setForm({ ...form, type: value })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(depositTypeLabels) as DepositType[]).map((type) => (
+                  <SelectItem key={type} value={type}>{depositTypeLabels[type]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>이름</Label>
+            <Input
+              placeholder="예: 1분기 부가세"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>목표 금액</Label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder="0"
+              value={form.targetAmount ? parseInt(form.targetAmount).toLocaleString() : ""}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^\d]/g, "");
+                setForm({ ...form, targetAmount: value });
+              }}
+            />
+          </div>
+          <Button onClick={handleSubmit} className="w-full" disabled={isPending}>
+            {isPending ? "추가 중..." : "추가하기"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function AutoTransferDialog({
   open,
   onOpenChange,
@@ -429,23 +514,6 @@ export default function Funds() {
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
 
-  const [newDeposit, setNewDeposit] = useState({
-    type: "emergency" as DepositType,
-    name: "",
-    targetAmount: "",
-  });
-
-  const handleAddDeposit = async () => {
-    if (!newDeposit.name) return;
-    await addDeposit.mutateAsync({
-      type: newDeposit.type,
-      name: newDeposit.name,
-      target_amount: newDeposit.targetAmount ? parseInt(newDeposit.targetAmount) : undefined,
-    });
-    setNewDeposit({ type: "emergency", name: "", targetAmount: "" });
-    setIsDepositDialogOpen(false);
-  };
-
   const handleAddTransfer = async (data: NewAutoTransfer) => {
     await addTransfer.mutateAsync(data);
   };
@@ -460,61 +528,15 @@ export default function Funds() {
     <>
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">예치금 현황</h2>
-        <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Plus className="mr-1 h-4 w-4" />
-              추가
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>새 예치금 설정</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>유형</Label>
-                <Select
-                  value={newDeposit.type}
-                  onValueChange={(value: DepositType) =>
-                    setNewDeposit({ ...newDeposit, type: value })
-                  }
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(depositTypeLabels) as DepositType[]).map((type) => (
-                      <SelectItem key={type} value={type}>{depositTypeLabels[type]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>이름</Label>
-                <Input
-                  placeholder="예: 1분기 부가세"
-                  value={newDeposit.name}
-                  onChange={(e) => setNewDeposit({ ...newDeposit, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>목표 금액</Label>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="0"
-                  value={newDeposit.targetAmount ? parseInt(newDeposit.targetAmount).toLocaleString() : ""}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[^\d]/g, "");
-                    setNewDeposit({ ...newDeposit, targetAmount: value });
-                  }}
-                />
-              </div>
-              <Button onClick={handleAddDeposit} className="w-full" disabled={addDeposit.isPending}>
-                {addDeposit.isPending ? "추가 중..." : "추가하기"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <DepositDialog
+          open={isDepositDialogOpen}
+          onOpenChange={setIsDepositDialogOpen}
+          onSubmit={async (data) => {
+            await addDeposit.mutateAsync(data);
+            setIsDepositDialogOpen(false);
+          }}
+          isPending={addDeposit.isPending}
+        />
       </div>
 
       {deposits.length === 0 ? (
