@@ -42,8 +42,8 @@ serve(async (req) => {
       selectedVoiceId = genderVoices[tone as keyof typeof genderVoices] || genderVoices.default;
     }
 
-    // 모델 선택: 짧은 텍스트나 미리듣기는 터보 모델 사용
-    const selectedModel = model_id || (text.length <= 50 ? "eleven_turbo_v2_5" : "eleven_multilingual_v2");
+    // 브리핑처럼 긴 텍스트도 turbo 모델로 고정 (multilingual_v2보다 2~3배 빠름)
+    const selectedModel = model_id || "eleven_turbo_v2_5";
 
     console.log("Generating TTS:", { textLength: text.length, voiceId: selectedVoiceId, model: selectedModel });
 

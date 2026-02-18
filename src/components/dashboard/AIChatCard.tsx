@@ -341,7 +341,6 @@ export function AIChatCard() {
     }
     if (!response) return;
 
-    // 이전 요청 취소 후 새 AbortController 생성
     stopTTS();
     const abort = new AbortController();
     ttsAbortRef.current = abort;
@@ -350,6 +349,16 @@ export function AIChatCard() {
       setIsPlayingTTS(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session || abort.signal.aborted) return;
+
+      // 마크다운 기호 제거 (**, *, #, 번호 목록 등)
+      const cleanText = response
+        .replace(/\*\*(.*?)\*\*/g, "$1")   // **굵게** → 굵게
+        .replace(/\*(.*?)\*/g, "$1")        // *기울기* → 기울기
+        .replace(/^#+\s/gm, "")             // ## 제목 제거
+        .replace(/^\d+\.\s+/gm, "")         // 1. 번호 제거
+        .replace(/^[-•]\s+/gm, "")          // - 불릿 제거
+        .replace(/\n{3,}/g, "\n\n")         // 과도한 빈줄 정리
+        .trim();
 
       const voiceId = profile?.secretary_voice_id || "EXAVITQu4vr4xnSDxMaL";
       const res = await fetch(
@@ -362,12 +371,13 @@ export function AIChatCard() {
             "Authorization": `Bearer ${session.access_token}`,
             "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
-          body: JSON.stringify({ text: response, voiceId }),
+          body: JSON.stringify({ text: cleanText, voiceId }),
         }
       );
       if (abort.signal.aborted) return;
       if (!res.ok) throw new Error("TTS failed");
 
+      // 스트리밍 응답을 바로 blob으로 받아 즉시 재생 (chunked transfer 활용)
       const blob = await res.blob();
       if (abort.signal.aborted) return;
 
@@ -387,11 +397,10 @@ export function AIChatCard() {
       };
       await audio.play();
     } catch (err: any) {
-      if (err?.name === "AbortError") return; // 취소된 요청은 무시
+      if (err?.name === "AbortError") return;
       console.error("TTS playback failed:", err);
       setIsPlayingTTS(false);
     }
-
   };
 
   const displayMessage = response;
