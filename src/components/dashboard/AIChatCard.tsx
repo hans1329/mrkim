@@ -40,39 +40,26 @@ const getIncompleteSettingsMessages = (profile: any, secretaryName: string) => {
 };
 
 // 브리핑 슬롯 키 생성 (localStorage 중복 방지용)
-const getBriefingSlotKey = (userId: string, frequency: string): string => {
-  const now = new Date();
-  const dateStr = now.toISOString().split('T')[0];
-  if (frequency === 'weekly') {
-    const day = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-    return `briefing_${userId}_weekly_${monday.toISOString().split('T')[0]}`;
-  }
-  if (frequency === 'realtime') {
-    const hour = now.getHours();
-    let slot = 0;
-    if (hour >= 22) slot = 22;
-    else if (hour >= 18) slot = 18;
-    else if (hour >= 12) slot = 12;
-    else if (hour >= 9) slot = 9;
-    if (!slot) return '';
-    return `briefing_${userId}_realtime_${dateStr}_${slot}`;
-  }
-  return `briefing_${userId}_daily_${dateStr}`;
+const getBriefingSlotKey = (userId: string, hour: number): string => {
+  const dateStr = new Date().toISOString().split('T')[0];
+  return `briefing_${userId}_${dateStr}_${hour}`;
 };
 
-// 브리핑 시간 도래 여부 확인 (빈도 설정 반영)
-const isBriefingDue = (frequency: string): boolean => {
+// 현재 시각이 선택된 시간대 중 어느 하나의 ±30분 이내인지 확인
+const getDueBriefingHour = (briefingTimes: string[]): number | null => {
   const now = new Date();
   const hour = now.getHours();
   const minute = now.getMinutes();
-  const inWindow = (h: number) =>
-    (hour === h && minute <= 30) || (hour === h - 1 && minute >= 30);
-  if (frequency === 'realtime') return [9, 12, 18, 22].some(inWindow);
-  if (frequency === 'daily') return inWindow(9);
-  if (frequency === 'weekly') return now.getDay() === 1 && inWindow(9);
-  return false;
+
+  for (const t of briefingTimes) {
+    const h = parseInt(t, 10);
+    // h시 정각 기준으로 h-1:30 ~ h:30 범위
+    const inWindow =
+      (hour === h && minute <= 30) ||
+      (hour === h - 1 && minute >= 30);
+    if (inWindow) return h;
+  }
+  return null;
 };
 
 const BRIEFING_PROMPT =
@@ -213,20 +200,29 @@ export function AIChatCard() {
     return defaultPlaceholders[Math.floor(Math.random() * defaultPlaceholders.length)];
   }, [profile, secretaryName, hasConversationHistory]);
 
-  // AI 브리핑 자동 트리거 (briefing_frequency 설정 반영)
+  // AI 브리핑 자동 트리거 (briefing_times 배열 기반)
   useEffect(() => {
     if (profileLoading || realStats.isLoading || hasConversationHistory === null) return;
     if (response || hasConversationHistory === false) return;
 
-    const frequency = profile?.briefing_frequency || 'daily';
-    if (!isBriefingDue(frequency)) return;
+    // briefing_times 배열 (새 컬럼) 우선, 없으면 기존 frequency로 변환
+    const rawTimes = (profile as any)?.briefing_times;
+    const briefingTimes: string[] = Array.isArray(rawTimes) && rawTimes.length > 0
+      ? rawTimes.map(String)
+      : (() => {
+          const freq = profile?.briefing_frequency || 'daily';
+          return freq === 'realtime' ? ["9","12","18","22"] : ["9"];
+        })();
+
+    const dueHour = getDueBriefingHour(briefingTimes);
+    if (dueHour === null) return;
 
     const trigger = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
-        const slotKey = getBriefingSlotKey(session.user.id, frequency);
+        const slotKey = getBriefingSlotKey(session.user.id, dueHour);
         if (!slotKey || localStorage.getItem(slotKey)) return;
 
         setIsTyping(true);
@@ -250,7 +246,6 @@ export function AIChatCard() {
         if (!res.ok) return;
         const data = await res.json();
         if (data.response) {
-          // chat_messages에 assistant 메시지로 저장 (쿼터 미차감)
           await supabase.from('chat_messages').insert({
             user_id: session.user.id,
             role: 'assistant',

@@ -56,11 +56,12 @@ const speakingStyles = [
   { id: "cute", label: "귀여운체", example: "오늘 매출 234만원이에용~ 🎉" },
 ];
 
-// briefing_frequency는 DB에서 'realtime', 'daily', 'weekly'만 허용
-const briefingFrequencyOptions = [
-  { id: "realtime", label: "실시간", description: "중요 변동 시 즉시 알림" },
-  { id: "daily", label: "매일", description: "하루 한 번 정기 브리핑" },
-  { id: "weekly", label: "매주", description: "일주일 한 번 요약 브리핑" },
+// 브리핑 시간대 옵션 (하루 중 원하는 시간대 복수 선택)
+const briefingTimeOptions = [
+  { id: "9", label: "오전 9시", description: "오전 업무 시작 전 브리핑" },
+  { id: "12", label: "점심 12시", description: "점심시간 경영 현황 체크" },
+  { id: "18", label: "저녁 6시", description: "하루 마감 전 매출 확인" },
+  { id: "22", label: "밤 10시", description: "하루 최종 결산 브리핑" },
 ];
 
 const interestMetrics = [
@@ -79,7 +80,7 @@ export default function SecretarySettings() {
   const { profile, loading, updateProfileCache } = useProfileQuery();
   
   const [speakingStyle, setSpeakingStyle] = useState("friendly");
-  const [briefingFrequency, setBriefingFrequency] = useState("daily");
+  const [briefingTimes, setBriefingTimes] = useState<string[]>(["9"]);
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(["sales", "expenses", "alerts"]);
   const [secretaryName, setSecretaryName] = useState("김비서");
   const [secretaryGender, setSecretaryGender] = useState("female");
@@ -97,7 +98,14 @@ export default function SecretarySettings() {
       setSecretaryName(profile.secretary_name || "김비서");
       setSecretaryGender(profile.secretary_gender || "female");
       setSpeakingStyle(profile.secretary_tone || "friendly");
-      setBriefingFrequency(profile.briefing_frequency || "daily");
+      // briefing_times: 새 컬럼 우선, 없으면 기존 frequency에서 변환
+      const rawTimes = (profile as any).briefing_times;
+      if (Array.isArray(rawTimes) && rawTimes.length > 0) {
+        setBriefingTimes(rawTimes.map(String));
+      } else {
+        const freq = profile.briefing_frequency || "daily";
+        setBriefingTimes(freq === "realtime" ? ["9","12","18","22"] : ["9"]);
+      }
       setSecretaryAvatarUrl(profile.secretary_avatar_url || null);
       setSecretaryVoiceId(profile.secretary_voice_id || null);
       if (profile.priority_metrics && Array.isArray(profile.priority_metrics)) {
@@ -180,41 +188,31 @@ export default function SecretarySettings() {
   };
 
   const handleSave = async () => {
-    console.log("Saving settings:", {
+    const voiceId = secretaryGender === "male"
+      ? (secretaryVoiceId || maleVoiceOptions[0].id)
+      : (secretaryVoiceId || femaleVoiceOptions[0].id);
+
+    const updates = {
       secretary_name: secretaryName,
       secretary_gender: secretaryGender,
       secretary_tone: speakingStyle,
-      briefing_frequency: briefingFrequency,
       priority_metrics: selectedMetrics,
       secretary_avatar_url: secretaryAvatarUrl,
-      secretary_voice_id: secretaryGender === "male" ? (secretaryVoiceId || maleVoiceOptions[0].id) : (secretaryVoiceId || femaleVoiceOptions[0].id),
-    });
+      secretary_voice_id: voiceId,
+    };
     
-    const success = await updateProfile({
-      secretary_name: secretaryName,
-      secretary_gender: secretaryGender,
-      secretary_tone: speakingStyle,
-      briefing_frequency: briefingFrequency,
-      priority_metrics: selectedMetrics,
-      secretary_avatar_url: secretaryAvatarUrl,
-      secretary_voice_id: secretaryGender === "male" ? (secretaryVoiceId || maleVoiceOptions[0].id) : (secretaryVoiceId || femaleVoiceOptions[0].id),
-    }, false);
+    const success = await updateProfile(updates, false);
     
-    console.log("Save result:", success);
-    
+    // briefing_times는 직접 supabase 업데이트 (useProfile의 Profile 타입에 없는 필드)
     if (success) {
-      // React Query 캐시도 즉시 갱신 (페이지 이동 시 플로팅 버튼 깜빡임 방지)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("profiles").update({ briefing_times: briefingTimes } as any).eq("user_id", user.id);
+      }
       updateProfileCache({
-        secretary_name: secretaryName,
-        secretary_gender: secretaryGender,
-        secretary_tone: speakingStyle,
-        briefing_frequency: briefingFrequency,
-        priority_metrics: selectedMetrics,
-        secretary_avatar_url: secretaryAvatarUrl,
-        secretary_voice_id: secretaryGender === "male" ? (secretaryVoiceId || maleVoiceOptions[0].id) : (secretaryVoiceId || femaleVoiceOptions[0].id),
+        ...updates,
       });
       toast.success(`${secretaryName} 설정이 저장되었습니다`);
-      // 채팅에서 왔으면 채팅 열린 상태로 돌아가기
       if (fromChat) {
         navigate("/?openChat=true");
       } else {
@@ -517,41 +515,49 @@ export default function SecretarySettings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-primary" />
-              브리핑 설정
+              브리핑 시간 설정
             </CardTitle>
-            <CardDescription>정기 브리핑 시간과 빈도를 설정하세요</CardDescription>
+            <CardDescription>하루 중 브리핑을 받을 시간대를 선택하세요 (복수 선택 가능)</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              브리핑 빈도를 설정하세요
-            </p>
-            <div className="space-y-2">
-              {briefingFrequencyOptions.map((option) => (
+          <CardContent className="space-y-2">
+            {briefingTimeOptions.map((option) => {
+              const isSelected = briefingTimes.includes(option.id);
+              return (
                 <div
                   key={option.id}
                   className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
-                    briefingFrequency === option.id 
-                      ? "border-primary bg-primary/5" 
+                    isSelected
+                      ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/50"
                   }`}
-                  onClick={() => setBriefingFrequency(option.id)}
+                  onClick={() => {
+                    setBriefingTimes(prev =>
+                      prev.includes(option.id)
+                        ? prev.filter(t => t !== option.id)
+                        : [...prev, option.id]
+                    );
+                  }}
                 >
                   <div>
-                    <span className={briefingFrequency === option.id ? "font-medium" : "text-muted-foreground"}>
+                    <span className={isSelected ? "font-medium" : "text-muted-foreground"}>
                       {option.label}
                     </span>
                     <p className="text-xs text-muted-foreground">{option.description}</p>
                   </div>
-                  {briefingFrequency === option.id && (
+                  {isSelected && (
                     <Badge variant="secondary" className="bg-primary/10 text-primary">
                       선택됨
                     </Badge>
                   )}
                 </div>
-              ))}
-            </div>
+              );
+            })}
+            {briefingTimes.length === 0 && (
+              <p className="text-xs text-destructive mt-1">최소 하나의 시간대를 선택해주세요</p>
+            )}
           </CardContent>
         </Card>
+
 
         {/* 관심 지표 설정 */}
         <Card>

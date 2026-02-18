@@ -610,6 +610,7 @@ export type Database = {
           account_connected_at: string | null
           avatar_url: string | null
           briefing_frequency: string | null
+          briefing_times: Json | null
           business_name: string | null
           business_registration_number: string | null
           business_type: string | null
@@ -638,6 +639,7 @@ export type Database = {
           account_connected_at?: string | null
           avatar_url?: string | null
           briefing_frequency?: string | null
+          briefing_times?: Json | null
           business_name?: string | null
           business_registration_number?: string | null
           business_type?: string | null
@@ -666,6 +668,7 @@ export type Database = {
           account_connected_at?: string | null
           avatar_url?: string | null
           briefing_frequency?: string | null
+          briefing_times?: Json | null
           business_name?: string | null
           business_registration_number?: string | null
           business_type?: string | null
