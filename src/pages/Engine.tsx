@@ -26,7 +26,11 @@ import {
   Wallet,
   PiggyBank,
   ArrowLeftRight,
-  Share2
+  Share2,
+  CircleDot,
+  CheckCircle2,
+  Clock,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -1271,6 +1275,156 @@ export default function Engine() {
             </CardContent>
           </Card>
 
+
+          {/* API 통합 미구현 현황 */}
+          <Card className="border-2 border-dashed border-muted">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CircleDot className="h-5 w-5 text-muted-foreground" />
+                API 통합 미구현 현황
+                <Badge variant="outline" className="text-xs ml-auto">2026-02-18</Badge>
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">구현 완료 시 업데이트됩니다.</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+
+              {/* 코드에프 */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-amber-500" />
+                  <h3 className="font-semibold">코드에프 (Codef)</h3>
+                  <Badge className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">베타 운영 중</Badge>
+                </div>
+                <div className="space-y-2 pl-4">
+                  {[
+                    {
+                      label: "정식 환경 전환",
+                      desc: "development.codef.io → api.codef.io (서비스 출시 시 계약 필요)",
+                    },
+                    {
+                      label: "카드 매출 조회",
+                      desc: "현재는 카드 지출만 수집. 여신금융협회 API를 통한 POS 매출 데이터 별도 연동 필요",
+                    },
+                    {
+                      label: "홈택스 현금영수증",
+                      desc: "현금영수증 발행·수취 내역 endpoint 미구현 (/v1/kr/public/nt/cash-receipt/...)",
+                    },
+                    {
+                      label: "홈택스 공동인증서 로그인",
+                      desc: "현재 간편인증(loginType: 0)만 지원. 공동인증서(loginType: 5) 방식 추가 필요",
+                    },
+                    {
+                      label: "실시간 잔액 조회 API",
+                      desc: "계좌 잔액을 거래내역에서 추정 중. 별도 잔액 조회 endpoint 호출로 정확도 개선 필요",
+                    },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                      <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{item.label}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                      </div>
+                      <Badge variant="outline" className="text-xs shrink-0">미구현</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* 하이픈 */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-purple-500" />
+                  <h3 className="font-semibold">하이픈 (Hyphen)</h3>
+                  <Badge className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/20">구조만 준비됨</Badge>
+                </div>
+                <div className="space-y-2 pl-4">
+                  {[
+                    {
+                      label: "API 키 발급 및 시크릿 등록",
+                      desc: "HYPHEN_CLIENT_ID, HYPHEN_CLIENT_SECRET 미등록. 하이픈 계약 후 Supabase Secrets에 추가 필요",
+                    },
+                    {
+                      label: "hyphen-transfer Edge Function",
+                      desc: "자동이체 실행 로직 없음. auto_transfers 테이블에 규칙은 저장되나 실제 이체 미실행",
+                    },
+                    {
+                      label: "전자금융거래 동의 UI (ARS/OTP)",
+                      desc: "이체 실행 전 connected_accounts.hyphen_consent_at 기록 필요. 동의 플로우 UI 미구현",
+                    },
+                    {
+                      label: "hyphen-payroll Edge Function",
+                      desc: "employees.monthly_salary 데이터와 하이픈 급여 API 연결 없음",
+                    },
+                    {
+                      label: "이체 실행 트리거",
+                      desc: "schedule_type(monthly/weekly/on_income)에 따른 실행 로직 없음. pg_cron 또는 수동 트리거 필요",
+                    },
+                    {
+                      label: "auto_transfer_logs 테이블",
+                      desc: "이체 실행 이력 기록 테이블 미생성. 성공/실패/금액/실행시간 로그 추적 불가",
+                    },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                      <AlertCircle className="h-4 w-4 text-purple-500 mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{item.label}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                      </div>
+                      <Badge variant="outline" className="text-xs shrink-0">미구현</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* 트윌로 */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-destructive" />
+                  <h3 className="font-semibold">트윌로 (Twilio)</h3>
+                  <Badge className="text-xs bg-destructive/10 text-destructive border-destructive/20">미착수</Badge>
+                </div>
+                <div className="space-y-2 pl-4">
+                  {[
+                    {
+                      label: "API 키 발급 및 시크릿 등록",
+                      desc: "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER 미등록",
+                    },
+                    {
+                      label: "twilio-call Edge Function",
+                      desc: "AI 비서가 전화로 알림·브리핑을 발신하는 핵심 기능. TwiML로 음성 합성 후 발신",
+                    },
+                    {
+                      label: "secretary_phone 인증 플로우",
+                      desc: "profiles.secretary_phone_verified가 false인 상태. 실제 전화번호 OTP 인증 후 전환 필요",
+                    },
+                    {
+                      label: "전화 발신 스케줄러",
+                      desc: "briefing_frequency/briefing_times 설정값 기반으로 pg_cron이 twilio-call을 트리거하는 구조 미완성",
+                    },
+                    {
+                      label: "발신 이력 로깅",
+                      desc: "call_logs 테이블 없음. 발신 결과(연결/부재/실패)·통화 시간·TwiML 내용 기록 미구현",
+                    },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                      <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{item.label}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                      </div>
+                      <Badge variant="outline" className="text-xs shrink-0">미구현</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </CardContent>
+          </Card>
+
           <p className="text-center text-xs text-muted-foreground pb-8">
             © 2026 김비서 · 내부 문서
           </p>
@@ -1279,3 +1433,4 @@ export default function Engine() {
     </div>
   );
 }
+
