@@ -101,7 +101,6 @@ const statusConfig = {
   completed: { label: "완료", icon: CheckCircle, color: "text-success" },
 };
 
-// 빈 자동이체 폼 초기값
 const emptyTransfer: NewAutoTransfer = {
   name: "",
   transfer_type: "fixed",
@@ -123,7 +122,7 @@ function DepositDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onSubmit: (data: { type: DepositType; name: string; target_amount?: number }) => void;
+  onSubmit: (data: { type: DepositType; name: string; target_amount?: number }) => Promise<void>;
   isPending: boolean;
 }) {
   const [form, setForm] = useState({ type: "emergency" as DepositType, name: "", targetAmount: "" });
@@ -133,14 +132,18 @@ function DepositDialog({
     onOpenChange(v);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.name) return;
-    onSubmit({
-      type: form.type,
-      name: form.name,
-      target_amount: form.targetAmount ? parseInt(form.targetAmount) : undefined,
-    });
-    handleOpen(false);
+    try {
+      await onSubmit({
+        type: form.type,
+        name: form.name,
+        target_amount: form.targetAmount ? parseInt(form.targetAmount) : undefined,
+      });
+      handleOpen(false);
+    } catch {
+      // 에러는 useFunds onError에서 처리
+    }
   };
 
   return (
@@ -208,7 +211,7 @@ function AutoTransferDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onSubmit: (data: NewAutoTransfer) => void;
+  onSubmit: (data: NewAutoTransfer) => Promise<void>;
   isPending: boolean;
 }) {
   const [form, setForm] = useState<NewAutoTransfer>(emptyTransfer);
@@ -218,12 +221,16 @@ function AutoTransferDialog({
     onOpenChange(v);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.name || !form.recipient) return;
     if (form.transfer_type === "fixed" && !form.amount) return;
     if (form.transfer_type === "percentage" && !form.amount_percentage) return;
-    onSubmit(form);
-    handleOpen(false);
+    try {
+      await onSubmit(form);
+      handleOpen(false);
+    } catch {
+      // 에러는 useFunds onError에서 처리
+    }
   };
 
   const needsScheduleDay = form.schedule_type === "weekly" || form.schedule_type === "monthly";
@@ -241,14 +248,12 @@ function AutoTransferDialog({
           <DialogTitle>새 자동이체 규칙</DialogTitle>
         </DialogHeader>
 
-        {/* 하이픈 연동 안내 배너 */}
         <div className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs text-muted-foreground">
           <Info className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
           <span>규칙을 미리 설정해두면 하이픈 계좌 연동 후 즉시 자동 실행됩니다.</span>
         </div>
 
         <div className="space-y-4 py-2">
-          {/* 이름 */}
           <div className="space-y-1.5">
             <Label>규칙 이름</Label>
             <Input
@@ -258,7 +263,6 @@ function AutoTransferDialog({
             />
           </div>
 
-          {/* 이체 유형 */}
           <div className="space-y-1.5">
             <Label>이체 방식</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -293,7 +297,6 @@ function AutoTransferDialog({
             </div>
           </div>
 
-          {/* 금액 / 비율 */}
           {form.transfer_type === "fixed" ? (
             <div className="space-y-1.5">
               <Label>이체 금액</Label>
@@ -329,7 +332,6 @@ function AutoTransferDialog({
             </div>
           )}
 
-          {/* 수취인 */}
           <div className="space-y-1.5">
             <Label>수취인 / 목적</Label>
             <Input
@@ -339,7 +341,6 @@ function AutoTransferDialog({
             />
           </div>
 
-          {/* 입금 계좌 (선택) */}
           <div className="space-y-1.5">
             <Label>입금 은행 <span className="text-muted-foreground font-normal">(선택)</span></Label>
             <Select
@@ -366,7 +367,6 @@ function AutoTransferDialog({
             />
           </div>
 
-          {/* 실행 조건 */}
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1">
               <CalendarDays className="h-3.5 w-3.5" />
@@ -387,7 +387,6 @@ function AutoTransferDialog({
             </Select>
           </div>
 
-          {/* 실행일 (주별/월별일 때만) */}
           {needsScheduleDay && (
             <div className="space-y-1.5">
               <Label>
@@ -426,7 +425,6 @@ function AutoTransferDialog({
             </div>
           )}
 
-          {/* 메모 */}
           <div className="space-y-1.5">
             <Label>메모 <span className="text-muted-foreground font-normal">(선택)</span></Label>
             <Textarea
@@ -504,27 +502,20 @@ function TransferItem({ transfer, onDelete }: { transfer: AutoTransfer; onDelete
   );
 }
 
-export default function Funds() {
-  const navigate = useNavigate();
-  const { accountConnected, profileLoading } = useConnection();
-
-  const { deposits, isLoading: depositsLoading, totalDeposits, addDeposit, deleteDeposit } = useDeposits();
-  const { autoTransfers, isLoading: transfersLoading, addTransfer, deleteTransfer } = useAutoTransfers();
-
-  const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
-  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
-
-  const handleAddTransfer = async (data: NewAutoTransfer) => {
-    await addTransfer.mutateAsync(data);
-  };
-
-  const handleDeleteTransfer = (id: string) => {
-    deleteTransfer.mutate(id);
-  };
-
-  const isLoading = profileLoading || depositsLoading || transfersLoading;
-
-  const DepositSection = ({ dimmed = false }: { dimmed?: boolean }) => (
+function DepositSection({
+  dimmed = false,
+  deposits,
+  isDepositDialogOpen,
+  setIsDepositDialogOpen,
+  addDeposit,
+}: {
+  dimmed?: boolean;
+  deposits: Deposit[];
+  isDepositDialogOpen: boolean;
+  setIsDepositDialogOpen: (v: boolean) => void;
+  addDeposit: ReturnType<typeof useDeposits>["addDeposit"];
+}) {
+  return (
     <>
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">예치금 현황</h2>
@@ -591,8 +582,24 @@ export default function Funds() {
       )}
     </>
   );
+}
 
-  const TransferSection = ({ dimmed = false }: { dimmed?: boolean }) => (
+function TransferSection({
+  dimmed = false,
+  autoTransfers,
+  isTransferDialogOpen,
+  setIsTransferDialogOpen,
+  addTransfer,
+  deleteTransfer,
+}: {
+  dimmed?: boolean;
+  autoTransfers: AutoTransfer[];
+  isTransferDialogOpen: boolean;
+  setIsTransferDialogOpen: (v: boolean) => void;
+  addTransfer: ReturnType<typeof useAutoTransfers>["addTransfer"];
+  deleteTransfer: ReturnType<typeof useAutoTransfers>["deleteTransfer"];
+}) {
+  return (
     <>
       <div className="flex items-center justify-between pt-2">
         <div>
@@ -606,7 +613,9 @@ export default function Funds() {
         <AutoTransferDialog
           open={isTransferDialogOpen}
           onOpenChange={setIsTransferDialogOpen}
-          onSubmit={handleAddTransfer}
+          onSubmit={async (data) => {
+            await addTransfer.mutateAsync(data);
+          }}
           isPending={addTransfer.isPending}
         />
       </div>
@@ -629,7 +638,7 @@ export default function Funds() {
               <TransferItem
                 key={transfer.id}
                 transfer={transfer}
-                onDelete={() => handleDeleteTransfer(transfer.id)}
+                onDelete={() => deleteTransfer.mutate(transfer.id)}
               />
             ))}
           </CardContent>
@@ -644,6 +653,19 @@ export default function Funds() {
       )}
     </>
   );
+}
+
+export default function Funds() {
+  const navigate = useNavigate();
+  const { accountConnected, profileLoading } = useConnection();
+
+  const { deposits, isLoading: depositsLoading, totalDeposits, addDeposit, deleteDeposit } = useDeposits();
+  const { autoTransfers, isLoading: transfersLoading, addTransfer, deleteTransfer } = useAutoTransfers();
+
+  const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
+  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
+
+  const isLoading = profileLoading || depositsLoading || transfersLoading;
 
   if (isLoading) {
     return (
@@ -665,8 +687,21 @@ export default function Funds() {
       <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요" showBackButton>
         <div className="space-y-4">
           <FundsConnectionPrompt />
-          <DepositSection dimmed />
-          <TransferSection dimmed />
+          <DepositSection
+            dimmed
+            deposits={deposits}
+            isDepositDialogOpen={isDepositDialogOpen}
+            setIsDepositDialogOpen={setIsDepositDialogOpen}
+            addDeposit={addDeposit}
+          />
+          <TransferSection
+            dimmed
+            autoTransfers={autoTransfers}
+            isTransferDialogOpen={isTransferDialogOpen}
+            setIsTransferDialogOpen={setIsTransferDialogOpen}
+            addTransfer={addTransfer}
+            deleteTransfer={deleteTransfer}
+          />
         </div>
       </MainLayout>
     );
@@ -675,7 +710,6 @@ export default function Funds() {
   return (
     <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요" showBackButton>
       <div className="space-y-4">
-        {/* 총 예치금 */}
         <Card className="bg-primary text-primary-foreground">
           <CardContent className="flex items-center justify-between p-4">
             <div>
@@ -686,10 +720,20 @@ export default function Funds() {
           </CardContent>
         </Card>
 
-        <DepositSection />
-        <TransferSection />
+        <DepositSection
+          deposits={deposits}
+          isDepositDialogOpen={isDepositDialogOpen}
+          setIsDepositDialogOpen={setIsDepositDialogOpen}
+          addDeposit={addDeposit}
+        />
+        <TransferSection
+          autoTransfers={autoTransfers}
+          isTransferDialogOpen={isTransferDialogOpen}
+          setIsTransferDialogOpen={setIsTransferDialogOpen}
+          addTransfer={addTransfer}
+          deleteTransfer={deleteTransfer}
+        />
 
-        {/* 자동 자금 관리 설정 */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -718,13 +762,9 @@ export default function Funds() {
           </CardContent>
         </Card>
 
-        {/* 예치금 운용 현황 */}
         <InvestmentCard />
-
-        {/* 단기 대출 */}
         <LoanCard />
 
-        {/* 금융 서비스 더보기 */}
         <Button
           variant="outline"
           className="w-full gap-2"
