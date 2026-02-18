@@ -66,17 +66,35 @@ function StatCard({ value, label, sublabel }: StatCardProps) {
 export default function PitchDeck() {
   const [activeSection, setActiveSection] = useState(0);
 
-  // 전역 overflow:hidden 해제 (index.css에서 html/body에 설정됨)
+  // 전역 overflow:hidden 해제 (index.css에서 html/body/#root 모두 설정됨)
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
+    const root = document.getElementById("root");
+
     const prevHtmlOverflow = html.style.overflow;
     const prevBodyOverflow = body.style.overflow;
+    const prevRootOverflow = root?.style.overflow ?? "";
+    const prevRootHeight = root?.style.height ?? "";
+
     html.style.overflow = "auto";
+    html.style.height = "auto";
     body.style.overflow = "auto";
+    body.style.height = "auto";
+    if (root) {
+      root.style.overflow = "auto";
+      root.style.height = "auto";
+    }
+
     return () => {
       html.style.overflow = prevHtmlOverflow;
+      html.style.height = "";
       body.style.overflow = prevBodyOverflow;
+      body.style.height = "";
+      if (root) {
+        root.style.overflow = prevRootOverflow;
+        root.style.height = prevRootHeight;
+      }
     };
   }, []);
 
