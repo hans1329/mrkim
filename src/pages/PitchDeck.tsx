@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -65,72 +65,58 @@ function StatCard({ value, label, sublabel }: StatCardProps) {
 
 export default function PitchDeck() {
   const [activeSection, setActiveSection] = useState(0);
-
-  // 전역 overflow:hidden 해제 (index.css에서 html/body/#root 모두 설정됨)
-  useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const root = document.getElementById("root");
-
-    const prevHtmlOverflow = html.style.overflow;
-    const prevBodyOverflow = body.style.overflow;
-    const prevRootOverflow = root?.style.overflow ?? "";
-    const prevRootHeight = root?.style.height ?? "";
-
-    html.style.overflow = "auto";
-    html.style.height = "auto";
-    body.style.overflow = "auto";
-    body.style.height = "auto";
-    if (root) {
-      root.style.overflow = "auto";
-      root.style.height = "auto";
-    }
-
-    return () => {
-      html.style.overflow = prevHtmlOverflow;
-      html.style.height = "";
-      body.style.overflow = prevBodyOverflow;
-      body.style.height = "";
-      if (root) {
-        root.style.overflow = prevRootOverflow;
-        root.style.height = prevRootHeight;
-      }
-    };
-  }, []);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
     const handleScroll = () => {
-      const sections = document.querySelectorAll("section");
-      const scrollPos = window.scrollY + window.innerHeight / 2;
+      const sections = container.querySelectorAll("section");
+      const scrollPos = container.scrollTop + container.clientHeight / 2;
 
       sections.forEach((section, index) => {
-        const top = section.offsetTop;
-        const height = section.offsetHeight;
+        const el = section as HTMLElement;
+        const top = el.offsetTop;
+        const height = el.offsetHeight;
         if (scrollPos >= top && scrollPos < top + height) {
           setActiveSection(index);
         }
       });
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
   const scrollToNext = () => {
-    const sections = document.querySelectorAll("section");
+    const container = containerRef.current;
+    if (!container) return;
+    const sections = container.querySelectorAll("section");
     if (activeSection < sections.length - 1) {
-      sections[activeSection + 1].scrollIntoView({ behavior: "smooth" });
+      (sections[activeSection + 1] as HTMLElement).scrollIntoView({ behavior: "smooth" });
     }
   };
 
+  const scrollToSection = (i: number) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const sections = container.querySelectorAll("section");
+    (sections[i] as HTMLElement)?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
-    <div className="bg-[#0a0a0f] text-white min-h-screen">
+    <div
+      ref={containerRef}
+      style={{ position: "fixed", inset: 0, overflowY: "auto", overflowX: "hidden" }}
+      className="bg-[#0a0a0f] text-white"
+    >
       {/* Navigation Dots */}
       <nav className="fixed right-6 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col gap-2">
         {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
           <button
             key={i}
-            onClick={() => document.querySelectorAll("section")[i]?.scrollIntoView({ behavior: "smooth" })}
+            onClick={() => scrollToSection(i)}
             className={`w-2 h-2 rounded-full transition-all ${
               activeSection === i ? "bg-white scale-150" : "bg-white/30 hover:bg-white/50"
             }`}
