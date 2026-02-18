@@ -7,8 +7,9 @@ const corsHeaders = {
 };
 
 const GEMINI_API_URL_THINKING = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
-// 음성 모드용 빠른 모델 (ElevenLabs 타임아웃 이내 응답 보장)
-const GEMINI_API_URL_FAST = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+// 음성 모드용 빠른 모델: Lovable AI Gateway의 gemini-2.5-flash-lite 사용 (할당량 오류 없음)
+const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const VOICE_MODEL = "google/gemini-2.5-flash-lite";
 
 
 // ============ 유틸리티 ============
@@ -95,18 +96,42 @@ const SAFETY_SETTINGS = [
 
 const GENERATION_CONFIG = { temperature: 0.7, topK: 40, topP: 0.95, maxOutputTokens: 8192 };
 
+async function callGeminiVoice(lovableApiKey: string, systemPrompt: string, userMessage: string): Promise<string> {
+  // 음성 모드: Lovable AI Gateway 사용 (할당량 오류 없음, 빠른 응답)
+  const response = await fetch(LOVABLE_AI_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${lovableApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: VOICE_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+      max_tokens: 1024,
+    }),
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Lovable AI Gateway error:", response.status, errorText.substring(0, 200));
+    throw { status: response.status, body: errorText };
+  }
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || "";
+}
+
 async function callGemini(apiKey: string, contents: any[], fastMode = false): Promise<any> {
-  const apiUrl = fastMode ? GEMINI_API_URL_FAST : GEMINI_API_URL_THINKING;
-  const modelLabel = fastMode ? "2.0-flash (voice)" : "2.5-flash";
+  const apiUrl = GEMINI_API_URL_THINKING;
+  const modelLabel = "2.5-flash";
   const body: any = { contents, generationConfig: GENERATION_CONFIG, safetySettings: SAFETY_SETTINGS };
-  const MAX_RETRIES = fastMode ? 2 : 3; // 음성 모드는 빠르게 실패
+  const MAX_RETRIES = 3;
   let lastError: any = null;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     if (attempt > 0) {
-      const delayMs = fastMode
-        ? Math.min(1000 + Math.random() * 500, 2000) // 음성 모드: 짧은 재시도 딜레이
-        : Math.min(2000 * Math.pow(2, attempt - 1) + Math.random() * 1000, 10000);
+      const delayMs = Math.min(2000 * Math.pow(2, attempt - 1) + Math.random() * 1000, 10000);
       console.log(`Retry attempt ${attempt}/${MAX_RETRIES}, waiting ${Math.round(delayMs)}ms...`);
       await new Promise(r => setTimeout(r, delayMs));
     }
@@ -778,6 +803,7 @@ serve(async (req) => {
   try {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") || "";
 
     const { messages, secretaryName = "김비서", secretaryTone = "polite", secretaryGender = "female", userId, voiceMode = false } = await req.json();
     if (!messages || messages.length === 0) throw new Error("Messages array is required");
@@ -845,12 +871,17 @@ serve(async (req) => {
     // ━━━ Case 1: 데이터 불필요 → 자유 대화 ━━━
     if (!classified.needsData || !classified.dataSource) {
       const systemPrompt = `당신은 "${secretaryName}"입니다. 소상공인 사장님의 AI 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${voiceInst}\n\n## 자기소개 규칙\n- "이름이 뭐야?", "넌 누구야?", "너 이름은?" 같은 질문에는 반드시 "${secretaryName}"이라고 대답하세요.\n- 자기소개: "${secretaryName}이에요! 사장님의 AI 비서예요."\n\n## 성격\n- 따뜻하고 친근한 비서, 사장님을 진심으로 응원${voiceMode ? "\n- 이모지 대신 말투로 감정 표현" : "\n- 가끔 이모지를 적절히 사용"}\n\n## 대화 범위\n- 사장님이 물어보는 모든 질문에 성실하게 답변하세요\n- 경영, 세금, 일상 잡담, 맛집 추천, 건강, 고민 상담, 일반 상식 등 자유롭게 답변\n- 단, 가짜 매출/지출 숫자는 절대 만들지 마세요 (실제 데이터 조회가 필요)\n- 불법 행위 조장, 혐오 표현만 정중히 거절`;
-      const result = await callGemini(GEMINI_API_KEY, [
-        { role: "user", parts: [{ text: systemPrompt }] },
-        { role: "model", parts: [{ text: "네, 알겠습니다." }] },
-        ...geminiMessages,
-      ], voiceMode);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "무엇을 도와드릴까요?";
+      let response: string;
+      if (voiceMode) {
+        response = await callGeminiVoice(LOVABLE_API_KEY, systemPrompt, lastMsg);
+      } else {
+        const result = await callGemini(GEMINI_API_KEY, [
+          { role: "user", parts: [{ text: systemPrompt }] },
+          { role: "model", parts: [{ text: "네, 알겠습니다." }] },
+          ...geminiMessages,
+        ]);
+        response = result.candidates?.[0]?.content?.parts?.[0]?.text || "무엇을 도와드릴까요?";
+      }
       console.log("Direct response (no data)");
       return new Response(JSON.stringify({ response, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -886,12 +917,17 @@ serve(async (req) => {
       const visualization = buildVisualization(classified.dataSource, result.data, lastMsg);
       const sourceNote = syncMeta ? `\n\n📌 이 데이터의 출처: ${syncMeta.name} (${syncMeta.source === "codef" ? "코드에프 자동 동기화" : "수동 등록"}, 갱신: ${formatSyncTimestamp(syncMeta.syncedAt)})` : "";
       const dataPrompt = `당신은 "${secretaryName}"입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${result.prompt}${sourceNote}`;
-      const geminiResult = await callGemini(GEMINI_API_KEY, [
-        { role: "user", parts: [{ text: dataPrompt }] },
-        { role: "model", parts: [{ text: "네, 실제 데이터를 기반으로 정확하게 답변하겠습니다." }] },
-        ...geminiMessages,
-      ], voiceMode);
-      const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
+      let response: string;
+      if (voiceMode) {
+        response = await callGeminiVoice(LOVABLE_API_KEY, dataPrompt, lastMsg);
+      } else {
+        const geminiResult = await callGemini(GEMINI_API_KEY, [
+          { role: "user", parts: [{ text: dataPrompt }] },
+          { role: "model", parts: [{ text: "네, 실제 데이터를 기반으로 정확하게 답변하겠습니다." }] },
+          ...geminiMessages,
+        ]);
+        response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
+      }
       console.log(`${classified.dataSource} data response (1 API call)`);
       return new Response(JSON.stringify({ response, visualization, sources, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -899,13 +935,18 @@ serve(async (req) => {
     // 데이터 없음
     const emptyMsg = result?.emptyMessage || "해당 데이터를 찾을 수 없습니다.";
     const noDataPrompt = `당신은 "${secretaryName}"입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.\n\n참고: ${emptyMsg} 사용자에게 친절하게 안내하세요.${voiceDataInst}`;
-    const geminiResult = await callGemini(GEMINI_API_KEY, [
-      { role: "user", parts: [{ text: noDataPrompt }] },
-      { role: "model", parts: [{ text: "네, 알겠습니다." }] },
-      ...geminiMessages,
-    ], voiceMode);
-    const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
-    return new Response(JSON.stringify({ response, sources, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let emptyResponse: string;
+    if (voiceMode) {
+      emptyResponse = await callGeminiVoice(LOVABLE_API_KEY, noDataPrompt, lastMsg);
+    } else {
+      const geminiResult = await callGemini(GEMINI_API_KEY, [
+        { role: "user", parts: [{ text: noDataPrompt }] },
+        { role: "model", parts: [{ text: "네, 알겠습니다." }] },
+        ...geminiMessages,
+      ]);
+      emptyResponse = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
+    }
+    return new Response(JSON.stringify({ response: emptyResponse, sources, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (error: any) {
     console.error("=== Gemini Error ===", error?.status, error?.body);
