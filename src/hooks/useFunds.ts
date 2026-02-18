@@ -115,8 +115,9 @@ export function useDeposits() {
 
   const addDeposit = useMutation({
     mutationFn: async (newDeposit: NewDeposit) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("로그인이 필요합니다");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error("로그인이 필요합니다");
+      const user = session.user;
 
       const { error } = await supabase.from("deposits").insert({
         user_id: user.id,
@@ -203,8 +204,9 @@ export function useAutoTransfers() {
 
   const addTransfer = useMutation({
     mutationFn: async (newTransfer: NewAutoTransfer) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("로그인이 필요합니다");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error("로그인이 필요합니다");
+      const user = session.user;
 
       // condition 필드는 schedule_type 기반으로 자동 생성
       const condition = newTransfer.condition || SCHEDULE_TYPE_LABELS[newTransfer.schedule_type];
