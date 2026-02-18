@@ -492,7 +492,7 @@ export function AIChatCard() {
                   className="px-4 py-3 cursor-pointer"
                   onClick={isBriefingDisplay ? handleBriefingTTS : openChat}
                 >
-                  <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{displayMessage}</p>
+                  <p className="text-xs text-foreground/85 leading-relaxed whitespace-pre-line">{displayMessage}</p>
                 </div>
 
                 {/* 브리핑 액션 */}
