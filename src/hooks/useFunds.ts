@@ -115,9 +115,8 @@ export function useDeposits() {
 
   const addDeposit = useMutation({
     mutationFn: async (newDeposit: NewDeposit) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) throw new Error("로그인이 필요합니다");
-      const user = session.user;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("로그인이 필요합니다");
 
       const { error } = await supabase.from("deposits").insert({
         user_id: user.id,
