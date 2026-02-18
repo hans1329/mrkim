@@ -99,6 +99,7 @@ export function AIChatCard() {
   const [isBriefingResponse, setIsBriefingResponse] = useState(false);
   const [isPlayingTTS, setIsPlayingTTS] = useState(false);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
+  const ttsAbortRef = useRef<AbortController | null>(null);
   const [realStats, setRealStats] = useState<RealTimeStats>({
     todayIncome: 0,
     todayExpense: 0,
@@ -321,24 +322,41 @@ export function AIChatCard() {
   };
 
   // 브리핑 TTS 재생/정지
+  const stopTTS = () => {
+    ttsAbortRef.current?.abort();
+    ttsAbortRef.current = null;
+    if (ttsAudioRef.current) {
+      ttsAudioRef.current.pause();
+      ttsAudioRef.current.src = "";
+      ttsAudioRef.current = null;
+    }
+    setIsPlayingTTS(false);
+  };
+
   const handleBriefingTTS = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isPlayingTTS) {
-      ttsAudioRef.current?.pause();
-      ttsAudioRef.current = null;
-      setIsPlayingTTS(false);
+      stopTTS();
       return;
     }
     if (!response) return;
+
+    // 이전 요청 취소 후 새 AbortController 생성
+    stopTTS();
+    const abort = new AbortController();
+    ttsAbortRef.current = abort;
+
     try {
       setIsPlayingTTS(true);
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session || abort.signal.aborted) return;
+
       const voiceId = profile?.secretary_voice_id || "EXAVITQu4vr4xnSDxMaL";
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
         {
           method: "POST",
+          signal: abort.signal,
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${session.access_token}`,
@@ -347,25 +365,33 @@ export function AIChatCard() {
           body: JSON.stringify({ text: response, voiceId }),
         }
       );
+      if (abort.signal.aborted) return;
       if (!res.ok) throw new Error("TTS failed");
+
       const blob = await res.blob();
+      if (abort.signal.aborted) return;
+
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       ttsAudioRef.current = audio;
       audio.onended = () => {
         setIsPlayingTTS(false);
         ttsAudioRef.current = null;
+        ttsAbortRef.current = null;
         URL.revokeObjectURL(url);
       };
       audio.onerror = () => {
         setIsPlayingTTS(false);
         ttsAudioRef.current = null;
+        ttsAbortRef.current = null;
       };
       await audio.play();
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === "AbortError") return; // 취소된 요청은 무시
       console.error("TTS playback failed:", err);
       setIsPlayingTTS(false);
     }
+
   };
 
   const displayMessage = response;
