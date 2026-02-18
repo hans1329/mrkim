@@ -399,7 +399,7 @@ export function AIChatCard() {
   return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/90 backdrop-blur-md border-border/50" : "bg-card border-border"}`}>
       <CardContent className="p-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="relative">
               <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg hover:bg-muted transition-colors overflow-hidden">
@@ -414,21 +414,22 @@ export function AIChatCard() {
               {secretaryName ? <h3 className="font-bold text-foreground">{secretaryName}</h3> : <Skeleton className="h-5 w-16" />}
             </div>
           </div>
+
+          {/* 우상단: 브리핑 + 마이크 아이콘 */}
           <div className="flex items-center gap-1.5">
             <Button variant="outline" size="sm" onClick={() => triggerBriefing(true)} disabled={isTyping} className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 rounded-full text-xs px-3">
               <Sparkles className="h-3.5 w-3.5" />
               브리핑
             </Button>
-            <Button variant="secondary" size="sm" onClick={openVoice} className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 border-0 rounded-full">
-              <Mic className="h-4 w-4" />
-              대화
+            <Button variant="ghost" size="icon" onClick={openVoice} className="h-9 w-9 rounded-full bg-primary/10 hover:bg-primary/20 text-primary">
+              <Mic className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
         {/* Response/Briefing Area */}
         {(displayMessage || isTyping) && (
-          <div className={`mb-4 rounded-2xl border transition-all ${isBriefingDisplay ? "bg-success/8 border-success/25" : "bg-muted/60 border-border"}`}>
+          <div className={`mb-3 rounded-2xl border transition-all ${isBriefingDisplay ? "bg-success/8 border-success/25" : "bg-muted/60 border-border"}`}>
             {isTyping ? (
               <div className="flex items-center gap-2.5 px-4 py-5">
                 <Sparkles className="h-4 w-4 animate-pulse text-success shrink-0" />
@@ -454,7 +455,7 @@ export function AIChatCard() {
                   <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{displayMessage}</p>
                 </div>
 
-                {/* 액션 버튼 */}
+                {/* 브리핑 액션 */}
                 <div className="flex items-center justify-between px-3 pb-2.5">
                   {isBriefingDisplay ? (
                     <Button
@@ -479,9 +480,7 @@ export function AIChatCard() {
                   )}
                   <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={e => {
                     e.stopPropagation();
-                    ttsAudioRef.current?.pause();
-                    ttsAudioRef.current = null;
-                    setIsPlayingTTS(false);
+                    stopTTS();
                     setResponse(null);
                     setIsBriefingResponse(false);
                   }}>
@@ -494,7 +493,7 @@ export function AIChatCard() {
         )}
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="flex gap-2 mb-3 mt-3">
+        <form onSubmit={handleSubmit} className="flex gap-2 mb-3">
           <Input value={input} onChange={e => setInput(e.target.value)} placeholder="비서에게 요청해주세요!" className="flex-1 bg-muted border-border text-sm font-medium placeholder:text-xs placeholder:font-normal placeholder:text-muted-foreground placeholder:leading-normal focus-visible:ring-primary/30 leading-normal text-foreground rounded-full" disabled={isTyping || profileLoading || realStats.isLoading} />
           <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 rounded-full h-9 w-9 shrink-0">
             <Send className="h-4 w-4" />
@@ -502,11 +501,21 @@ export function AIChatCard() {
         </form>
 
         {/* Quick Prompts */}
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1 mb-3">
           {quickPrompts.map(prompt => <button key={prompt} type="button" className="text-xs px-1.5 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50" onClick={() => handleQuickAsk(prompt)} disabled={isTyping}>
               #{prompt}
             </button>)}
         </div>
+
+        {/* 하단: 비서와 대화하기 */}
+        <Button
+          onClick={openChat}
+          className="w-full gap-2 bg-primary/10 hover:bg-primary/20 text-primary border-0 rounded-full font-medium"
+          variant="ghost"
+        >
+          <Sparkles className="h-4 w-4" />
+          비서와 대화하기
+        </Button>
       </CardContent>
     </Card>;
 }
