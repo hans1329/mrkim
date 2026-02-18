@@ -7,8 +7,8 @@ const corsHeaders = {
 };
 
 const GEMINI_API_URL_THINKING = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
-// 음성 모드용 경량 모델 (ElevenLabs 타임아웃 이내 응답 보장)
-const GEMINI_API_URL_LITE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent";
+// 음성 모드도 동일 모델 사용
+const GEMINI_API_URL_LITE = GEMINI_API_URL_THINKING;
 
 
 // ============ 유틸리티 ============
