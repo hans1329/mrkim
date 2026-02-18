@@ -98,8 +98,8 @@ export default function SecretarySettings() {
       setSecretaryName(profile.secretary_name || "김비서");
       setSecretaryGender(profile.secretary_gender || "female");
       setSpeakingStyle(profile.secretary_tone || "friendly");
-      // briefing_times: 새 컬럼 우선, 없으면 기존 frequency에서 변환
-      const rawTimes = (profile as any).briefing_times;
+      // briefing_times: Profile 타입에 포함됨
+      const rawTimes = profile.briefing_times;
       if (Array.isArray(rawTimes) && rawTimes.length > 0) {
         setBriefingTimes(rawTimes.map(String));
       } else {
@@ -211,7 +211,8 @@ export default function SecretarySettings() {
       }
       updateProfileCache({
         ...updates,
-      });
+        briefing_times: briefingTimes,
+      } as any);
       toast.success(`${secretaryName} 설정이 저장되었습니다`);
       if (fromChat) {
         navigate("/?openChat=true");

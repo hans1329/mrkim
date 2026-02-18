@@ -20,6 +20,7 @@ export interface Profile {
   secretary_tone: string | null;
   secretary_voice_id: string | null;
   briefing_frequency: string | null;
+  briefing_times: string[] | null;
   priority_metrics: string[] | null;
   // 연동 상태
   hometax_connected: boolean | null;
@@ -37,6 +38,9 @@ const transformDbProfile = (data: Record<string, unknown>): Profile => ({
   ...data,
   priority_metrics: Array.isArray(data.priority_metrics) 
     ? data.priority_metrics as string[]
+    : null,
+  briefing_times: Array.isArray(data.briefing_times)
+    ? data.briefing_times as string[]
     : null,
 } as Profile);
 
