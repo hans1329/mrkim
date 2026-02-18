@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bot, Send, Sparkles, Mic, RotateCcw, Clock, Settings } from "lucide-react";
+import { Send, Sparkles, Mic, RotateCcw, Clock, Settings } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
 import { josa } from "@/lib/utils";
 import { useChat } from "@/contexts/ChatContext";
@@ -39,59 +39,44 @@ const getIncompleteSettingsMessages = (profile: any, secretaryName: string) => {
   return messages;
 };
 
-// 브리핑 시간인지 확인 (9시, 12시, 18시, 22시 기준 ±30분)
-const isBriefingTime = (): boolean => {
+// 브리핑 슬롯 키 생성 (localStorage 중복 방지용)
+const getBriefingSlotKey = (userId: string, frequency: string): string => {
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  if (frequency === 'weekly') {
+    const day = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    return `briefing_${userId}_weekly_${monday.toISOString().split('T')[0]}`;
+  }
+  if (frequency === 'realtime') {
+    const hour = now.getHours();
+    let slot = 0;
+    if (hour >= 22) slot = 22;
+    else if (hour >= 18) slot = 18;
+    else if (hour >= 12) slot = 12;
+    else if (hour >= 9) slot = 9;
+    if (!slot) return '';
+    return `briefing_${userId}_realtime_${dateStr}_${slot}`;
+  }
+  return `briefing_${userId}_daily_${dateStr}`;
+};
+
+// 브리핑 시간 도래 여부 확인 (빈도 설정 반영)
+const isBriefingDue = (frequency: string): boolean => {
   const now = new Date();
   const hour = now.getHours();
   const minute = now.getMinutes();
-  const briefingHours = [9, 12, 18, 22];
-  return briefingHours.some(bh => {
-    if (hour === bh && minute <= 30) return true;
-    if (hour === bh - 1 && minute >= 30) return true;
-    return false;
-  });
+  const inWindow = (h: number) =>
+    (hour === h && minute <= 30) || (hour === h - 1 && minute >= 30);
+  if (frequency === 'realtime') return [9, 12, 18, 22].some(inWindow);
+  if (frequency === 'daily') return inWindow(9);
+  if (frequency === 'weekly') return now.getDay() === 1 && inWindow(9);
+  return false;
 };
 
-// 실제 데이터 기반 브리핑 메시지 생성
-const generateRealBriefingMessage = (stats: RealTimeStats, profile: any): string => {
-  const {
-    hometax_connected,
-    card_connected,
-    account_connected
-  } = profile || {};
-
-  // 연동이 하나도 안된 경우
-  if (!hometax_connected && !card_connected && !account_connected) {
-    return "데이터를 연동하면 실시간 경영 현황을 알려드릴게요.";
-  }
-
-  // 오늘 데이터가 있는 경우
-  if (stats.todayIncome > 0 || stats.todayExpense > 0) {
-    const parts = [];
-    if (stats.todayIncome > 0) {
-      parts.push(`오늘 매출 ${formatCurrency(stats.todayIncome)}`);
-    }
-    if (stats.todayExpense > 0) {
-      parts.push(`지출 ${formatCurrency(stats.todayExpense)}`);
-    }
-    return parts.join(", ") + "입니다.";
-  }
-
-  // 이번 달 데이터만 있는 경우
-  if (stats.monthlyIncome > 0 || stats.monthlyExpense > 0) {
-    const parts = [];
-    if (stats.monthlyIncome > 0) {
-      parts.push(`이번 달 매출 ${formatCurrency(stats.monthlyIncome)}`);
-    }
-    if (stats.monthlyExpense > 0) {
-      parts.push(`지출 ${formatCurrency(stats.monthlyExpense)}`);
-    }
-    return parts.join(", ") + "입니다.";
-  }
-
-  // 연동은 되어있지만 데이터가 없는 경우
-  return "아직 이번 달 거래 내역이 없어요. 거래가 발생하면 알려드릴게요!";
-};
+const BRIEFING_PROMPT =
+  "오늘 경영 현황을 간략하게 브리핑해줘. 매출과 지출 현황, 주요 체크포인트를 요약해서 알려줘.";
 export function AIChatCard() {
   const navigate = useNavigate();
   const {
@@ -108,7 +93,7 @@ export function AIChatCard() {
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
-  const [showBriefing, setShowBriefing] = useState(false);
+  const [isBriefingResponse, setIsBriefingResponse] = useState(false);
   const [realStats, setRealStats] = useState<RealTimeStats>({
     todayIncome: 0,
     todayExpense: 0,
@@ -226,24 +211,62 @@ export function AIChatCard() {
     return defaultPlaceholders[Math.floor(Math.random() * defaultPlaceholders.length)];
   }, [profile, secretaryName, hasConversationHistory]);
 
-  // 실제 데이터 기반 브리핑 메시지
-  const briefingMessage = useMemo(() => {
-    if (realStats.isLoading) return "";
-    return generateRealBriefingMessage(realStats, profile);
-  }, [realStats, profile]);
-
-  // 브리핑 시간 체크
+  // AI 브리핑 자동 트리거 (briefing_frequency 설정 반영)
   useEffect(() => {
-    const checkBriefing = () => {
-      // 첫 대화 사용자에게는 브리핑 표시하지 않음
-      if (isBriefingTime() && !response && !realStats.isLoading && hasConversationHistory === true) {
-        setShowBriefing(true);
+    if (profileLoading || realStats.isLoading || hasConversationHistory === null) return;
+    if (response || hasConversationHistory === false) return;
+
+    const frequency = profile?.briefing_frequency || 'daily';
+    if (!isBriefingDue(frequency)) return;
+
+    const trigger = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const slotKey = getBriefingSlotKey(session.user.id, frequency);
+        if (!slotKey || localStorage.getItem(slotKey)) return;
+
+        setIsTyping(true);
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-ai`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              messages: [{ role: 'user', content: BRIEFING_PROMPT }],
+              secretaryName: profile?.secretary_name || '김비서',
+              secretaryTone: profile?.secretary_tone || 'polite',
+              secretaryGender: profile?.secretary_gender || 'female',
+              userId: session.user.id,
+            }),
+          }
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.response) {
+          // chat_messages에 assistant 메시지로 저장 (쿼터 미차감)
+          await supabase.from('chat_messages').insert({
+            user_id: session.user.id,
+            role: 'assistant',
+            content: data.response,
+          });
+          localStorage.setItem(slotKey, new Date().toISOString());
+          setIsBriefingResponse(true);
+          setResponse(data.response);
+        }
+      } catch (err) {
+        console.error('AI briefing error:', err);
+      } finally {
+        setIsTyping(false);
       }
     };
-    checkBriefing();
-    const interval = setInterval(checkBriefing, 60000);
-    return () => clearInterval(interval);
-  }, [response, realStats.isLoading, hasConversationHistory]);
+
+    trigger();
+  }, [profileLoading, realStats.isLoading, hasConversationHistory, profile]);
 
   // 실제 데이터 기반 빠른 응답
   const generateQuickResponse = (inputText: string): string => {
@@ -271,7 +294,7 @@ export function AIChatCard() {
   const handleQuickAsk = async (question: string) => {
     setInput("");
     setIsTyping(true);
-    setShowBriefing(false);
+    setIsBriefingResponse(false);
     await new Promise(resolve => setTimeout(resolve, 500));
     const answer = generateQuickResponse(question);
     setResponse(answer);
@@ -282,8 +305,8 @@ export function AIChatCard() {
     if (!input.trim()) return;
     handleQuickAsk(input);
   };
-  const displayMessage = response || (showBriefing ? briefingMessage : null);
-  const isBriefingDisplay = !response && showBriefing;
+  const displayMessage = response;
+  const isBriefingDisplay = isBriefingResponse && !!response;
   return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/90 backdrop-blur-md border-border/50" : "bg-card border-border"}`}>
       <CardContent className="p-4">
         {/* Header */}
@@ -321,7 +344,7 @@ export function AIChatCard() {
                 <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={e => {
             e.stopPropagation();
             setResponse(null);
-            setShowBriefing(false);
+            setIsBriefingResponse(false);
           }}>
                   <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
                 </Button>
