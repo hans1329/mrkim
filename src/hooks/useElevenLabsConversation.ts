@@ -117,15 +117,28 @@ export function useElevenLabsConversation() {
         const { data: sessionData } = await supabase.auth.getSession();
         const userId = sessionData?.session?.user?.id;
 
-        const { data, error } = await supabase.functions.invoke("chat-ai", {
-          body: {
-            messages: [{ role: "user", content: params.question }],
-            secretaryName: secretaryNameRef.current,
-            secretaryTone: secretaryToneRef.current,
-            secretaryGender: secretaryGenderRef.current,
-            userId,
-          },
-        });
+        // 음성 모드: 15초 타임아웃 설정 (ElevenLabs 툴 타임아웃 이전에 응답)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        let data: any = null;
+        let error: any = null;
+        try {
+          const result = await supabase.functions.invoke("chat-ai", {
+            body: {
+              messages: [{ role: "user", content: params.question }],
+              secretaryName: secretaryNameRef.current,
+              secretaryTone: secretaryToneRef.current,
+              secretaryGender: secretaryGenderRef.current,
+              userId,
+              voiceMode: true,  // 빠른 모델 사용 지시
+            },
+          });
+          data = result.data;
+          error = result.error;
+        } finally {
+          clearTimeout(timeoutId);
+        }
 
         if (error || !data?.response) {
           console.error("[VoiceClientTool] query_business error:", error);
