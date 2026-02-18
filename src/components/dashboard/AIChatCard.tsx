@@ -415,16 +415,10 @@ export function AIChatCard() {
             </div>
           </div>
 
-          {/* 우상단: 브리핑 + 마이크 아이콘 */}
-          <div className="flex items-center gap-1.5">
-            <Button variant="outline" size="sm" onClick={() => triggerBriefing(true)} disabled={isTyping} className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 rounded-full text-xs px-3">
-              <Sparkles className="h-3.5 w-3.5" />
-              브리핑
-            </Button>
-            <Button variant="ghost" size="icon" onClick={openVoice} className="h-9 w-9 rounded-full bg-primary/10 hover:bg-primary/20 text-primary">
-              <Mic className="h-5 w-5" />
-            </Button>
-          </div>
+          {/* 우상단: 마이크 아이콘 */}
+          <Button variant="ghost" size="icon" onClick={openVoice} className="h-9 w-9 rounded-full bg-primary/10 hover:bg-primary/20 text-primary">
+            <Mic className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Response/Briefing Area */}
@@ -499,8 +493,16 @@ export function AIChatCard() {
           </Button>
         </form>
 
-        {/* Quick Prompts */}
-        <div className="flex flex-wrap gap-1">
+        {/* Quick Prompts + 브리핑 버튼 */}
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <button
+            type="button"
+            disabled={isTyping}
+            onClick={() => triggerBriefing(true)}
+            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-primary/40 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+          >
+            <Sparkles className="h-3 w-3" />브리핑
+          </button>
           {quickPrompts.map(prompt => <button key={prompt} type="button" className="text-xs px-1.5 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50" onClick={() => handleQuickAsk(prompt)} disabled={isTyping}>
               #{prompt}
             </button>)}
