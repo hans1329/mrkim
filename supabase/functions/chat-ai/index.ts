@@ -7,6 +7,8 @@ const corsHeaders = {
 };
 
 const GEMINI_API_URL_THINKING = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+// 음성 모드용 빠른 모델 (ElevenLabs 타임아웃 이내 응답 보장)
+const GEMINI_API_URL_FAST = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 
 // ============ 유틸리티 ============
@@ -93,20 +95,23 @@ const SAFETY_SETTINGS = [
 
 const GENERATION_CONFIG = { temperature: 0.7, topK: 40, topP: 0.95, maxOutputTokens: 8192 };
 
-async function callGemini(apiKey: string, contents: any[]): Promise<any> {
-  const apiUrl = GEMINI_API_URL_THINKING;
+async function callGemini(apiKey: string, contents: any[], fastMode = false): Promise<any> {
+  const apiUrl = fastMode ? GEMINI_API_URL_FAST : GEMINI_API_URL_THINKING;
+  const modelLabel = fastMode ? "2.0-flash (voice)" : "2.5-flash";
   const body: any = { contents, generationConfig: GENERATION_CONFIG, safetySettings: SAFETY_SETTINGS };
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = fastMode ? 2 : 3; // 음성 모드는 빠르게 실패
   let lastError: any = null;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     if (attempt > 0) {
-      const delayMs = Math.min(2000 * Math.pow(2, attempt - 1) + Math.random() * 1000, 10000);
+      const delayMs = fastMode
+        ? Math.min(1000 + Math.random() * 500, 2000) // 음성 모드: 짧은 재시도 딜레이
+        : Math.min(2000 * Math.pow(2, attempt - 1) + Math.random() * 1000, 10000);
       console.log(`Retry attempt ${attempt}/${MAX_RETRIES}, waiting ${Math.round(delayMs)}ms...`);
       await new Promise(r => setTimeout(r, delayMs));
     }
     await waitForSlot();
-    console.log(`Gemini API call (attempt ${attempt + 1}/${MAX_RETRIES}), model: 2.5-flash, slot acquired`);
+    console.log(`Gemini API call (attempt ${attempt + 1}/${MAX_RETRIES}), model: ${modelLabel}, slot acquired`);
     const response = await fetch(`${apiUrl}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -844,7 +849,7 @@ serve(async (req) => {
         { role: "user", parts: [{ text: systemPrompt }] },
         { role: "model", parts: [{ text: "네, 알겠습니다." }] },
         ...geminiMessages,
-      ]);
+      ], voiceMode);
       const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "무엇을 도와드릴까요?";
       console.log("Direct response (no data)");
       return new Response(JSON.stringify({ response, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -885,7 +890,7 @@ serve(async (req) => {
         { role: "user", parts: [{ text: dataPrompt }] },
         { role: "model", parts: [{ text: "네, 실제 데이터를 기반으로 정확하게 답변하겠습니다." }] },
         ...geminiMessages,
-      ]);
+      ], voiceMode);
       const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
       console.log(`${classified.dataSource} data response (1 API call)`);
       return new Response(JSON.stringify({ response, visualization, sources, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -898,7 +903,7 @@ serve(async (req) => {
       { role: "user", parts: [{ text: noDataPrompt }] },
       { role: "model", parts: [{ text: "네, 알겠습니다." }] },
       ...geminiMessages,
-    ]);
+    ], voiceMode);
     const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
     return new Response(JSON.stringify({ response, sources, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
