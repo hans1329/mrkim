@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
 import { resizeAndCompressImage } from "@/lib/imageUtils";
+import { getRandomAvatarUrl } from "@/lib/utils";
 import {
   User,
   Phone,
@@ -253,7 +254,7 @@ export default function Profile() {
               <div className="relative shrink-0">
                 <Avatar className="h-16 w-16">
                   <AvatarImage 
-                    src={profile.avatar_url || undefined} 
+                    src={profile.avatar_url || getRandomAvatarUrl(profile.user_id)} 
                     alt="프로필" 
                     className="object-cover"
                   />
