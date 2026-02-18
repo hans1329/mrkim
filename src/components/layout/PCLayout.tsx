@@ -20,6 +20,7 @@ import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
 import { AIChatPanel } from "@/components/chat/AIChatPanel";
 import { FloatingVoiceButton } from "@/components/voice/FloatingVoiceButton";
 import { useProfileQuery } from "@/hooks/useProfileQuery";
+import { getRandomAvatarUrl } from "@/lib/utils";
 
 
 const navItems = [
@@ -40,7 +41,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const { profile } = useProfileQuery();
-  const userAvatarUrl = profile?.avatar_url;
+  const userAvatarUrl = profile?.avatar_url || (profile?.user_id ? getRandomAvatarUrl(profile.user_id) : null);
 
   // PC에서는 body 스크롤 비활성화 (main만 스크롤)
   useEffect(() => {
