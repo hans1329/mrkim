@@ -42,7 +42,7 @@ export default function Engine() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">김비서 AI 엔진 아키텍처</h1>
-              <p className="text-muted-foreground text-sm">v2.0 · 2026-02-13 업데이트</p>
+              <p className="text-muted-foreground text-sm">v2.1 · 2026-02-18 업데이트</p>
             </div>
           </div>
         </div>
@@ -1043,14 +1043,15 @@ export default function Engine() {
                 <CardTitle className="text-base">기술 스택</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  <Badge>Gemini 2.0 Flash</Badge>
-                  <Badge variant="secondary">ElevenLabs Scribe</Badge>
-                  <Badge variant="secondary">ElevenLabs TTS</Badge>
-                  <Badge variant="secondary">Edge Functions</Badge>
-                  <Badge variant="secondary">Codef API</Badge>
-                  <Badge variant="outline">PostgreSQL</Badge>
-                </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge>Gemini 2.5 Flash</Badge>
+                    <Badge variant="secondary">ElevenLabs Conversational AI (WebRTC)</Badge>
+                    <Badge variant="secondary">ElevenLabs Scribe STT (v1 레거시)</Badge>
+                    <Badge variant="secondary">ElevenLabs TTS</Badge>
+                    <Badge variant="secondary">Edge Functions</Badge>
+                    <Badge variant="secondary">Codef API</Badge>
+                    <Badge variant="outline">PostgreSQL</Badge>
+                  </div>
                 
                 <div className="pt-2 border-t">
                   <p className="text-xs text-muted-foreground mb-2">API 키 발급</p>
@@ -1135,11 +1136,11 @@ export default function Engine() {
                       <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Optional</Badge></td>
                       <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
                     </tr>
-                    <tr className="border-b">
+                     <tr className="border-b">
                       <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">elevenlabs-conversation-token</code></td>
-                      <td className="py-2 px-3">Conversational AI 토큰 (미사용, 예비)</td>
+                      <td className="py-2 px-3">Conversational AI WebRTC 토큰 발급 (v2.0 음성 핵심)</td>
                       <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Optional</Badge></td>
-                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">예비</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
                     </tr>
                     
                     {/* 데이터 연동 */}
@@ -1249,8 +1250,10 @@ export default function Engine() {
                   { step: 12, name: "pg_cron 자동 스케줄링 (6시간 주기)", priority: "완료", color: "bg-green-500" },
                   { step: 13, name: "연동 완료 시 즉시 동기화 트리거", priority: "완료", color: "bg-green-500" },
                   { step: 14, name: "알림 자동 생성 (대시보드 + 동기화)", priority: "완료", color: "bg-green-500" },
-                  { step: 15, name: "음성 Persistent Audio + STT 라이프사이클", priority: "완료", color: "bg-green-500" },
-                  { step: 16, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
+                  { step: 15, name: "음성 Persistent Audio + STT 라이프사이클 (v1)", priority: "완료", color: "bg-green-500" },
+                  { step: 16, name: "ElevenLabs Conversational AI WebRTC (v2.0 음성)", priority: "완료", color: "bg-green-500" },
+                  { step: 17, name: "PC 사이드바 사용자 아바타 반영", priority: "완료", color: "bg-green-500" },
+                  { step: 18, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
                   { step: 17, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
                   { step: 18, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
                   { step: 19, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
@@ -1269,7 +1272,7 @@ export default function Engine() {
           </Card>
 
           <p className="text-center text-xs text-muted-foreground pb-8">
-            © 2025 김비서 · 내부 문서
+            © 2026 김비서 · 내부 문서
           </p>
         </div>
       </ScrollArea>
