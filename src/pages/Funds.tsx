@@ -204,21 +204,18 @@ function DepositDialog({
 }
 
 function AutoTransferDialog({
-  open,
-  onOpenChange,
   onSubmit,
   isPending,
 }: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
   onSubmit: (data: NewAutoTransfer) => Promise<void>;
   isPending: boolean;
 }) {
+  const [open, setOpen] = useState(false);
   const [form, setForm] = useState<NewAutoTransfer>(emptyTransfer);
 
   const handleOpen = (v: boolean) => {
     if (v) setForm(emptyTransfer);
-    onOpenChange(v);
+    setOpen(v);
   };
 
   const handleSubmit = async () => {
@@ -227,7 +224,7 @@ function AutoTransferDialog({
     if (form.transfer_type === "percentage" && !form.amount_percentage) return;
     try {
       await onSubmit(form);
-      handleOpen(false);
+      setOpen(false);
     } catch {
       // 에러는 useFunds onError에서 처리
     }
@@ -236,7 +233,7 @@ function AutoTransferDialog({
   const needsScheduleDay = form.schedule_type === "weekly" || form.schedule_type === "monthly";
 
   return (
-    <Dialog open={open} onOpenChange={handleOpen}>
+    <Dialog open={open} onOpenChange={handleOpen} modal={true}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Plus className="mr-1 h-4 w-4" />
@@ -587,15 +584,11 @@ function DepositSection({
 function TransferSection({
   dimmed = false,
   autoTransfers,
-  isTransferDialogOpen,
-  setIsTransferDialogOpen,
   addTransfer,
   deleteTransfer,
 }: {
   dimmed?: boolean;
   autoTransfers: AutoTransfer[];
-  isTransferDialogOpen: boolean;
-  setIsTransferDialogOpen: (v: boolean) => void;
   addTransfer: ReturnType<typeof useAutoTransfers>["addTransfer"];
   deleteTransfer: ReturnType<typeof useAutoTransfers>["deleteTransfer"];
 }) {
@@ -611,8 +604,6 @@ function TransferSection({
           )}
         </div>
         <AutoTransferDialog
-          open={isTransferDialogOpen}
-          onOpenChange={setIsTransferDialogOpen}
           onSubmit={async (data) => {
             await addTransfer.mutateAsync(data);
           }}
@@ -663,7 +654,6 @@ export default function Funds() {
   const { autoTransfers, isLoading: transfersLoading, addTransfer, deleteTransfer } = useAutoTransfers();
 
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
-  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
 
   const isLoading = profileLoading || depositsLoading || transfersLoading;
 
@@ -697,8 +687,6 @@ export default function Funds() {
           <TransferSection
             dimmed
             autoTransfers={autoTransfers}
-            isTransferDialogOpen={isTransferDialogOpen}
-            setIsTransferDialogOpen={setIsTransferDialogOpen}
             addTransfer={addTransfer}
             deleteTransfer={deleteTransfer}
           />
@@ -728,8 +716,6 @@ export default function Funds() {
         />
         <TransferSection
           autoTransfers={autoTransfers}
-          isTransferDialogOpen={isTransferDialogOpen}
-          setIsTransferDialogOpen={setIsTransferDialogOpen}
           addTransfer={addTransfer}
           deleteTransfer={deleteTransfer}
         />
