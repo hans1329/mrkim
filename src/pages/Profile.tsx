@@ -28,6 +28,7 @@ import {
   LogOut,
   ChevronRight,
   Pencil,
+  X,
 } from "lucide-react";
 import { ConnectedAccountsCard } from "@/components/profile/ConnectedAccountsCard";
 import { ConnectorStatusCard } from "@/components/profile/ConnectorStatusCard";
@@ -116,6 +117,23 @@ export default function Profile() {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+    }
+  };
+
+  // 프로필 이미지 삭제
+  const handleAvatarRemove = async () => {
+    if (!profile?.avatar_url) return;
+    setIsUploadingAvatar(true);
+    try {
+      const oldPath = profile.avatar_url.split("/").slice(-2).join("/");
+      await supabase.storage.from("user-avatars").remove([oldPath]);
+      await updateProfile({ avatar_url: null });
+      toast.success("프로필 사진이 삭제되었습니다");
+    } catch (error) {
+      console.error("Avatar remove error:", error);
+      toast.error("프로필 사진 삭제에 실패했습니다");
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -269,6 +287,7 @@ export default function Profile() {
                   onChange={handleAvatarUpload}
                   className="hidden"
                 />
+                {/* 카메라(변경) 버튼 */}
                 <Button
                   size="icon"
                   variant="secondary"
@@ -282,6 +301,18 @@ export default function Profile() {
                     <Camera className="h-3 w-3" />
                   )}
                 </Button>
+                {/* 삭제 버튼 - 실제 사진이 있을 때만 표시 */}
+                {profile.avatar_url && (
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full shadow-md"
+                    onClick={handleAvatarRemove}
+                    disabled={isUploadingAvatar}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-lg font-bold truncate">{profile.name || profile.nickname || "이름 없음"}</h2>
