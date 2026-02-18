@@ -228,8 +228,8 @@ function AutoTransferDialog({
       console.log("[AutoTransferDialog] validation failed: amount missing for fixed type");
       return;
     }
-    if (form.transfer_type === "percentage" && !form.amount_percentage) {
-      console.log("[AutoTransferDialog] validation failed: amount_percentage missing");
+    if (form.transfer_type === "percentage" && (form.amount_percentage == null || isNaN(form.amount_percentage) || form.amount_percentage <= 0)) {
+      console.log("[AutoTransferDialog] validation failed: amount_percentage missing or invalid");
       return;
     }
     console.log("[AutoTransferDialog] validation passed, calling onSubmit...");
@@ -324,13 +324,16 @@ function AutoTransferDialog({
               <Label>이체 비율 (%)</Label>
               <div className="relative">
                 <Input
-                  type="text"
+                  type="number"
                   inputMode="numeric"
                   placeholder="10"
+                  min="0"
+                  max="100"
                   value={form.amount_percentage ?? ""}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/[^\d.]/g, "");
-                    setForm({ ...form, amount_percentage: value ? parseFloat(value) : undefined });
+                    const raw = e.target.value;
+                    const parsed = parseFloat(raw);
+                    setForm((prev) => ({ ...prev, amount_percentage: isNaN(parsed) ? undefined : parsed }));
                   }}
                   className="pr-8"
                 />
