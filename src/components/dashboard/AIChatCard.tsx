@@ -475,7 +475,7 @@ export function AIChatCard() {
                     className="gap-1.5 text-primary hover:bg-primary/10 rounded-full text-xs h-7 px-3"
                     onClick={openChat}
                   >
-                    <Sparkles className="h-3.5 w-3.5" />비서와 대화하기
+                    <Mic className="h-3.5 w-3.5" />비서와 대화하기
                   </Button>
                   <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={e => {
                     e.stopPropagation();
