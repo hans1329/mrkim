@@ -133,8 +133,9 @@ export function useDeposits() {
       queryClient.invalidateQueries({ queryKey: ["deposits"] });
       toast.success("예치금이 추가되었습니다");
     },
-    onError: () => {
-      toast.error("예치금 추가에 실패했습니다");
+    onError: (error: any) => {
+      const msg = error?.message || "알 수 없는 오류";
+      toast.error(`예치금 추가 실패: ${msg}`);
     },
   });
 
@@ -230,8 +231,9 @@ export function useAutoTransfers() {
       queryClient.invalidateQueries({ queryKey: ["auto-transfers"] });
       toast.success("자동이체 규칙이 추가되었습니다");
     },
-    onError: () => {
-      toast.error("자동이체 규칙 추가에 실패했습니다");
+    onError: (error: any) => {
+      const msg = error?.message || "알 수 없는 오류";
+      toast.error(`자동이체 규칙 추가 실패: ${msg}`);
     },
   });
 
