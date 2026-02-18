@@ -290,7 +290,7 @@ function AutoTransferDialog({
               </button>
               <button
                 type="button"
-                onClick={() => setForm((prev) => ({ ...prev, transfer_type: "percentage" }))}
+                onClick={() => setForm((prev) => ({ ...prev, transfer_type: "percentage", amount_percentage: prev.amount_percentage ?? 10 }))}
                 className={cn(
                   "flex flex-col items-center gap-1 rounded-lg border p-3 text-sm transition-colors",
                   form.transfer_type === "percentage"
