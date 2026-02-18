@@ -140,43 +140,70 @@ export type Database = {
       auto_transfers: {
         Row: {
           amount: number
+          amount_percentage: number | null
           condition: string
           created_at: string
+          description: string | null
+          hyphen_transfer_id: string | null
           id: string
           is_active: boolean
           last_executed_at: string | null
           name: string
           next_execution_at: string | null
           recipient: string
+          schedule_day: number | null
+          schedule_type: string
+          source_account_id: string | null
           status: string
+          target_account_number: string | null
+          target_bank_name: string | null
+          transfer_type: string
           updated_at: string
           user_id: string
         }
         Insert: {
           amount: number
+          amount_percentage?: number | null
           condition?: string
           created_at?: string
+          description?: string | null
+          hyphen_transfer_id?: string | null
           id?: string
           is_active?: boolean
           last_executed_at?: string | null
           name: string
           next_execution_at?: string | null
           recipient: string
+          schedule_day?: number | null
+          schedule_type?: string
+          source_account_id?: string | null
           status?: string
+          target_account_number?: string | null
+          target_bank_name?: string | null
+          transfer_type?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           amount?: number
+          amount_percentage?: number | null
           condition?: string
           created_at?: string
+          description?: string | null
+          hyphen_transfer_id?: string | null
           id?: string
           is_active?: boolean
           last_executed_at?: string | null
           name?: string
           next_execution_at?: string | null
           recipient?: string
+          schedule_day?: number | null
+          schedule_type?: string
+          source_account_id?: string | null
           status?: string
+          target_account_number?: string | null
+          target_bank_name?: string | null
+          transfer_type?: string
           updated_at?: string
           user_id?: string
         }
