@@ -267,7 +267,7 @@ function AutoTransferDialog({
             <Input
               placeholder="예: 부가세 적립, 거래처 대금"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
             />
           </div>
 
@@ -276,7 +276,7 @@ function AutoTransferDialog({
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setForm({ ...form, transfer_type: "fixed" })}
+                onClick={() => setForm((prev) => ({ ...prev, transfer_type: "fixed" }))}
                 className={cn(
                   "flex flex-col items-center gap-1 rounded-lg border p-3 text-sm transition-colors",
                   form.transfer_type === "fixed"
@@ -290,7 +290,7 @@ function AutoTransferDialog({
               </button>
               <button
                 type="button"
-                onClick={() => setForm({ ...form, transfer_type: "percentage" })}
+                onClick={() => setForm((prev) => ({ ...prev, transfer_type: "percentage" }))}
                 className={cn(
                   "flex flex-col items-center gap-1 rounded-lg border p-3 text-sm transition-colors",
                   form.transfer_type === "percentage"
@@ -315,7 +315,7 @@ function AutoTransferDialog({
                 value={form.amount ? form.amount.toLocaleString() : ""}
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^\d]/g, "");
-                  setForm({ ...form, amount: value ? parseInt(value) : undefined });
+                  setForm((prev) => ({ ...prev, amount: value ? parseInt(value) : undefined }));
                 }}
               />
             </div>
@@ -348,7 +348,7 @@ function AutoTransferDialog({
             <Input
               placeholder="예: 세금 통장, A상사, 임대인 홍길동"
               value={form.recipient}
-              onChange={(e) => setForm({ ...form, recipient: e.target.value })}
+              onChange={(e) => setForm((prev) => ({ ...prev, recipient: e.target.value }))}
             />
           </div>
 
@@ -356,7 +356,7 @@ function AutoTransferDialog({
             <Label>입금 은행 <span className="text-muted-foreground font-normal">(선택)</span></Label>
             <Select
               value={form.target_bank_name || ""}
-              onValueChange={(v) => setForm({ ...form, target_bank_name: v })}
+              onValueChange={(v) => setForm((prev) => ({ ...prev, target_bank_name: v }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="은행 선택" />
@@ -374,7 +374,7 @@ function AutoTransferDialog({
             <Input
               placeholder="예: 110-123-456789"
               value={form.target_account_number || ""}
-              onChange={(e) => setForm({ ...form, target_account_number: e.target.value })}
+              onChange={(e) => setForm((prev) => ({ ...prev, target_account_number: e.target.value }))}
             />
           </div>
 
@@ -385,7 +385,7 @@ function AutoTransferDialog({
             </Label>
             <Select
               value={form.schedule_type}
-              onValueChange={(v: ScheduleType) => setForm({ ...form, schedule_type: v, schedule_day: undefined })}
+              onValueChange={(v: ScheduleType) => setForm((prev) => ({ ...prev, schedule_type: v, schedule_day: undefined }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -406,7 +406,7 @@ function AutoTransferDialog({
               {form.schedule_type === "monthly" ? (
                 <Select
                   value={form.schedule_day?.toString() || ""}
-                  onValueChange={(v) => setForm({ ...form, schedule_day: parseInt(v) })}
+                  onValueChange={(v) => setForm((prev) => ({ ...prev, schedule_day: parseInt(v) }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="실행일 선택" />
@@ -421,7 +421,7 @@ function AutoTransferDialog({
               ) : (
                 <Select
                   value={form.schedule_day?.toString() || ""}
-                  onValueChange={(v) => setForm({ ...form, schedule_day: parseInt(v) })}
+                  onValueChange={(v) => setForm((prev) => ({ ...prev, schedule_day: parseInt(v) }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="요일 선택" />
@@ -442,7 +442,7 @@ function AutoTransferDialog({
               placeholder="이체 목적이나 참고 사항을 적어두세요"
               rows={2}
               value={form.description || ""}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
               className="resize-none"
             />
           </div>
