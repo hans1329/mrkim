@@ -439,11 +439,23 @@ export function AIChatCard() {
               <div className="flex flex-col gap-0">
                 {/* 브리핑 헤더 */}
                 {isBriefingDisplay && (
-                  <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-success/15">
-                    {isPlayingTTS
-                      ? <Volume2 className="h-3.5 w-3.5 text-success animate-pulse shrink-0" />
-                      : <Clock className="h-3.5 w-3.5 text-success shrink-0" />}
-                    <span className="text-[11px] font-semibold text-success tracking-wide uppercase">오늘의 경영 브리핑</span>
+                  <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-success/15">
+                    <div className="flex items-center gap-2">
+                      {isPlayingTTS
+                        ? <Volume2 className="h-3.5 w-3.5 text-success animate-pulse shrink-0" />
+                        : <Clock className="h-3.5 w-3.5 text-success shrink-0" />}
+                      <span className="text-[11px] font-semibold text-success tracking-wide uppercase">오늘의 경영 브리핑</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1 text-success hover:text-success hover:bg-success/10 rounded-full text-xs h-7 px-2.5"
+                      onClick={handleBriefingTTS}
+                    >
+                      {isPlayingTTS
+                        ? <><VolumeX className="h-3.5 w-3.5" />중지</>
+                        : <><Volume2 className="h-3.5 w-3.5" />듣기</>}
+                    </Button>
                   </div>
                 )}
 
