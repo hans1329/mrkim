@@ -15,6 +15,9 @@ export type DepositType =
   | "marketing"     // 마케팅/광고
   | "maintenance";  // 시설 유지보수
 
+export type TransferType = "fixed" | "percentage";
+export type ScheduleType = "manual" | "on_income" | "daily" | "weekly" | "monthly";
+
 export interface Deposit {
   id: string;
   user_id: string;
@@ -41,6 +44,16 @@ export interface AutoTransfer {
   last_executed_at: string | null;
   created_at: string;
   updated_at: string;
+  // 하이픈 연동 필드
+  transfer_type: TransferType;
+  amount_percentage: number | null;
+  source_account_id: string | null;
+  target_account_number: string | null;
+  target_bank_name: string | null;
+  schedule_type: ScheduleType;
+  schedule_day: number | null;
+  hyphen_transfer_id: string | null;
+  description: string | null;
 }
 
 export interface NewDeposit {
@@ -52,10 +65,32 @@ export interface NewDeposit {
 
 export interface NewAutoTransfer {
   name: string;
-  amount: number;
+  transfer_type: TransferType;
+  amount?: number;
+  amount_percentage?: number;
   recipient: string;
-  condition: string;
+  target_account_number?: string;
+  target_bank_name?: string;
+  schedule_type: ScheduleType;
+  schedule_day?: number;
+  condition?: string;
+  description?: string;
 }
+
+export const SCHEDULE_TYPE_LABELS: Record<ScheduleType, string> = {
+  manual: "수동 실행",
+  on_income: "매출 발생 시",
+  daily: "매일",
+  weekly: "매주",
+  monthly: "매월",
+};
+
+export const BANK_LIST = [
+  "국민은행", "신한은행", "우리은행", "하나은행", "농협은행",
+  "기업은행", "카카오뱅크", "토스뱅크", "케이뱅크", "새마을금고",
+  "신협", "우체국", "수협", "부산은행", "대구은행", "광주은행",
+  "전북은행", "제주은행", "경남은행",
+];
 
 export function useDeposits() {
   const queryClient = useQueryClient();
@@ -170,13 +205,23 @@ export function useAutoTransfers() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다");
 
+      // condition 필드는 schedule_type 기반으로 자동 생성
+      const condition = newTransfer.condition || SCHEDULE_TYPE_LABELS[newTransfer.schedule_type];
+
       const { error } = await supabase.from("auto_transfers").insert({
         user_id: user.id,
         name: newTransfer.name,
-        amount: newTransfer.amount,
+        amount: newTransfer.transfer_type === "fixed" ? (newTransfer.amount || 0) : 0,
         recipient: newTransfer.recipient,
-        condition: newTransfer.condition || "수동 실행",
+        condition,
         status: "pending",
+        transfer_type: newTransfer.transfer_type,
+        amount_percentage: newTransfer.transfer_type === "percentage" ? (newTransfer.amount_percentage || null) : null,
+        target_account_number: newTransfer.target_account_number || null,
+        target_bank_name: newTransfer.target_bank_name || null,
+        schedule_type: newTransfer.schedule_type,
+        schedule_day: newTransfer.schedule_day || null,
+        description: newTransfer.description || null,
       });
 
       if (error) throw error;
