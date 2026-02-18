@@ -401,33 +401,57 @@ export function AIChatCard() {
         </div>
 
         {/* Response/Briefing Area */}
-        {(displayMessage || isTyping) && <div className={`mb-4 rounded-xl p-2.5 border ${isBriefingDisplay ? "bg-success/10 border-success/20" : "bg-muted border-border"}`}>
-            {isTyping ? <div className="flex items-center gap-2">
-                <Sparkles className="h-3.5 w-3.5 animate-pulse text-success" />
-                <span className="text-xs text-muted-foreground">{isBriefingResponse ? "브리핑 생성 중..." : "답변 중..."}</span>
-              </div> : <div className="flex items-center justify-between gap-2">
-                {/* 브리핑: 탭하면 TTS 재생 / 일반 응답: 탭하면 채팅 오픈 */}
+        {(displayMessage || isTyping) && (
+          <div className={`mb-4 rounded-2xl border transition-all ${isBriefingDisplay ? "bg-success/8 border-success/25" : "bg-muted/60 border-border"}`}>
+            {isTyping ? (
+              <div className="flex items-center gap-2.5 px-4 py-5">
+                <Sparkles className="h-4 w-4 animate-pulse text-success shrink-0" />
+                <span className="text-sm text-muted-foreground">{isBriefingResponse ? "브리핑 생성 중..." : "답변 중..."}</span>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-0">
+                {/* 브리핑 헤더 */}
+                {isBriefingDisplay && (
+                  <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-success/15">
+                    {isPlayingTTS
+                      ? <Volume2 className="h-3.5 w-3.5 text-success animate-pulse shrink-0" />
+                      : <Clock className="h-3.5 w-3.5 text-success shrink-0" />}
+                    <span className="text-[11px] font-semibold text-success tracking-wide uppercase">오늘의 경영 브리핑</span>
+                  </div>
+                )}
+
+                {/* 본문 */}
                 <div
-                  className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
+                  className="px-4 py-3 cursor-pointer"
                   onClick={isBriefingDisplay ? handleBriefingTTS : openChat}
                 >
-                  {isBriefingDisplay ? (
-                    isPlayingTTS
-                      ? <Volume2 className="h-3.5 w-3.5 text-success shrink-0 animate-pulse" />
-                      : <Clock className="h-3.5 w-3.5 text-success shrink-0" />
-                  ) : null}
-                  <p className="text-xs text-foreground/80 flex-1 line-clamp-2">{displayMessage}</p>
+                  <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{displayMessage}</p>
                 </div>
-                <div className="flex items-center gap-0.5 shrink-0">
-                  {/* 브리핑일 때만 TTS 버튼 노출 */}
-                  {isBriefingDisplay && (
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleBriefingTTS}>
+
+                {/* 액션 버튼 */}
+                <div className="flex items-center justify-between px-3 pb-2.5">
+                  {isBriefingDisplay ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-success hover:text-success hover:bg-success/10 rounded-full text-xs h-7 px-3"
+                      onClick={handleBriefingTTS}
+                    >
                       {isPlayingTTS
-                        ? <VolumeX className="h-3.5 w-3.5 text-success" />
-                        : <Volume2 className="h-3.5 w-3.5 text-success" />}
+                        ? <><VolumeX className="h-3.5 w-3.5" />재생 중지</>
+                        : <><Volume2 className="h-3.5 w-3.5" />소리로 듣기</>}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-primary hover:bg-primary/10 rounded-full text-xs h-7 px-3"
+                      onClick={openChat}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />자세히 보기
                     </Button>
                   )}
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={e => {
+                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={e => {
                     e.stopPropagation();
                     ttsAudioRef.current?.pause();
                     ttsAudioRef.current = null;
@@ -438,8 +462,10 @@ export function AIChatCard() {
                     <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
                   </Button>
                 </div>
-              </div>}
-          </div>}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Input */}
         <form onSubmit={handleSubmit} className="flex gap-2 mb-3 mt-3">
