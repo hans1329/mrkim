@@ -444,7 +444,7 @@ export function AIChatCard() {
                       {isPlayingTTS
                         ? <Volume2 className="h-3.5 w-3.5 text-success animate-pulse shrink-0" />
                         : <Clock className="h-3.5 w-3.5 text-success shrink-0" />}
-                      <span className="text-[11px] font-semibold text-success tracking-wide uppercase">오늘의 경영 브리핑</span>
+                      <span className="text-xs font-bold text-success tracking-wide">오늘의 경영 브리핑</span>
                     </div>
                     <Button
                       variant="ghost"
