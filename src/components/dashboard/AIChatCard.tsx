@@ -216,69 +216,70 @@ export function AIChatCard() {
     return defaultPlaceholders[Math.floor(Math.random() * defaultPlaceholders.length)];
   }, [profile, secretaryName, hasConversationHistory]);
 
-  // AI 브리핑 자동 트리거 (briefing_times 배열 기반)
-  useEffect(() => {
-    if (profileLoading || realStats.isLoading || hasConversationHistory === null) return;
-    if (response || hasConversationHistory === false) return;
+  // 브리핑 공통 실행 함수 (자동 트리거 & 수동 모두 사용)
+  const triggerBriefing = async (force = false) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-    // briefing_times 배열 (새 컬럼) 우선, 없으면 기존 frequency로 변환
-    const rawTimes = (profile as any)?.briefing_times;
-    const briefingTimes: string[] = Array.isArray(rawTimes) && rawTimes.length > 0
-      ? rawTimes.map(String)
-      : (() => {
-          const freq = profile?.briefing_frequency || 'daily';
-          return freq === 'realtime' ? ["9","12","18","22"] : ["9"];
-        })();
-
-    const dueHour = getDueBriefingHour(briefingTimes);
-    if (dueHour === null) return;
-
-    const trigger = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
+      if (!force) {
+        const rawTimes = (profile as any)?.briefing_times;
+        const briefingTimes: string[] = Array.isArray(rawTimes) && rawTimes.length > 0
+          ? rawTimes.map(String)
+          : (() => {
+              const freq = profile?.briefing_frequency || 'daily';
+              return freq === 'realtime' ? ["9","12","18","22"] : ["9"];
+            })();
+        const dueHour = getDueBriefingHour(briefingTimes);
+        if (dueHour === null) return;
         const slotKey = getBriefingSlotKey(session.user.id, dueHour);
         if (!slotKey || localStorage.getItem(slotKey)) return;
+      }
 
-        setIsTyping(true);
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-ai`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              messages: [{ role: 'user', content: buildBriefingPrompt(profile?.priority_metrics || []) }],
-              secretaryName: profile?.secretary_name || '김비서',
-              secretaryTone: profile?.secretary_tone || 'polite',
-              secretaryGender: profile?.secretary_gender || 'female',
-              userId: session.user.id,
-            }),
-          }
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.response) {
+      setIsTyping(true);
+      setIsBriefingResponse(true);
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-ai`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: buildBriefingPrompt(profile?.priority_metrics || []) }],
+            secretaryName: profile?.secretary_name || '김비서',
+            secretaryTone: profile?.secretary_tone || 'polite',
+            secretaryGender: profile?.secretary_gender || 'female',
+            userId: session.user.id,
+          }),
+        }
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.response) {
+        if (!force) {
           await supabase.from('chat_messages').insert({
             user_id: session.user.id,
             role: 'assistant',
             content: data.response,
           });
-          localStorage.setItem(slotKey, new Date().toISOString());
-          setIsBriefingResponse(true);
-          setResponse(data.response);
         }
-      } catch (err) {
-        console.error('AI briefing error:', err);
-      } finally {
-        setIsTyping(false);
+        setIsBriefingResponse(true);
+        setResponse(data.response);
       }
-    };
+    } catch (err) {
+      console.error('AI briefing error:', err);
+    } finally {
+      setIsTyping(false);
+    }
+  };
 
-    trigger();
+  // AI 브리핑 자동 트리거 (briefing_times 배열 기반)
+  useEffect(() => {
+    if (profileLoading || realStats.isLoading || hasConversationHistory === null) return;
+    if (response || hasConversationHistory === false) return;
+    triggerBriefing(false);
   }, [profileLoading, realStats.isLoading, hasConversationHistory, profile]);
 
   // 실제 데이터 기반 빠른 응답
@@ -387,10 +388,16 @@ export function AIChatCard() {
               {secretaryName ? <h3 className="font-bold text-foreground">{secretaryName}</h3> : <Skeleton className="h-5 w-16" />}
             </div>
           </div>
-          <Button variant="secondary" size="sm" onClick={openVoice} className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 border-0 rounded-full">
-            <Mic className="h-4 w-4" />
-            대화
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="sm" onClick={() => triggerBriefing(true)} disabled={isTyping} className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 rounded-full text-xs px-3">
+              <Sparkles className="h-3.5 w-3.5" />
+              브리핑
+            </Button>
+            <Button variant="secondary" size="sm" onClick={openVoice} className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 border-0 rounded-full">
+              <Mic className="h-4 w-4" />
+              대화
+            </Button>
+          </div>
         </div>
 
         {/* Response/Briefing Area */}
