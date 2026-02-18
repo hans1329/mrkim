@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Sparkles, Mic, RotateCcw, Clock, Settings } from "lucide-react";
+import { Send, Sparkles, Mic, RotateCcw, Clock, Settings, Volume2, VolumeX } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
 import { josa } from "@/lib/utils";
 import { useChat } from "@/contexts/ChatContext";
@@ -94,6 +94,8 @@ export function AIChatCard() {
   const [response, setResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isBriefingResponse, setIsBriefingResponse] = useState(false);
+  const [isPlayingTTS, setIsPlayingTTS] = useState(false);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const [realStats, setRealStats] = useState<RealTimeStats>({
     todayIncome: 0,
     todayExpense: 0,
@@ -305,6 +307,55 @@ export function AIChatCard() {
     if (!input.trim()) return;
     handleQuickAsk(input);
   };
+
+  // 브리핑 TTS 재생/정지
+  const handleBriefingTTS = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isPlayingTTS) {
+      ttsAudioRef.current?.pause();
+      ttsAudioRef.current = null;
+      setIsPlayingTTS(false);
+      return;
+    }
+    if (!response) return;
+    try {
+      setIsPlayingTTS(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const voiceId = profile?.secretary_voice_id || "EXAVITQu4vr4xnSDxMaL";
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ text: response, voiceId }),
+        }
+      );
+      if (!res.ok) throw new Error("TTS failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      ttsAudioRef.current = audio;
+      audio.onended = () => {
+        setIsPlayingTTS(false);
+        ttsAudioRef.current = null;
+        URL.revokeObjectURL(url);
+      };
+      audio.onerror = () => {
+        setIsPlayingTTS(false);
+        ttsAudioRef.current = null;
+      };
+      await audio.play();
+    } catch (err) {
+      console.error("TTS playback failed:", err);
+      setIsPlayingTTS(false);
+    }
+  };
+
   const displayMessage = response;
   const isBriefingDisplay = isBriefingResponse && !!response;
   return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/90 backdrop-blur-md border-border/50" : "bg-card border-border"}`}>
@@ -335,19 +386,40 @@ export function AIChatCard() {
         {(displayMessage || isTyping) && <div className={`mb-4 rounded-xl p-2.5 border ${isBriefingDisplay ? "bg-success/10 border-success/20" : "bg-muted border-border"}`}>
             {isTyping ? <div className="flex items-center gap-2">
                 <Sparkles className="h-3.5 w-3.5 animate-pulse text-success" />
-                <span className="text-xs text-muted-foreground">답변 중...</span>
-              </div> : <div className="flex items-center justify-between gap-2 cursor-pointer" onClick={openChat}>
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {isBriefingDisplay && <Clock className="h-3.5 w-3.5 text-success shrink-0" />}
+                <span className="text-xs text-muted-foreground">{isBriefingResponse ? "브리핑 생성 중..." : "답변 중..."}</span>
+              </div> : <div className="flex items-center justify-between gap-2">
+                {/* 브리핑: 탭하면 TTS 재생 / 일반 응답: 탭하면 채팅 오픈 */}
+                <div
+                  className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
+                  onClick={isBriefingDisplay ? handleBriefingTTS : openChat}
+                >
+                  {isBriefingDisplay ? (
+                    isPlayingTTS
+                      ? <Volume2 className="h-3.5 w-3.5 text-success shrink-0 animate-pulse" />
+                      : <Clock className="h-3.5 w-3.5 text-success shrink-0" />
+                  ) : null}
                   <p className="text-xs text-foreground/80 flex-1 line-clamp-2">{displayMessage}</p>
                 </div>
-                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={e => {
-            e.stopPropagation();
-            setResponse(null);
-            setIsBriefingResponse(false);
-          }}>
-                  <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
-                </Button>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {/* 브리핑일 때만 TTS 버튼 노출 */}
+                  {isBriefingDisplay && (
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleBriefingTTS}>
+                      {isPlayingTTS
+                        ? <VolumeX className="h-3.5 w-3.5 text-success" />
+                        : <Volume2 className="h-3.5 w-3.5 text-success" />}
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={e => {
+                    e.stopPropagation();
+                    ttsAudioRef.current?.pause();
+                    ttsAudioRef.current = null;
+                    setIsPlayingTTS(false);
+                    setResponse(null);
+                    setIsBriefingResponse(false);
+                  }}>
+                    <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Button>
+                </div>
               </div>}
           </div>}
 
