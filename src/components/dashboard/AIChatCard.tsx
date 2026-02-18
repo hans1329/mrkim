@@ -416,8 +416,9 @@ export function AIChatCard() {
           </div>
 
           {/* 우상단: 마이크 아이콘 */}
-          <Button variant="ghost" size="icon" onClick={openVoice} className="h-9 w-9 rounded-full bg-primary/10 hover:bg-primary/20 text-primary">
-            <Mic className="h-5 w-5" />
+          <Button variant="ghost" size="sm" onClick={openVoice} className="gap-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary px-3">
+            <Mic className="h-4 w-4" />
+            음성 대화
           </Button>
         </div>
 
