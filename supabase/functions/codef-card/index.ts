@@ -1,4 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// node:crypto - Deno 엣지 함수에서 지원되는 Node.js 호환 모듈 사용
+// 공식 Codef SDK(easycodef-node/lib/util.ts)와 완전 동일한 방식
+import { publicEncrypt } from "node:crypto";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,99 +25,29 @@ const CARD_ORGANIZATION_CODES: Record<string, string> = {
   "nh": "0304",        // NH농협카드
 };
 
-// Base64 → ArrayBuffer
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
-
-// ArrayBuffer → Base64
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
 /**
- * Web Crypto API를 사용한 RSA-PKCS1-v1_5 암호화
- * Codef 요구: Java의 Cipher.getInstance("RSA") = RSA/ECB/PKCS1Padding
+ * RSA PKCS#1 v1.5 암호화 - 공식 Codef SDK(easycodef-node)와 동일 구현
+ * Buffer.from(plainText) → node:crypto.publicEncrypt → base64
  */
-async function encryptRSA(plainText: string, base64PublicKey: string): Promise<string> {
-  const keyBuffer = base64ToArrayBuffer(base64PublicKey);
-  
-  let cryptoKey: CryptoKey;
-  
-  // SubjectPublicKeyInfo (SPKI) 형식으로 먼저 시도
-  try {
-    cryptoKey = await crypto.subtle.importKey(
-      "spki",
-      keyBuffer,
-      {
-        name: "RSA-OAEP",
-        hash: "SHA-1",
-      },
-      false,
-      ["encrypt"]
-    );
-    console.log("Imported key as SPKI format with RSA-OAEP/SHA-1");
-  } catch (e1) {
-    console.log("SPKI import failed, trying PKCS#1 format:", e1);
-    // PKCS#1 형식은 브라우저에서 직접 지원 안 되므로 다른 방법 시도
-    throw new Error(`공개키 임포트 실패: ${e1}`);
-  }
-
-  const plaintextBytes = new TextEncoder().encode(plainText);
-  const encrypted = await crypto.subtle.encrypt(
-    { name: "RSA-OAEP" },
-    cryptoKey,
-    plaintextBytes
-  );
-  
-  return arrayBufferToBase64(encrypted);
-}
-
-/**
- * PKCS1 v1.5 암호화 - SubtleCrypto는 RSASSA-PKCS1-v1_5만 sign에 지원하므로
- * node-forge를 사용하되, 입력 형식을 명확히 처리
- */
-async function encryptRSAPKCS1v15(plainText: string, base64PublicKey: string): Promise<string> {
-  // @ts-ignore
-  const forge = await import("npm:node-forge@1.3.1");
-  
+function encryptRSAPKCS1v15(plainText: string, base64PublicKey: string): string {
   const cleanKey = base64PublicKey.replace(/[\r\n\s]/g, "");
-  const pem = `-----BEGIN PUBLIC KEY-----\n${cleanKey.match(/.{1,64}/g)!.join("\n")}\n-----END PUBLIC KEY-----`;
-  
+  const pem = "-----BEGIN PUBLIC KEY-----\n" + cleanKey + "\n-----END PUBLIC KEY-----";
+
   console.log("Public key length:", cleanKey.length);
   console.log("Public key prefix:", cleanKey.substring(0, 20));
-  
-  try {
-    const publicKey = forge.default.pki.publicKeyFromPem(pem);
-    
-    // node-forge는 내부적으로 binary string을 사용하므로
-    // UTF-8 텍스트를 명시적으로 UTF-8 bytes → forge binary string으로 변환해야 함
-    // 그렇지 않으면 특수문자나 ASCII 범위 밖 문자가 잘못 처리됨
-    const utf8Bytes = new TextEncoder().encode(plainText);
-    let binaryStr = "";
-    for (let i = 0; i < utf8Bytes.length; i++) {
-      binaryStr += String.fromCharCode(utf8Bytes[i]);
-    }
-    
-    // RSA PKCS#1 v1.5 암호화 (binary string 입력)
-    const encrypted = publicKey.encrypt(binaryStr, "RSAES-PKCS1-V1_5");
-    const result = forge.default.util.encode64(encrypted);
-    console.log("Encrypted length:", result.length, "Input bytes:", utf8Bytes.length);
-    return result;
-  } catch (e) {
-    console.error("forge encryption error:", e);
-    throw new Error(`암호화 실패: ${e}`);
-  }
+
+  // @ts-ignore - node:crypto types
+  const encrypted = publicEncrypt(
+    {
+      key: pem,
+      padding: 1, // RSA_PKCS1_PADDING = 1 (constants.RSA_PKCS1_PADDING)
+    },
+    Buffer.from(plainText)  // UTF-8 encoding (Node.js default)
+  );
+
+  const result = encrypted.toString("base64");
+  console.log("Encrypted length:", result.length, "Input bytes:", plainText.length);
+  return result;
 }
 
 async function getAccessToken(): Promise<string> {
@@ -278,7 +211,7 @@ async function handleRegisterWithCert(
   }
 
   console.log("Encrypting cert password with RSA PKCS1 v1.5...");
-  const encryptedCertPassword = await encryptRSAPKCS1v15(certPassword, publicKey);
+  const encryptedCertPassword = encryptRSAPKCS1v15(certPassword, publicKey);
   console.log("Cert password encrypted successfully");
 
   const requestBody = {
@@ -357,7 +290,7 @@ async function handleRegister(
 
   // 비밀번호 RSA PKCS1 v1.5 암호화
   console.log("Encrypting password with RSA PKCS1 v1.5...");
-  const encryptedPassword = await encryptRSAPKCS1v15(password, publicKey);
+  const encryptedPassword = encryptRSAPKCS1v15(password, publicKey);
   console.log("Password encrypted successfully");
 
   const requestBody = {
@@ -434,7 +367,7 @@ async function handleAddAccount(
     );
   }
 
-  const encryptedPassword = await encryptRSAPKCS1v15(password, publicKey);
+  const encryptedPassword = encryptRSAPKCS1v15(password, publicKey);
 
   const requestBody = {
     connectedId,
