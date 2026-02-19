@@ -1,6 +1,6 @@
- import { Card, CardContent } from "@/components/ui/card";
- import { Button } from "@/components/ui/button";
- import { useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
  import { 
    CreditCard, 
    Wallet, 
@@ -28,7 +28,7 @@ const benefits = [
 ];
 
  export function IntegratedConnectionCard() {
-   const navigate = useNavigate();
+   const { openDrawer } = useConnectionDrawer();
  
    return (
      <Card className="overflow-hidden bg-card">
@@ -79,7 +79,7 @@ const benefits = [
 
            {/* 연동 버튼 */}
            <Button 
-             onClick={() => navigate("/onboarding")} 
+             onClick={() => openDrawer("hometax")}
              className="w-full gap-2 h-12 text-base rounded-full"
              size="lg"
            >

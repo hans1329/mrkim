@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +51,7 @@ import { toast } from "sonner";
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { openDrawer } = useConnectionDrawer();
   const { theme, setTheme } = useTheme();
   const { resetOnboarding } = useOnboarding();
   const { profile, loading, updating, updateProfile, resetConnections } = useProfile();
@@ -305,7 +307,7 @@ export default function Settings() {
                   연결됨
                 </span>
               ) : (
-                <Button variant="outline" size="sm" onClick={() => navigate("/onboarding")}>
+                <Button variant="outline" size="sm" onClick={() => openDrawer("hometax")}>
                   연결
                 </Button>
               )}
@@ -327,7 +329,7 @@ export default function Settings() {
                   연결됨
                 </span>
               ) : (
-                <Button variant="outline" size="sm" onClick={() => navigate("/onboarding")}>
+                <Button variant="outline" size="sm" onClick={() => openDrawer("card")}>
                   연결
                 </Button>
               )}
@@ -349,7 +351,7 @@ export default function Settings() {
                   연결됨
                 </span>
               ) : (
-                <Button variant="outline" size="sm" onClick={() => navigate("/onboarding")}>
+                <Button variant="outline" size="sm" onClick={() => openDrawer("account")}>
                   연결
                 </Button>
               )}

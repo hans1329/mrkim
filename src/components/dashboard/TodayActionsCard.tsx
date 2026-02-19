@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { useProfile } from "@/hooks/useProfile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ interface TodayActionsCardProps {
 
 export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps) {
   const navigate = useNavigate();
+  const { openDrawer } = useConnectionDrawer();
   const { openChat } = useChat();
   const { profile, loading } = useProfile();
   const [statusOverrides, setStatusOverrides] = useState<Record<string, ActionStatus>>({});
@@ -111,7 +113,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
         status: "pending" as ActionStatus,
         icon: Link2,
         actions: {
-          primary: { label: "연동 시작하기", action: () => navigate("/onboarding") },
+          primary: { label: "연동 시작하기", action: () => openDrawer("hometax") },
         },
       }];
     }

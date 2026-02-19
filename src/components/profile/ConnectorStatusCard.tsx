@@ -21,6 +21,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 
 const CATEGORY_TO_STEP: Record<string, string> = {
   hometax: "hometax",
@@ -51,6 +52,7 @@ export function ConnectorStatusCard() {
   const { data: connectors, isLoading } = useConnectorStatus();
   const { hometaxConnected, cardConnected, accountConnected, profile } = useConnection();
   const navigate = useNavigate();
+  const { openDrawer } = useConnectionDrawer();
 
   // profiles fallback: connector_instances가 없을 때 카테고리별 연동 상태
   const profileFallback: Record<string, boolean> = {
@@ -159,8 +161,8 @@ export function ConnectorStatusCard() {
                     size="icon"
                     className="h-6 w-6 text-muted-foreground"
                     onClick={() => {
-                      const step = CATEGORY_TO_STEP[connector.category];
-                      if (step) navigate(`/onboarding?step=${step}`);
+                      const type = connector.category === "bank" ? "account" : connector.category as "hometax" | "card";
+                      openDrawer(type);
                     }}
                   >
                     <RefreshCw className="h-3 w-3" />
@@ -171,8 +173,8 @@ export function ConnectorStatusCard() {
                     size="sm"
                     className="h-6 px-2 text-[10px]"
                     onClick={() => {
-                      const step = CATEGORY_TO_STEP[connector.category];
-                      if (step) navigate(`/onboarding?step=${step}`);
+                      const type = connector.category === "bank" ? "account" : connector.category as "hometax" | "card";
+                      openDrawer(type);
                     }}
                   >
                     연동하기

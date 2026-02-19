@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
 import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { cn } from "@/lib/utils";
 import { TransactionClassifier } from "@/components/transactions/TransactionClassifier";
 import { useTransactions, useTransactionStats, useAddTransaction, type TransactionInsert } from "@/hooks/useTransactions";
@@ -57,6 +58,7 @@ export default function Transactions() {
   const bankSync = useBankSync();
 
   const navigate = useNavigate();
+  const { openDrawer } = useConnectionDrawer();
   const cardConnectedId = localStorage.getItem("codef_connected_id");
   const bankConnectedId = localStorage.getItem("codef_bank_connected_id");
 
@@ -72,7 +74,7 @@ export default function Transactions() {
 
     if (!connectedId) {
       toast.error("카드 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.", {
-        action: { label: "재연동", onClick: () => navigate("/onboarding?step=card&reconnect=true") },
+        action: { label: "재연동", onClick: () => openDrawer("card") },
       });
       return;
     }
@@ -110,7 +112,7 @@ export default function Transactions() {
 
     if (!connectedId) {
       toast.error("은행 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.", {
-        action: { label: "재연동", onClick: () => navigate("/onboarding?step=account&reconnect=true") },
+        action: { label: "재연동", onClick: () => openDrawer("account") },
       });
       return;
     }
@@ -194,7 +196,7 @@ export default function Transactions() {
               <p className="text-xs text-muted-foreground mb-3">
                 연동하면 거래 내역이 자동으로 수집되고 AI가 분류해드려요
               </p>
-              <Button size="sm" className="gap-1" onClick={() => navigate("/onboarding")}>
+              <Button size="sm" className="gap-1" onClick={() => openDrawer("card")}>
                 <Sparkles className="h-3.5 w-3.5" />
                 연동하러 가기
               </Button>
@@ -226,7 +228,7 @@ export default function Transactions() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => navigate("/onboarding?step=card&reconnect=true")}
+                      onClick={() => openDrawer("card")}
                       className="h-6 px-2 gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
                       <ExternalLink className="h-3 w-3" />
@@ -237,7 +239,7 @@ export default function Transactions() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => navigate("/onboarding?step=card")}
+                    onClick={() => openDrawer("card")}
                     className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10"
                   >
                     <LinkIcon className="h-3 w-3" />
@@ -267,7 +269,7 @@ export default function Transactions() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => navigate("/onboarding?step=account&reconnect=true")}
+                      onClick={() => openDrawer("account")}
                       className="h-6 px-2 gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
                       <ExternalLink className="h-3 w-3" />
@@ -278,8 +280,8 @@ export default function Transactions() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => navigate("/onboarding?step=account")}
-                    className="h-6 px-2 gap-1 text-xs text-green-600 hover:text-green-600 hover:bg-green-500/10"
+                    onClick={() => openDrawer("account")}
+                    className="h-6 px-2 gap-1 text-xs text-success hover:text-success hover:bg-success/10"
                   >
                     <LinkIcon className="h-3 w-3" />
                     연동
