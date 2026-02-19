@@ -14,8 +14,6 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  Smartphone,
-  Lock,
   AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -57,7 +55,6 @@ interface CardInfo {
 export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowProps) {
   const [step, setStep] = useState<FlowStep>("select-company");
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-  const [authMethod, setAuthMethod] = useState<"id" | "cert">("id");
   const [credentials, setCredentials] = useState({ id: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
@@ -268,70 +265,35 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 </div>
               )}
 
-              {/* 인증 방법 선택 */}
-              <div className="flex gap-2 p-1 bg-muted rounded-lg">
-                <button
-                  onClick={() => setAuthMethod("id")}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm transition-all",
-                    authMethod === "id" ? "bg-background shadow-sm" : "text-muted-foreground"
-                  )}
-                >
-                  <Smartphone className="h-4 w-4" />
-                  아이디 로그인
-                </button>
-                <button
-                  onClick={() => setAuthMethod("cert")}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm transition-all",
-                    authMethod === "cert" ? "bg-background shadow-sm" : "text-muted-foreground"
-                  )}
-                >
-                  <Lock className="h-4 w-4" />
-                  공동인증서
-                </button>
-              </div>
-
-              {authMethod === "id" ? (
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs">아이디</Label>
+              {/* 아이디/비밀번호 입력 */}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">아이디</Label>
+                  <Input
+                    placeholder="카드사 홈페이지 아이디"
+                    value={credentials.id}
+                    onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">비밀번호</Label>
+                  <div className="relative">
                     <Input
-                      placeholder="카드사 홈페이지 아이디"
-                      value={credentials.id}
-                      onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="비밀번호"
+                      value={credentials.password}
+                      onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">비밀번호</Label>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="비밀번호"
-                        value={credentials.password}
-                        onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
-              ) : (
-                <div className="bg-muted/50 rounded-xl p-4 text-center">
-                  <Lock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    공동인증서 로그인은 준비 중입니다
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    아이디 로그인을 이용해주세요
-                  </p>
-                </div>
-              )}
+              </div>
 
               {/* 보안 안내 */}
               <div className="flex items-start gap-2 bg-primary/5 rounded-lg p-3 text-xs">
@@ -361,7 +323,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 </Button>
                 <Button
                   onClick={handleAuth}
-                  disabled={!credentials.id || !credentials.password || !agreedTerms || isLoading || authMethod === "cert"}
+                  disabled={!credentials.id || !credentials.password || !agreedTerms || isLoading}
                   className="flex-1"
                 >
                   {isLoading ? (
