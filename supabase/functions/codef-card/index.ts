@@ -88,8 +88,6 @@ async function encryptRSAPKCS1v15(plainText: string, base64PublicKey: string): P
   // @ts-ignore
   const forge = await import("npm:node-forge@1.3.1");
   
-  // 공개키 형식 확인 및 PEM 변환
-  // SPKI 형식 (SubjectPublicKeyInfo) - BEGIN PUBLIC KEY
   const cleanKey = base64PublicKey.replace(/[\r\n\s]/g, "");
   const pem = `-----BEGIN PUBLIC KEY-----\n${cleanKey.match(/.{1,64}/g)!.join("\n")}\n-----END PUBLIC KEY-----`;
   
@@ -98,10 +96,20 @@ async function encryptRSAPKCS1v15(plainText: string, base64PublicKey: string): P
   
   try {
     const publicKey = forge.default.pki.publicKeyFromPem(pem);
-    // RSA PKCS#1 v1.5 암호화
-    const encrypted = publicKey.encrypt(plainText, "RSAES-PKCS1-V1_5");
+    
+    // node-forge는 내부적으로 binary string을 사용하므로
+    // UTF-8 텍스트를 명시적으로 UTF-8 bytes → forge binary string으로 변환해야 함
+    // 그렇지 않으면 특수문자나 ASCII 범위 밖 문자가 잘못 처리됨
+    const utf8Bytes = new TextEncoder().encode(plainText);
+    let binaryStr = "";
+    for (let i = 0; i < utf8Bytes.length; i++) {
+      binaryStr += String.fromCharCode(utf8Bytes[i]);
+    }
+    
+    // RSA PKCS#1 v1.5 암호화 (binary string 입력)
+    const encrypted = publicKey.encrypt(binaryStr, "RSAES-PKCS1-V1_5");
     const result = forge.default.util.encode64(encrypted);
-    console.log("Encrypted length:", result.length);
+    console.log("Encrypted length:", result.length, "Input bytes:", utf8Bytes.length);
     return result;
   } catch (e) {
     console.error("forge encryption error:", e);
