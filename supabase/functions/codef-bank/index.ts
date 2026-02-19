@@ -547,24 +547,31 @@ async function handleGetTransactions(
   if (isSuccess) {
     const rawTransactions = data.data?.resTrHistoryList || [];
     
-    // 거래 데이터 정규화 (API 응답 필드: resAccountDesc1~4 매핑)
+    // 거래 데이터 정규화
+    // 주의: resAccountDesc1~4의 의미는 은행마다 다름 (코드에프 스펙 시트 참조)
+    // - Desc1: 대부분 미제공(-), 일부 은행만 상대 예금주명
+    // - Desc2: 은행마다 거래구분/적요/거래내용 등으로 다름
+    // - Desc3: 은행마다 적요/거래내용/보낸분 등으로 다름
+    // - Desc4: 거래점 (일부 은행 미제공)
+    // → 전략: 비어있지 않은 Desc 값들을 모아 의미있는 description 구성
     const transactions = rawTransactions.map((tx: any) => {
       const outAmount = parseInt(tx.resAccountOut || "0", 10);
       const inAmount = parseInt(tx.resAccountIn || "0", 10);
       const isExpense = outAmount > 0;
       const amount = isExpense ? outAmount : inAmount;
 
-      // 코드에프 응답 필드 매핑:
-      // resAccountDesc1: 보낸분/받는분 (거래상대)
-      // resAccountDesc2: 거래구분/메모
-      // resAccountDesc3: 적요
-      // resAccountDesc4: 거래점(지점)
-      const counterpart = (tx.resAccountDesc1 || "").trim();
-      const memo = (tx.resAccountDesc2 || "").trim();
-      const summary = (tx.resAccountDesc3 || "").trim();
+      const desc1 = (tx.resAccountDesc1 || "").trim();
+      const desc2 = (tx.resAccountDesc2 || "").trim();
+      const desc3 = (tx.resAccountDesc3 || "").trim();
+      const desc4 = (tx.resAccountDesc4 || "").trim();
 
-      // 설명: 적요 > 거래구분/메모 > 거래상대 순으로 fallback
-      const description = summary || memo || counterpart || (isExpense ? "출금" : "입금");
+      // 비어있지 않은 Desc 값 중 첫 번째를 대표 description으로 사용
+      // desc2(거래구분/적요)와 desc3(적요/거래내용)이 핵심이므로 우선순위 부여
+      const description = desc2 || desc3 || desc1 || (isExpense ? "출금" : "입금");
+
+      // 거래상대(보낸분/받는분)는 desc1이거나 desc3인 경우가 많음 (은행마다 다름)
+      // raw 값을 모두 보존해서 AI 분류나 검색에 활용 가능하도록
+      const rawMemo = [desc1, desc2, desc3].filter(Boolean).join(" | ");
 
       return {
         transactionDate: tx.resAccountTrDate || "",
@@ -575,9 +582,9 @@ async function handleGetTransactions(
         balance: tx.resAfterTranBalance || "0",
         // 고유 ID: 날짜+시각+금액 조합 (중복방지)
         transactionId: `${tx.resAccountTrDate}_${tx.resAccountTrTime}_${outAmount}_${inAmount}`,
-        memo,
-        counterpartName: counterpart,
-        branch: (tx.resAccountDesc4 || "").trim(),
+        memo: rawMemo,
+        counterpartName: desc1, // Desc1이 거래상대인 은행 (기업·신한 등)
+        branch: desc4,
       };
     });
 
