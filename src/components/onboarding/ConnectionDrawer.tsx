@@ -31,7 +31,7 @@ export function ConnectionDrawer({ open, type, onClose, onComplete }: Connection
 
   return (
     <Drawer open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DrawerContent className="max-h-[92dvh]">
+      <DrawerContent className="max-h-[88dvh] mx-auto w-full max-w-md">
         <DrawerHeader className="pb-2 pt-4 px-4">
           <DrawerTitle className="text-base font-semibold">
             {type ? TITLES[type] : ""}
