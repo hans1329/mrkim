@@ -238,7 +238,7 @@ serve(async (req) => {
       );
     }
 
-    const { action, bankId, loginId, password, connectedId, accountNo, startDate, endDate } = await req.json();
+    const { action, bankId, loginId, password, loginType, certFile, certPassword, connectedId, accountNo, startDate, endDate } = await req.json();
 
     const publicKey = Deno.env.get("CODEF_PUBLIC_KEY");
     if (!publicKey) {
@@ -250,7 +250,13 @@ serve(async (req) => {
     console.log("Access token obtained");
 
     if (action === "register") {
-      return await handleRegister(accessToken, publicKey, bankId, loginId, password);
+      if (loginType === "2") {
+        // 인증서 로그인
+        return await handleRegisterWithCert(accessToken, publicKey, bankId, certFile, certPassword);
+      } else {
+        // 아이디/비밀번호 로그인
+        return await handleRegister(accessToken, publicKey, bankId, loginId, password);
+      }
     } else if (action === "addAccount") {
       return await handleAddAccount(accessToken, publicKey, connectedId, bankId, loginId, password);
     } else if (action === "getAccounts") {
@@ -276,7 +282,93 @@ serve(async (req) => {
   }
 });
 
-// 계정 등록 (ConnectedId 신규 발급)
+// 계정 등록 - 인증서 방식 (loginType "2")
+async function handleRegisterWithCert(
+  accessToken: string,
+  publicKey: string,
+  bankId: string,
+  certFile: string,      // Base64 인증서 파일
+  certPassword: string,  // 인증서 비밀번호 (평문, RSA 암호화 적용)
+): Promise<Response> {
+  const organizationCode = BANK_ORGANIZATION_CODES[bankId];
+  if (!organizationCode) {
+    return new Response(
+      JSON.stringify({ success: false, error: "지원하지 않는 은행입니다." }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  if (!certFile || !certPassword) {
+    return new Response(
+      JSON.stringify({ success: false, error: "인증서 파일과 비밀번호가 필요합니다." }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  console.log("Encrypting cert password with RSA PKCS1 v1.5...");
+  const encryptedCertPassword = await encryptRSAPKCS1(certPassword, publicKey);
+  console.log("Cert password encrypted successfully");
+
+  const requestBody = {
+    accountList: [
+      {
+        countryCode: "KR",
+        businessType: "BK",
+        clientType: "P",
+        organization: organizationCode,
+        loginType: "2",           // 공동인증서 로그인
+        certType: "0",            // 공동인증서 (구 공인인증서)
+        certFile: certFile,       // Base64 인증서 파일
+        certPassword: encryptedCertPassword,
+      }
+    ]
+  };
+
+  console.log("Registering bank account with cert for organization:", organizationCode);
+
+  const response = await fetch(`${CODEF_API_URL}/v1/account/create`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const responseText = await response.text();
+  console.log("Account create (cert) response:", responseText);
+
+  const data = parseCodefResponse(responseText);
+  const result = data.result || {};
+  const isSuccess = result.code === "CF-00000";
+
+  if (isSuccess && data.data?.connectedId) {
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "인증서로 은행 계정이 등록되었습니다.",
+        connectedId: data.data.connectedId,
+        successList: data.data.successList || [],
+        errorList: data.data.errorList || [],
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } else {
+    const errorCode = data.data?.errorList?.[0]?.code || result.code;
+    const errorMessage = getUserFriendlyMessage(errorCode);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: errorMessage,
+        code: result.code,
+        errorList: data.data?.errorList || [],
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+}
+
+// 계정 등록 - 아이디/비밀번호 방식 (loginType "1")
 async function handleRegister(
   accessToken: string,
   publicKey: string,
