@@ -547,19 +547,24 @@ async function handleGetTransactions(
   if (isSuccess) {
     const rawTransactions = data.data?.resTrHistoryList || [];
     
-    // 거래 데이터 정규화
+    // 거래 데이터 정규화 (API 응답 필드: resAccountDesc1~4 매핑)
     const transactions = rawTransactions.map((tx: any) => {
       const outAmount = parseInt(tx.resAccountOut || "0", 10);
       const inAmount = parseInt(tx.resAccountIn || "0", 10);
       const isExpense = outAmount > 0;
       const amount = isExpense ? outAmount : inAmount;
 
-      // 설명: 적요 > 메모 > 비고 > 거래상대 순으로 fallback
-      const description = (tx.resAccountDesc || "").trim()
-        || (tx.resAccountMemo || "").trim()
-        || (tx.resAccountNote || "").trim()
-        || (tx.resAccountCounterpartName || "").trim()
-        || "";
+      // 코드에프 응답 필드 매핑:
+      // resAccountDesc1: 보낸분/받는분 (거래상대)
+      // resAccountDesc2: 거래구분/메모
+      // resAccountDesc3: 적요
+      // resAccountDesc4: 거래점(지점)
+      const counterpart = (tx.resAccountDesc1 || "").trim();
+      const memo = (tx.resAccountDesc2 || "").trim();
+      const summary = (tx.resAccountDesc3 || "").trim();
+
+      // 설명: 적요 > 거래구분/메모 > 거래상대 순으로 fallback
+      const description = summary || memo || counterpart || (isExpense ? "출금" : "입금");
 
       return {
         transactionDate: tx.resAccountTrDate || "",
@@ -568,9 +573,11 @@ async function handleGetTransactions(
         type: isExpense ? "expense" : "income",
         description,
         balance: tx.resAfterTranBalance || "0",
-        transactionId: tx.resAccountTrSeq || `${tx.resAccountTrDate}_${tx.resAccountTrTime}_${Math.random().toString(36).substr(2, 9)}`,
-        memo: tx.resAccountMemo || "",
-        counterpartName: (tx.resAccountCounterpartName || "").trim(),
+        // 고유 ID: 날짜+시각+금액 조합 (중복방지)
+        transactionId: `${tx.resAccountTrDate}_${tx.resAccountTrTime}_${outAmount}_${inAmount}`,
+        memo,
+        counterpartName: counterpart,
+        branch: (tx.resAccountDesc4 || "").trim(),
       };
     });
 
