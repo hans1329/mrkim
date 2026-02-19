@@ -54,8 +54,12 @@ async function encryptRSAPKCS1(plainText: string, base64PublicKey: string): Prom
   // RSA 암호화 (m^e mod n)
   const encrypted = modPow(paddedMessage, e, n);
   
-  // Base64 인코딩하여 반환
-  return btoa(String.fromCharCode(...encrypted));
+  // Base64 인코딩하여 반환 (스택 오버플로우 방지를 위해 청크 단위로 변환)
+  let binary = "";
+  for (let i = 0; i < encrypted.length; i++) {
+    binary += String.fromCharCode(encrypted[i]);
+  }
+  return btoa(binary);
 }
 
 // ASN.1 DER에서 RSA 공개키 파싱

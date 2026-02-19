@@ -53,7 +53,12 @@ async function encryptRSAPKCS1(plainText: string, base64PublicKey: string): Prom
   const paddedMessage = pkcs1v15Pad(messageBytes, keySize);
   const encrypted = modPow(paddedMessage, e, n);
   
-  return btoa(String.fromCharCode(...encrypted));
+  // Base64 인코딩 (스택 오버플로우 방지를 위해 루프 방식으로 변환)
+  let binary = "";
+  for (let i = 0; i < encrypted.length; i++) {
+    binary += String.fromCharCode(encrypted[i]);
+  }
+  return btoa(binary);
 }
 
 function parseRSAPublicKey(der: Uint8Array): { n: Uint8Array; e: Uint8Array } {
