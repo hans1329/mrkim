@@ -32,7 +32,7 @@ export function ConnectionDrawer({ open, type, onClose, onComplete }: Connection
   return (
     <Drawer open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DrawerContent className="max-h-[88dvh] mx-auto w-full max-w-md">
-        <div className="flex justify-center pt-3 pb-1">
+        <div className="flex justify-center pt-3 pb-4">
           <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
         </div>
         <DrawerHeader className="pb-2 pt-2 px-4">
