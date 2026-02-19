@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import forge from "npm:node-forge@1.3.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,19 +22,92 @@ const CARD_ORGANIZATION_CODES: Record<string, string> = {
   "nh": "0304",        // NH농협카드
 };
 
-// RSA PKCS1 v1.5 암호화 (node-forge 사용 - Java Cipher.getInstance("RSA")와 동일)
-function encryptRSAPKCS1(plainText: string, base64PublicKey: string): string {
-  // Base64 공개키를 DER → PEM 형식으로 변환
-  const pem = `-----BEGIN PUBLIC KEY-----\n${base64PublicKey.match(/.{1,64}/g)!.join("\n")}\n-----END PUBLIC KEY-----`;
-  const publicKey = forge.pki.publicKeyFromPem(pem);
-  
-  // RSA PKCS#1 v1.5 암호화
-  const encrypted = publicKey.encrypt(plainText, "RSAES-PKCS1-V1_5");
-  
-  // Base64 인코딩
-  return forge.util.encode64(encrypted);
+// Base64 → ArrayBuffer
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
 }
 
+// ArrayBuffer → Base64
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+/**
+ * Web Crypto API를 사용한 RSA-PKCS1-v1_5 암호화
+ * Codef 요구: Java의 Cipher.getInstance("RSA") = RSA/ECB/PKCS1Padding
+ */
+async function encryptRSA(plainText: string, base64PublicKey: string): Promise<string> {
+  const keyBuffer = base64ToArrayBuffer(base64PublicKey);
+  
+  let cryptoKey: CryptoKey;
+  
+  // SubjectPublicKeyInfo (SPKI) 형식으로 먼저 시도
+  try {
+    cryptoKey = await crypto.subtle.importKey(
+      "spki",
+      keyBuffer,
+      {
+        name: "RSA-OAEP",
+        hash: "SHA-1",
+      },
+      false,
+      ["encrypt"]
+    );
+    console.log("Imported key as SPKI format with RSA-OAEP/SHA-1");
+  } catch (e1) {
+    console.log("SPKI import failed, trying PKCS#1 format:", e1);
+    // PKCS#1 형식은 브라우저에서 직접 지원 안 되므로 다른 방법 시도
+    throw new Error(`공개키 임포트 실패: ${e1}`);
+  }
+
+  const plaintextBytes = new TextEncoder().encode(plainText);
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "RSA-OAEP" },
+    cryptoKey,
+    plaintextBytes
+  );
+  
+  return arrayBufferToBase64(encrypted);
+}
+
+/**
+ * PKCS1 v1.5 암호화 - SubtleCrypto는 RSASSA-PKCS1-v1_5만 sign에 지원하므로
+ * node-forge를 사용하되, 입력 형식을 명확히 처리
+ */
+async function encryptRSAPKCS1v15(plainText: string, base64PublicKey: string): Promise<string> {
+  // @ts-ignore
+  const forge = await import("npm:node-forge@1.3.1");
+  
+  // 공개키 형식 확인 및 PEM 변환
+  // SPKI 형식 (SubjectPublicKeyInfo) - BEGIN PUBLIC KEY
+  const cleanKey = base64PublicKey.replace(/[\r\n\s]/g, "");
+  const pem = `-----BEGIN PUBLIC KEY-----\n${cleanKey.match(/.{1,64}/g)!.join("\n")}\n-----END PUBLIC KEY-----`;
+  
+  console.log("Public key length:", cleanKey.length);
+  console.log("Public key prefix:", cleanKey.substring(0, 20));
+  
+  try {
+    const publicKey = forge.default.pki.publicKeyFromPem(pem);
+    // RSA PKCS#1 v1.5 암호화
+    const encrypted = publicKey.encrypt(plainText, "RSAES-PKCS1-V1_5");
+    const result = forge.default.util.encode64(encrypted);
+    console.log("Encrypted length:", result.length);
+    return result;
+  } catch (e) {
+    console.error("forge encryption error:", e);
+    throw new Error(`암호화 실패: ${e}`);
+  }
+}
 
 async function getAccessToken(): Promise<string> {
   const clientId = Deno.env.get("CODEF_CLIENT_ID");
@@ -66,6 +138,45 @@ async function getAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+/**
+ * 코드에프 공개키 동적 조회 (GET /v1/common/public-key)
+ */
+async function getPublicKeyFromAPI(accessToken: string): Promise<string> {
+  const url = `${CODEF_API_URL}/v1/common/public-key`;
+  console.log("Fetching public key from:", url);
+  
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${accessToken}`,
+    },
+  });
+  
+  console.log("Public key API status:", response.status);
+  
+  if (!response.ok) {
+    const body = await response.text();
+    console.error("Public key API error:", body);
+    throw new Error(`공개키 API 오류 (${response.status}): ${body}`);
+  }
+  
+  const text = await response.text();
+  console.log("Public key raw response length:", text.length);
+  console.log("Public key raw response preview:", text.substring(0, 100));
+  
+  // JSON 형식인 경우
+  try {
+    const json = JSON.parse(text);
+    if (json.publicKey) return json.publicKey;
+    if (json.data?.publicKey) return json.data.publicKey;
+    // 전체가 키인 경우
+    return text.trim();
+  } catch {
+    // 순수 텍스트로 반환
+    return text.trim();
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -89,10 +200,19 @@ serve(async (req) => {
     const accessToken = await getAccessToken();
     console.log("Access token obtained");
 
-    // 2. 공개키 (환경변수에서 로드)
-    const publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
-    if (!publicKey && (action === "register" || action === "addAccount")) {
-      throw new Error("CODEF_PUBLIC_KEY가 설정되지 않았습니다.");
+    // 2. 공개키 - 동적 조회 우선, 실패 시 환경변수 폴백
+    let publicKey = "";
+    if (action === "register" || action === "addAccount") {
+      try {
+        publicKey = await getPublicKeyFromAPI(accessToken);
+        console.log("Using dynamic public key, length:", publicKey.length);
+      } catch (pkError) {
+        console.error("Dynamic public key fetch failed:", pkError);
+        // 환경변수 폴백
+        publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
+        if (!publicKey) throw new Error("공개키를 가져올 수 없습니다.");
+        console.log("Using env public key, length:", publicKey.length);
+      }
     }
 
     // 액션에 따른 분기
@@ -102,13 +222,10 @@ serve(async (req) => {
       }
       return await handleRegister(accessToken, publicKey, cardCompanyId, loginId, password);
     } else if (action === "addAccount") {
-      // 계정 추가 (기존 ConnectedId에 카드사 추가)
       return await handleAddAccount(accessToken, publicKey, connectedId, cardCompanyId, loginId, password);
     } else if (action === "getCards") {
-      // 보유 카드 조회
       return await handleGetCards(accessToken, connectedId, cardCompanyId);
     } else if (action === "getTransactions") {
-      // 승인 내역 조회
       return await handleGetTransactions(accessToken, connectedId, cardCompanyId, startDate, endDate, cardNo);
     } else {
       return new Response(
@@ -153,7 +270,7 @@ async function handleRegisterWithCert(
   }
 
   console.log("Encrypting cert password with RSA PKCS1 v1.5...");
-  const encryptedCertPassword = encryptRSAPKCS1(certPassword, publicKey);
+  const encryptedCertPassword = await encryptRSAPKCS1v15(certPassword, publicKey);
   console.log("Cert password encrypted successfully");
 
   const requestBody = {
@@ -232,7 +349,7 @@ async function handleRegister(
 
   // 비밀번호 RSA PKCS1 v1.5 암호화
   console.log("Encrypting password with RSA PKCS1 v1.5...");
-  const encryptedPassword = encryptRSAPKCS1(password, publicKey);
+  const encryptedPassword = await encryptRSAPKCS1v15(password, publicKey);
   console.log("Password encrypted successfully");
 
   const requestBody = {
@@ -309,7 +426,7 @@ async function handleAddAccount(
     );
   }
 
-  const encryptedPassword = await encryptRSAPKCS1(password, publicKey);
+  const encryptedPassword = await encryptRSAPKCS1v15(password, publicKey);
 
   const requestBody = {
     connectedId,
@@ -376,7 +493,7 @@ async function handleGetCards(
     connectedId,
     organization: organizationCode,
     birthDate: "",
-    inquiryType: "0", // 0: 전체, 1: 신용카드, 2: 체크카드
+    inquiryType: "0",
   };
 
   console.log("Getting cards for connectedId:", connectedId, "organization:", organizationCode);
@@ -433,7 +550,6 @@ function parseCodefResponse(text: string): any {
     return JSON.parse(text);
   } catch {
     try {
-      // Codef 응답은 percent-encoding + 공백을 '+'로 보내는 케이스가 있어 함께 처리
       const decoded = decodeURIComponent(text.replace(/\+/g, "%20"));
       return JSON.parse(decoded);
     } catch {
@@ -444,7 +560,6 @@ function parseCodefResponse(text: string): any {
 
 function normalizeCodefMessage(msg: string | undefined): string {
   if (!msg) return "";
-  // msg 자체가 URL 인코딩/플러스 공백인 경우도 있어 안전하게 복원
   try {
     return decodeURIComponent(msg.replace(/\+/g, "%20"));
   } catch {
@@ -476,7 +591,6 @@ async function handleGetTransactions(
     );
   }
 
-  // 기본값: 최근 3개월
   const now = new Date();
   const defaultEndDate = now.toISOString().slice(0, 10).replace(/-/g, "");
   const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
@@ -490,10 +604,10 @@ async function handleGetTransactions(
     organization: organizationCode,
     startDate: normalizedStart,
     endDate: normalizedEnd,
-    orderBy: "0", // 0: 최신순
-    inquiryType: "0", // 0: 전체, 1: 신용, 2: 체크
+    orderBy: "0",
+    inquiryType: "0",
     cardNo: cardNoValue,
-    memberStoreInfoType: "0", // 가맹점 정보 포함
+    memberStoreInfoType: "0",
   });
 
   const fetchApprovalList = async (cardNoValue: string) => {
@@ -526,7 +640,6 @@ async function handleGetTransactions(
     const cardNoFromRequest = (cardNo || "").trim();
     if (cardNoFromRequest) return [cardNoFromRequest];
 
-    // cardNo가 없으면 카드 목록을 조회한 뒤, 각 카드별로 승인내역을 합쳐 반환
     const cardListReq = {
       connectedId,
       organization: organizationCode,
@@ -558,7 +671,6 @@ async function handleGetTransactions(
       .map((c: any) => (c?.resCardNo ? String(c.resCardNo) : ""))
       .filter((no: string) => no.length > 0);
 
-    // 중복 제거
     return Array.from(new Set(cardNos));
   };
 
@@ -597,32 +709,18 @@ async function handleGetTransactions(
 
     const rawTransactions = fulfilled.flatMap((r) => r.value.rawTransactions || []);
     
-    // 거래 데이터 정규화
     const transactions = rawTransactions.map((tx: any) => ({
-      // 날짜/시간
       transactionDate: formatDate(tx.resUsedDate),
       transactionTime: tx.resUsedTime || null,
-      
-      // 금액
       amount: parseInt(tx.resUsedAmount?.replace(/,/g, "") || "0", 10),
-      
-      // 가맹점 정보
       merchantName: tx.resMemberStoreName || tx.resStoreName || "",
       merchantCategory: tx.resMemberStoreType || "",
       description: tx.resMemberStoreName || tx.resStoreName || tx.resNote || "카드 결제",
-      
-      // 카드 정보
       cardNo: tx.resCardNo || "",
       cardName: tx.resCardName || "",
-      
-      // 결제 상태
       status: tx.resApprovalStatus || "approved",
       approvalNo: tx.resApprovalNo || "",
-      
-      // 분할 납부
       installment: tx.resInstallmentCnt || "0",
-      
-      // 원본 데이터 참조용
       rawData: tx,
     }));
 
