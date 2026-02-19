@@ -140,10 +140,14 @@ export function useDeposits() {
   });
 
   const updateDeposit = useMutation({
-    mutationFn: async ({ id, amount }: { id: string; amount: number }) => {
+    mutationFn: async ({ id, amount, name, target_amount }: { id: string; amount: number; name?: string; target_amount?: number | null }) => {
+      const updateData: Record<string, unknown> = { amount };
+      if (name !== undefined) updateData.name = name;
+      if (target_amount !== undefined) updateData.target_amount = target_amount;
+
       const { error } = await supabase
         .from("deposits")
-        .update({ amount })
+        .update(updateData)
         .eq("id", id);
 
       if (error) throw error;

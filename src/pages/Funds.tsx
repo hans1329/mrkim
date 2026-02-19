@@ -513,19 +513,121 @@ function TransferItem({ transfer, onDelete }: { transfer: AutoTransfer; onDelete
   );
 }
 
+function DepositEditDialog({
+  deposit,
+  open,
+  onOpenChange,
+  onUpdate,
+  onDelete,
+  isUpdating,
+  isDeleting,
+}: {
+  deposit: Deposit;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onUpdate: (data: { name: string; target_amount?: number; amount: number }) => Promise<void>;
+  onDelete: () => Promise<void>;
+  isUpdating: boolean;
+  isDeleting: boolean;
+}) {
+  const [form, setForm] = useState({
+    name: deposit.name,
+    amount: deposit.amount.toString(),
+    targetAmount: deposit.target_amount?.toString() || "",
+  });
+
+  const handleUpdate = async () => {
+    if (!form.name) return;
+    await onUpdate({
+      name: form.name,
+      amount: parseInt(form.amount) || 0,
+      target_amount: form.targetAmount ? parseInt(form.targetAmount) : undefined,
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>예치금 수정</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>이름</Label>
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>현재 금액</Label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder="0"
+              value={form.amount ? parseInt(form.amount).toLocaleString() : ""}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^\d]/g, "");
+                setForm({ ...form, amount: value });
+              }}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>목표 금액</Label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder="설정 안 함"
+              value={form.targetAmount ? parseInt(form.targetAmount).toLocaleString() : ""}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^\d]/g, "");
+                setForm({ ...form, targetAmount: value });
+              }}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={onDelete}
+              disabled={isDeleting || isUpdating}
+            >
+              <Trash2 className="mr-1 h-4 w-4" />
+              {isDeleting ? "삭제 중..." : "삭제"}
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={handleUpdate}
+              disabled={isUpdating || isDeleting || !form.name}
+            >
+              {isUpdating ? "저장 중..." : "저장"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function DepositSection({
   dimmed = false,
   deposits,
   isDepositDialogOpen,
   setIsDepositDialogOpen,
   addDeposit,
+  updateDeposit,
+  deleteDeposit,
 }: {
   dimmed?: boolean;
   deposits: Deposit[];
   isDepositDialogOpen: boolean;
   setIsDepositDialogOpen: (v: boolean) => void;
   addDeposit: ReturnType<typeof useDeposits>["addDeposit"];
+  updateDeposit: ReturnType<typeof useDeposits>["updateDeposit"];
+  deleteDeposit: ReturnType<typeof useDeposits>["deleteDeposit"];
 }) {
+  const [editingDeposit, setEditingDeposit] = useState<Deposit | null>(null);
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -571,11 +673,21 @@ function DepositSection({
                         {dimmed && <p className="text-xs text-muted-foreground">연동 후 활성화</p>}
                       </div>
                     </div>
-                    {dimmed ? (
-                      <Badge variant="outline" className="text-muted-foreground">대기 중</Badge>
-                    ) : (
-                      <p className="font-semibold">{formatCurrency(deposit.amount)}</p>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {dimmed ? (
+                        <Badge variant="outline" className="text-muted-foreground">대기 중</Badge>
+                      ) : (
+                        <p className="font-semibold">{formatCurrency(deposit.amount)}</p>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setEditingDeposit(deposit)}
+                      >
+                        <Settings className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
                   </div>
                   {!dimmed && deposit.target_amount && (
                     <div className="space-y-1">
@@ -590,6 +702,29 @@ function DepositSection({
             );
           })}
         </div>
+      )}
+
+      {editingDeposit && (
+        <DepositEditDialog
+          deposit={editingDeposit}
+          open={!!editingDeposit}
+          onOpenChange={(v) => { if (!v) setEditingDeposit(null); }}
+          onUpdate={async (data) => {
+            await updateDeposit.mutateAsync({
+              id: editingDeposit.id,
+              amount: data.amount,
+              name: data.name,
+              target_amount: data.target_amount ?? null,
+            });
+            setEditingDeposit(null);
+          }}
+          onDelete={async () => {
+            await deleteDeposit.mutateAsync(editingDeposit.id);
+            setEditingDeposit(null);
+          }}
+          isUpdating={updateDeposit.isPending}
+          isDeleting={deleteDeposit.isPending}
+        />
       )}
     </>
   );
@@ -664,7 +799,7 @@ export default function Funds() {
   const navigate = useNavigate();
   const { accountConnected, profileLoading } = useConnection();
 
-  const { deposits, isLoading: depositsLoading, totalDeposits, addDeposit, deleteDeposit } = useDeposits();
+  const { deposits, isLoading: depositsLoading, totalDeposits, addDeposit, updateDeposit, deleteDeposit } = useDeposits();
   const { autoTransfers, isLoading: transfersLoading, addTransfer, deleteTransfer } = useAutoTransfers();
 
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
@@ -697,6 +832,8 @@ export default function Funds() {
             isDepositDialogOpen={isDepositDialogOpen}
             setIsDepositDialogOpen={setIsDepositDialogOpen}
             addDeposit={addDeposit}
+            updateDeposit={updateDeposit}
+            deleteDeposit={deleteDeposit}
           />
           <TransferSection
             dimmed
@@ -727,6 +864,8 @@ export default function Funds() {
           isDepositDialogOpen={isDepositDialogOpen}
           setIsDepositDialogOpen={setIsDepositDialogOpen}
           addDeposit={addDeposit}
+          updateDeposit={updateDeposit}
+          deleteDeposit={deleteDeposit}
         />
         <TransferSection
           autoTransfers={autoTransfers}
