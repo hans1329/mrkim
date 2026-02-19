@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import forge from "npm:node-forge@1.3.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,194 +33,12 @@ const BANK_ORGANIZATION_CODES: Record<string, string> = {
   "shinhyup": "0048",  // 신협
 };
 
-// PKCS1 v1.5 RSA 암호화 함수 (카드와 동일)
-async function encryptRSAPKCS1(plainText: string, base64PublicKey: string): Promise<string> {
-  const cleanedKey = base64PublicKey
-    .replace(/-----BEGIN PUBLIC KEY-----/g, "")
-    .replace(/-----END PUBLIC KEY-----/g, "")
-    .replace(/-----BEGIN RSA PUBLIC KEY-----/g, "")
-    .replace(/-----END RSA PUBLIC KEY-----/g, "")
-    .replace(/\s+/g, "");
-
-  const binaryString = atob(cleanedKey);
-  const keyBytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    keyBytes[i] = binaryString.charCodeAt(i);
-  }
-
-  const { n, e } = parseRSAPublicKey(keyBytes);
-  const messageBytes = new TextEncoder().encode(plainText);
-  const keySize = n.length;
-  const paddedMessage = pkcs1v15Pad(messageBytes, keySize);
-  const encrypted = modPow(paddedMessage, e, n);
-  
-  // Base64 인코딩 (스택 오버플로우 방지를 위해 루프 방식으로 변환)
-  let binary = "";
-  for (let i = 0; i < encrypted.length; i++) {
-    binary += String.fromCharCode(encrypted[i]);
-  }
-  return btoa(binary);
-}
-
-function parseRSAPublicKey(der: Uint8Array): { n: Uint8Array; e: Uint8Array } {
-  let offset = 0;
-  
-  if (der[offset] === 0x30) {
-    offset++;
-    offset = skipLength(der, offset);
-    
-    if (der[offset] === 0x30) {
-      offset++;
-      const algLen = readLength(der, offset);
-      offset += algLen.bytesRead + algLen.length;
-      
-      if (der[offset] === 0x03) {
-        offset++;
-        offset = skipLength(der, offset);
-        offset++;
-        
-        if (der[offset] === 0x30) {
-          offset++;
-          offset = skipLength(der, offset);
-        }
-      }
-    }
-    
-    if (der[offset] === 0x02) {
-      offset++;
-      const nLen = readLength(der, offset);
-      offset += nLen.bytesRead;
-      
-      let nStart = offset;
-      let nLength = nLen.length;
-      
-      while (nLength > 0 && der[nStart] === 0x00) {
-        nStart++;
-        nLength--;
-      }
-      
-      const n = der.slice(nStart, nStart + nLength);
-      offset += nLen.length;
-      
-      if (der[offset] === 0x02) {
-        offset++;
-        const eLen = readLength(der, offset);
-        offset += eLen.bytesRead;
-        
-        let eStart = offset;
-        let eLength = eLen.length;
-        
-        while (eLength > 0 && der[eStart] === 0x00) {
-          eStart++;
-          eLength--;
-        }
-        
-        const e = der.slice(eStart, eStart + eLength);
-        
-        return { n, e };
-      }
-    }
-  }
-  
-  throw new Error("Invalid RSA public key format");
-}
-
-function skipLength(der: Uint8Array, offset: number): number {
-  const result = readLength(der, offset);
-  return offset + result.bytesRead;
-}
-
-function readLength(der: Uint8Array, offset: number): { length: number; bytesRead: number } {
-  if (der[offset] < 0x80) {
-    return { length: der[offset], bytesRead: 1 };
-  }
-  
-  const numBytes = der[offset] & 0x7f;
-  let length = 0;
-  for (let i = 0; i < numBytes; i++) {
-    length = (length << 8) | der[offset + 1 + i];
-  }
-  return { length, bytesRead: 1 + numBytes };
-}
-
-function pkcs1v15Pad(message: Uint8Array, keySize: number): Uint8Array {
-  const paddingLength = keySize - message.length - 3;
-  if (paddingLength < 8) {
-    throw new Error("Message too long for key size");
-  }
-  
-  const padded = new Uint8Array(keySize);
-  padded[0] = 0x00;
-  padded[1] = 0x02;
-  
-  const randomBytes = crypto.getRandomValues(new Uint8Array(paddingLength));
-  for (let i = 0; i < paddingLength; i++) {
-    padded[2 + i] = randomBytes[i] === 0 ? 0x01 : randomBytes[i];
-  }
-  
-  padded[2 + paddingLength] = 0x00;
-  padded.set(message, 3 + paddingLength);
-  
-  return padded;
-}
-
-function modPow(base: Uint8Array, exp: Uint8Array, mod: Uint8Array): Uint8Array {
-  let baseNum = bytesToBigInt(base);
-  let expNum = bytesToBigInt(exp);
-  const modNum = bytesToBigInt(mod);
-  
-  let result = 1n;
-  baseNum = baseNum % modNum;
-  
-  while (expNum > 0n) {
-    if (expNum % 2n === 1n) {
-      result = (result * baseNum) % modNum;
-    }
-    expNum = expNum / 2n;
-    baseNum = (baseNum * baseNum) % modNum;
-  }
-  
-  return bigIntToBytes(result, mod.length);
-}
-
-function bytesToBigInt(bytes: Uint8Array): bigint {
-  let result = 0n;
-  for (const byte of bytes) {
-    result = (result << 8n) | BigInt(byte);
-  }
-  return result;
-}
-
-function bigIntToBytes(num: bigint, length: number): Uint8Array {
-  const result = new Uint8Array(length);
-  let temp = num;
-  for (let i = length - 1; i >= 0; i--) {
-    result[i] = Number(temp & 0xffn);
-    temp = temp >> 8n;
-  }
-  return result;
-}
-
-// 코드에프 공개키 동적 조회 (매 요청마다 최신 키를 받아옴)
-async function getPublicKey(accessToken: string): Promise<string> {
-  const response = await fetch(`${CODEF_API_URL}/v1/common/public-key`, {
-    method: "GET",
-    headers: {
-      "Authorization": `Bearer ${accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`공개키 조회 실패: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const publicKey = data.publicKey;
-  if (!publicKey) {
-    throw new Error("공개키를 받아오지 못했습니다.");
-  }
-  console.log("Public key obtained from API");
-  return publicKey;
+// RSA PKCS1 v1.5 암호화 (node-forge 사용 - Java Cipher.getInstance("RSA")와 동일)
+function encryptRSAPKCS1(plainText: string, base64PublicKey: string): string {
+  const pem = `-----BEGIN PUBLIC KEY-----\n${base64PublicKey.match(/.{1,64}/g)!.join("\n")}\n-----END PUBLIC KEY-----`;
+  const publicKey = forge.pki.publicKeyFromPem(pem);
+  const encrypted = publicKey.encrypt(plainText, "RSAES-PKCS1-V1_5");
+  return forge.util.encode64(encrypted);
 }
 
 async function getAccessToken(): Promise<string> {
@@ -271,10 +90,10 @@ serve(async (req) => {
     const accessToken = await getAccessToken();
     console.log("Access token obtained");
 
-    // 공개키 동적 조회 (암호화가 필요한 경우에만)
-    let publicKey = "";
-    if (action === "register" || action === "addAccount") {
-      publicKey = await getPublicKey(accessToken);
+    // 공개키 (환경변수에서 로드)
+    const publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
+    if (!publicKey && (action === "register" || action === "addAccount")) {
+      throw new Error("CODEF_PUBLIC_KEY가 설정되지 않았습니다.");
     }
 
     if (action === "register") {
@@ -334,7 +153,7 @@ async function handleRegisterWithCert(
   }
 
   console.log("Encrypting cert password with RSA PKCS1 v1.5...");
-  const encryptedCertPassword = await encryptRSAPKCS1(certPassword, publicKey);
+  const encryptedCertPassword = encryptRSAPKCS1(certPassword, publicKey);
   console.log("Cert password encrypted successfully");
 
   const requestBody = {
@@ -413,7 +232,7 @@ async function handleRegister(
   }
 
   console.log("Encrypting password with RSA PKCS1 v1.5...");
-  const encryptedPassword = await encryptRSAPKCS1(password, publicKey);
+  const encryptedPassword = encryptRSAPKCS1(password, publicKey);
   console.log("Password encrypted successfully");
 
   const requestBody = {
