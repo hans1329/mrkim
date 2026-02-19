@@ -13,11 +13,17 @@ interface CardInfo {
   sleepYN: string;
 }
 
+interface CertOptions {
+  loginType: "2";
+  certFile: string; // Base64
+  certPassword: string;
+}
+
 interface UseCardConnectionReturn {
   isLoading: boolean;
   connectedId: string | null;
   cards: CardInfo[];
-  registerCardAccount: (cardCompanyId: string, loginId: string, password: string) => Promise<string | null>;
+  registerCardAccount: (cardCompanyId: string, loginId: string, password: string, certOptions?: CertOptions) => Promise<string | null>;
   addCardAccount: (cardCompanyId: string, loginId: string, password: string) => Promise<boolean>;
   getCards: (cardCompanyId: string, overrideConnectedId?: string) => Promise<CardInfo[]>;
 }
@@ -32,7 +38,8 @@ export function useCardConnection(): UseCardConnectionReturn {
   const registerCardAccount = async (
     cardCompanyId: string, 
     loginId: string, 
-    password: string
+    password: string,
+    certOptions?: CertOptions
   ): Promise<string | null> => {
     setIsLoading(true);
     try {
@@ -42,13 +49,23 @@ export function useCardConnection(): UseCardConnectionReturn {
         return null;
       }
 
+      const requestBody: Record<string, unknown> = {
+        action: "register",
+        cardCompanyId,
+      };
+
+      if (certOptions) {
+        requestBody.loginType = "2";
+        requestBody.certFile = certOptions.certFile;
+        requestBody.certPassword = certOptions.certPassword;
+      } else {
+        requestBody.loginType = "1";
+        requestBody.loginId = loginId;
+        requestBody.password = password;
+      }
+
       const response = await supabase.functions.invoke("codef-card", {
-        body: {
-          action: "register",
-          cardCompanyId,
-          loginId,
-          password,
-        },
+        body: requestBody,
       });
 
       // 에러 메시지에서 + 기호를 공백으로 디코딩
