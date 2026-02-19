@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -151,7 +152,7 @@ interface TodaySummarySectionProps {
 }
 
 export function TodaySummarySection({ isLoggedOut = false, isHero = false }: TodaySummarySectionProps) {
-  const navigate = useNavigate();
+  const { openDrawer } = useConnectionDrawer();
   const isMobile = useIsMobile();
   const { profile, profileLoading } = useConnection();
   
@@ -212,7 +213,7 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
                   한눈에 확인할 수 있어요
                 </p>
               </div>
-              <Button onClick={() => navigate("/onboarding")} className="gap-2 rounded-full">
+              <Button onClick={() => openDrawer("hometax")} className="gap-2 rounded-full">
                 <Sparkles className="h-4 w-4" />
                 연동 시작하기
               </Button>

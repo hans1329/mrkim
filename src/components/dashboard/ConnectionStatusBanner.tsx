@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle, X, ChevronRight, CheckCircle2, Clock, Sparkles } from "lucide-react";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { SecretaryInsightCard } from "./SecretaryInsightCard";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -81,6 +82,7 @@ interface ConnectionStatusBannerProps {
 
 export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: ConnectionStatusBannerProps) {
   const navigate = useNavigate();
+  const { openDrawer } = useConnectionDrawer();
   const { profile, profileLoading: loading, isLoggedIn } = useConnection();
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -98,7 +100,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
   const handleStartConnection = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      navigate("/onboarding");
+      openDrawer("hometax");
     } else {
       setShowLoginDialog(true);
     }
