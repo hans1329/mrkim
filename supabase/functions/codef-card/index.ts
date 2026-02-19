@@ -1,7 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-// node:crypto - Deno 엣지 함수에서 지원되는 Node.js 호환 모듈 사용
-// 공식 Codef SDK(easycodef-node/lib/util.ts)와 완전 동일한 방식
-import { publicEncrypt } from "node:crypto";
+import forge from "npm:node-forge@1.3.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,29 +24,32 @@ const CARD_ORGANIZATION_CODES: Record<string, string> = {
 };
 
 /**
- * RSA PKCS#1 v1.5 암호화 - 공식 Codef SDK(easycodef-node)와 동일 구현
- * Buffer.from(plainText) → node:crypto.publicEncrypt → base64
+ * RSA PKCS#1 v1.5 암호화 - node-forge (npm: specifier, Deno 호환)
+ * Codef SDK 동일 방식: UTF-8 바이트 → RSAES-PKCS1-V1_5 → base64
  */
 function encryptRSAPKCS1v15(plainText: string, base64PublicKey: string): string {
   const cleanKey = base64PublicKey.replace(/[\r\n\s]/g, "");
-  const pem = "-----BEGIN PUBLIC KEY-----\n" + cleanKey + "\n-----END PUBLIC KEY-----";
-
   console.log("Public key length:", cleanKey.length);
   console.log("Public key prefix:", cleanKey.substring(0, 20));
 
-  // @ts-ignore - node:crypto types
-  const encrypted = publicEncrypt(
-    {
-      key: pem,
-      padding: 1, // RSA_PKCS1_PADDING = 1 (constants.RSA_PKCS1_PADDING)
-    },
-    Buffer.from(plainText)  // UTF-8 encoding (Node.js default)
-  );
+  // SPKI DER → forge PublicKey
+  const derBytes = forge.util.decode64(cleanKey);
+  const asn1 = forge.asn1.fromDer(derBytes);
+  const publicKey = forge.pki.publicKeyFromAsn1(asn1);
 
-  const result = encrypted.toString("base64");
-  console.log("Encrypted length:", result.length, "Input bytes:", plainText.length);
+  // UTF-8 바이트로 변환 후 암호화 (Java getBytes("UTF-8")와 동일)
+  const utf8Bytes = new TextEncoder().encode(plainText);
+  let binaryStr = "";
+  for (const byte of utf8Bytes) {
+    binaryStr += String.fromCharCode(byte);
+  }
+
+  const encrypted = publicKey.encrypt(binaryStr, "RSAES-PKCS1-V1_5");
+  const result = forge.util.encode64(encrypted);
+  console.log("Encrypted length:", result.length, "Input bytes:", utf8Bytes.length);
   return result;
 }
+
 
 async function getAccessToken(): Promise<string> {
   const clientId = Deno.env.get("CODEF_CLIENT_ID");
