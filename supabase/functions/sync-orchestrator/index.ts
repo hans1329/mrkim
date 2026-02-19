@@ -365,7 +365,7 @@ async function callCodefTaxInvoice(
   startDate: string,
   endDate: string
 ): Promise<{ recordsFetched: number; recordsSaved: number }> {
-  const CODEF_API_URL = "https://development.codef.io";
+  const CODEF_API_URL = "https://api.codef.io";
   const CODEF_TOKEN_URL = "https://oauth.codef.io/oauth/token";
 
   const clientId = Deno.env.get("CODEF_CLIENT_ID")!;
@@ -498,7 +498,7 @@ async function syncCardTransactions(
     throw new Error("ConnectedId가 없습니다. 카드사를 먼저 등록해주세요.");
   }
 
-  const CODEF_API_URL = "https://development.codef.io";
+  const CODEF_API_URL = "https://api.codef.io";
   const CODEF_TOKEN_URL = "https://oauth.codef.io/oauth/token";
   const clientId = Deno.env.get("CODEF_CLIENT_ID")!;
   const clientSecret = Deno.env.get("CODEF_CLIENT_SECRET")!;
@@ -629,7 +629,7 @@ async function syncBankTransactions(
     throw new Error("ConnectedId가 없습니다. 은행을 먼저 등록해주세요.");
   }
 
-  const CODEF_API_URL = "https://development.codef.io";
+  const CODEF_API_URL = "https://api.codef.io";
   const CODEF_TOKEN_URL = "https://oauth.codef.io/oauth/token";
   const clientId = Deno.env.get("CODEF_CLIENT_ID")!;
   const clientSecret = Deno.env.get("CODEF_CLIENT_SECRET")!;
