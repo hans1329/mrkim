@@ -200,6 +200,28 @@ function bigIntToBytes(num: bigint, length: number): Uint8Array {
   return result;
 }
 
+// 코드에프 공개키 동적 조회 (매 요청마다 최신 키를 받아옴)
+async function getPublicKey(accessToken: string): Promise<string> {
+  const response = await fetch(`${CODEF_API_URL}/v1/common/public-key`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`공개키 조회 실패: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const publicKey = data.publicKey;
+  if (!publicKey) {
+    throw new Error("공개키를 받아오지 못했습니다.");
+  }
+  console.log("Public key obtained from API");
+  return publicKey;
+}
+
 async function getAccessToken(): Promise<string> {
   const clientId = Deno.env.get("CODEF_CLIENT_ID");
   const clientSecret = Deno.env.get("CODEF_CLIENT_SECRET");
@@ -245,14 +267,15 @@ serve(async (req) => {
 
     const { action, bankId, loginId, password, loginType, certFile, certPassword, connectedId, accountNo, startDate, endDate } = await req.json();
 
-    const publicKey = Deno.env.get("CODEF_PUBLIC_KEY");
-    if (!publicKey) {
-      throw new Error("CODEF_PUBLIC_KEY가 설정되지 않았습니다.");
-    }
-
     console.log("Getting access token...");
     const accessToken = await getAccessToken();
     console.log("Access token obtained");
+
+    // 공개키 동적 조회 (암호화가 필요한 경우에만)
+    let publicKey = "";
+    if (action === "register" || action === "addAccount") {
+      publicKey = await getPublicKey(accessToken);
+    }
 
     if (action === "register") {
       if (loginType === "2") {
