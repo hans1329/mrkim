@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,12 +18,16 @@ import {
   Lock,
   AlertCircle,
   Wallet,
-  RefreshCw
+  Upload,
+  FileKey
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAccountConnection } from "@/hooks/useAccountConnection";
 import { useBankSync } from "@/hooks/useBankSync";
 import { useConnection } from "@/contexts/ConnectionContext";
+
+// 아이디/PW 로그인 지원 은행 (인터넷 전문은행)
+const ID_PW_BANKS = new Set(["kakao", "toss", "kbank"]);
 
 // 은행 목록
 const BANKS = [
@@ -54,18 +58,25 @@ interface AccountInfo {
   holder: string;
 }
 
+
 export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionFlowProps) {
   const [step, setStep] = useState<FlowStep>("select-bank");
   const [selectedBank, setSelectedBank] = useState<string | null>(null);
-  const [authMethod, setAuthMethod] = useState<"id" | "cert">("id");
   const [credentials, setCredentials] = useState({ id: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [certFile, setCertFile] = useState<File | null>(null);
+  const [certPassword, setCertPassword] = useState("");
+  const [showCertPassword, setShowCertPassword] = useState(false);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [fetchedAccounts, setFetchedAccounts] = useState<AccountInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [syncProgress, setSyncProgress] = useState<{ synced: number; total: number }>({ synced: 0, total: 0 });
   const [currentConnectedId, setCurrentConnectedId] = useState<string | null>(null);
+  const certFileInputRef = useRef<HTMLInputElement>(null);
+
+  // 선택된 은행의 로그인 방식 결정
+  const isCertBank = selectedBank ? !ID_PW_BANKS.has(selectedBank) : false;
 
   const { isLoading, registerBankAccount, getAccounts } = useAccountConnection();
   const bankSync = useBankSync();
@@ -86,17 +97,35 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   };
 
   const handleAuth = async () => {
-    if (!credentials.id || !credentials.password || !agreedTerms || !selectedBank) return;
+    if (!agreedTerms || !selectedBank) return;
+
+    // 인증서 은행: certFile + certPassword 필요
+    if (isCertBank && (!certFile || !certPassword)) return;
+    // 아이디 은행: id + password 필요
+    if (!isCertBank && (!credentials.id || !credentials.password)) return;
     
     setError(null);
     setStep("loading");
     
     try {
-      const newConnectedId = await registerBankAccount(
-        selectedBank,
-        credentials.id,
-        credentials.password
-      );
+      let newConnectedId: string | null = null;
+
+      if (isCertBank && certFile) {
+        // 인증서 파일을 Base64로 변환
+        const certBase64 = await fileToBase64(certFile);
+        newConnectedId = await registerBankAccount(
+          selectedBank,
+          "", // id는 인증서 방식에선 불필요
+          certPassword,
+          { loginType: "2", certFile: certBase64, certPassword }
+        );
+      } else {
+        newConnectedId = await registerBankAccount(
+          selectedBank,
+          credentials.id,
+          credentials.password
+        );
+      }
       
       if (newConnectedId) {
         setCurrentConnectedId(newConnectedId);
@@ -104,7 +133,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
         setFetchedAccounts(accounts);
         setStep("select-accounts");
       } else {
-        setError("은행 연결에 실패했습니다. 로그인 정보를 확인해주세요.");
+        setError("은행 연결에 실패했습니다. 입력 정보를 확인해주세요.");
         setStep("auth");
       }
     } catch (err) {
@@ -112,6 +141,20 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
       setError(err instanceof Error ? err.message : "연결 중 오류가 발생했습니다.");
       setStep("auth");
     }
+  };
+
+  // File → Base64 변환
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // "data:...;base64," 접두사 제거
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = reject;
+    });
   };
 
   // 계좌 선택 후 거래 내역 자동 동기화
@@ -259,31 +302,94 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
                 </div>
               )}
 
-              {/* 인증 방법 선택 */}
-              <div className="flex gap-2 p-1 bg-muted rounded-lg">
-                <button
-                  onClick={() => setAuthMethod("id")}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm transition-all",
-                    authMethod === "id" ? "bg-background shadow-sm" : "text-muted-foreground"
-                  )}
-                >
-                  <Smartphone className="h-4 w-4" />
-                  아이디 로그인
-                </button>
-                <button
-                  onClick={() => setAuthMethod("cert")}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm transition-all",
-                    authMethod === "cert" ? "bg-background shadow-sm" : "text-muted-foreground"
-                  )}
-                >
-                  <Lock className="h-4 w-4" />
-                  공동인증서
-                </button>
+              {/* 로그인 방식 안내 */}
+              <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                {isCertBank ? (
+                  <>
+                    <Lock className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">공동인증서</span> 로그인이 필요한 은행입니다
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Smartphone className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">아이디/비밀번호</span> 로그인 지원 은행입니다
+                    </span>
+                  </>
+                )}
               </div>
 
-              {authMethod === "id" ? (
+              {/* 인증서 로그인 */}
+              {isCertBank ? (
+                <div className="space-y-3">
+                  {/* 인증서 파일 업로드 */}
+                  <div className="space-y-2">
+                    <Label className="text-xs">공동인증서 파일 (.pfx, .p12)</Label>
+                    <input
+                      ref={certFileInputRef}
+                      type="file"
+                      accept=".pfx,.p12"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setCertFile(file);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => certFileInputRef.current?.click()}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed transition-all text-left",
+                        certFile ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      {certFile ? (
+                        <>
+                          <FileKey className="h-5 w-5 text-primary shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{certFile.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(certFile.size / 1024).toFixed(1)} KB
+                            </p>
+                          </div>
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">인증서 파일 선택</p>
+                            <p className="text-xs text-muted-foreground">.pfx 또는 .p12 파일</p>
+                          </div>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* 인증서 비밀번호 */}
+                  <div className="space-y-2">
+                    <Label className="text-xs">인증서 비밀번호</Label>
+                    <div className="relative">
+                      <Input
+                        type={showCertPassword ? "text" : "password"}
+                        placeholder="공동인증서 비밀번호"
+                        value={certPassword}
+                        onChange={(e) => setCertPassword(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCertPassword(!showCertPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      >
+                        {showCertPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* 아이디/비밀번호 로그인 */
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <Label className="text-xs">아이디</Label>
@@ -311,16 +417,6 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
                       </button>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="bg-muted/50 rounded-xl p-4 text-center">
-                  <Lock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    공동인증서 로그인은 준비 중입니다
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    아이디 로그인을 이용해주세요
-                  </p>
                 </div>
               )}
 
@@ -352,7 +448,10 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
                 </Button>
                 <Button
                   onClick={handleAuth}
-                  disabled={!credentials.id || !credentials.password || !agreedTerms || isLoading || authMethod === "cert"}
+                  disabled={
+                    !agreedTerms || isLoading ||
+                    (isCertBank ? (!certFile || !certPassword) : (!credentials.id || !credentials.password))
+                  }
                   className="flex-1"
                 >
                   {isLoading ? (
@@ -494,7 +593,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
           {step === "syncing" && (
             <div className="space-y-4 text-center py-8">
               <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto flex items-center justify-center">
-                <RefreshCw className="h-8 w-8 text-primary animate-spin" />
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
               </div>
               <div>
                 <h3 className="text-lg font-bold">거래 내역 동기화 중</h3>

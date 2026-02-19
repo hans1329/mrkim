@@ -12,11 +12,17 @@ interface AccountInfo {
   holder: string;
 }
 
+interface CertOptions {
+  loginType: "2";
+  certFile: string; // Base64
+  certPassword: string;
+}
+
 interface UseAccountConnectionReturn {
   isLoading: boolean;
   connectedId: string | null;
   accounts: AccountInfo[];
-  registerBankAccount: (bankId: string, loginId: string, password: string) => Promise<string | null>;
+  registerBankAccount: (bankId: string, loginId: string, password: string, certOptions?: CertOptions) => Promise<string | null>;
   addBankAccount: (bankId: string, loginId: string, password: string) => Promise<boolean>;
   getAccounts: (bankId: string, overrideConnectedId?: string) => Promise<AccountInfo[]>;
 }
@@ -31,7 +37,8 @@ export function useAccountConnection(): UseAccountConnectionReturn {
   const registerBankAccount = async (
     bankId: string, 
     loginId: string, 
-    password: string
+    password: string,
+    certOptions?: CertOptions
   ): Promise<string | null> => {
     setIsLoading(true);
     try {
@@ -41,13 +48,25 @@ export function useAccountConnection(): UseAccountConnectionReturn {
         return null;
       }
 
+      const requestBody: Record<string, unknown> = {
+        action: "register",
+        bankId,
+      };
+
+      if (certOptions) {
+        // 인증서 로그인 (loginType "2")
+        requestBody.loginType = "2";
+        requestBody.certFile = certOptions.certFile;
+        requestBody.certPassword = certOptions.certPassword;
+      } else {
+        // 아이디/비밀번호 로그인 (loginType "1")
+        requestBody.loginType = "1";
+        requestBody.loginId = loginId;
+        requestBody.password = password;
+      }
+
       const response = await supabase.functions.invoke("codef-bank", {
-        body: {
-          action: "register",
-          bankId,
-          loginId,
-          password,
-        },
+        body: requestBody,
       });
 
       // 에러 메시지에서 + 기호를 공백으로 디코딩
