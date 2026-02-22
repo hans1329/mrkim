@@ -773,10 +773,6 @@ export default function SecretarySettings() {
                   </select>
                 </div>
               </div>
-
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                💡 전화 알림은 Twilio를 통해 발신되며, 비서 설정의 음성으로 안내됩니다
-              </p>
             </CardContent>
           )}
         </Card>
