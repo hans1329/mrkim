@@ -914,34 +914,6 @@ export default function Funds() {
           deposits={deposits}
         />
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Settings className="h-4 w-4" />
-              자동 자금 관리
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              규칙만 정하면 돈이 알아서 움직여요
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">세금 자동으로 모으기</p>
-                <p className="text-xs text-muted-foreground">매출의 10%를 세금 통장에 모아둬요</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">월급 미리 준비하기</p>
-                <p className="text-xs text-muted-foreground">월급날 전에 알아서 준비해둬요</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-          </CardContent>
-        </Card>
-
         <InvestmentCard />
         <LoanCard />
 
