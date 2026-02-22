@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.twilio-verify]
 verify_jwt = false
+
+[functions.phone-alert-scheduler]
+verify_jwt = false
