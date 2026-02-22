@@ -701,6 +701,7 @@ export type Database = {
           name: string | null
           nickname: string | null
           phone: string | null
+          phone_alert_custom_days: Json | null
           phone_alert_custom_message: string | null
           phone_alert_custom_time: string | null
           phone_alert_enabled: boolean | null
@@ -735,6 +736,7 @@ export type Database = {
           name?: string | null
           nickname?: string | null
           phone?: string | null
+          phone_alert_custom_days?: Json | null
           phone_alert_custom_message?: string | null
           phone_alert_custom_time?: string | null
           phone_alert_enabled?: boolean | null
@@ -769,6 +771,7 @@ export type Database = {
           name?: string | null
           nickname?: string | null
           phone?: string | null
+          phone_alert_custom_days?: Json | null
           phone_alert_custom_message?: string | null
           phone_alert_custom_time?: string | null
           phone_alert_enabled?: boolean | null
