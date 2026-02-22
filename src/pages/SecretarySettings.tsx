@@ -711,14 +711,52 @@ export default function SecretarySettings() {
                   <Badge variant="outline" className="text-[10px]">선택</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  특정 시간에 원하는 메시지를 전화로 안내받을 수 있습니다
+                  특정 요일과 시간에 원하는 메시지를 전화로 안내받을 수 있습니다
                 </p>
                 <Textarea
-                  placeholder="예: 오후 3시에 거래처 미팅 있습니다. 자료 준비해주세요."
+                  placeholder="예: 거래처 미팅 있습니다. 자료 준비해주세요."
                   value={phoneAlertCustomMessage}
                   onChange={(e) => setPhoneAlertCustomMessage(e.target.value)}
                   className="min-h-[80px] text-sm"
                 />
+                {/* 요일 선택 */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">반복 요일</Label>
+                  <div className="flex gap-1.5">
+                    {[
+                      { id: "mon", label: "월" },
+                      { id: "tue", label: "화" },
+                      { id: "wed", label: "수" },
+                      { id: "thu", label: "목" },
+                      { id: "fri", label: "금" },
+                      { id: "sat", label: "토" },
+                      { id: "sun", label: "일" },
+                    ].map((day) => {
+                      const isSelected = phoneAlertCustomDays.includes(day.id);
+                      return (
+                        <button
+                          key={day.id}
+                          type="button"
+                          className={`h-9 w-9 rounded-full text-xs font-medium transition-all ${
+                            isSelected
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          }`}
+                          onClick={() => {
+                            setPhoneAlertCustomDays(prev =>
+                              prev.includes(day.id)
+                                ? prev.filter(d => d !== day.id)
+                                : [...prev, day.id]
+                            );
+                          }}
+                        >
+                          {day.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* 시간 선택 */}
                 <div className="flex items-center gap-2">
                   <Label className="text-xs text-muted-foreground whitespace-nowrap">전화 시각</Label>
                   <select
