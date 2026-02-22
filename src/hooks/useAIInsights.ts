@@ -26,7 +26,6 @@ export function useAIInsights() {
         .from("ai_insights")
         .select("*")
         .eq("user_id", userData.user.id)
-        .gte("expires_at", new Date().toISOString())
         .order("priority", { ascending: true }) // high first
         .order("created_at", { ascending: false });
 
