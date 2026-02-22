@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_call_logs: {
+        Row: {
+          call_type: string
+          created_at: string
+          duration_seconds: number | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          recipient_name: string | null
+          recipient_phone: string
+          script: string
+          status: string
+          tts_audio_url: string | null
+          twilio_call_sid: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          call_type?: string
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_name?: string | null
+          recipient_phone: string
+          script: string
+          status?: string
+          tts_audio_url?: string | null
+          twilio_call_sid?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          call_type?: string
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_name?: string | null
+          recipient_phone?: string
+          script?: string
+          status?: string
+          tts_audio_url?: string | null
+          twilio_call_sid?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_insights: {
         Row: {
           created_at: string
