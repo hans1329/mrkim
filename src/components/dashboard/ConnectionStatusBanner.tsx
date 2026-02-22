@@ -303,7 +303,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
         <X className={cn("h-3.5 w-3.5", isUrgent ? "text-destructive" : "text-primary")} />
       </button>
 
-      <div className="flex items-start gap-3 mt-4">
+      <div className="flex items-start gap-3 mt-8">
         <div className="shrink-0 mt-0.5">
           <div className={cn(
             "h-8 w-8 rounded-full flex items-center justify-center",
