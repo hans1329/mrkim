@@ -121,6 +121,7 @@ export default function SecretarySettings() {
   const [phoneAlertTimes, setPhoneAlertTimes] = useState<string[]>(["10"]);
   const [phoneAlertCustomMessage, setPhoneAlertCustomMessage] = useState("");
   const [phoneAlertCustomTime, setPhoneAlertCustomTime] = useState("");
+  const [phoneAlertCustomDays, setPhoneAlertCustomDays] = useState<string[]>([]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -149,6 +150,7 @@ export default function SecretarySettings() {
       if (Array.isArray(p.phone_alert_times)) setPhoneAlertTimes(p.phone_alert_times.map(String));
       setPhoneAlertCustomMessage(p.phone_alert_custom_message || "");
       setPhoneAlertCustomTime(p.phone_alert_custom_time || "");
+      if (Array.isArray(p.phone_alert_custom_days)) setPhoneAlertCustomDays(p.phone_alert_custom_days);
     }
   }, [profile]);
 
@@ -252,6 +254,7 @@ export default function SecretarySettings() {
           phone_alert_times: phoneAlertTimes,
           phone_alert_custom_message: phoneAlertCustomMessage || null,
           phone_alert_custom_time: phoneAlertCustomTime || null,
+          phone_alert_custom_days: phoneAlertCustomDays.length > 0 ? phoneAlertCustomDays : null,
         } as any).eq("user_id", user.id);
       }
       updateProfileCache({
@@ -262,6 +265,7 @@ export default function SecretarySettings() {
         phone_alert_times: phoneAlertTimes,
         phone_alert_custom_message: phoneAlertCustomMessage || null,
         phone_alert_custom_time: phoneAlertCustomTime || null,
+        phone_alert_custom_days: phoneAlertCustomDays.length > 0 ? phoneAlertCustomDays : null,
       } as any);
       toast.success(`${secretaryName} 설정이 저장되었습니다`);
       if (fromChat) {
