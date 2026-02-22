@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
 
     const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
     const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const twilioServiceSid = Deno.env.get("TWILIO_MESSAGING_SERVICE_SID");
+    const twilioServiceSid = Deno.env.get("TWILIO_VERIFY_SERVICE_SID");
 
     if (!twilioAccountSid || !twilioAuthToken || !twilioServiceSid) {
       throw new Error("Twilio credentials not configured");
