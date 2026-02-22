@@ -112,6 +112,7 @@ const emptyTransfer: NewAutoTransfer = {
   schedule_type: "manual",
   schedule_day: undefined,
   description: "",
+  linked_deposit_id: undefined,
 };
 
 function DepositDialog({
@@ -206,9 +207,11 @@ function DepositDialog({
 function AutoTransferDialog({
   onSubmit,
   isPending,
+  deposits,
 }: {
   onSubmit: (data: NewAutoTransfer) => Promise<void>;
   isPending: boolean;
+  deposits: Deposit[];
 }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<NewAutoTransfer>(emptyTransfer);
@@ -447,6 +450,32 @@ function AutoTransferDialog({
             />
           </div>
 
+          {deposits.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1">
+                <Wallet className="h-3.5 w-3.5" />
+                연결할 예치금 <span className="text-muted-foreground font-normal">(선택)</span>
+              </Label>
+              <Select
+                value={form.linked_deposit_id || "none"}
+                onValueChange={(v) => setForm((prev) => ({ ...prev, linked_deposit_id: v === "none" ? undefined : v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="예치금 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">연결 안 함</SelectItem>
+                  {deposits.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {depositTypeLabels[d.type]} — {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">이체 완료 시 선택한 예치금에 금액이 자동 적립됩니다</p>
+            </div>
+          )}
+
           <Button
             onClick={handleSubmit}
             className="w-full"
@@ -460,7 +489,8 @@ function AutoTransferDialog({
   );
 }
 
-function TransferItem({ transfer, onDelete }: { transfer: AutoTransfer; onDelete: () => void }) {
+function TransferItem({ transfer, onDelete, deposits }: { transfer: AutoTransfer; onDelete: () => void; deposits: Deposit[] }) {
+  const linkedDeposit = transfer.linked_deposit_id ? deposits.find(d => d.id === transfer.linked_deposit_id) : null;
   const config = statusConfig[transfer.status];
   const StatusIcon = config.icon;
 
@@ -488,6 +518,11 @@ function TransferItem({ transfer, onDelete }: { transfer: AutoTransfer; onDelete
           {transfer.target_bank_name && (
             <p className="text-xs text-muted-foreground/70 truncate">
               {transfer.target_bank_name} {transfer.target_account_number}
+            </p>
+          )}
+          {linkedDeposit && (
+            <p className="text-xs text-primary/80 truncate">
+              → {depositTypeLabels[linkedDeposit.type as DepositType]} 적립 연결
             </p>
           )}
         </div>
@@ -735,11 +770,13 @@ function TransferSection({
   autoTransfers,
   addTransfer,
   deleteTransfer,
+  deposits,
 }: {
   dimmed?: boolean;
   autoTransfers: AutoTransfer[];
   addTransfer: ReturnType<typeof useAutoTransfers>["addTransfer"];
   deleteTransfer: ReturnType<typeof useAutoTransfers>["deleteTransfer"];
+  deposits: Deposit[];
 }) {
   return (
     <>
@@ -757,6 +794,7 @@ function TransferSection({
             await addTransfer.mutateAsync(data);
           }}
           isPending={addTransfer.isPending}
+          deposits={deposits}
         />
       </div>
 
@@ -779,6 +817,7 @@ function TransferSection({
                 key={transfer.id}
                 transfer={transfer}
                 onDelete={() => deleteTransfer.mutate(transfer.id)}
+                deposits={deposits}
               />
             ))}
           </CardContent>
@@ -840,6 +879,7 @@ export default function Funds() {
             autoTransfers={autoTransfers}
             addTransfer={addTransfer}
             deleteTransfer={deleteTransfer}
+            deposits={deposits}
           />
         </div>
       </MainLayout>
@@ -871,6 +911,7 @@ export default function Funds() {
           autoTransfers={autoTransfers}
           addTransfer={addTransfer}
           deleteTransfer={deleteTransfer}
+          deposits={deposits}
         />
 
         <Card>

@@ -54,6 +54,7 @@ export interface AutoTransfer {
   schedule_day: number | null;
   hyphen_transfer_id: string | null;
   description: string | null;
+  linked_deposit_id: string | null;
 }
 
 export interface NewDeposit {
@@ -75,6 +76,7 @@ export interface NewAutoTransfer {
   schedule_day?: number;
   condition?: string;
   description?: string;
+  linked_deposit_id?: string;
 }
 
 export const SCHEDULE_TYPE_LABELS: Record<ScheduleType, string> = {
@@ -228,6 +230,7 @@ export function useAutoTransfers() {
         schedule_type: newTransfer.schedule_type,
         schedule_day: newTransfer.schedule_day || null,
         description: newTransfer.description || null,
+        linked_deposit_id: newTransfer.linked_deposit_id || null,
       });
 
       if (error) throw error;
