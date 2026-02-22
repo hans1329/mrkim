@@ -22,8 +22,15 @@ import {
   Save,
   HelpCircle,
   Loader2,
-  Volume2
+  Volume2,
+  Phone,
+  AlertTriangle,
+  DollarSign,
+  CalendarClock,
+  Megaphone,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProfile } from "@/hooks/useProfile";
 import { useProfileQuery } from "@/hooks/useProfileQuery";
@@ -72,6 +79,24 @@ const interestMetrics = [
   { id: "alerts", label: "긴급 알림", icon: BarChart3 },
 ];
 
+// 전화 긴급 알림 항목
+const phoneAlertItems = [
+  { id: "large_transaction", label: "대규모 입출금 감지", icon: DollarSign, description: "설정 금액 이상의 입금/출금 발생 시" },
+  { id: "tax_deadline", label: "세금 납부 기한 임박", icon: CalendarClock, description: "부가세, 종소세 마감 3일/1일 전 리마인드" },
+  { id: "salary_reminder", label: "급여 지급일 리마인드", icon: Users, description: "급여일 전날 미지급 건 알림" },
+  { id: "sales_spike", label: "매출 급변동 감지", icon: AlertTriangle, description: "전일 대비 30% 이상 증감 시" },
+];
+
+// 전화 알림 시간대 옵션
+const phoneAlertTimeOptions = [
+  { id: "9", label: "오전 9시" },
+  { id: "10", label: "오전 10시" },
+  { id: "12", label: "점심 12시" },
+  { id: "14", label: "오후 2시" },
+  { id: "17", label: "오후 5시" },
+  { id: "19", label: "저녁 7시" },
+];
+
 export default function SecretarySettings() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -90,6 +115,13 @@ export default function SecretarySettings() {
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   
+  // 전화 긴급 알림 상태
+  const [phoneAlertEnabled, setPhoneAlertEnabled] = useState(false);
+  const [selectedPhoneAlertItems, setSelectedPhoneAlertItems] = useState<string[]>(["tax_deadline", "large_transaction", "salary_reminder", "sales_spike"]);
+  const [phoneAlertTimes, setPhoneAlertTimes] = useState<string[]>(["10"]);
+  const [phoneAlertCustomMessage, setPhoneAlertCustomMessage] = useState("");
+  const [phoneAlertCustomTime, setPhoneAlertCustomTime] = useState("");
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // DB 데이터로 초기화
@@ -98,7 +130,6 @@ export default function SecretarySettings() {
       setSecretaryName(profile.secretary_name || "김비서");
       setSecretaryGender(profile.secretary_gender || "female");
       setSpeakingStyle(profile.secretary_tone || "friendly");
-      // briefing_times: Profile 타입에 포함됨
       const rawTimes = profile.briefing_times;
       if (Array.isArray(rawTimes) && rawTimes.length > 0) {
         setBriefingTimes(rawTimes.map(String));
@@ -111,6 +142,13 @@ export default function SecretarySettings() {
       if (profile.priority_metrics && Array.isArray(profile.priority_metrics)) {
         setSelectedMetrics(profile.priority_metrics);
       }
+      // 전화 알림 설정 초기화
+      const p = profile as any;
+      setPhoneAlertEnabled(p.phone_alert_enabled ?? false);
+      if (Array.isArray(p.phone_alert_items)) setSelectedPhoneAlertItems(p.phone_alert_items);
+      if (Array.isArray(p.phone_alert_times)) setPhoneAlertTimes(p.phone_alert_times.map(String));
+      setPhoneAlertCustomMessage(p.phone_alert_custom_message || "");
+      setPhoneAlertCustomTime(p.phone_alert_custom_time || "");
     }
   }, [profile]);
 
@@ -203,15 +241,27 @@ export default function SecretarySettings() {
     
     const success = await updateProfile(updates, false);
     
-    // briefing_times는 직접 supabase 업데이트 (useProfile의 Profile 타입에 없는 필드)
+    // briefing_times + phone_alert 설정은 직접 supabase 업데이트
     if (success) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from("profiles").update({ briefing_times: briefingTimes } as any).eq("user_id", user.id);
+        await supabase.from("profiles").update({
+          briefing_times: briefingTimes,
+          phone_alert_enabled: phoneAlertEnabled,
+          phone_alert_items: selectedPhoneAlertItems,
+          phone_alert_times: phoneAlertTimes,
+          phone_alert_custom_message: phoneAlertCustomMessage || null,
+          phone_alert_custom_time: phoneAlertCustomTime || null,
+        } as any).eq("user_id", user.id);
       }
       updateProfileCache({
         ...updates,
         briefing_times: briefingTimes,
+        phone_alert_enabled: phoneAlertEnabled,
+        phone_alert_items: selectedPhoneAlertItems,
+        phone_alert_times: phoneAlertTimes,
+        phone_alert_custom_message: phoneAlertCustomMessage || null,
+        phone_alert_custom_time: phoneAlertCustomTime || null,
       } as any);
       toast.success(`${secretaryName} 설정이 저장되었습니다`);
       if (fromChat) {
@@ -511,14 +561,14 @@ export default function SecretarySettings() {
           </CardContent>
         </Card>
 
-        {/* 브리핑 설정 */}
+        {/* 매일 브리핑 시간 설정 */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-primary" />
-              브리핑 시간 설정
+              매일 브리핑 시간 설정
             </CardTitle>
-            <CardDescription>하루 중 브리핑을 받을 시간대를 선택하세요 (복수 선택 가능)</CardDescription>
+            <CardDescription>하루 중 채팅 브리핑을 받을 시간대를 선택하세요 (복수 선택 가능)</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {briefingTimeOptions.map((option) => {
@@ -559,6 +609,135 @@ export default function SecretarySettings() {
           </CardContent>
         </Card>
 
+        {/* 전화로 긴급 알림 */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Phone className="h-5 w-5 text-primary" />
+                전화로 긴급 알림
+              </CardTitle>
+              <Switch
+                checked={phoneAlertEnabled}
+                onCheckedChange={setPhoneAlertEnabled}
+              />
+            </div>
+            <CardDescription>
+              중요한 경영 이벤트 발생 시 {secretaryName}{secretaryName.endsWith('서') ? '가' : '이'} 직접 전화로 알려드립니다
+            </CardDescription>
+          </CardHeader>
+          {phoneAlertEnabled && (
+            <CardContent className="space-y-5">
+              {/* 알림 항목 선택 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">알림 받을 항목</Label>
+                {phoneAlertItems.map((item) => {
+                  const isSelected = selectedPhoneAlertItems.includes(item.id);
+                  return (
+                    <div
+                      key={item.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
+                        isSelected
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                      onClick={() => {
+                        setSelectedPhoneAlertItems(prev =>
+                          prev.includes(item.id)
+                            ? prev.filter(i => i !== item.id)
+                            : [...prev, item.id]
+                        );
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <item.icon className={`h-4 w-4 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                        <div>
+                          <span className={`text-sm ${isSelected ? "font-medium" : "text-muted-foreground"}`}>
+                            {item.label}
+                          </span>
+                          <p className="text-xs text-muted-foreground">{item.description}</p>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
+                          ON
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 전화 시간대 선택 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">전화 받을 시간대</Label>
+                <p className="text-xs text-muted-foreground">긴급 알림 전화를 받을 수 있는 시간대를 선택하세요</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {phoneAlertTimeOptions.map((option) => {
+                    const isSelected = phoneAlertTimes.includes(option.id);
+                    return (
+                      <Button
+                        key={option.id}
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => {
+                          setPhoneAlertTimes(prev =>
+                            prev.includes(option.id)
+                              ? prev.filter(t => t !== option.id)
+                              : [...prev, option.id]
+                          );
+                        }}
+                      >
+                        {option.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+                {phoneAlertTimes.length === 0 && (
+                  <p className="text-xs text-destructive">최소 하나의 시간대를 선택해주세요</p>
+                )}
+              </div>
+
+              {/* 자유 메시지 전화 알림 */}
+              <div className="space-y-3 p-4 rounded-lg bg-muted/50 border border-dashed border-border">
+                <div className="flex items-center gap-2">
+                  <Megaphone className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-medium">자유 메시지 전화 알림</Label>
+                  <Badge variant="outline" className="text-[10px]">선택</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  특정 시간에 원하는 메시지를 전화로 안내받을 수 있습니다
+                </p>
+                <Textarea
+                  placeholder="예: 오후 3시에 거래처 미팅 있습니다. 자료 준비해주세요."
+                  value={phoneAlertCustomMessage}
+                  onChange={(e) => setPhoneAlertCustomMessage(e.target.value)}
+                  className="min-h-[80px] text-sm"
+                />
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground whitespace-nowrap">전화 시각</Label>
+                  <select
+                    value={phoneAlertCustomTime}
+                    onChange={(e) => setPhoneAlertCustomTime(e.target.value)}
+                    className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">시간 선택</option>
+                    {Array.from({ length: 14 }, (_, i) => i + 8).map((h) => (
+                      <option key={h} value={String(h)}>
+                        {h < 12 ? `오전 ${h}시` : h === 12 ? "낮 12시" : `오후 ${h - 12}시`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                💡 전화 알림은 Twilio를 통해 발신되며, 비서 설정의 음성으로 안내됩니다
+              </p>
+            </CardContent>
+          )}
+        </Card>
 
         {/* 관심 지표 설정 */}
         <Card>
