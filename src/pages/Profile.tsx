@@ -141,31 +141,53 @@ export default function Profile() {
     }
   };
 
-  // 인증번호 발송
+  // 인증번호 발송 (Twilio Verify)
   const handleSendCode = async () => {
     if (!secretaryPhone || secretaryPhone.length < 10) {
       toast.error("올바른 전화번호를 입력해주세요");
       return;
     }
     setIsSending(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsSending(false);
-    setIsCodeSent(true);
-    toast.success("인증번호가 발송되었습니다");
+    try {
+      const { data, error } = await supabase.functions.invoke("twilio-verify", {
+        body: { action: "send", phone: secretaryPhone },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setIsCodeSent(true);
+      toast.success("인증번호가 발송되었습니다");
+    } catch (error: any) {
+      console.error("SMS 발송 오류:", error);
+      toast.error(error?.message || "인증번호 발송에 실패했습니다");
+    } finally {
+      setIsSending(false);
+    }
   };
 
-  // 인증번호 확인
+  // 인증번호 확인 (Twilio Verify)
   const handleVerifyCode = async () => {
     if (verificationCode.length !== 6) {
       toast.error("6자리 인증번호를 입력해주세요");
       return;
     }
     setIsVerifying(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    await updateSecretaryPhone(secretaryPhone, true);
-    setIsVerifying(false);
-    setIsCodeSent(false);
-    setVerificationCode("");
+    try {
+      const { data, error } = await supabase.functions.invoke("twilio-verify", {
+        body: { action: "verify", phone: secretaryPhone, code: verificationCode },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      // 프로필 로컬 상태 갱신
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast.success("전화번호가 인증되었습니다");
+      setIsCodeSent(false);
+      setVerificationCode("");
+    } catch (error: any) {
+      console.error("인증 확인 오류:", error);
+      toast.error(error?.message || "인증번호 확인에 실패했습니다");
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   // 번호 변경 시작
