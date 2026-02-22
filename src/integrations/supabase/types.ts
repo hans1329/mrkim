@@ -199,6 +199,7 @@ export type Database = {
           id: string
           is_active: boolean
           last_executed_at: string | null
+          linked_deposit_id: string | null
           name: string
           next_execution_at: string | null
           recipient: string
@@ -222,6 +223,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_executed_at?: string | null
+          linked_deposit_id?: string | null
           name: string
           next_execution_at?: string | null
           recipient: string
@@ -245,6 +247,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_executed_at?: string | null
+          linked_deposit_id?: string | null
           name?: string
           next_execution_at?: string | null
           recipient?: string
@@ -258,7 +261,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "auto_transfers_linked_deposit_id_fkey"
+            columns: ["linked_deposit_id"]
+            isOneToOne: false
+            referencedRelation: "deposits"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_messages: {
         Row: {
