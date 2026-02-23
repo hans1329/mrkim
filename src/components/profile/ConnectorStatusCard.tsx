@@ -16,6 +16,7 @@ import {
   XCircle,
   Link2,
   RefreshCw,
+  PlusCircle,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -50,7 +51,7 @@ const STATUS_CONFIG = {
 
 export function ConnectorStatusCard() {
   const { data: connectors, isLoading } = useConnectorStatus();
-  const { hometaxConnected, cardConnected, accountConnected, profile } = useConnection();
+  const { hometaxConnected, cardConnected, accountConnected, profile, connectorInstances } = useConnection();
   const navigate = useNavigate();
   const { openDrawer } = useConnectionDrawer();
 
@@ -123,6 +124,11 @@ export function ConnectorStatusCard() {
           const StatusIcon = statusInfo?.icon;
           const isConnected = instance?.status === "connected" || isFallbackConnected;
 
+          // 같은 카테고리의 모든 연결된 인스턴스 수
+          const connectedInstanceCount = connectorInstances.filter(
+            (inst) => inst.connector_id === connector.id && inst.status === "connected"
+          ).length;
+
           return (
             <div
               key={connector.id}
@@ -133,7 +139,12 @@ export function ConnectorStatusCard() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
                   <Icon className="h-4 w-4 text-primary" />
                 </div>
-                <p className="text-sm font-medium flex-1">{connector.name}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{connector.name}</p>
+                  {connectedInstanceCount > 1 && (
+                    <p className="text-[10px] text-muted-foreground">{connectedInstanceCount}개 연동됨</p>
+                  )}
+                </div>
                 {isConnected ? (
                   <Badge variant={statusInfo!.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
                     {StatusIcon && <StatusIcon className="h-2.5 w-2.5" />}
@@ -155,31 +166,50 @@ export function ConnectorStatusCard() {
                       ? formatDistanceToNow(new Date(profileConnectedAt[connector.category]!), { addSuffix: true, locale: ko }) + " 연동"
                       : isConnected ? "연동 완료" : "미연동"}
                 </p>
-                {isConnected || instance ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-muted-foreground"
-                    onClick={() => {
-                      const type = connector.category === "bank" ? "account" : connector.category as "hometax" | "card";
-                      openDrawer(type);
-                    }}
-                  >
-                    <RefreshCw className="h-3 w-3" />
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-6 px-2 text-[10px]"
-                    onClick={() => {
-                      const type = connector.category === "bank" ? "account" : connector.category as "hometax" | "card";
-                      openDrawer(type);
-                    }}
-                  >
-                    연동하기
-                  </Button>
-                )}
+                <div className="flex items-center gap-0.5">
+                  {(isConnected || instance) && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground"
+                        onClick={() => {
+                          const type = connector.category === "bank" ? "account" : connector.category as "hometax" | "card";
+                          openDrawer(type);
+                        }}
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                      </Button>
+                      {(connector.category === "card" || connector.category === "bank") && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1.5 gap-0.5 text-[10px] text-muted-foreground hover:text-primary"
+                          onClick={() => {
+                            const type = connector.category === "bank" ? "account" : "card";
+                            openDrawer(type);
+                          }}
+                        >
+                          <PlusCircle className="h-3 w-3" />
+                          추가
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  {!isConnected && !instance && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 px-2 text-[10px]"
+                      onClick={() => {
+                        const type = connector.category === "bank" ? "account" : connector.category as "hometax" | "card";
+                        openDrawer(type);
+                      }}
+                    >
+                      연동하기
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           );
