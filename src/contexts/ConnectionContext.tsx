@@ -183,14 +183,14 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     updateProfileCache(updates as Partial<Profile>);
   }, [updateProfileCache]);
 
-  // 커넥터 연결
+  // 커넥터 연결 (다중 인스턴스 지원)
   const connectService = useCallback(async (connectorId: string, connectedId?: string, credentialsMeta?: Record<string, unknown>): Promise<boolean> => {
     try {
       await upsertInstance.mutateAsync({
         connector_id: connectorId,
         status: "connected",
         connected_id: connectedId,
-        ...(credentialsMeta ? { credentials_meta: credentialsMeta } : {}),
+        credentials_meta: credentialsMeta,
       });
 
       // profiles 플래그 동기화 (하위 호환)
@@ -232,12 +232,13 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     }
   }, [upsertInstance, syncProfileFlags]);
 
-  // 커넥터 해제
-  const disconnectService = useCallback(async (connectorId: string): Promise<boolean> => {
+  // 커넥터 해제 (특정 connected_id 또는 전체)
+  const disconnectService = useCallback(async (connectorId: string, connectedId?: string): Promise<boolean> => {
     try {
       await upsertInstance.mutateAsync({
         connector_id: connectorId,
         status: "disconnected",
+        connected_id: connectedId,
       });
 
       const category = CONNECTOR_CATEGORY_MAP[connectorId];

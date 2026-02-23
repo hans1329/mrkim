@@ -86,8 +86,11 @@ export function useAccountConnection(): UseAccountConnectionReturn {
       if (data?.success && data?.connectedId) {
         setConnectedId(data.connectedId);
         
-        // connector_instances + profiles 플래그 동기화
-        await connectService("codef_bank_account", data.connectedId);
+        // connector_instances + profiles 플래그 동기화 (은행 정보도 함께 저장)
+        await connectService("codef_bank_account", data.connectedId, {
+          bank_id: bankId,
+          bank_name: bankId, // TODO: 은행명 매핑
+        });
         
         toast.success("은행 연결이 완료되었습니다!");
         return data.connectedId;
