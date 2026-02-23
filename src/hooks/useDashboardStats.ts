@@ -67,7 +67,7 @@ interface WeeklyDataItem {
   지출: number;
 }
 
-async function fetchWeeklyData(): Promise<{ data: WeeklyDataItem[]; hasRealData: boolean } | null> {
+async function fetchWeeklyData(): Promise<{ data: WeeklyDataItem[]; hasRealData: boolean; startDate: string; endDate: string } | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
@@ -75,44 +75,42 @@ async function fetchWeeklyData(): Promise<{ data: WeeklyDataItem[]; hasRealData:
   const weekAgo = new Date(today);
   weekAgo.setDate(today.getDate() - 6);
 
+  const startDateStr = weekAgo.toISOString().split("T")[0];
+  const endDateStr = today.toISOString().split("T")[0];
+
   const { data: transactions } = await supabase
     .from("transactions")
     .select("transaction_date, type, amount")
     .eq("user_id", user.id)
-    .gte("transaction_date", weekAgo.toISOString().split("T")[0])
-    .lte("transaction_date", today.toISOString().split("T")[0]);
+    .gte("transaction_date", startDateStr)
+    .lte("transaction_date", endDateStr);
 
   if (!transactions || transactions.length === 0) {
-    return { data: [], hasRealData: false };
+    return { data: [], hasRealData: false, startDate: startDateStr, endDate: endDateStr };
   }
 
   const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
-  const weekData: { [key: string]: { 매출: number; 지출: number } } = {};
 
+  // 날짜 순서대로 7일 생성 (오래된 날 → 오늘)
+  const chartData: WeeklyDataItem[] = [];
   for (let i = 6; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(today.getDate() - i);
+    const dateStr = date.toISOString().split("T")[0];
     const dayName = dayNames[date.getDay()];
-    weekData[dayName] = { 매출: 0, 지출: 0 };
+
+    let 매출 = 0, 지출 = 0;
+    transactions.forEach((tx) => {
+      if (tx.transaction_date === dateStr) {
+        if (tx.type === "income") 매출 += tx.amount;
+        else 지출 += tx.amount;
+      }
+    });
+
+    chartData.push({ name: dayName, 매출, 지출 });
   }
 
-  transactions.forEach((tx) => {
-    const txDate = new Date(tx.transaction_date);
-    const dayName = dayNames[txDate.getDay()];
-    if (weekData[dayName]) {
-      if (tx.type === "income") weekData[dayName].매출 += tx.amount;
-      else weekData[dayName].지출 += tx.amount;
-    }
-  });
-
-  const orderedDays = ["월", "화", "수", "목", "금", "토", "일"];
-  const chartData = orderedDays.map((day) => ({
-    name: day,
-    매출: weekData[day]?.매출 || 0,
-    지출: weekData[day]?.지출 || 0,
-  }));
-
-  return { data: chartData, hasRealData: true };
+  return { data: chartData, hasRealData: true, startDate: startDateStr, endDate: endDateStr };
 }
 
 export function useWeeklyChartData(enabled = true) {

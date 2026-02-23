@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, mockTransactions } from "@/data/mockData";
-import { TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, RefreshCw, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCardSync } from "@/hooks/useCardSync";
 import { useRecentTransactions } from "@/hooks/useDashboardStats";
@@ -97,7 +97,15 @@ export function RecentTransactionsCard() {
   return (
     <Card>
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
-        <CardTitle className="text-base">최근 거래 내역</CardTitle>
+        <div>
+          <CardTitle className="text-base">최근 거래 내역</CardTitle>
+          {result?.hasRealData && transactions.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              최근 {transactions.length}건 · {transactions[transactions.length - 1]?.transaction_date?.replace(/-/g, ".")} ~
+            </p>
+          )}
+        </div>
         {isLoggedIn && (
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSync} disabled={isSyncing}>
             <RefreshCw className={cn("h-4 w-4", isSyncing && "animate-spin")} />

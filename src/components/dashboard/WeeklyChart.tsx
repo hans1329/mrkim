@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { formatNumber, getWeeklyData } from "@/data/mockData";
 import { useProfile } from "@/hooks/useProfile";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCardSync } from "@/hooks/useCardSync";
 import { useWeeklyChartData } from "@/hooks/useDashboardStats";
@@ -91,7 +91,15 @@ export function WeeklyChart() {
   return (
     <Card className="col-span-full">
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
-        <CardTitle className="text-base">주간 매출/지출 현황</CardTitle>
+        <div>
+          <CardTitle className="text-base">주간 매출/지출 현황</CardTitle>
+          {weeklyResult?.startDate && weeklyResult?.endDate && (
+            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {weeklyResult.startDate.replace(/-/g, ".")} ~ {weeklyResult.endDate.replace(/-/g, ".")}
+            </p>
+          )}
+        </div>
         {isLoggedIn && (
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSync} disabled={isSyncing}>
             <RefreshCw className={cn("h-4 w-4", isSyncing && "animate-spin")} />
