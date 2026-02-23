@@ -565,11 +565,13 @@ async function handleGetTransactions(
     });
 
     const responseText = await response.text();
+    console.log("Approval list raw response for card", cardNoValue, ":", responseText.substring(0, 500));
     const data = parseCodefResponse(responseText);
     const result = data.result || {};
     const isSuccess = result.code === "CF-00000";
 
     if (!isSuccess) {
+      console.error("Approval list error - code:", result.code, "message:", normalizeCodefMessage(result.message));
       const msg = normalizeCodefMessage(result.message) || "승인 내역 조회 실패";
       throw new Error(msg);
     }
