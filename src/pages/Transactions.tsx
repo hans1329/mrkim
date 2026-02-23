@@ -22,7 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, ExternalLink } from "lucide-react";
+import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, ExternalLink, PlusCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { cn } from "@/lib/utils";
@@ -207,35 +207,36 @@ export default function Transactions() {
           {/* 동기화 배너 - 카드/계좌 한 행 */}
           {(isCardConnected || isAccountConnected) && (
             <div className="grid grid-cols-2 gap-2">
-              {/* 카드: 연동됨 → 동기화/재연동, 미연동 → 연동하기 */}
+              {/* 카드: 연동됨 → 동기화+추가, 미연동 → 연동하기 */}
               <div className={cn(
                 "flex items-center justify-between rounded-lg px-3 py-2",
                 isCardConnected ? "bg-primary/5 border border-primary/20" : "bg-muted/50 border border-dashed border-muted-foreground/20"
               )}>
-                <p className="text-xs font-medium">💳 카드</p>
+                <p className="text-xs font-medium">💳 카드{cardInfo.cardCompanyName ? ` · ${cardInfo.cardCompanyName}` : ""}</p>
                 {isCardConnected ? (
-                  cardInfo.connectedId ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleCardSync}
-                      disabled={cardSync.isPending}
-                      className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10"
-                    >
-                      <RefreshCw className={cn("h-3 w-3", cardSync.isPending && "animate-spin")} />
-                      {cardSync.isPending ? "..." : "동기화"}
-                    </Button>
-                  ) : (
+                  <div className="flex items-center gap-0.5">
+                    {cardInfo.connectedId && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleCardSync}
+                        disabled={cardSync.isPending}
+                        className="h-6 px-1.5 gap-0.5 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                      >
+                        <RefreshCw className={cn("h-3 w-3", cardSync.isPending && "animate-spin")} />
+                        {cardSync.isPending ? "..." : "동기화"}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => openDrawer("card")}
-                      className="h-6 px-2 gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10"
                     >
-                      <ExternalLink className="h-3 w-3" />
-                      재연동
+                      <PlusCircle className="h-3 w-3" />
+                      추가
                     </Button>
-                  )
+                  </div>
                 ) : (
                   <Button
                     size="sm"
@@ -248,35 +249,36 @@ export default function Transactions() {
                   </Button>
                 )}
               </div>
-              {/* 계좌: 연동됨 → 동기화/재연동, 미연동 → 연동하기 */}
+              {/* 계좌: 연동됨 → 동기화+추가, 미연동 → 연동하기 */}
               <div className={cn(
                 "flex items-center justify-between rounded-lg px-3 py-2",
                 isAccountConnected ? "bg-muted/50 border border-border" : "bg-muted/50 border border-dashed border-muted-foreground/20"
               )}>
-                <p className="text-xs font-medium">🏦 계좌</p>
+                <p className="text-xs font-medium">🏦 계좌{bankInfo.bankName ? ` · ${bankInfo.bankName}` : ""}</p>
                 {isAccountConnected ? (
-                  bankInfo.connectedId ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleBankSync}
-                      disabled={bankSync.isPending}
-                      className="h-6 px-2 gap-1 text-xs text-green-600 hover:text-green-600 hover:bg-green-500/10"
-                    >
-                      <RefreshCw className={cn("h-3 w-3", bankSync.isPending && "animate-spin")} />
-                      {bankSync.isPending ? "..." : "동기화"}
-                    </Button>
-                  ) : (
+                  <div className="flex items-center gap-0.5">
+                    {bankInfo.connectedId && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleBankSync}
+                        disabled={bankSync.isPending}
+                        className="h-6 px-1.5 gap-0.5 text-xs text-green-600 hover:text-green-600 hover:bg-green-500/10"
+                      >
+                        <RefreshCw className={cn("h-3 w-3", bankSync.isPending && "animate-spin")} />
+                        {bankSync.isPending ? "..." : "동기화"}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => openDrawer("account")}
-                      className="h-6 px-2 gap-1 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-muted-foreground hover:bg-muted"
                     >
-                      <ExternalLink className="h-3 w-3" />
-                      재연동
+                      <PlusCircle className="h-3 w-3" />
+                      추가
                     </Button>
-                  )
+                  </div>
                 ) : (
                   <Button
                     size="sm"
