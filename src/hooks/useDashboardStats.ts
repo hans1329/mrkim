@@ -33,7 +33,7 @@ async function fetchSummaryStats(): Promise<SummaryStats | null> {
   let todayIncome = 0, todayExpense = 0;
   if (todayResult.data) {
     todayResult.data.forEach((tx) => {
-      if (tx.type === "income") todayIncome += Number(tx.amount);
+      if (tx.type === "income" || tx.type === "transfer_in") todayIncome += Number(tx.amount);
       else if (tx.type === "expense") todayExpense += Number(tx.amount);
     });
   }
@@ -41,7 +41,7 @@ async function fetchSummaryStats(): Promise<SummaryStats | null> {
   let monthlyIncome = 0, monthlyExpense = 0;
   if (monthlyResult.data) {
     monthlyResult.data.forEach((tx) => {
-      if (tx.type === "income") monthlyIncome += Number(tx.amount);
+      if (tx.type === "income" || tx.type === "transfer_in") monthlyIncome += Number(tx.amount);
       else if (tx.type === "expense") monthlyExpense += Number(tx.amount);
     });
   }
@@ -102,7 +102,8 @@ async function fetchWeeklyData(): Promise<{ data: WeeklyDataItem[]; hasRealData:
     let 매출 = 0, 지출 = 0;
     transactions.forEach((tx) => {
       if (tx.transaction_date === dateStr) {
-        if (tx.type === "income") 매출 += tx.amount;
+        if (tx.type === "income" || tx.type === "transfer_in") 매출 += Number(tx.amount);
+        else if (tx.type === "expense") 지출 += Number(tx.amount);
         else 지출 += tx.amount;
       }
     });
@@ -230,10 +231,10 @@ async function fetchActionData(): Promise<MonthlyComparison | null> {
   ]);
 
   const thisMonthIncome = (thisMonthResult.data || [])
-    .filter((t) => t.type === "income")
+    .filter((t) => t.type === "income" || t.type === "transfer_in")
     .reduce((sum, t) => sum + Number(t.amount), 0);
   const lastMonthIncome = (lastMonthResult.data || [])
-    .filter((t) => t.type === "income")
+    .filter((t) => t.type === "income" || t.type === "transfer_in")
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
   return {
