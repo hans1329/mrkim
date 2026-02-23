@@ -37,6 +37,7 @@ import { Link } from "react-router-dom";
 
 export default function Transactions() {
   const [filter, setFilter] = useState<"all" | "income" | "expense">("all");
+  const [sourceFilter, setSourceFilter] = useState<"all" | "card" | "bank">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newTransaction, setNewTransaction] = useState({
@@ -49,6 +50,7 @@ export default function Transactions() {
 
   const { data: transactions, isLoading, refetch } = useTransactions({
     type: filter === "all" ? undefined : filter,
+    sourceType: sourceFilter === "all" ? undefined : sourceFilter,
     searchTerm: searchTerm || undefined,
   });
 
@@ -279,6 +281,16 @@ export default function Transactions() {
                 <SelectItem value="all">전체</SelectItem>
                 <SelectItem value="income">매출</SelectItem>
                 <SelectItem value="expense">지출</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sourceFilter} onValueChange={(value: "all" | "card" | "bank") => setSourceFilter(value)}>
+              <SelectTrigger className="w-20 h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="card">카드</SelectItem>
+                <SelectItem value="bank">은행</SelectItem>
               </SelectContent>
             </Select>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
