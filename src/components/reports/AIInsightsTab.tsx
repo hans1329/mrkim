@@ -88,6 +88,9 @@ export function AIInsightsTab() {
                 src="/images/icc-5.webp"
                 alt="김비서"
                 className="h-9 w-auto object-contain opacity-70"
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
               />
               <div>
                 <p className="text-sm font-semibold text-primary">김비서 AI 분석</p>
