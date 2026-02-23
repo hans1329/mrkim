@@ -55,6 +55,7 @@ async function getAccessToken(): Promise<string> {
   const clientId = Deno.env.get("CODEF_CLIENT_ID");
   const clientSecret = Deno.env.get("CODEF_CLIENT_SECRET");
 
+  console.log("Using CODEF_CLIENT_ID:", clientId?.substring(0, 8) + "...");
   if (!clientId || !clientSecret) {
     throw new Error("CODEF credentials not configured");
   }
