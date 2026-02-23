@@ -61,8 +61,8 @@ export function useGenerateInsights() {
 
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ai-insights"] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["ai-insights"] });
     },
   });
 }
