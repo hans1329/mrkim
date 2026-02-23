@@ -145,6 +145,26 @@ serve(async (req) => {
         topP: 0.95,
         maxOutputTokens: 4096,
         responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            insights: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  type: { type: "string", enum: ["suggestion", "warning", "positive", "action"] },
+                  priority: { type: "string", enum: ["high", "medium", "low"] },
+                  title: { type: "string" },
+                  description: { type: "string" },
+                  impact: { type: "string" },
+                },
+                required: ["type", "priority", "title", "description"],
+              },
+            },
+          },
+          required: ["insights"],
+        },
       },
     };
 
@@ -182,6 +202,7 @@ serve(async (req) => {
         insights = parsed.insights || [];
       } catch (e) {
         console.error("Failed to parse Gemini JSON response:", e);
+        console.error("Raw response text:", responseText.substring(0, 500));
         // JSON 파싱 실패 시 텍스트에서 JSON 추출 시도
         const jsonMatch = responseText.match(/\{[\s\S]*"insights"[\s\S]*\}/);
         if (jsonMatch) {
