@@ -7,6 +7,7 @@ import { TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCardSync } from "@/hooks/useCardSync";
 import { useRecentTransactions } from "@/hooks/useDashboardStats";
+import { useCardConnectionInfo } from "@/hooks/useCardConnectionInfo";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -27,6 +28,7 @@ export function RecentTransactionsCard() {
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
   const cardSync = useCardSync();
+  const cardInfo = useCardConnectionInfo();
 
   const isLoggedIn = result !== null && result !== undefined;
   const transactions = result?.hasRealData ? result.data : getMockTransactions();
@@ -38,9 +40,9 @@ export function RecentTransactionsCard() {
       return;
     }
     
-    const connectedId = localStorage.getItem("codef_connected_id");
-    const cardCompanyId = localStorage.getItem("codef_card_company");
-    const cardCompanyName = localStorage.getItem("codef_card_company_name");
+    const connectedId = cardInfo.connectedId;
+    const cardCompanyId = cardInfo.cardCompanyId;
+    const cardCompanyName = cardInfo.cardCompanyName;
 
     if (!connectedId || !cardCompanyId) {
       toast.error("연동된 카드 정보가 없습니다. 카드를 먼저 연결해주세요.");

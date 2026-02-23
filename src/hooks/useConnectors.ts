@@ -19,6 +19,7 @@ export interface ConnectorInstance {
   status: "pending" | "connected" | "failed" | "expired" | "disconnected";
   status_message: string | null;
   connected_id: string | null;
+  credentials_meta: Record<string, unknown> | null;
   last_sync_at: string | null;
   next_sync_at: string | null;
   sync_interval_minutes: number | null;
