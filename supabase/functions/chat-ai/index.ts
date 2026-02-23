@@ -543,13 +543,13 @@ function classifyByKeyword(text: string): ClassifiedIntent {
     return { needsData: true, dataSource: "tax_invoice", requiresConnection: "hometax", timePeriod };
   }
 
-  // 매출/지출/거래내역
-  if (/매출|수입|수익|지출|비용|결제|소비|얼마|현황|내역|카드.*사용|총액|합계|브리핑|요약|정리/.test(t)) {
+  // 매출/지출/거래내역 (구어체 포함)
+  if (/매출|수입|수익|지출|비용|결제|소비|얼마|현황|내역|카드.*사용|총액|합계|브리핑|요약|정리|장사|벌었|벌이|돈.*벌|손익|실적|매상/.test(t)) {
     return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod };
   }
 
-  // 기간 키워드 + 조회 동사
-  if (timePeriod && /얼마|얼만큼|어때|어떻게|알려|보여|확인/.test(t)) {
+  // 기간 키워드 + 조회 동사 (구어체 포함)
+  if (timePeriod && /얼마|얼만큼|어때|어떻게|알려|보여|확인|맞아|맞냐|괜찮|잘\s*[됐된돼]|좋았/.test(t)) {
     return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod };
   }
 
