@@ -219,10 +219,19 @@ export default function Employees() {
                       <SelectValue placeholder="부서 선택" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="경영/관리">경영/관리</SelectItem>
+                      <SelectItem value="개발">개발</SelectItem>
+                      <SelectItem value="디자인">디자인</SelectItem>
+                      <SelectItem value="마케팅">마케팅</SelectItem>
+                      <SelectItem value="영업">영업</SelectItem>
                       <SelectItem value="운영">운영</SelectItem>
+                      <SelectItem value="인사/총무">인사/총무</SelectItem>
+                      <SelectItem value="재무/회계">재무/회계</SelectItem>
+                      <SelectItem value="고객지원">고객지원</SelectItem>
+                      <SelectItem value="물류/배송">물류/배송</SelectItem>
                       <SelectItem value="주방">주방</SelectItem>
                       <SelectItem value="홀">홀</SelectItem>
-                      <SelectItem value="관리">관리</SelectItem>
+                      <SelectItem value="생산/제조">생산/제조</SelectItem>
                       <SelectItem value="기타">기타</SelectItem>
                     </SelectContent>
                   </Select>
