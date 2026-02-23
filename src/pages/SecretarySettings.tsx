@@ -674,7 +674,8 @@ export default function SecretarySettings() {
                       </div>
                       {/* 대규모 입출금 기준 금액 설정 */}
                       {item.id === "large_transaction" && isSelected && (
-                        <div className="mt-3 ml-7 space-y-2.5 pb-1">
+                        <div className="mt-3 ml-7 p-3 rounded-lg border border-border bg-muted/40 space-y-2.5">
+                          <Label className="text-xs text-muted-foreground">기준 금액</Label>
                           <div className="flex items-center gap-1.5">
                             <div className="relative flex-1 max-w-[180px]">
                               <Input
