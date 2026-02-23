@@ -584,40 +584,46 @@ async function handleGetTransactions(
     const cardNoFromRequest = (cardNo || "").trim();
     if (cardNoFromRequest) return [cardNoFromRequest];
 
-    const cardListReq = {
-      connectedId,
-      organization: organizationCode,
-      birthDate: "",
-      inquiryType: "0",
-    };
+    // card-list API 권한이 없을 수 있으므로, 실패 시 빈 cardNo로 승인내역 직접 조회
+    try {
+      const cardListReq = {
+        connectedId,
+        organization: organizationCode,
+        birthDate: "",
+        inquiryType: "0",
+      };
 
-    const resp = await fetch(`${CODEF_API_URL}/v1/kr/card/p/account/card-list`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(cardListReq),
-    });
+      const resp = await fetch(`${CODEF_API_URL}/v1/kr/card/p/account/card-list`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(cardListReq),
+      });
 
-    const respText = await resp.text();
-    console.log("Card list raw response (in getTransactions):", respText.substring(0, 500));
-    const parsed = parseCodefResponse(respText);
-    const result = parsed.result || {};
-    const isSuccess = result.code === "CF-00000";
+      const respText = await resp.text();
+      console.log("Card list raw response (in getTransactions):", respText.substring(0, 500));
+      const parsed = parseCodefResponse(respText);
+      const result = parsed.result || {};
+      const isSuccess = result.code === "CF-00000";
 
-    if (!isSuccess) {
-      console.error("Card list failed - code:", result.code, "message:", normalizeCodefMessage(result.message));
-      const msg = normalizeCodefMessage(result.message) || "카드 목록 조회 실패";
-      throw new Error(msg);
+      if (!isSuccess) {
+        console.warn("Card list failed (code:", result.code, ") - falling back to empty cardNo for approval-list");
+        return [""];  // 빈 cardNo로 전체 승인내역 조회 시도
+      }
+
+      const cards = Array.isArray(parsed.data) ? parsed.data : [];
+      const cardNos = cards
+        .map((c: any) => (c?.resCardNo ? String(c.resCardNo) : ""))
+        .filter((no: string) => no.length > 0);
+
+      if (cardNos.length === 0) return [""];
+      return Array.from(new Set(cardNos));
+    } catch (err) {
+      console.warn("Card list threw error, falling back to empty cardNo:", err);
+      return [""];  // 폴백: 빈 cardNo로 전체 조회
     }
-
-    const cards = Array.isArray(parsed.data) ? parsed.data : [];
-    const cardNos = cards
-      .map((c: any) => (c?.resCardNo ? String(c.resCardNo) : ""))
-      .filter((no: string) => no.length > 0);
-
-    return Array.from(new Set(cardNos));
   };
 
   console.log(
