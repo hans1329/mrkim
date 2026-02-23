@@ -601,11 +601,13 @@ async function handleGetTransactions(
     });
 
     const respText = await resp.text();
+    console.log("Card list raw response (in getTransactions):", respText.substring(0, 500));
     const parsed = parseCodefResponse(respText);
     const result = parsed.result || {};
     const isSuccess = result.code === "CF-00000";
 
     if (!isSuccess) {
+      console.error("Card list failed - code:", result.code, "message:", normalizeCodefMessage(result.message));
       const msg = normalizeCodefMessage(result.message) || "카드 목록 조회 실패";
       throw new Error(msg);
     }
