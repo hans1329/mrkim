@@ -64,78 +64,13 @@ export default function Transactions() {
   const bankInfo = useBankConnectionInfo();
 
   const handleCardSync = () => {
-    if (!cardConnected) {
-      toast.error("먼저 카드를 연동해주세요");
-      return;
-    }
-
-    const connectedId = cardInfo.connectedId;
-    const cardCompanyId = cardInfo.cardCompanyId || "shinhan";
-    const cardCompanyName = cardInfo.cardCompanyName || "신한카드";
-
-    if (!connectedId) {
-      toast.error("카드 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.", {
-        action: { label: "재연동", onClick: () => openDrawer("card") },
-      });
-      return;
-    }
-
-    cardSync.mutate(
-      { connectedId, cardCompanyId, cardCompanyName },
-      {
-        onSuccess: (result) => {
-          if (result.synced > 0) {
-            toast.success(`${result.synced}건의 새 거래를 가져왔습니다`);
-          } else if (result.skipped > 0) {
-            toast.info("새로운 거래가 없습니다");
-          } else {
-            toast.info("가져올 거래가 없습니다");
-          }
-          refetch();
-        },
-        onError: (error) => {
-          toast.error(error.message || "동기화에 실패했습니다");
-        },
-      }
-    );
+    // 카드 동기화 = 재연동 (인증 재입력 필요)
+    navigate("/onboarding?reconnect=true&type=card");
   };
 
   const handleBankSync = () => {
-    if (!accountConnected) {
-      toast.error("먼저 은행 계좌를 연동해주세요");
-      return;
-    }
-
-    const connectedId = bankInfo.connectedId;
-    const bankId = bankInfo.bankCode || "shinhan";
-    const bankName = bankInfo.bankName || "신한은행";
-    const accountNo = "";
-
-    if (!connectedId) {
-      toast.error("은행 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.", {
-        action: { label: "재연동", onClick: () => openDrawer("account") },
-      });
-      return;
-    }
-
-    bankSync.mutate(
-      { connectedId, bankId, bankName, accountNo },
-      {
-        onSuccess: (result) => {
-          if (result.synced > 0) {
-            toast.success(`${result.synced}건의 새 거래를 가져왔습니다`);
-          } else if (result.skipped > 0) {
-            toast.info("새로운 거래가 없습니다");
-          } else {
-            toast.info("가져올 거래가 없습니다");
-          }
-          refetch();
-        },
-        onError: (error) => {
-          toast.error(error.message || "동기화에 실패했습니다");
-        },
-      }
-    );
+    // 계좌 동기화 = 재연동 (인증 재입력 필요)
+    navigate("/onboarding?reconnect=true&type=account");
   };
 
   const handleAddTransaction = () => {
@@ -215,18 +150,15 @@ export default function Transactions() {
                 <p className="text-xs font-medium">💳 카드{cardInfo.cardCompanyName ? ` · ${cardInfo.cardCompanyName}` : ""}</p>
                 {isCardConnected ? (
                   <div className="flex items-center gap-0.5">
-                    {cardInfo.connectedId && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleCardSync}
-                        disabled={cardSync.isPending}
-                        className="h-6 px-1.5 gap-0.5 text-xs text-primary hover:text-primary hover:bg-primary/10"
-                      >
-                        <RefreshCw className={cn("h-3 w-3", cardSync.isPending && "animate-spin")} />
-                        {cardSync.isPending ? "..." : "동기화"}
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleCardSync}
+                      className="h-6 px-1.5 gap-0.5 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      재연동
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -257,18 +189,15 @@ export default function Transactions() {
                 <p className="text-xs font-medium">🏦 계좌{bankInfo.bankName ? ` · ${bankInfo.bankName}` : ""}</p>
                 {isAccountConnected ? (
                   <div className="flex items-center gap-0.5">
-                    {bankInfo.connectedId && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleBankSync}
-                        disabled={bankSync.isPending}
-                        className="h-6 px-1.5 gap-0.5 text-xs text-green-600 hover:text-green-600 hover:bg-green-500/10"
-                      >
-                        <RefreshCw className={cn("h-3 w-3", bankSync.isPending && "animate-spin")} />
-                        {bankSync.isPending ? "..." : "동기화"}
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleBankSync}
+                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      재연동
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
