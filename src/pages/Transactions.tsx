@@ -31,6 +31,7 @@ import { useTransactions, useTransactionStats, useAddTransaction, type Transacti
 import { useCardSync } from "@/hooks/useCardSync";
 import { useBankSync } from "@/hooks/useBankSync";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { useCardConnectionInfo, useBankConnectionInfo } from "@/hooks/useCardConnectionInfo";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
@@ -59,8 +60,8 @@ export default function Transactions() {
 
   const navigate = useNavigate();
   const { openDrawer } = useConnectionDrawer();
-  const cardConnectedId = localStorage.getItem("codef_connected_id");
-  const bankConnectedId = localStorage.getItem("codef_bank_connected_id");
+  const cardInfo = useCardConnectionInfo();
+  const bankInfo = useBankConnectionInfo();
 
   const handleCardSync = () => {
     if (!cardConnected) {
@@ -68,9 +69,9 @@ export default function Transactions() {
       return;
     }
 
-    const connectedId = cardConnectedId;
-    const cardCompanyId = localStorage.getItem("codef_card_company") || "shinhan";
-    const cardCompanyName = localStorage.getItem("codef_card_company_name") || "신한카드";
+    const connectedId = cardInfo.connectedId;
+    const cardCompanyId = cardInfo.cardCompanyId || "shinhan";
+    const cardCompanyName = cardInfo.cardCompanyName || "신한카드";
 
     if (!connectedId) {
       toast.error("카드 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.", {
@@ -105,10 +106,10 @@ export default function Transactions() {
       return;
     }
 
-    const connectedId = bankConnectedId;
-    const bankId = localStorage.getItem("codef_bank_id") || "shinhan";
-    const bankName = localStorage.getItem("codef_bank_name") || "신한은행";
-    const accountNo = localStorage.getItem("codef_bank_account_no") || "";
+    const connectedId = bankInfo.connectedId;
+    const bankId = bankInfo.bankCode || "shinhan";
+    const bankName = bankInfo.bankName || "신한은행";
+    const accountNo = "";
 
     if (!connectedId) {
       toast.error("은행 연동 정보를 찾을 수 없습니다. 다시 연동해주세요.", {
@@ -213,7 +214,7 @@ export default function Transactions() {
               )}>
                 <p className="text-xs font-medium">💳 카드</p>
                 {isCardConnected ? (
-                  cardConnectedId ? (
+                  cardInfo.connectedId ? (
                     <Button
                       size="sm"
                       variant="ghost"
@@ -254,7 +255,7 @@ export default function Transactions() {
               )}>
                 <p className="text-xs font-medium">🏦 계좌</p>
                 {isAccountConnected ? (
-                  bankConnectedId ? (
+                  bankInfo.connectedId ? (
                     <Button
                       size="sm"
                       variant="ghost"

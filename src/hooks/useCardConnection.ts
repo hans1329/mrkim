@@ -16,6 +16,18 @@ const CARD_ORGANIZATION_CODES: Record<string, string> = {
   nh: "0304",
 };
 
+const CARD_COMPANY_NAMES: Record<string, string> = {
+  shinhan: "신한카드",
+  samsung: "삼성카드",
+  kb: "KB국민카드",
+  hyundai: "현대카드",
+  lotte: "롯데카드",
+  bc: "BC카드",
+  hana: "하나카드",
+  woori: "우리카드",
+  nh: "NH농협카드",
+};
+
 function getOrganizationCode(cardCompanyId: string): string {
   return CARD_ORGANIZATION_CODES[cardCompanyId] || cardCompanyId;
 }
@@ -111,6 +123,7 @@ export function useCardConnection(): UseCardConnectionReturn {
         // connector_instances + profiles 플래그 동기화 (카드사 코드도 함께 저장)
         await connectService("codef_card_usage", data.connectedId, {
           card_company_id: cardCompanyId,
+          card_company_name: CARD_COMPANY_NAMES[cardCompanyId] || cardCompanyId,
           organization_code: getOrganizationCode(cardCompanyId),
         });
         
