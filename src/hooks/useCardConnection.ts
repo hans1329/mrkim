@@ -3,6 +3,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useConnection } from "@/contexts/ConnectionContext";
 
+// 카드사 기관코드 매핑 (codef-card 엣지 함수와 동일)
+const CARD_ORGANIZATION_CODES: Record<string, string> = {
+  shinhan: "0306",
+  samsung: "0303",
+  kb: "0301",
+  hyundai: "0302",
+  lotte: "0311",
+  bc: "0305",
+  hana: "0313",
+  woori: "0309",
+  nh: "0304",
+};
+
+function getOrganizationCode(cardCompanyId: string): string {
+  return CARD_ORGANIZATION_CODES[cardCompanyId] || cardCompanyId;
+}
+
 interface CardInfo {
   cardNo: string;
   cardName: string;
@@ -91,8 +108,11 @@ export function useCardConnection(): UseCardConnectionReturn {
       if (data.success && data.connectedId) {
         setConnectedId(data.connectedId);
         
-        // connector_instances + profiles 플래그 동기화
-        await connectService("codef_card_usage", data.connectedId);
+        // connector_instances + profiles 플래그 동기화 (카드사 코드도 함께 저장)
+        await connectService("codef_card_usage", data.connectedId, {
+          card_company_id: cardCompanyId,
+          organization_code: getOrganizationCode(cardCompanyId),
+        });
         
         toast.success("카드사 연결이 완료되었습니다!");
         return data.connectedId;
