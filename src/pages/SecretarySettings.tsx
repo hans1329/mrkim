@@ -674,7 +674,7 @@ export default function SecretarySettings() {
                       </div>
                       {/* 대규모 입출금 기준 금액 설정 */}
                       {item.id === "large_transaction" && isSelected && (
-                        <div className="mt-1 ml-7 flex items-center gap-2 pb-1">
+                        <div className="mt-3 ml-7 flex items-center gap-2 pb-1">
                           <Input
                             type="text"
                             inputMode="numeric"
