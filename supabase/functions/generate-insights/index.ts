@@ -76,7 +76,7 @@ serve(async (req) => {
     const deposits = depositsRes.data || [];
 
     // 3. 데이터 요약 생성
-    const totalIncome = transactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+    const totalIncome = transactions.filter(t => t.type === "income" || t.type === "transfer_in").reduce((sum, t) => sum + t.amount, 0);
     const totalExpense = transactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
     const categoryStats = new Map<string, number>();
     transactions.filter(t => t.type === "expense" && t.category).forEach(t => {
