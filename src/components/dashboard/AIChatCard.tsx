@@ -83,7 +83,8 @@ const buildBriefingPrompt = (metrics: string[]): string => {
 export function AIChatCard() {
   const navigate = useNavigate();
   const {
-    openChat
+    openChat,
+    openChatWithMessage
   } = useChat();
   const {
     openVoice
@@ -309,17 +310,13 @@ export function AIChatCard() {
   };
   const handleQuickAsk = async (question: string) => {
     setInput("");
-    setIsTyping(true);
-    setIsBriefingResponse(false);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const answer = generateQuickResponse(question);
-    setResponse(answer);
-    setIsTyping(false);
+    openChatWithMessage(question);
   };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-    handleQuickAsk(input);
+    openChatWithMessage(input.trim());
+    setInput("");
   };
 
   // 브리핑 TTS 재생/정지

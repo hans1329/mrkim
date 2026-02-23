@@ -46,7 +46,7 @@ const defaultQuickCommands = [
 
 export function AIChatPanel() {
   const navigate = useNavigate();
-  const { isOpen, closeChat } = useChat();
+  const { isOpen, closeChat, consumeInitialMessage } = useChat();
   const { 
     messages, 
     sessions,
@@ -84,6 +84,16 @@ export function AIChatPanel() {
       setTimeout(scrollToBottom, 50);
     }
   }, [messages, isOpen]);
+
+  // 초기 메시지가 있으면 자동 전송
+  useEffect(() => {
+    if (isOpen && !isLoading && !isLoadingHistory) {
+      const msg = consumeInitialMessage();
+      if (msg) {
+        sendMessage(msg);
+      }
+    }
+  }, [isOpen, isLoadingHistory]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
