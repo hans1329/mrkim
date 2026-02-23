@@ -424,11 +424,11 @@ export default function Transactions() {
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       <div className={cn(
                         "flex h-9 w-9 items-center justify-center rounded-full shrink-0",
-                        transaction.type === "income" ? "bg-green-500/10" : "bg-red-500/10"
+                        (transaction.type === "income" || transaction.type === "transfer_in") ? "bg-green-500/10" : "bg-red-500/10"
                       )}>
                         {transaction.category_icon ? (
                           <span className="text-base">{transaction.category_icon}</span>
-                        ) : transaction.type === "income" ? (
+                        ) : (transaction.type === "income" || transaction.type === "transfer_in") ? (
                           <TrendingUp className="h-4 w-4 text-green-600" />
                         ) : (
                           <TrendingDown className="h-4 w-4 text-red-600" />
@@ -444,9 +444,9 @@ export default function Transactions() {
                     <div className="text-right shrink-0 ml-2">
                       <p className={cn(
                         "font-semibold text-sm",
-                        transaction.type === "income" ? "text-green-600" : "text-red-600"
+                        (transaction.type === "income" || transaction.type === "transfer_in") ? "text-green-600" : "text-red-600"
                       )}>
-                        {transaction.type === "income" ? "+" : "-"}
+                        {(transaction.type === "income" || transaction.type === "transfer_in") ? "+" : "-"}
                         {formatCurrency(transaction.amount)}
                       </p>
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">

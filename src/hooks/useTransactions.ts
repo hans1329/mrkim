@@ -9,7 +9,7 @@ export interface Transaction {
   transaction_time: string | null;
   description: string;
   amount: number;
-  type: "income" | "expense";
+  type: "income" | "expense" | "transfer_in";
   source_type: "card" | "bank";
   source_name: string | null;
   source_account: string | null;
@@ -32,7 +32,7 @@ export interface TransactionInsert {
   transaction_time?: string;
   description: string;
   amount: number;
-  type: "income" | "expense";
+  type: "income" | "expense" | "transfer_in";
   source_type: "card" | "bank";
   source_name?: string;
   source_account?: string;
@@ -56,7 +56,7 @@ export interface TransactionUpdate {
 }
 
 export interface TransactionFilters {
-  type?: "income" | "expense";
+  type?: "income" | "expense" | "transfer_in";
   category?: string;
   startDate?: string;
   endDate?: string;
@@ -120,7 +120,7 @@ export function useTransactionStats() {
       const dateTo = dates[dates.length - 1] || null;
 
       const totalIncome = transactions
-        .filter((t) => t.type === "income")
+        .filter((t) => t.type === "income" || t.type === "transfer_in")
         .reduce((sum, t) => sum + t.amount, 0);
 
       const totalExpense = transactions
