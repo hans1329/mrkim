@@ -642,7 +642,7 @@ export default function SecretarySettings() {
                 {phoneAlertItems.map((item) => {
                   const isSelected = selectedPhoneAlertItems.includes(item.id);
                   return (
-                    <div key={item.id} className="space-y-0">
+                    <div key={item.id} className="space-y-3">
                       <div
                         className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
                           isSelected
@@ -674,7 +674,7 @@ export default function SecretarySettings() {
                       </div>
                       {/* 대규모 입출금 기준 금액 설정 */}
                       {item.id === "large_transaction" && isSelected && (
-                        <div className="mt-6 p-3 rounded-lg border border-border bg-muted/40 space-y-2.5">
+                        <div className="p-3 rounded-lg border border-border bg-muted/40 space-y-2.5">
                           <Label className="text-xs text-muted-foreground">기준 금액</Label>
                           <div className="flex items-center gap-1.5">
                             <div className="relative flex-1 max-w-[180px]">
