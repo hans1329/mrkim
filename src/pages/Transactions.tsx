@@ -64,13 +64,11 @@ export default function Transactions() {
   const bankInfo = useBankConnectionInfo();
 
   const handleCardSync = () => {
-    // 카드 동기화 = 재연동 (인증 재입력 필요)
-    navigate("/onboarding?reconnect=true&type=card");
+    openDrawer("card");
   };
 
   const handleBankSync = () => {
-    // 계좌 동기화 = 재연동 (인증 재입력 필요)
-    navigate("/onboarding?reconnect=true&type=account");
+    openDrawer("account");
   };
 
   const handleAddTransaction = () => {
