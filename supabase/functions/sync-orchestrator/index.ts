@@ -562,16 +562,20 @@ async function syncCardTransactions(
   );
 
   const text = await res.text();
+  console.log("Card approval-list raw response (first 500):", text.substring(0, 500));
+  console.log("Card approval-list HTTP status:", res.status);
   let data: any;
   try {
     data = JSON.parse(text);
   } catch {
     try {
-      data = JSON.parse(decodeURIComponent(text.replace(/\+/g, " ")));
+      data = JSON.parse(decodeURIComponent(text.replace(/\+/g, "%20")));
     } catch {
       throw new Error("카드 거래내역 응답 파싱 실패");
     }
   }
+
+  console.log("Card API result code:", data.result?.code, "message:", data.result?.message);
 
   if (data.result?.code !== "CF-00000") {
     throw new Error(
