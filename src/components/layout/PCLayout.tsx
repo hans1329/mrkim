@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect } from "react";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
@@ -41,6 +42,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const { profile } = useProfileQuery();
+  const { unreadCount } = useNotifications();
   const userAvatarUrl = profile?.avatar_url || (profile?.user_id ? getRandomAvatarUrl(profile.user_id) : null);
 
   // PC에서는 body 스크롤 비활성화 (main만 스크롤)
@@ -128,9 +130,11 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           >
             <div className="relative flex-shrink-0">
               <Bell className="h-5 w-5" />
-              <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
-                2
-              </span>
+              {unreadCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </div>
             {!collapsed && <span>알림</span>}
           </Button>
