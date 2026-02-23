@@ -298,7 +298,7 @@ async function fetchTransactionData(userId: string, authHeader: string, timePeri
     const catMap = new Map<string, { amount: number; count: number }>();
     for (const tx of txs) {
       if (tx.type === "expense") { totalExpense += tx.amount; expenseCount++; }
-      else if (tx.type === "income") { totalIncome += tx.amount; incomeCount++; }
+      else if (tx.type === "income" || tx.type === "transfer_in") { totalIncome += tx.amount; incomeCount++; }
       const c = tx.category || "미분류";
       const e = catMap.get(c) || { amount: 0, count: 0 };
       catMap.set(c, { amount: e.amount + tx.amount, count: e.count + 1 });
