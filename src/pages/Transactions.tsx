@@ -28,7 +28,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, ExternalLink, PlusCircle, CalendarIcon } from "lucide-react";
+import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, PlusCircle, CalendarIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { cn } from "@/lib/utils";
@@ -145,7 +145,7 @@ export default function Transactions() {
 
   return (
     <MainLayout title="매출/매입" subtitle="거래 내역을 관리하세요" showBackButton>
-      <Tabs defaultValue="list" className="space-y-3">
+      <Tabs defaultValue="list" className="space-y-2.5">
         <TabsList className="grid w-full grid-cols-2 h-9">
           <TabsTrigger value="list" className="text-sm">거래 목록</TabsTrigger>
           <TabsTrigger value="classify" className="gap-1 text-sm">
@@ -154,100 +154,76 @@ export default function Transactions() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="list" className="space-y-3 mt-0">
+        <TabsContent value="list" className="space-y-2.5 mt-0">
           {/* 미연동 상태: 온보딩 유도 배너 */}
           {!isCardConnected && !isAccountConnected && (
             <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center">
-              <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-primary/10 mb-3">
-                <LinkIcon className="h-6 w-6 text-primary" />
+              <div className="flex h-10 w-10 mx-auto items-center justify-center rounded-full bg-primary/10 mb-2">
+                <LinkIcon className="h-5 w-5 text-primary" />
               </div>
               <h3 className="text-sm font-semibold mb-1">카드/계좌를 연동해보세요</h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                연동하면 거래 내역이 자동으로 수집되고 AI가 분류해드려요
+              <p className="text-xs text-muted-foreground mb-2.5">
+                연동하면 거래 내역이 자동으로 수집됩니다
               </p>
-              <Button size="sm" className="gap-1" onClick={() => openDrawer("card")}>
+              <Button size="sm" className="gap-1 h-8" onClick={() => openDrawer("card")}>
                 <Sparkles className="h-3.5 w-3.5" />
                 연동하러 가기
               </Button>
             </div>
           )}
 
-          {/* 동기화 배너 - 카드/계좌 한 행 */}
+          {/* 동기화 배너 - 모바일: 세로 스택, 넓은 화면: 2열 */}
           {(isCardConnected || isAccountConnected) && (
-            <div className="grid grid-cols-2 gap-2">
-              {/* 카드: 연동됨 → 동기화+추가, 미연동 → 연동하기 */}
+            <div className="flex flex-col sm:grid sm:grid-cols-2 gap-1.5">
+              {/* 카드 */}
               <div className={cn(
                 "flex items-center justify-between rounded-lg px-3 py-2",
                 isCardConnected ? "bg-primary/5 border border-primary/20" : "bg-muted/50 border border-dashed border-muted-foreground/20"
               )}>
-                <p className="text-xs font-medium">💳 카드{cardInfo.cardCompanyName ? ` · ${cardInfo.cardCompanyName}` : ""}</p>
+                <p className="text-xs font-medium truncate">💳 카드{cardInfo.cardCompanyName ? ` · ${cardInfo.cardCompanyName}` : ""}</p>
                 {isCardConnected ? (
-                  <div className="flex items-center gap-0.5">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleCardSync}
-                      className="h-6 px-1.5 gap-0.5 text-xs text-primary hover:text-primary hover:bg-primary/10"
-                    >
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <Button size="sm" variant="ghost" onClick={handleCardSync}
+                      className="h-6 px-1.5 gap-0.5 text-xs text-primary hover:text-primary hover:bg-primary/10">
                       <RefreshCw className="h-3 w-3" />
                       재연동
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => openDrawer("card")}
-                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10"
-                    >
+                    <Button size="sm" variant="ghost" onClick={() => openDrawer("card")}
+                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10">
                       <PlusCircle className="h-3 w-3" />
                       추가
                     </Button>
                   </div>
                 ) : (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openDrawer("card")}
-                    className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10"
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => openDrawer("card")}
+                    className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10 shrink-0">
                     <LinkIcon className="h-3 w-3" />
                     연동
                   </Button>
                 )}
               </div>
-              {/* 계좌: 연동됨 → 동기화+추가, 미연동 → 연동하기 */}
+              {/* 계좌 */}
               <div className={cn(
                 "flex items-center justify-between rounded-lg px-3 py-2",
                 isAccountConnected ? "bg-muted/50 border border-border" : "bg-muted/50 border border-dashed border-muted-foreground/20"
               )}>
-                <p className="text-xs font-medium">🏦 계좌{bankInfo.bankName ? ` · ${bankInfo.bankName}` : ""}</p>
+                <p className="text-xs font-medium truncate">🏦 계좌{bankInfo.bankName ? ` · ${bankInfo.bankName}` : ""}</p>
                 {isAccountConnected ? (
-                  <div className="flex items-center gap-0.5">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleBankSync}
-                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
-                    >
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <Button size="sm" variant="ghost" onClick={handleBankSync}
+                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
                       <RefreshCw className="h-3 w-3" />
                       재연동
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => openDrawer("account")}
-                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-muted-foreground hover:bg-muted"
-                    >
+                    <Button size="sm" variant="ghost" onClick={() => openDrawer("account")}
+                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-muted-foreground hover:bg-muted">
                       <PlusCircle className="h-3 w-3" />
                       추가
                     </Button>
                   </div>
                 ) : (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openDrawer("account")}
-                    className="h-6 px-2 gap-1 text-xs text-success hover:text-success hover:bg-success/10"
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => openDrawer("account")}
+                    className="h-6 px-2 gap-1 text-xs text-success hover:text-success hover:bg-success/10 shrink-0">
                     <LinkIcon className="h-3 w-3" />
                     연동
                   </Button>
@@ -256,14 +232,14 @@ export default function Transactions() {
             </div>
           )}
 
-          {/* 기간 설정 */}
-          <div className="flex items-center gap-1.5">
+          {/* 기간 설정 - 스크롤 가능한 영역 */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
             {(["1m", "3m", "6m", "all"] as const).map((preset) => (
               <Button
                 key={preset}
                 size="sm"
                 variant={periodPreset === preset ? "default" : "outline"}
-                className="h-7 px-2.5 text-xs rounded-full"
+                className="h-7 px-2.5 text-xs rounded-full shrink-0"
                 onClick={() => setPeriodPreset(preset)}
               >
                 {preset === "1m" ? "1개월" : preset === "3m" ? "3개월" : preset === "6m" ? "6개월" : "전체"}
@@ -274,7 +250,7 @@ export default function Transactions() {
                 <Button
                   size="sm"
                   variant={periodPreset === "custom" ? "default" : "outline"}
-                  className="h-7 px-2.5 text-xs rounded-full gap-1"
+                  className="h-7 px-2.5 text-xs rounded-full gap-1 shrink-0"
                   onClick={() => {
                     if (periodPreset !== "custom") {
                       setPeriodPreset("custom");
@@ -288,24 +264,16 @@ export default function Transactions() {
                     : "직접설정"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-3" align="end">
+              <PopoverContent className="w-auto p-3" align="start">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-xs">
-                    <Button
-                      size="sm"
-                      variant={calendarTarget === "start" ? "default" : "outline"}
-                      className="h-6 px-2 text-xs"
-                      onClick={() => setCalendarTarget("start")}
-                    >
+                    <Button size="sm" variant={calendarTarget === "start" ? "default" : "outline"}
+                      className="h-6 px-2 text-xs" onClick={() => setCalendarTarget("start")}>
                       시작일 {customStartDate ? format(customStartDate, "M.d") : "-"}
                     </Button>
                     <span className="text-muted-foreground">~</span>
-                    <Button
-                      size="sm"
-                      variant={calendarTarget === "end" ? "default" : "outline"}
-                      className="h-6 px-2 text-xs"
-                      onClick={() => setCalendarTarget("end")}
-                    >
+                    <Button size="sm" variant={calendarTarget === "end" ? "default" : "outline"}
+                      className="h-6 px-2 text-xs" onClick={() => setCalendarTarget("end")}>
                       종료일 {customEndDate ? format(customEndDate, "M.d") : "-"}
                     </Button>
                   </div>
@@ -323,174 +291,172 @@ export default function Transactions() {
                     }}
                     locale={ko}
                     disabled={(date) => date > new Date()}
-                    className={cn("p-3 pointer-events-auto")}
+                    className="p-3 pointer-events-auto"
                   />
                 </div>
               </PopoverContent>
             </Popover>
+
+            {/* 데이터 기간 표시 (인라인) */}
+            {stats?.dateFrom && stats?.dateTo && (
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0 ml-auto">
+                {stats.dateFrom.replace(/-/g, '.')} ~ {stats.dateTo.replace(/-/g, '.')}
+              </span>
+            )}
           </div>
 
-          {/* 데이터 기간 표시 */}
-          {stats?.dateFrom && stats?.dateTo && (
-            <p className="text-xs text-muted-foreground">
-              📅 {stats.dateFrom.replace(/-/g, '.')} ~ {stats.dateTo.replace(/-/g, '.')}
-            </p>
-          )}
-
-          {/* 요약 카드 */}
-          <div className="space-y-2">
-            {/* 매출/지출 - 2열 */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg bg-card border p-3">
-                <p className="text-xs text-muted-foreground mb-1">매출</p>
-                {isStatsLoading ? (
-                  <Skeleton className="h-6 w-24" />
-                ) : (
-                  <p className="text-lg font-bold text-green-600">{formatCurrency(stats?.totalIncome || 0)}</p>
-                )}
-              </div>
-              <div className="rounded-lg bg-card border p-3">
-                <p className="text-xs text-muted-foreground mb-1">지출</p>
-                {isStatsLoading ? (
-                  <Skeleton className="h-6 w-24" />
-                ) : (
-                  <p className="text-lg font-bold text-red-600">{formatCurrency(stats?.totalExpense || 0)}</p>
-                )}
-              </div>
-            </div>
-            {/* 순이익 - 별도 행 */}
-            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 flex items-center justify-between">
-              <p className="text-sm font-medium text-muted-foreground">순이익</p>
+          {/* 요약 카드 - 모바일 최적화: 3열 한 줄로 */}
+          <div className="grid grid-cols-3 gap-1.5">
+            <div className="rounded-lg bg-card border p-2.5">
+              <p className="text-[10px] text-muted-foreground mb-0.5">매출</p>
               {isStatsLoading ? (
-                <Skeleton className="h-5 w-28" />
+                <Skeleton className="h-5 w-full" />
               ) : (
-                <p className="text-base font-bold text-primary">{formatCurrency(stats?.netProfit || 0)}</p>
+                <p className="text-sm font-bold text-green-600 truncate">{formatCurrency(stats?.totalIncome || 0)}</p>
+              )}
+            </div>
+            <div className="rounded-lg bg-card border p-2.5">
+              <p className="text-[10px] text-muted-foreground mb-0.5">지출</p>
+              {isStatsLoading ? (
+                <Skeleton className="h-5 w-full" />
+              ) : (
+                <p className="text-sm font-bold text-red-600 truncate">{formatCurrency(stats?.totalExpense || 0)}</p>
+              )}
+            </div>
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-2.5">
+              <p className="text-[10px] text-muted-foreground mb-0.5">순이익</p>
+              {isStatsLoading ? (
+                <Skeleton className="h-5 w-full" />
+              ) : (
+                <p className="text-sm font-bold text-primary truncate">{formatCurrency(stats?.netProfit || 0)}</p>
               )}
             </div>
           </div>
 
-          {/* 필터 및 검색 - 더 컴팩트하게 */}
-          <div className="flex gap-1.5">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {/* 필터 및 검색 - 2행 구조로 모바일 최적화 */}
+          <div className="space-y-1.5">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="검색..."
-                className="pl-8 h-9 text-sm"
+                placeholder="거래처 검색..."
+                className="pl-8 h-8 text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Select value={filter} onValueChange={(value: "all" | "income" | "expense") => setFilter(value)}>
-              <SelectTrigger className="w-20 h-9 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체</SelectItem>
-                <SelectItem value="income">매출</SelectItem>
-                <SelectItem value="expense">지출</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sourceFilter} onValueChange={(value: "all" | "card" | "bank") => setSourceFilter(value)}>
-              <SelectTrigger className="w-20 h-9 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체</SelectItem>
-                <SelectItem value="card">카드</SelectItem>
-                <SelectItem value="bank">은행</SelectItem>
-              </SelectContent>
-            </Select>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="icon" className="h-9 w-9 shrink-0">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-[calc(100%-2rem)] rounded-xl">
-                <DialogHeader>
-                  <DialogTitle>새 거래 추가</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-3 py-2">
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">거래 유형</Label>
-                    <Select
-                      value={newTransaction.type}
-                      onValueChange={(value: "income" | "expense") =>
-                        setNewTransaction({ ...newTransaction, type: value })
-                      }
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="income">매출</SelectItem>
-                        <SelectItem value="expense">매입/지출</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">거래처/내용</Label>
-                    <Input
-                      placeholder="예: 스타벅스 강남점"
-                      className="h-10"
-                      value={newTransaction.description}
-                      onChange={(e) =>
-                        setNewTransaction({ ...newTransaction, description: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">금액</Label>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      className="h-10"
-                      value={newTransaction.amount}
-                      onChange={(e) =>
-                        setNewTransaction({ ...newTransaction, amount: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
+            <div className="flex gap-1.5">
+              <Select value={filter} onValueChange={(value: "all" | "income" | "expense") => setFilter(value)}>
+                <SelectTrigger className="flex-1 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체 유형</SelectItem>
+                  <SelectItem value="income">매출</SelectItem>
+                  <SelectItem value="expense">지출</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sourceFilter} onValueChange={(value: "all" | "card" | "bank") => setSourceFilter(value)}>
+                <SelectTrigger className="flex-1 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체 소스</SelectItem>
+                  <SelectItem value="card">카드</SelectItem>
+                  <SelectItem value="bank">은행</SelectItem>
+                </SelectContent>
+              </Select>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="icon" className="h-8 w-8 shrink-0">
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-[calc(100%-2rem)] max-w-md rounded-xl">
+                  <DialogHeader>
+                    <DialogTitle>새 거래 추가</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3 py-2">
                     <div className="space-y-1.5">
-                      <Label className="text-sm">결제 수단</Label>
+                      <Label className="text-sm">거래 유형</Label>
                       <Select
-                        value={newTransaction.source_type}
-                        onValueChange={(value: "card" | "bank") =>
-                          setNewTransaction({ ...newTransaction, source_type: value })
+                        value={newTransaction.type}
+                        onValueChange={(value: "income" | "expense") =>
+                          setNewTransaction({ ...newTransaction, type: value })
                         }
                       >
                         <SelectTrigger className="h-10">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="card">카드</SelectItem>
-                          <SelectItem value="bank">계좌이체</SelectItem>
+                          <SelectItem value="income">매출</SelectItem>
+                          <SelectItem value="expense">매입/지출</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-sm">카드/은행명</Label>
+                      <Label className="text-sm">거래처/내용</Label>
                       <Input
-                        placeholder="예: 신한카드"
+                        placeholder="예: 스타벅스 강남점"
                         className="h-10"
-                        value={newTransaction.source_name}
+                        value={newTransaction.description}
                         onChange={(e) =>
-                          setNewTransaction({ ...newTransaction, source_name: e.target.value })
+                          setNewTransaction({ ...newTransaction, description: e.target.value })
                         }
                       />
                     </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">금액</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        className="h-10"
+                        value={newTransaction.amount}
+                        onChange={(e) =>
+                          setNewTransaction({ ...newTransaction, amount: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">결제 수단</Label>
+                        <Select
+                          value={newTransaction.source_type}
+                          onValueChange={(value: "card" | "bank") =>
+                            setNewTransaction({ ...newTransaction, source_type: value })
+                          }
+                        >
+                          <SelectTrigger className="h-10">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="card">카드</SelectItem>
+                            <SelectItem value="bank">계좌이체</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">카드/은행명</Label>
+                        <Input
+                          placeholder="예: 신한카드"
+                          className="h-10"
+                          value={newTransaction.source_name}
+                          onChange={(e) =>
+                            setNewTransaction({ ...newTransaction, source_name: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleAddTransaction}
+                      className="w-full h-11 mt-2"
+                      disabled={addTransaction.isPending}
+                    >
+                      {addTransaction.isPending ? "추가 중..." : "추가하기"}
+                    </Button>
                   </div>
-                  <Button 
-                    onClick={handleAddTransaction} 
-                    className="w-full h-11 mt-2"
-                    disabled={addTransaction.isPending}
-                  >
-                    {addTransaction.isPending ? "추가 중..." : "추가하기"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           {/* 거래 목록 */}
@@ -498,17 +464,17 @@ export default function Transactions() {
             <Card className="overflow-hidden">
               <CardContent className="divide-y p-0">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex items-center justify-between px-3 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                  <div key={i} className="flex items-center justify-between px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-8 w-8 rounded-full shrink-0" />
                       <div className="min-w-0">
-                        <Skeleton className="h-4 w-28 mb-1" />
-                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-3.5 w-24 mb-1" />
+                        <Skeleton className="h-3 w-16" />
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <Skeleton className="h-4 w-16 mb-1 ml-auto" />
-                      <Skeleton className="h-4 w-10 ml-auto" />
+                      <Skeleton className="h-3.5 w-14 mb-1 ml-auto" />
+                      <Skeleton className="h-3 w-8 ml-auto" />
                     </div>
                   </div>
                 ))}
@@ -516,20 +482,20 @@ export default function Transactions() {
             </Card>
           ) : isEmpty ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-10 text-center">
-                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                  <LinkIcon className="h-7 w-7 text-muted-foreground" />
+              <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="mb-2.5 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                  <LinkIcon className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <h3 className="mb-1 font-semibold text-base">거래 내역이 없습니다</h3>
-                <p className="mb-4 text-sm text-muted-foreground">
+                <h3 className="mb-1 font-semibold text-sm">거래 내역이 없습니다</h3>
+                <p className="mb-3 text-xs text-muted-foreground">
                   카드/계좌를 연동하면 자동 수집됩니다
                 </p>
                 <div className="flex gap-2">
-                  <Button asChild variant="outline" size="sm">
+                  <Button asChild variant="outline" size="sm" className="h-8 text-xs">
                     <Link to="/onboarding">연동하기</Link>
                   </Button>
-                  <Button size="sm" onClick={() => setIsDialogOpen(true)}>
-                    <Plus className="mr-1 h-3.5 w-3.5" />
+                  <Button size="sm" className="h-8 text-xs" onClick={() => setIsDialogOpen(true)}>
+                    <Plus className="mr-1 h-3 w-3" />
                     수동 추가
                   </Button>
                 </div>
@@ -539,39 +505,39 @@ export default function Transactions() {
             <Card className="overflow-hidden">
               <CardContent className="divide-y p-0">
                 {transactions?.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between px-3 py-3 active:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div key={transaction.id} className="flex items-center justify-between px-3 py-2.5 active:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <div className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-full shrink-0",
+                        "flex h-8 w-8 items-center justify-center rounded-full shrink-0",
                         (transaction.type === "income" || transaction.type === "transfer_in") ? "bg-green-500/10" : "bg-red-500/10"
                       )}>
                         {transaction.category_icon ? (
-                          <span className="text-base">{transaction.category_icon}</span>
+                          <span className="text-sm">{transaction.category_icon}</span>
                         ) : (transaction.type === "income" || transaction.type === "transfer_in") ? (
-                          <TrendingUp className="h-4 w-4 text-green-600" />
+                          <TrendingUp className="h-3.5 w-3.5 text-green-600" />
                         ) : (
-                          <TrendingDown className="h-4 w-4 text-red-600" />
+                          <TrendingDown className="h-3.5 w-3.5 text-red-600" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm truncate">{transaction.description}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {transaction.category || "미분류"} · {transaction.transaction_date}
-                        </p>
+                        <p className="font-medium text-[13px] leading-tight truncate">{transaction.description}</p>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className="text-[10px] text-muted-foreground truncate">{transaction.category || "미분류"}</span>
+                          <span className="text-[10px] text-muted-foreground/50">·</span>
+                          <span className="text-[10px] text-muted-foreground shrink-0">{transaction.transaction_date?.slice(5)}</span>
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 shrink-0 ml-0.5">
+                            {transaction.source_type === "card" ? "카드" : "계좌"}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right shrink-0 ml-2">
-                      <p className={cn(
-                        "font-semibold text-sm",
-                        (transaction.type === "income" || transaction.type === "transfer_in") ? "text-green-600" : "text-red-600"
-                      )}>
-                        {(transaction.type === "income" || transaction.type === "transfer_in") ? "+" : "-"}
-                        {formatCurrency(transaction.amount)}
-                      </p>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                        {transaction.source_type === "card" ? "카드" : "계좌"}
-                      </Badge>
-                    </div>
+                    <p className={cn(
+                      "font-semibold text-[13px] shrink-0 ml-2 tabular-nums",
+                      (transaction.type === "income" || transaction.type === "transfer_in") ? "text-green-600" : "text-red-600"
+                    )}>
+                      {(transaction.type === "income" || transaction.type === "transfer_in") ? "+" : "-"}
+                      {formatCurrency(transaction.amount)}
+                    </p>
                   </div>
                 ))}
               </CardContent>
