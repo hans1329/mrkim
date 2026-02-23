@@ -120,6 +120,7 @@ export default function SecretarySettings() {
   const [selectedPhoneAlertItems, setSelectedPhoneAlertItems] = useState<string[]>(["tax_deadline", "large_transaction", "salary_reminder", "sales_spike"]);
   const [phoneAlertTimes, setPhoneAlertTimes] = useState<string[]>(["10"]);
   const [phoneAlertCustomMessage, setPhoneAlertCustomMessage] = useState("");
+  const [largeTransactionThreshold, setLargeTransactionThreshold] = useState<number>(1000000);
   const [phoneAlertCustomTime, setPhoneAlertCustomTime] = useState("");
   const [phoneAlertCustomDays, setPhoneAlertCustomDays] = useState<string[]>([]);
   
@@ -151,6 +152,7 @@ export default function SecretarySettings() {
       setPhoneAlertCustomMessage(p.phone_alert_custom_message || "");
       setPhoneAlertCustomTime(p.phone_alert_custom_time || "");
       if (Array.isArray(p.phone_alert_custom_days)) setPhoneAlertCustomDays(p.phone_alert_custom_days);
+      setLargeTransactionThreshold(p.large_transaction_threshold ?? 1000000);
     }
   }, [profile]);
 
@@ -255,6 +257,7 @@ export default function SecretarySettings() {
           phone_alert_custom_message: phoneAlertCustomMessage || null,
           phone_alert_custom_time: phoneAlertCustomTime || null,
           phone_alert_custom_days: phoneAlertCustomDays.length > 0 ? phoneAlertCustomDays : null,
+          large_transaction_threshold: largeTransactionThreshold,
         } as any).eq("user_id", user.id);
       }
       updateProfileCache({
@@ -266,6 +269,7 @@ export default function SecretarySettings() {
         phone_alert_custom_message: phoneAlertCustomMessage || null,
         phone_alert_custom_time: phoneAlertCustomTime || null,
         phone_alert_custom_days: phoneAlertCustomDays.length > 0 ? phoneAlertCustomDays : null,
+        large_transaction_threshold: largeTransactionThreshold,
       } as any);
       toast.success(`${secretaryName} 설정이 저장되었습니다`);
       if (fromChat) {
@@ -638,34 +642,52 @@ export default function SecretarySettings() {
                 {phoneAlertItems.map((item) => {
                   const isSelected = selectedPhoneAlertItems.includes(item.id);
                   return (
-                    <div
-                      key={item.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
-                        isSelected
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                      onClick={() => {
-                        setSelectedPhoneAlertItems(prev =>
-                          prev.includes(item.id)
-                            ? prev.filter(i => i !== item.id)
-                            : [...prev, item.id]
-                        );
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <item.icon className={`h-4 w-4 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
-                        <div>
-                          <span className={`text-sm ${isSelected ? "font-medium" : "text-muted-foreground"}`}>
-                            {item.label}
-                          </span>
-                          <p className="text-xs text-muted-foreground">{item.description}</p>
+                    <div key={item.id} className="space-y-0">
+                      <div
+                        className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
+                          isSelected
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                        onClick={() => {
+                          setSelectedPhoneAlertItems(prev =>
+                            prev.includes(item.id)
+                              ? prev.filter(i => i !== item.id)
+                              : [...prev, item.id]
+                          );
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <item.icon className={`h-4 w-4 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                          <div>
+                            <span className={`text-sm ${isSelected ? "font-medium" : "text-muted-foreground"}`}>
+                              {item.label}
+                            </span>
+                            <p className="text-xs text-muted-foreground">{item.description}</p>
+                          </div>
                         </div>
+                        {isSelected && (
+                          <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
+                            ON
+                          </Badge>
+                        )}
                       </div>
-                      {isSelected && (
-                        <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
-                          ON
-                        </Badge>
+                      {/* 대규모 입출금 기준 금액 설정 */}
+                      {item.id === "large_transaction" && isSelected && (
+                        <div className="mt-1 ml-7 flex items-center gap-2 pb-1">
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            className="w-32 h-8 text-sm"
+                            placeholder="1,000,000"
+                            value={largeTransactionThreshold ? largeTransactionThreshold.toLocaleString() : ""}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/[^\d]/g, "");
+                              setLargeTransactionThreshold(value ? parseInt(value) : 1000000);
+                            }}
+                          />
+                          <span className="text-xs text-muted-foreground">원 이상</span>
+                        </div>
                       )}
                     </div>
                   );
