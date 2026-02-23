@@ -102,14 +102,22 @@ export function useTransactions(filters?: TransactionFilters) {
   });
 }
 
-export function useTransactionStats() {
+export function useTransactionStats(filters?: { startDate?: string; endDate?: string }) {
   return useQuery({
-    queryKey: ["transaction-stats"],
+    queryKey: ["transaction-stats", filters],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("transactions")
         .select("type, amount, category, category_icon, transaction_date");
 
+      if (filters?.startDate) {
+        query = query.gte("transaction_date", filters.startDate);
+      }
+      if (filters?.endDate) {
+        query = query.lte("transaction_date", filters.endDate);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
 
       const transactions = data as Pick<Transaction, "type" | "amount" | "category" | "category_icon" | "transaction_date">[];

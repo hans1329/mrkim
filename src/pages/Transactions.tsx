@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,10 +19,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, ExternalLink, PlusCircle } from "lucide-react";
+import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, ExternalLink, PlusCircle, CalendarIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { cn } from "@/lib/utils";
@@ -34,6 +40,8 @@ import { useConnection } from "@/contexts/ConnectionContext";
 import { useCardConnectionInfo, useBankConnectionInfo } from "@/hooks/useCardConnectionInfo";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { format, subMonths } from "date-fns";
+import { ko } from "date-fns/locale";
 
 export default function Transactions() {
   const [filter, setFilter] = useState<"all" | "income" | "expense">("all");
@@ -48,13 +56,38 @@ export default function Transactions() {
     source_name: "",
   });
 
+  // 기간 설정
+  const [periodPreset, setPeriodPreset] = useState<"1m" | "3m" | "6m" | "all" | "custom">("3m");
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
+  const [calendarTarget, setCalendarTarget] = useState<"start" | "end">("start");
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  const dateRange = useMemo(() => {
+    if (periodPreset === "all") return { startDate: undefined, endDate: undefined };
+    if (periodPreset === "custom") {
+      return {
+        startDate: customStartDate ? format(customStartDate, "yyyy-MM-dd") : undefined,
+        endDate: customEndDate ? format(customEndDate, "yyyy-MM-dd") : undefined,
+      };
+    }
+    const months = periodPreset === "1m" ? 1 : periodPreset === "3m" ? 3 : 6;
+    const start = subMonths(new Date(), months);
+    return { startDate: format(start, "yyyy-MM-dd"), endDate: format(new Date(), "yyyy-MM-dd") };
+  }, [periodPreset, customStartDate, customEndDate]);
+
   const { data: transactions, isLoading, refetch } = useTransactions({
     type: filter === "all" ? undefined : filter,
     sourceType: sourceFilter === "all" ? undefined : sourceFilter,
     searchTerm: searchTerm || undefined,
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
   });
 
-  const { data: stats, isLoading: isStatsLoading } = useTransactionStats();
+  const { data: stats, isLoading: isStatsLoading } = useTransactionStats({
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+  });
   const { profile, cardConnected, accountConnected } = useConnection();
   const addTransaction = useAddTransaction();
   const cardSync = useCardSync();
@@ -222,6 +255,80 @@ export default function Transactions() {
               </div>
             </div>
           )}
+
+          {/* 기간 설정 */}
+          <div className="flex items-center gap-1.5">
+            {(["1m", "3m", "6m", "all"] as const).map((preset) => (
+              <Button
+                key={preset}
+                size="sm"
+                variant={periodPreset === preset ? "default" : "outline"}
+                className="h-7 px-2.5 text-xs rounded-full"
+                onClick={() => setPeriodPreset(preset)}
+              >
+                {preset === "1m" ? "1개월" : preset === "3m" ? "3개월" : preset === "6m" ? "6개월" : "전체"}
+              </Button>
+            ))}
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  variant={periodPreset === "custom" ? "default" : "outline"}
+                  className="h-7 px-2.5 text-xs rounded-full gap-1"
+                  onClick={() => {
+                    if (periodPreset !== "custom") {
+                      setPeriodPreset("custom");
+                      setCalendarTarget("start");
+                    }
+                  }}
+                >
+                  <CalendarIcon className="h-3 w-3" />
+                  {periodPreset === "custom" && customStartDate && customEndDate
+                    ? `${format(customStartDate, "M.d")}~${format(customEndDate, "M.d")}`
+                    : "직접설정"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-3" align="end">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Button
+                      size="sm"
+                      variant={calendarTarget === "start" ? "default" : "outline"}
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setCalendarTarget("start")}
+                    >
+                      시작일 {customStartDate ? format(customStartDate, "M.d") : "-"}
+                    </Button>
+                    <span className="text-muted-foreground">~</span>
+                    <Button
+                      size="sm"
+                      variant={calendarTarget === "end" ? "default" : "outline"}
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setCalendarTarget("end")}
+                    >
+                      종료일 {customEndDate ? format(customEndDate, "M.d") : "-"}
+                    </Button>
+                  </div>
+                  <Calendar
+                    mode="single"
+                    selected={calendarTarget === "start" ? customStartDate : customEndDate}
+                    onSelect={(date) => {
+                      if (calendarTarget === "start") {
+                        setCustomStartDate(date);
+                        setCalendarTarget("end");
+                      } else {
+                        setCustomEndDate(date);
+                        if (customStartDate) setIsCalendarOpen(false);
+                      }
+                    }}
+                    locale={ko}
+                    disabled={(date) => date > new Date()}
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
 
           {/* 데이터 기간 표시 */}
           {stats?.dateFrom && stats?.dateTo && (
