@@ -6,6 +6,7 @@ import { Bell, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AIChatPanel } from "@/components/chat/AIChatPanel";
 import { VoiceOverlay } from "@/components/voice/VoiceOverlay";
+import { useNotifications } from "@/hooks/useNotifications";
 import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
 import qrCode from "@/assets/qr-code.png";
@@ -32,6 +33,7 @@ export function AppLayout({
 }: AppLayoutProps) {
   const navigate = useNavigate();
   const isInstalledApp = useIsInstalledApp();
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     if (isInstalledApp) {
@@ -136,9 +138,11 @@ export function AppLayout({
                   </div>
                   <Button variant="ghost" size="icon" className="relative h-9 w-9 [&_svg]:!size-5" onClick={() => navigate("/notifications")}>
                     <Bell />
-                    <span className="absolute right-0 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
-                      2
-                    </span>
+                    {unreadCount > 0 && (
+                      <span className="absolute right-0 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
                   </Button>
                 </div>
               </header>
