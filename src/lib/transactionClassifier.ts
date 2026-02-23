@@ -111,7 +111,7 @@ export const CATEGORY_RULES: CategoryRule[] = [
   
   // 보험/금융
   { pattern: /보험|삼성생명|한화생명|교보생명|현대해상|DB손해|KB손해|경찰공제회|공제회/i, category: "보험료", icon: "🛡️" },
-  { pattern: /은행|수수료|이체수수료/i, category: "지급수수료", subCategory: "금융수수료", icon: "🏦" },
+  { pattern: /이체수수료|송금수수료|출금수수료/i, category: "지급수수료", subCategory: "금융수수료", icon: "🏦" },
   
   // 임대/관리
   { pattern: /관리비|전기|가스|수도|난방/i, category: "임차료", subCategory: "관리비", icon: "🏢" },
