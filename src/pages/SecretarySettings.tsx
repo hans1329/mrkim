@@ -674,19 +674,43 @@ export default function SecretarySettings() {
                       </div>
                       {/* 대규모 입출금 기준 금액 설정 */}
                       {item.id === "large_transaction" && isSelected && (
-                        <div className="mt-3 ml-7 flex items-center gap-2 pb-1">
-                          <Input
-                            type="text"
-                            inputMode="numeric"
-                            className="w-32 h-8 text-sm"
-                            placeholder="1,000,000"
-                            value={largeTransactionThreshold ? largeTransactionThreshold.toLocaleString() : ""}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/[^\d]/g, "");
-                              setLargeTransactionThreshold(value ? parseInt(value) : 1000000);
-                            }}
-                          />
-                          <span className="text-xs text-muted-foreground">원 이상</span>
+                        <div className="mt-3 ml-7 space-y-2.5 pb-1">
+                          <div className="flex items-center gap-1.5">
+                            <div className="relative flex-1 max-w-[180px]">
+                              <Input
+                                type="text"
+                                inputMode="numeric"
+                                className="h-9 text-sm pr-8 font-mono text-right"
+                                placeholder="1,000,000"
+                                value={largeTransactionThreshold ? largeTransactionThreshold.toLocaleString() : ""}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/[^\d]/g, "");
+                                  setLargeTransactionThreshold(value ? parseInt(value) : 1000000);
+                                }}
+                              />
+                              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">원</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">이상</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {[
+                              { label: "50만", value: 500000 },
+                              { label: "100만", value: 1000000 },
+                              { label: "300만", value: 3000000 },
+                              { label: "500만", value: 5000000 },
+                            ].map((preset) => (
+                              <Button
+                                key={preset.value}
+                                type="button"
+                                variant={largeTransactionThreshold === preset.value ? "default" : "outline"}
+                                size="sm"
+                                className="h-7 text-xs px-2.5"
+                                onClick={() => setLargeTransactionThreshold(preset.value)}
+                              >
+                                {preset.label}원
+                              </Button>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
