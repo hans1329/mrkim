@@ -758,21 +758,67 @@ async function syncBankTransactions(
       });
 
       if (formatted.length > 0) {
-        const externalIds = formatted
-          .map((t: any) => t.external_tx_id)
-          .filter(Boolean);
-        if (externalIds.length > 0) {
-          await supabase
+        // ━━━ 체크카드 중복 제거 ━━━
+        // 같은 사용자의 카드 거래 중 동일 날짜+금액인 건을 찾아 은행 출금을 제외
+        const expenseOnly = formatted.filter((t: any) => t.type === "expense");
+        const uniqueDates = [...new Set(expenseOnly.map((t: any) => t.transaction_date))];
+
+        let cardDupeKeys = new Set<string>();
+        if (uniqueDates.length > 0 && expenseOnly.length > 0) {
+          const { data: cardTxs } = await supabase
             .from("transactions")
-            .delete()
+            .select("transaction_date, amount")
             .eq("user_id", instance.user_id)
-            .eq("source_type", "bank")
-            .in("external_tx_id", externalIds);
+            .eq("source_type", "card")
+            .in("transaction_date", uniqueDates);
+
+          if (cardTxs && cardTxs.length > 0) {
+            // 카드 거래별 날짜+금액 키 생성 (동일 금액 여러 건 허용을 위해 카운터 사용)
+            const cardKeyCount = new Map<string, number>();
+            for (const ct of cardTxs) {
+              const key = `${ct.transaction_date}|${ct.amount}`;
+              cardKeyCount.set(key, (cardKeyCount.get(key) || 0) + 1);
+            }
+            // 은행 출금 중 카드와 매칭되는 건 표시
+            const usedCount = new Map<string, number>();
+            for (const bt of formatted) {
+              if (bt.type !== "expense") continue;
+              const key = `${bt.transaction_date}|${bt.amount}`;
+              const available = (cardKeyCount.get(key) || 0) - (usedCount.get(key) || 0);
+              if (available > 0) {
+                cardDupeKeys.add(bt.external_tx_id || `${key}|${Math.random()}`);
+                usedCount.set(key, (usedCount.get(key) || 0) + 1);
+              }
+            }
+            if (cardDupeKeys.size > 0) {
+              console.log(`Filtered ${cardDupeKeys.size} duplicate bank withdrawals (debit card matches)`);
+            }
+          }
         }
 
-        const { error } = await supabase.from("transactions").insert(formatted);
-        if (!error) totalSaved += formatted.length;
-        else console.error("Bank transaction insert error:", error);
+        // 중복 제거된 목록
+        const deduped = formatted.filter((t: any) => {
+          if (t.type !== "expense") return true;
+          return !cardDupeKeys.has(t.external_tx_id || "");
+        });
+
+        if (deduped.length > 0) {
+          const externalIds = deduped
+            .map((t: any) => t.external_tx_id)
+            .filter(Boolean);
+          if (externalIds.length > 0) {
+            await supabase
+              .from("transactions")
+              .delete()
+              .eq("user_id", instance.user_id)
+              .eq("source_type", "bank")
+              .in("external_tx_id", externalIds);
+          }
+
+          const { error } = await supabase.from("transactions").insert(deduped);
+          if (!error) totalSaved += deduped.length;
+          else console.error("Bank transaction insert error:", error);
+        }
       }
     } catch (err) {
       console.error(
