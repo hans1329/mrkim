@@ -21,10 +21,19 @@ import { ko } from "date-fns/locale";
 export function SalesAnalysisTab() {
   // 최근 6개월 매출 데이터 조회
   const sixMonthsAgo = format(startOfMonth(subMonths(new Date(), 5)), "yyyy-MM-dd");
-  const { data: transactions, isLoading } = useTransactions({
+  const { data: incomeTransactions, isLoading: isLoadingIncome } = useTransactions({
     type: "income",
     startDate: sixMonthsAgo,
   });
+  const { data: transferInTransactions, isLoading: isLoadingTransferIn } = useTransactions({
+    type: "transfer_in",
+    startDate: sixMonthsAgo,
+  });
+
+  const isLoading = isLoadingIncome || isLoadingTransferIn;
+  const transactions = useMemo(() => {
+    return [...(incomeTransactions || []), ...(transferInTransactions || [])];
+  }, [incomeTransactions, transferInTransactions]);
 
   // 월별 데이터 집계
   const { monthlyData, weeklyData, stats } = useMemo(() => {
