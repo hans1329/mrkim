@@ -529,16 +529,24 @@ async function syncCardTransactions(
   }
   const endDate = now.toISOString().slice(0, 10).replace(/-/g, "");
 
+  // credentials_meta에서 카드사 기관코드 읽기
+  const meta = instance.credentials_meta || {};
+  const organizationCode = meta.organization_code || "";
+  
+  if (!organizationCode) {
+    throw new Error("카드사 기관코드가 없습니다. 카드를 재연동해주세요.");
+  }
+
   // 승인 내역 조회 (전체 카드)
   const requestBody = {
     connectedId: instance.connected_id,
-    organization: "",
+    organization: organizationCode,
     startDate,
     endDate,
     orderBy: "0",
     inquiryType: "0",
     cardNo: "",
-    memberStoreNo: "",
+    memberStoreInfoType: "0",
   };
 
   const res = await fetch(

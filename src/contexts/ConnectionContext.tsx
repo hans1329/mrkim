@@ -57,7 +57,7 @@ export interface ConnectionState {
   updateProfile: (updates: Partial<Profile>, showToast?: boolean) => Promise<boolean>;
   resetConnections: () => Promise<boolean>;
   /** 커넥터 인스턴스 upsert 후 profiles 플래그도 동기화 */
-  connectService: (connectorId: string, connectedId?: string) => Promise<boolean>;
+  connectService: (connectorId: string, connectedId?: string, credentialsMeta?: Record<string, unknown>) => Promise<boolean>;
   disconnectService: (connectorId: string) => Promise<boolean>;
 }
 
@@ -184,12 +184,13 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   }, [updateProfileCache]);
 
   // 커넥터 연결
-  const connectService = useCallback(async (connectorId: string, connectedId?: string): Promise<boolean> => {
+  const connectService = useCallback(async (connectorId: string, connectedId?: string, credentialsMeta?: Record<string, unknown>): Promise<boolean> => {
     try {
       await upsertInstance.mutateAsync({
         connector_id: connectorId,
         status: "connected",
         connected_id: connectedId,
+        ...(credentialsMeta ? { credentials_meta: credentialsMeta } : {}),
       });
 
       // profiles 플래그 동기화 (하위 호환)
