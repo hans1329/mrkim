@@ -709,6 +709,7 @@ export type Database = {
           hometax_connected: boolean | null
           hometax_connected_at: string | null
           id: string
+          large_transaction_threshold: number
           name: string | null
           nickname: string | null
           phone: string | null
@@ -744,6 +745,7 @@ export type Database = {
           hometax_connected?: boolean | null
           hometax_connected_at?: string | null
           id?: string
+          large_transaction_threshold?: number
           name?: string | null
           nickname?: string | null
           phone?: string | null
@@ -779,6 +781,7 @@ export type Database = {
           hometax_connected?: boolean | null
           hometax_connected_at?: string | null
           id?: string
+          large_transaction_threshold?: number
           name?: string | null
           nickname?: string | null
           phone?: string | null

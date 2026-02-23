@@ -147,6 +147,15 @@ async function gatherAlertData(
           // Check for large transactions in the last 24 hours
           const yesterday = new Date(kstNow.getTime() - 24 * 60 * 60 * 1000)
             .toISOString();
+          
+          // 사용자별 기준 금액 조회
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("large_transaction_threshold")
+            .eq("user_id", userId)
+            .single();
+          const threshold = (profileData as any)?.large_transaction_threshold ?? 1000000;
+          
           const { data: txns } = await supabase
             .from("transactions")
             .select("amount, type, description")
@@ -156,7 +165,7 @@ async function gatherAlertData(
             .limit(5);
 
           if (txns && txns.length > 0) {
-            const largeTxns = txns.filter((t: any) => Math.abs(t.amount) >= 1000000);
+            const largeTxns = txns.filter((t: any) => Math.abs(t.amount) >= threshold);
             if (largeTxns.length > 0) {
               const summary = largeTxns
                 .map((t: any) => {
