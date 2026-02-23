@@ -62,16 +62,36 @@ export function EmployeeReportTab() {
     const uninsuredCount = employeeSalaryData.filter((e) => !e.insurance).length;
     const avgSalary = employeeSalaryData.length > 0 ? Math.round(totalSalary / employeeSalaryData.length) : 0;
 
-    // 월별 인건비 추이 (최근 6개월 - 현재 인건비 기준 시뮬레이션)
-    // 실제로는 급여 지급 내역 테이블이 필요하지만, 현재는 현재 인건비 기반으로 표시
+    // 월별 인건비 추이 (최근 6개월) - 각 월에 재직 중이었던 직원의 급여 합산
     const monthlyLaborCost = [];
     for (let i = 5; i >= 0; i--) {
       const monthDate = subMonths(new Date(), i);
       const monthKey = format(monthDate, "M월");
-      // 현재 인건비를 기준으로 표시 (실제 급여 내역 없음)
+      const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+      const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+
+      // 해당 월에 재직 중이었던 직원 필터링
+      const activeInMonth = employees.filter((emp) => {
+        const startDate = emp.start_date ? new Date(emp.start_date) : null;
+        const endDate = emp.end_date ? new Date(emp.end_date) : null;
+        // 입사일이 해당 월 말 이전이고, 퇴사일이 없거나 해당 월 초 이후
+        const startedBefore = !startDate || startDate <= monthEnd;
+        const notEndedYet = !endDate || endDate >= monthStart;
+        return startedBefore && notEndedYet;
+      });
+
+      const monthlyCost = activeInMonth.reduce((sum, emp) => {
+        let salary = emp.monthly_salary || 0;
+        if (emp.employee_type === "알바" && emp.hourly_rate && emp.weekly_hours) {
+          salary = Math.round(emp.hourly_rate * emp.weekly_hours * 4);
+        }
+        return sum + salary;
+      }, 0);
+
       monthlyLaborCost.push({
         name: monthKey,
-        인건비: totalSalary,
+        인건비: monthlyCost,
+        인원: activeInMonth.length,
       });
     }
 
@@ -156,6 +176,11 @@ export function EmployeeReportTab() {
                             <p style={{ color: payload[0].color }}>
                               인건비: {formatCurrency(payload[0].value as number)}
                             </p>
+                            {payload[0].payload?.인원 !== undefined && (
+                              <p className="text-muted-foreground">
+                                인원: {payload[0].payload.인원}명
+                              </p>
+                            )}
                           </div>
                         );
                       }
