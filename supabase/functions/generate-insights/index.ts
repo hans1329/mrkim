@@ -117,30 +117,21 @@ serve(async (req) => {
     const systemPrompt = `당신은 소상공인 사업자를 위한 AI 경영 비서 '김비서'입니다. 
 제공된 재무 데이터를 분석하여 실행 가능한 경영 인사이트를 제공해주세요.
 
-분석 결과는 반드시 아래 JSON 형식으로 반환해주세요:
-{"insights": [{"type": "suggestion|warning|positive|action", "priority": "high|medium|low", "title": "인사이트 제목 (20자 이내)", "description": "상세 설명 (100자 이내)", "impact": "예상 영향"}]}`;
+분석 결과는 반드시 아래 JSON 형식으로 반환해주세요. 제목과 설명은 짧게 작성하세요:
+{"insights": [{"type": "suggestion|warning|positive|action", "priority": "high|medium|low", "title": "제목(15자이내)", "description": "설명(50자이내)", "impact": "영향(20자이내)"}]}
 
-    const userPrompt = `다음은 사용자의 최근 3개월 경영 데이터입니다:
+주의사항:
+- 반드시 유효한 JSON만 출력하세요
+- 3~5개의 인사이트를 제공하세요
+- 설명은 반드시 50자 이내로 간결하게 작성하세요`;
 
-📊 매출/지출 요약:
-- 총 매출: ${totalIncome.toLocaleString()}원
-- 총 지출: ${totalExpense.toLocaleString()}원  
-- 순이익: ${(totalIncome - totalExpense).toLocaleString()}원
-- 거래 건수: ${transactions.length}건
+    const userPrompt = `최근 3개월 경영 데이터:
+매출: ${totalIncome.toLocaleString()}원 / 지출: ${totalExpense.toLocaleString()}원 / 순이익: ${(totalIncome - totalExpense).toLocaleString()}원 / 거래 ${transactions.length}건
+직원: ${employees.length}명 / 월인건비: ${totalSalary.toLocaleString()}원 / 4대보험: ${insuredCount}명
+예치금: ${deposits.length}개
+주요지출: ${Array.from(categoryStats.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([cat, amt]) => `${cat}:${amt.toLocaleString()}원`).join(', ')}
 
-👥 직원 현황:
-- 재직 직원: ${employees.length}명
-- 월 인건비: ${totalSalary.toLocaleString()}원
-- 4대보험 가입: ${insuredCount}명
-
-💰 예치금 현황:
-- 활성 예치금: ${deposits.length}개
-${deposits.map(d => `  - ${d.name}: ${d.amount?.toLocaleString()}원 / 목표: ${d.target_amount?.toLocaleString() || '미설정'}원`).join('\n')}
-
-📂 주요 지출 카테고리:
-${Array.from(categoryStats.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([cat, amt]) => `- ${cat}: ${amt.toLocaleString()}원`).join('\n')}
-
-위 데이터를 분석하여 3~5개의 핵심 인사이트를 JSON 형식으로 제공해주세요.`;
+3~5개 핵심 인사이트를 JSON으로 제공해주세요.`;
 
     const geminiBody = {
       contents: [
@@ -152,15 +143,9 @@ ${Array.from(categoryStats.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5).ma
         temperature: 0.7,
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 4096,
         responseMimeType: "application/json",
       },
-      safetySettings: [
-        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-      ],
     };
 
     const aiResponse = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
