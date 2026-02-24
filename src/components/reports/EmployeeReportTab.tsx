@@ -74,6 +74,8 @@ export function EmployeeReportTab() {
       const activeInMonth = employees.filter((emp) => {
         const startDate = emp.start_date ? new Date(emp.start_date) : null;
         const endDate = emp.end_date ? new Date(emp.end_date) : null;
+        // 퇴사 상태인데 end_date가 없으면 제외
+        if (emp.status === "퇴사" && !endDate) return false;
         // 입사일이 해당 월 말 이전이고, 퇴사일이 없거나 해당 월 초 이후
         const startedBefore = !startDate || startDate <= monthEnd;
         const notEndedYet = !endDate || endDate >= monthStart;
