@@ -213,26 +213,19 @@ function LoginContent() {
       </div>
 
       {/* 풋터 */}
-      <footer className="py-6 text-center">
-         <div className="flex justify-center gap-4 mb-2">
-           <Button
-             variant="link"
-             className="text-primary-foreground/50 text-xs p-0 h-auto hover:text-primary-foreground/70"
-             onClick={() => navigate("/terms")}
-           >
-             서비스 이용약관
-           </Button>
-           <span className="text-primary-foreground/30">|</span>
-           <Button
-             variant="link"
-             className="text-primary-foreground/50 text-xs p-0 h-auto hover:text-primary-foreground/70"
-             onClick={() => navigate("/privacy")}
-           >
-             개인정보처리방침
-           </Button>
-         </div>
+      <footer className="py-6 text-center space-y-2">
+        <div className="text-primary-foreground/40 text-[10px] leading-relaxed space-y-0.5">
+          <p><span className="font-medium text-primary-foreground/50">상호: 주식회사 더김비서</span> | 개인정보책임자: 송하진</p>
+          <p>소재지: 서울특별시 서초구 강남대로 311, 702호 (서초동, 한화생명보험빌딩)</p>
+          <p>사업자등록번호: 166-88-03509</p>
+          <p>고객센터: cs@tkbs.io</p>
+        </div>
+        <div className="flex justify-center gap-4">
+          <a href="https://mrkim.today/terms" className="text-primary-foreground/50 text-xs hover:text-primary-foreground/70 transition-colors">이용약관</a>
+          <a href="https://mrkim.today/privacy" className="text-primary-foreground/50 text-xs hover:text-primary-foreground/70 transition-colors">개인정보처리방침</a>
+        </div>
         <p className="text-primary-foreground/50 text-xs">
-          © 2024 김비서. All rights reserved.
+          © 2026 Mr.Kim. All rights reserved.
         </p>
       </footer>
 
