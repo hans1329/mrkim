@@ -6,7 +6,7 @@
    const navigate = useNavigate();
  
    return (
-     <div className="h-full overflow-auto bg-background">
+     <div className="fixed inset-0 overflow-y-auto bg-background z-50">
        {/* 헤더 */}
        <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
          <div className="container max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
