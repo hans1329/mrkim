@@ -543,8 +543,8 @@ const PreLoginLandingContent = () => {
               {/* Business Info */}
               <div className="space-y-0.5 text-xs text-muted-foreground/60">
                 <p><span className="font-medium text-muted-foreground">상호: 주식회사 더김비서</span> | 개인정보책임자: 송하진</p>
-                <p>소재지: 서울 서초구 서초동 1338-12</p>
-                <p>사업자등록번호: 692-86-03042 | 통신판매업신고번호: 2023-서울중구-0345</p>
+                <p>소재지: 서울특별시 서초구 강남대로 311, 702호 (서초동, 한화생명보험빌딩)</p>
+                <p>사업자등록번호: 166-88-03509</p>
               </div>
               
               {/* Contact Us */}
@@ -552,7 +552,7 @@ const PreLoginLandingContent = () => {
                 <p className="font-medium text-sm text-muted-foreground/60">Contact Us</p>
                 <div className="flex items-center gap-3">
                   {/* 이메일 */}
-                  <a href="mailto:hajin@thenexa.io" className="w-9 h-9 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground/60 hover:bg-muted/70 hover:text-muted-foreground transition-all" aria-label="이메일">
+                  <a href="mailto:cs@tkbs.io" className="w-9 h-9 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground/60 hover:bg-muted/70 hover:text-muted-foreground transition-all" aria-label="이메일">
                     <Mail className="w-5 h-5" />
                   </a>
                   {/* 카카오톡 */}
@@ -586,12 +586,11 @@ const PreLoginLandingContent = () => {
             
             {/* Copyright & Links */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-muted-foreground">
-              <p>© 2025 김비서. All rights reserved.</p>
+              <p>© 2026 Mr.Kim. All rights reserved.</p>
               
               <div className="flex items-center gap-4">
-                <a href="#" className="hover:text-foreground transition-colors">이용약관</a>
-                <a href="#" className="hover:text-foreground transition-colors">개인정보처리방침</a>
-                <a href="#" className="hover:text-foreground transition-colors">고객센터</a>
+                <a href="https://mrkim.today/terms" className="hover:text-foreground transition-colors">이용약관</a>
+                <a href="https://mrkim.today/privacy" className="hover:text-foreground transition-colors">개인정보처리방침</a>
               </div>
             </div>
           </div>
