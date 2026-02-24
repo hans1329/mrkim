@@ -133,7 +133,7 @@ export const privacyTranslations: Record<SupportedLang, PrivacyTranslation> = {
   en: {
     pageTitle: "Privacy Policy",
     effectiveDate: "Effective Date: January 1, 2026",
-    intro: "The Kim Secretary Co., Ltd. (hereinafter \"Company\") establishes and discloses the following privacy policy to protect users' personal information in accordance with the Personal Information Protection Act and to handle related grievances promptly and smoothly.",
+    intro: "TKBS Inc. (hereinafter \"Company\") establishes and discloses the following privacy policy to protect users' personal information in accordance with the Personal Information Protection Act and to handle related grievances promptly and smoothly.",
     sections: [
       {
         title: "Article 1 (Purpose of Processing Personal Information)",
@@ -352,7 +352,7 @@ export const privacyTranslations: Record<SupportedLang, PrivacyTranslation> = {
   zh: {
     pageTitle: "隐私政策",
     effectiveDate: "生效日期：2026年1月1日",
-    intro: "The Kim Secretary Co., Ltd.（以下简称\u201C公司\u201D）根据《个人信息保护法》制定并公开以下隐私政策，以保护用户的个人信息并迅速、顺畅地处理相关投诉。",
+    intro: "TKBS Inc.（以下简称\u201C公司\u201D）根据《个人信息保护法》制定并公开以下隐私政策，以保护用户的个人信息并迅速、顺畅地处理相关投诉。",
     sections: [
       {
         title: "第一条（个人信息处理目的）",
@@ -459,7 +459,7 @@ export const privacyTranslations: Record<SupportedLang, PrivacyTranslation> = {
   vi: {
     pageTitle: "Chính sách bảo mật",
     effectiveDate: "Ngày có hiệu lực: 1 tháng 1 năm 2026",
-    intro: "Công ty TNHH The Kim Secretary (sau đây gọi là \"Công ty\") xây dựng và công khai chính sách xử lý thông tin cá nhân sau đây để bảo vệ thông tin cá nhân của người dùng theo Luật Bảo vệ Thông tin Cá nhân.",
+    intro: "TKBS Inc. (sau đây gọi là \"Công ty\") xây dựng và công khai chính sách xử lý thông tin cá nhân sau đây để bảo vệ thông tin cá nhân của người dùng theo Luật Bảo vệ Thông tin Cá nhân.",
     sections: [
       {
         title: "Điều 1 (Mục đích xử lý thông tin cá nhân)",
