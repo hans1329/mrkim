@@ -159,7 +159,7 @@ export const termsTranslations: Record<SupportedLang, TermsTranslation> = {
     sections: [
       {
         title: "Article 1 (Purpose)",
-        content: "These Terms govern the rights, obligations, responsibilities, and other necessary matters between The Kim Secretary Co., Ltd. (\"Company\") and users regarding the use of the 'Mr. Kim' service (\"Service\").",
+        content: "These Terms govern the rights, obligations, responsibilities, and other necessary matters between TKBS Inc. (\"Company\") and users regarding the use of the 'Mr. Kim' service (\"Service\").",
       },
       {
         title: "Article 2 (Definitions)",
@@ -316,7 +316,7 @@ export const termsTranslations: Record<SupportedLang, TermsTranslation> = {
     pageTitle: "服务使用条款",
     effectiveDate: "生效日期：2026年1月1日",
     sections: [
-      { title: "第一条（目的）", content: "本条款旨在规定The Kim Secretary Co., Ltd.（以下简称\u201C公司\u201D）提供的\u201C金秘书\u201D服务（以下简称\u201C服务\u201D）使用相关的公司与用户之间的权利、义务及责任事项等必要事项。" },
+      { title: "第一条（目的）", content: "本条款旨在规定TKBS Inc.（以下简称\u201C公司\u201D）提供的\u201C金秘书\u201D服务（以下简称\u201C服务\u201D）使用相关的公司与用户之间的权利、义务及责任事项等必要事项。" },
       { title: "第二条（定义）", orderedList: ["\u201C服务\u201D是指公司提供的基于AI的经营秘书服务，包括金融数据对接、销售/支出分析、税务发票管理、AI聊天机器人咨询等相关服务。", "\u201C用户\u201D是指根据本条款接受公司服务的会员和非会员。", "\u201C会员\u201D是指向公司提供个人信息并注册的用户。", "\u201C营业信息\u201D是指用户为使用服务而输入的营业执照号码、商号名称、行业类型等信息。"] },
       { title: "第三条（条款的效力及变更）", orderedList: ["本条款通过在服务界面公布或以其他方式通知用户后生效。", "公司可在不违反相关法律的范围内变更本条款。", "条款变更时，公司将在生效前7天公告变更内容和生效日期。", "用户不同意变更条款的，可以停止使用服务并注销账户。"] },
       { title: "第四条（服务的提供）", orderedList: [{ text: "公司提供以下服务：", subList: ["银行账户及信用卡交易记录对接及查询", "HomeTax税务发票对接及查询", "销售、支出分析及报告", "基于AI的经营咨询聊天机器人", "语音识别命令处理", "其他公司规定的服务"] }, "服务原则上全年无休、每天24小时提供。但因系统维护、紧急修复等原因可能临时中断。", "公司可根据需要进行定期维护，维护时间将在服务内公告。"] },
@@ -336,7 +336,7 @@ export const termsTranslations: Record<SupportedLang, TermsTranslation> = {
     pageTitle: "Điều khoản sử dụng dịch vụ",
     effectiveDate: "Ngày có hiệu lực: 1 tháng 1 năm 2026",
     sections: [
-      { title: "Điều 1 (Mục đích)", content: "Điều khoản này quy định quyền, nghĩa vụ, trách nhiệm và các vấn đề cần thiết khác giữa Công ty TNHH The Kim Secretary (\"Công ty\") và người dùng liên quan đến việc sử dụng dịch vụ 'Mr. Kim' (\"Dịch vụ\")." },
+      { title: "Điều 1 (Mục đích)", content: "Điều khoản này quy định quyền, nghĩa vụ, trách nhiệm và các vấn đề cần thiết khác giữa TKBS Inc. (\"Công ty\") và người dùng liên quan đến việc sử dụng dịch vụ 'Mr. Kim' (\"Dịch vụ\")." },
       { title: "Điều 2 (Định nghĩa)", orderedList: ["\"Dịch vụ\" là dịch vụ thư ký kinh doanh dựa trên AI do Công ty cung cấp, bao gồm tích hợp dữ liệu tài chính, phân tích doanh thu/chi phí, quản lý hóa đơn thuế, tư vấn chatbot AI và các dịch vụ liên quan.", "\"Người dùng\" là thành viên và người không phải thành viên sử dụng Dịch vụ.", "\"Thành viên\" là người đã đăng ký bằng cách cung cấp thông tin cá nhân cho Công ty.", "\"Thông tin doanh nghiệp\" là số đăng ký kinh doanh, tên thương mại, v.v. do người dùng nhập."] },
       { title: "Điều 3 (Hiệu lực và sửa đổi điều khoản)", orderedList: ["Điều khoản có hiệu lực khi được đăng trên dịch vụ hoặc thông báo cho người dùng.", "Công ty có thể sửa đổi điều khoản trong phạm vi pháp luật cho phép.", "Khi sửa đổi, Công ty sẽ thông báo trước ít nhất 7 ngày.", "Người dùng không đồng ý có thể ngừng sử dụng và rút thành viên."] },
       { title: "Điều 4 (Cung cấp dịch vụ)", orderedList: [{ text: "Công ty cung cấp các dịch vụ sau:", subList: ["Tích hợp và truy vấn giao dịch tài khoản ngân hàng và thẻ", "Tích hợp và truy vấn hóa đơn thuế HomeTax", "Phân tích doanh thu, chi phí và báo cáo", "Chatbot tư vấn kinh doanh dựa trên AI", "Xử lý lệnh bằng nhận dạng giọng nói", "Các dịch vụ khác do Công ty quy định"] }, "Dịch vụ được cung cấp 24/7. Tuy nhiên, có thể tạm ngừng do bảo trì hệ thống.", "Công ty có thể thực hiện bảo trì định kỳ và sẽ thông báo trong Dịch vụ."] },
