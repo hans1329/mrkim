@@ -50,13 +50,21 @@ Deno.serve(async (req) => {
     );
 
     const body: OutboundCallRequest = await req.json();
-    const { recipient_phone, recipient_name, script, call_type = "briefing" } = body;
+    const { recipient_phone: rawPhone, recipient_name, script, call_type = "briefing" } = body;
 
-    if (!recipient_phone || !script) {
+    if (!rawPhone || !script) {
       return new Response(JSON.stringify({ error: "recipient_phone and script required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // 한국 번호 국제 형식 변환: 010... → +8210...
+    let recipient_phone = rawPhone.replace(/[^0-9+]/g, "");
+    if (recipient_phone.startsWith("0") && !recipient_phone.startsWith("+")) {
+      recipient_phone = "+82" + recipient_phone.slice(1);
+    } else if (!recipient_phone.startsWith("+")) {
+      recipient_phone = "+" + recipient_phone;
     }
 
     // 1. Create call log entry
