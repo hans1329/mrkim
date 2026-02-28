@@ -634,7 +634,28 @@ export default function SecretarySettings() {
               중요한 경영 이벤트 발생 시 {secretaryName}{secretaryName.endsWith('서') ? '가' : '이'} 직접 전화로 알려드립니다
             </CardDescription>
           </CardHeader>
-          {phoneAlertEnabled && (
+          {phoneAlertEnabled && !profile.secretary_phone_verified && (
+            <CardContent>
+              <div className="flex flex-col items-center gap-3 py-4 px-2 rounded-lg bg-muted/50 border border-dashed border-primary/30 text-center">
+                <Phone className="h-8 w-8 text-primary/60" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">전화번호를 먼저 등록해주세요</p>
+                  <p className="text-xs text-muted-foreground">
+                    전화 알림을 받으려면 사장님 전화번호 인증이 필요합니다
+                  </p>
+                </div>
+                <Button 
+                  size="sm" 
+                  className="rounded-full gap-1.5"
+                  onClick={() => navigate("/profile")}
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                  프로필에서 번호 등록하기
+                </Button>
+              </div>
+            </CardContent>
+          )}
+          {phoneAlertEnabled && profile.secretary_phone_verified && (
             <CardContent className="space-y-5">
               {/* 알림 항목 선택 */}
               <div className="space-y-2">
