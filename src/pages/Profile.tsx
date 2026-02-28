@@ -157,7 +157,9 @@ export default function Profile() {
           call_type: "welcome",
         },
       });
-      toast("📞 환영 전화를 발신합니다", { description: `${secretaryName}가 잠시 후 전화드립니다` });
+      const lastChar = secretaryName.charAt(secretaryName.length - 1);
+      const hasBatchim = (lastChar.charCodeAt(0) - 0xAC00) % 28 !== 0;
+      toast("📞 환영 전화를 발신합니다", { description: `${secretaryName}${hasBatchim ? "이" : "가"} 잠시 후 전화드립니다` });
     } catch (err) {
       console.error("환영 전화 발신 실패:", err);
       // 환영 전화 실패는 조용히 무시
