@@ -52,6 +52,7 @@ export default function Profile() {
   const [verificationCode, setVerificationCode] = useState("");
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isChangingNumber, setIsChangingNumber] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
   // 프로필 데이터 로드 시 폼 초기화
@@ -181,6 +182,7 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast.success("전화번호가 인증되었습니다");
       setIsCodeSent(false);
+      setIsChangingNumber(false);
       setVerificationCode("");
     } catch (error: any) {
       console.error("인증 확인 오류:", error);
@@ -190,11 +192,12 @@ export default function Profile() {
     }
   };
 
-  // 번호 변경 시작
+  // 번호 변경 시작 (DB 초기화 없이 UI만 전환)
   const handleChangeNumber = () => {
-    updateSecretaryPhone("", false);
+    setIsChangingNumber(true);
     setSecretaryPhone("");
     setVerificationCode("");
+    setIsCodeSent(false);
   };
 
   // 로그아웃 처리
@@ -458,7 +461,7 @@ export default function Profile() {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            {!profile.secretary_phone_verified ? (
+            {!profile.secretary_phone_verified || isChangingNumber ? (
               <div className="space-y-3">
                 <div className="flex gap-2">
                   <Input
@@ -507,6 +510,20 @@ export default function Profile() {
                     </p>
                   </div>
                 )}
+
+                {isChangingNumber && !isCodeSent && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs text-muted-foreground"
+                    onClick={() => {
+                      setIsChangingNumber(false);
+                      setSecretaryPhone(profile.secretary_phone || "");
+                    }}
+                  >
+                    취소
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-3">
@@ -519,7 +536,7 @@ export default function Profile() {
                   </p>
                 </div>
                 <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleChangeNumber}>
-                  변경
+                  번호수정
                 </Button>
               </div>
             )}
