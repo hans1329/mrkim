@@ -125,9 +125,11 @@ export default function SecretarySettings() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // DB 데이터로 초기화
+  // DB 데이터로 초기화 (최초 1회만)
+  const hasInitFromProfile = useRef(false);
   useEffect(() => {
-    if (profile) {
+    if (profile && !hasInitFromProfile.current) {
+      hasInitFromProfile.current = true;
       setSecretaryName(profile.secretary_name || "김비서");
       setSecretaryGender(profile.secretary_gender || "female");
       setSpeakingStyle(profile.secretary_tone || "friendly");
@@ -143,7 +145,6 @@ export default function SecretarySettings() {
       if (profile.priority_metrics && Array.isArray(profile.priority_metrics)) {
         setSelectedMetrics(profile.priority_metrics);
       }
-      // 전화 알림 설정 초기화
       const p = profile as any;
       setPhoneAlertEnabled(p.phone_alert_enabled ?? false);
       if (Array.isArray(p.phone_alert_items)) setSelectedPhoneAlertItems(p.phone_alert_items);
