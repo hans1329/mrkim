@@ -107,7 +107,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
               to={item.url}
               end={item.url === "/"}
               className={cn(
-                "flex items-center rounded-xl text-white/70 transition-all hover:bg-white/15 hover:text-white",
+                "flex items-center rounded-xl text-white/70 transition-colors hover:bg-white/15 hover:text-white",
                 collapsed ? "justify-center p-3" : "gap-3 px-4 py-3"
               )}
               activeClassName="bg-white/20 text-white font-medium"
@@ -123,7 +123,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           <Button
             variant="ghost"
             className={cn(
-              "w-full text-white/70 hover:bg-white/15 hover:text-white",
+              "w-full text-white/70 hover:bg-white/15 hover:text-white transition-colors",
               collapsed ? "justify-center p-3" : "justify-start gap-3"
             )}
             onClick={() => navigate("/notifications")}
@@ -142,7 +142,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           <Button
             variant="ghost"
             className={cn(
-              "w-full text-white/70 hover:bg-white/15 hover:text-white",
+              "w-full text-white/70 hover:bg-white/15 hover:text-white transition-colors",
               collapsed ? "justify-center p-3" : "justify-start gap-3"
             )}
             onClick={() => navigate("/settings")}
@@ -154,7 +154,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           <Button
             variant="ghost"
             className={cn(
-              "w-full text-white/70 hover:bg-white/15 hover:text-white",
+              "w-full text-white/70 hover:bg-white/15 hover:text-white transition-colors",
               collapsed ? "justify-center p-3" : "justify-start gap-3"
             )}
             onClick={() => navigate("/help")}
@@ -167,7 +167,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
           <Button
             variant="ghost"
             className={cn(
-              "w-full text-white/70 hover:bg-white/15 hover:text-white",
+              "w-full text-white/70 hover:bg-white/15 hover:text-white transition-colors",
               collapsed ? "justify-center p-3" : "justify-start gap-3"
             )}
             onClick={() => setCollapsed(!collapsed)}
