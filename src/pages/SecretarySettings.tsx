@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +19,6 @@ import {
   Users, 
   Wallet,
   Receipt,
-  Save,
   HelpCircle,
   Loader2,
   Volume2,
@@ -229,7 +228,12 @@ export default function SecretarySettings() {
     }
   };
 
-  const handleSave = async () => {
+  // 자동 저장 (debounce)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInitializedRef = useRef(false);
+
+  const autoSave = useCallback(async () => {
+    if (!profile) return;
     const voiceId = secretaryGender === "male"
       ? (secretaryVoiceId || maleVoiceOptions[0].id)
       : (secretaryVoiceId || femaleVoiceOptions[0].id);
@@ -245,7 +249,6 @@ export default function SecretarySettings() {
     
     const success = await updateProfile(updates, false);
     
-    // briefing_times + phone_alert 설정은 직접 supabase 업데이트
     if (success) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -271,16 +274,37 @@ export default function SecretarySettings() {
         phone_alert_custom_days: phoneAlertCustomDays.length > 0 ? phoneAlertCustomDays : null,
         large_transaction_threshold: largeTransactionThreshold,
       } as any);
-      toast.success(`${secretaryName} 설정이 저장되었습니다`);
-      if (fromChat) {
-        navigate("/?openChat=true");
-      } else {
-        navigate("/");
-      }
-    } else {
-      toast.error("설정 저장에 실패했습니다");
+      toast.success("설정이 저장되었습니다", { duration: 1500 });
     }
-  };
+  }, [
+    profile, secretaryName, secretaryGender, speakingStyle, selectedMetrics,
+    secretaryAvatarUrl, secretaryVoiceId, briefingTimes, phoneAlertEnabled,
+    selectedPhoneAlertItems, phoneAlertTimes, phoneAlertCustomMessage,
+    phoneAlertCustomTime, phoneAlertCustomDays, largeTransactionThreshold,
+    updateProfile, updateProfileCache,
+  ]);
+
+  // 설정 변경 감지 → debounce 자동 저장
+  useEffect(() => {
+    if (!profile) return;
+    // 초기 로드 시에는 저장하지 않음
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      return;
+    }
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      autoSave();
+    }, 1200);
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [
+    secretaryName, secretaryGender, speakingStyle, selectedMetrics,
+    secretaryAvatarUrl, secretaryVoiceId, briefingTimes, phoneAlertEnabled,
+    selectedPhoneAlertItems, phoneAlertTimes, phoneAlertCustomMessage,
+    phoneAlertCustomTime, phoneAlertCustomDays, largeTransactionThreshold,
+  ]);
 
   const handleBack = () => {
     if (fromChat) {
@@ -891,11 +915,7 @@ export default function SecretarySettings() {
           </CardContent>
         </Card>
 
-        {/* 저장 버튼 */}
-        <Button onClick={handleSave} className="w-full gap-2" size="lg" disabled={updating}>
-          {updating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-          {updating ? "저장 중..." : "설정 저장하기"}
-        </Button>
+        {/* 저장 버튼 제거 - 자동 저장 */}
       </div>
     </MainLayout>
   );
