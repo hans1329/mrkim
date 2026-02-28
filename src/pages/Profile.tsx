@@ -142,6 +142,28 @@ export default function Profile() {
     }
   };
 
+  // 환영 전화 발신 (인증 완료 직후)
+  const triggerWelcomeCall = async (phone: string) => {
+    try {
+      const secretaryName = profile?.secretary_name || "김비서";
+      const ownerName = profile?.name || "사장";
+      const script = `안녕하세요, ${ownerName}님. 저는 ${ownerName}님의 AI 비서 ${secretaryName}입니다. 전화번호 인증이 완료되어 인사드립니다. 앞으로 중요한 경영 알림이 있을 때 이 번호로 전화드리겠습니다. 비서 설정에서 알림 항목과 시간대를 설정해주시면 더 정확한 서비스를 받으실 수 있습니다. 감사합니다.`;
+      
+      await supabase.functions.invoke("twilio-outbound-call", {
+        body: {
+          recipient_phone: phone,
+          recipient_name: ownerName,
+          script,
+          call_type: "welcome",
+        },
+      });
+      toast("📞 환영 전화를 발신합니다", { description: `${secretaryName}가 잠시 후 전화드립니다` });
+    } catch (err) {
+      console.error("환영 전화 발신 실패:", err);
+      // 환영 전화 실패는 조용히 무시
+    }
+  };
+
   // 인증번호 발송 (Twilio Verify)
   const handleSendCode = async () => {
     if (!secretaryPhone || secretaryPhone.length < 10) {
@@ -184,6 +206,9 @@ export default function Profile() {
       setIsCodeSent(false);
       setIsChangingNumber(false);
       setVerificationCode("");
+
+      // 환영 전화 발신 (비동기, 실패해도 무시)
+      triggerWelcomeCall(secretaryPhone);
     } catch (error: any) {
       console.error("인증 확인 오류:", error);
       toast.error(error?.message || "인증번호 확인에 실패했습니다");
