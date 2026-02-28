@@ -31,6 +31,7 @@ import DesignGuide from "./pages/DesignGuide";
 import Engine from "./pages/Engine";
 import NotFound from "./pages/NotFound";
 import Community from "./pages/Community";
+import Help from "./pages/Help";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 // Admin pages
@@ -95,6 +96,7 @@ const App = () => (
                         <Route path="/design" element={<DesignGuide />} />
                         <Route path="/engine" element={<Engine />} />
                         <Route path="/community" element={<Community />} />
+                        <Route path="/help" element={<Help />} />
                       </Route>
 
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
