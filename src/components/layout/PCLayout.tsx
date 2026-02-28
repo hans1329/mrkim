@@ -57,7 +57,7 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
     <div className="flex h-screen w-full overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/10">
       {/* 좌측 네비게이션 사이드바 */}
       <aside className={cn(
-        "flex-shrink-0 bg-primary/90 backdrop-blur-md flex flex-col transition-all duration-300 text-white z-10",
+        "flex-shrink-0 bg-primary/90 backdrop-blur-md flex flex-col transition-[width] duration-300 text-white z-10",
         collapsed ? "w-16" : "w-64"
       )}>
         {/* 로고 영역 */}
