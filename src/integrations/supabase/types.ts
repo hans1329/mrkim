@@ -663,6 +663,39 @@ export type Database = {
         }
         Relationships: []
       }
+      intent_keywords: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          intent: string
+          intent_label: string
+          is_active: boolean
+          keywords: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          intent: string
+          intent_label: string
+          is_active?: boolean
+          keywords?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          intent?: string
+          intent_label?: string
+          is_active?: boolean
+          keywords?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string

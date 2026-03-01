@@ -13,7 +13,8 @@ import {
   Bell,
   HelpCircle,
   Activity,
-  Settings
+  Settings,
+  Brain
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +49,7 @@ const menuGroups = [
   {
     label: "시스템",
     items: [
+      { path: "/admin/intent-keywords", label: "AI 학습 관리", icon: Brain },
       { path: "/admin/api-usage", label: "API 사용량", icon: Activity },
       { path: "/admin/site-settings", label: "사이트 설정", icon: Settings },
     ],

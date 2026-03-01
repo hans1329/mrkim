@@ -44,6 +44,7 @@ import AdminPush from "./pages/admin/AdminPush";
 import AdminFeedback from "./pages/admin/AdminFeedback";
 import AdminApiUsage from "./pages/admin/AdminApiUsage";
 import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
+import AdminIntentKeywords from "./pages/admin/AdminIntentKeywords";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ const App = () => (
                       <Route path="/admin/push" element={<AdminPush />} />
                       <Route path="/admin/feedback" element={<AdminFeedback />} />
                       <Route path="/admin/api-usage" element={<AdminApiUsage />} />
+                      <Route path="/admin/intent-keywords" element={<AdminIntentKeywords />} />
                       <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
 
                       {/* 공통 레이아웃 적용 페이지 */}
