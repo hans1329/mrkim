@@ -731,6 +731,8 @@ export type Database = {
           account_connected: boolean | null
           account_connected_at: string | null
           avatar_url: string | null
+          ban_reason: string | null
+          banned_at: string | null
           briefing_frequency: string | null
           briefing_times: Json | null
           business_name: string | null
@@ -742,6 +744,7 @@ export type Database = {
           hometax_connected: boolean | null
           hometax_connected_at: string | null
           id: string
+          is_banned: boolean
           large_transaction_threshold: number
           name: string | null
           nickname: string | null
@@ -767,6 +770,8 @@ export type Database = {
           account_connected?: boolean | null
           account_connected_at?: string | null
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
           briefing_frequency?: string | null
           briefing_times?: Json | null
           business_name?: string | null
@@ -778,6 +783,7 @@ export type Database = {
           hometax_connected?: boolean | null
           hometax_connected_at?: string | null
           id?: string
+          is_banned?: boolean
           large_transaction_threshold?: number
           name?: string | null
           nickname?: string | null
@@ -803,6 +809,8 @@ export type Database = {
           account_connected?: boolean | null
           account_connected_at?: string | null
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
           briefing_frequency?: string | null
           briefing_times?: Json | null
           business_name?: string | null
@@ -814,6 +822,7 @@ export type Database = {
           hometax_connected?: boolean | null
           hometax_connected_at?: string | null
           id?: string
+          is_banned?: boolean
           large_transaction_threshold?: number
           name?: string | null
           nickname?: string | null

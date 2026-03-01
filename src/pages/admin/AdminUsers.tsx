@@ -5,11 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, Shield, User } from "lucide-react";
+import { Search, Shield, User, Ban, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Database } from "@/integrations/supabase/types";
@@ -25,6 +26,9 @@ interface UserWithRoles {
   business_name: string | null;
   created_at: string;
   roles: AppRole[];
+  is_banned: boolean;
+  banned_at: string | null;
+  ban_reason: string | null;
 }
 
 const ROLE_LABELS: Record<AppRole, string> = {
@@ -47,6 +51,8 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [banDialogOpen, setBanDialogOpen] = useState(false);
+  const [banReason, setBanReason] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole | "">("");
 
@@ -148,6 +154,53 @@ export default function AdminUsers() {
     }
   };
 
+  const handleBanUser = (user: UserWithRoles) => {
+    setSelectedUser(user);
+    setBanReason("");
+    setBanDialogOpen(true);
+  };
+
+  const handleConfirmBan = async () => {
+    if (!selectedUser) return;
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          is_banned: true,
+          banned_at: new Date().toISOString(),
+          ban_reason: banReason || null,
+        })
+        .eq("user_id", selectedUser.user_id);
+      if (error) throw error;
+      toast.success(`${selectedUser.nickname || selectedUser.name || "사용자"}님이 차단되었습니다`);
+      setBanDialogOpen(false);
+      fetchUsers();
+    } catch (error) {
+      console.error("Error banning user:", error);
+      toast.error("차단에 실패했습니다");
+    }
+  };
+
+  const handleUnbanUser = async (user: UserWithRoles) => {
+    if (!confirm(`${user.nickname || user.name || "사용자"}님의 차단을 해제하시겠습니까?`)) return;
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          is_banned: false,
+          banned_at: null,
+          ban_reason: null,
+        })
+        .eq("user_id", user.user_id);
+      if (error) throw error;
+      toast.success("차단이 해제되었습니다");
+      fetchUsers();
+    } catch (error) {
+      console.error("Error unbanning user:", error);
+      toast.error("차단 해제에 실패했습니다");
+    }
+  };
+
   const filteredUsers = users.filter(
     (user) =>
       (user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
@@ -212,18 +265,30 @@ export default function AdminUsers() {
                     </TableRow>
                   ) : (
                     filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
+                      <TableRow key={user.id} className={user.is_banned ? "opacity-60 bg-destructive/5" : ""}>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                              <User className="w-4 h-4 text-muted-foreground" />
+                              {user.is_banned ? (
+                                <Ban className="w-4 h-4 text-destructive" />
+                              ) : (
+                                <User className="w-4 h-4 text-muted-foreground" />
+                              )}
                             </div>
                             <div>
-                              <div className="font-medium">
+                              <div className="font-medium flex items-center gap-2">
                                 {user.nickname || user.name || "이름 없음"}
+                                {user.is_banned && (
+                                  <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                                    차단됨
+                                  </Badge>
+                                )}
                               </div>
                               {user.nickname && user.name && (
                                 <div className="text-xs text-muted-foreground">{user.name}</div>
+                              )}
+                              {user.is_banned && user.ban_reason && (
+                                <div className="text-xs text-destructive mt-0.5">사유: {user.ban_reason}</div>
                               )}
                             </div>
                           </div>
@@ -253,14 +318,38 @@ export default function AdminUsers() {
                           {new Date(user.created_at).toLocaleDateString("ko-KR")}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleOpenRoleDialog(user)}
-                          >
-                            <Shield className="w-4 h-4 mr-1" />
-                            권한 추가
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenRoleDialog(user)}
+                            >
+                              <Shield className="w-4 h-4 mr-1" />
+                              권한
+                            </Button>
+                            {user.is_banned ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUnbanUser(user)}
+                                className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                              >
+                                <ShieldCheck className="w-4 h-4 mr-1" />
+                                해제
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleBanUser(user)}
+                                className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                                disabled={user.user_id === currentUserId}
+                              >
+                                <Ban className="w-4 h-4 mr-1" />
+                                차단
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -304,6 +393,39 @@ export default function AdminUsers() {
               </Button>
               <Button onClick={handleAddRole} disabled={!selectedRole}>
                 권한 추가
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        {/* Ban Dialog */}
+        <Dialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Ban className="w-5 h-5 text-destructive" />
+                사용자 차단 - {selectedUser?.nickname || selectedUser?.name || "사용자"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <p className="text-sm text-muted-foreground">
+                차단된 사용자는 서비스에 접근할 수 없게 됩니다.
+              </p>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">차단 사유 (선택)</label>
+                <Textarea
+                  placeholder="차단 사유를 입력하세요..."
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setBanDialogOpen(false)}>
+                취소
+              </Button>
+              <Button variant="destructive" onClick={handleConfirmBan}>
+                차단하기
               </Button>
             </DialogFooter>
           </DialogContent>
