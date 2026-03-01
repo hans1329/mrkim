@@ -494,11 +494,56 @@ type DataSource = "transaction" | "employee" | "tax_invoice" | "deposit" | "savi
 interface ClassifiedIntent {
   needsData: boolean;
   dataSource: DataSource | null;
-  requiresConnection: string | null; // null = 내부 데이터, 연동 불필요
-  timePeriod?: { type: string; startDate?: string; endDate?: string };
+  requiresConnection: string | null;
+  timePeriod?: { type: string };
 }
 
-function classifyByKeyword(text: string): ClassifiedIntent {
+// DB 키워드 캐시 (5분 TTL)
+let cachedIntentKeywords: { intent: string; keywords: string[]; }[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+async function loadIntentKeywords(authHeader: string): Promise<{ intent: string; keywords: string[] }[]> {
+  const now = Date.now();
+  if (cachedIntentKeywords && (now - cacheTimestamp) < CACHE_TTL_MS) {
+    return cachedIntentKeywords;
+  }
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb) return [];
+    const { data, error } = await sb
+      .from("intent_keywords")
+      .select("intent, keywords")
+      .eq("is_active", true);
+    if (error || !data) return cachedIntentKeywords || [];
+    cachedIntentKeywords = data;
+    cacheTimestamp = now;
+    console.log(`Loaded ${data.length} intent keyword sets from DB`);
+    return data;
+  } catch (e) {
+    console.error("loadIntentKeywords error:", e);
+    return cachedIntentKeywords || [];
+  }
+}
+
+// 의도→데이터소스 + 연동요구사항 매핑
+const INTENT_DATA_MAP: Record<string, { dataSource: DataSource; requiresConnection: string | null }> = {
+  sales_inquiry: { dataSource: "transaction", requiresConnection: "card_or_bank" },
+  expense_inquiry: { dataSource: "transaction", requiresConnection: "card_or_bank" },
+  tax_question: { dataSource: "tax_invoice", requiresConnection: "hometax" },
+  payroll_inquiry: { dataSource: "employee", requiresConnection: null },
+  daily_briefing: { dataSource: "transaction", requiresConnection: "card_or_bank" },
+  employee_management: { dataSource: "employee", requiresConnection: null },
+  transaction_classify: { dataSource: "transaction", requiresConnection: "card_or_bank" },
+  fund_inquiry: { dataSource: "deposit", requiresConnection: null },
+  // 기존 하드코딩 매핑도 유지
+  auto_transfer: { dataSource: "auto_transfer", requiresConnection: null },
+  savings: { dataSource: "savings", requiresConnection: null },
+  deposit: { dataSource: "deposit", requiresConnection: null },
+  tax_invoice: { dataSource: "tax_invoice", requiresConnection: "hometax" },
+};
+
+function classifyByKeyword(text: string, dbKeywords: { intent: string; keywords: string[] }[]): ClassifiedIntent {
   const t = text.toLowerCase().trim();
 
   // 기간 감지
@@ -511,44 +556,19 @@ function classifyByKeyword(text: string): ClassifiedIntent {
   else if (/분기/.test(t)) timePeriod = { type: "quarter" };
   else if (/올해|금년/.test(t)) timePeriod = { type: "year" };
 
-  // 순서 중요: 구체적인 패턴을 먼저 매칭
-
-  // 자동이체
-  if (/자동\s*이체|자동\s*송금|이체\s*규칙|이체\s*설정/.test(t)) {
-    return { needsData: true, dataSource: "auto_transfer", requiresConnection: null, timePeriod };
+  // 1차: DB 키워드 매칭 (관리자가 추가한 키워드 우선)
+  for (const entry of dbKeywords) {
+    for (const kw of entry.keywords) {
+      if (t.includes(kw.toLowerCase())) {
+        const mapping = INTENT_DATA_MAP[entry.intent];
+        if (mapping) {
+          return { needsData: true, dataSource: mapping.dataSource, requiresConnection: mapping.requiresConnection, timePeriod };
+        }
+      }
+    }
   }
 
-  // 저축/투자
-  if (/적금|예금|파킹\s*통장|저축|이자.*얼마|굴리|투자.*현황/.test(t)) {
-    return { needsData: true, dataSource: "savings", requiresConnection: null, timePeriod };
-  }
-
-  // 예치금/비상금
-  if (/예치금|비상금|퇴직금.*적립|부가세.*예치|목표.*금액|적립.*현황/.test(t)) {
-    return { needsData: true, dataSource: "deposit", requiresConnection: null, timePeriod };
-  }
-
-  // 세금계산서 (일반 세금 질문보다 먼저)
-  if (/세금\s*계산서|계산서.*발행|계산서.*현황|매입.*계산서|매출.*계산서/.test(t)) {
-    return { needsData: true, dataSource: "tax_invoice", requiresConnection: "hometax", timePeriod };
-  }
-
-  // 직원/급여
-  if (/급여|월급|임금|직원.*급|인건비|4대.*보험|직원.*몇/.test(t)) {
-    return { needsData: true, dataSource: "employee", requiresConnection: null, timePeriod };
-  }
-
-  // 세금 일반 (부가세, 종소세 등 - 세금계산서 데이터 기반)
-  if (/세금|부가세|종소세|종합소득|세무|신고|납부|홈택스/.test(t)) {
-    return { needsData: true, dataSource: "tax_invoice", requiresConnection: "hometax", timePeriod };
-  }
-
-  // 매출/지출/거래내역 (구어체 포함)
-  if (/매출|수입|수익|지출|비용|결제|소비|얼마|현황|내역|카드.*사용|총액|합계|브리핑|요약|정리|장사|벌었|벌이|돈.*벌|손익|실적|매상/.test(t)) {
-    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod };
-  }
-
-  // 기간 키워드 + 조회 동사 (구어체 포함)
+  // 2차: 기간 키워드 + 조회 동사 (구어체 포함) - 폴백
   if (timePeriod && /얼마|얼만큼|어때|어떻게|알려|보여|확인|맞아|맞냐|괜찮|잘\s*[됐된돼]|좋았/.test(t)) {
     return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod };
   }
@@ -838,8 +858,9 @@ serve(async (req) => {
     console.log("Processing:", lastMsg.substring(0, 50));
     console.log("Persona:", { secretaryName, secretaryTone, secretaryGender, voiceMode });
 
-    // ━━━ 키워드 분류 ━━━
-    const classified = classifyByKeyword(lastMsg);
+    // ━━━ DB에서 의도 키워드 로드 + 키워드 분류 ━━━
+    const dbKeywords = await loadIntentKeywords(authHeader);
+    const classified = classifyByKeyword(lastMsg, dbKeywords);
     console.log("Classification:", { needsData: classified.needsData, source: classified.dataSource, period: classified.timePeriod?.type });
 
     // ━━━ Case 1: 데이터 불필요 → 자유 대화 ━━━
