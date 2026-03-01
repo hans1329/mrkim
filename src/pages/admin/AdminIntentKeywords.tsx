@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -25,6 +26,17 @@ interface IntentKeyword {
   created_at: string;
   updated_at: string;
 }
+
+const INTENT_OPTIONS = [
+  { value: "sales_inquiry", label: "매출 조회", description: "매출/수익 관련 질문" },
+  { value: "expense_inquiry", label: "지출 조회", description: "지출/비용 관련 질문" },
+  { value: "tax_question", label: "세금 질문", description: "세금/부가세 관련 질문" },
+  { value: "payroll_inquiry", label: "급여 조회", description: "급여/인건비 관련 질문" },
+  { value: "daily_briefing", label: "일일 브리핑", description: "오늘의 요약/브리핑 요청" },
+  { value: "employee_management", label: "직원 관리", description: "직원 정보 관련 질문" },
+  { value: "transaction_classify", label: "거래 분류", description: "거래 분류/카테고리 질문" },
+  { value: "fund_inquiry", label: "자금 조회", description: "예적금/자금 관련 질문" },
+] as const;
 
 interface FormData {
   intent: string;
@@ -275,14 +287,31 @@ export default function AdminIntentKeywords() {
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>의도 코드 (영문)</Label>
-                <Input
-                  placeholder="sales_inquiry"
+                <Label>의도 코드</Label>
+                <Select
                   value={form.intent}
-                  onChange={(e) =>
-                    setForm({ ...form, intent: e.target.value })
-                  }
-                />
+                  onValueChange={(v) => {
+                    const opt = INTENT_OPTIONS.find((o) => o.value === v);
+                    setForm({
+                      ...form,
+                      intent: v,
+                      intent_label: opt?.label || form.intent_label,
+                      description: form.description || opt?.description || "",
+                    });
+                  }}
+                  disabled={!!editingId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INTENT_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label} ({opt.value})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label>표시 이름</Label>
