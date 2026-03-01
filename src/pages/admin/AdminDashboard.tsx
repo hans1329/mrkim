@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +16,7 @@ interface DashboardStats {
 
 export default function AdminDashboard() {
   const { isAdmin, loading: authLoading } = useAdminAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -111,7 +113,7 @@ export default function AdminDashboard() {
 
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card>
+          <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/users")}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 전체 사용자
