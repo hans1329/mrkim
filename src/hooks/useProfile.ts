@@ -29,6 +29,9 @@ export interface Profile {
   card_connected_at: string | null;
   account_connected: boolean | null;
   account_connected_at: string | null;
+  is_banned: boolean;
+  banned_at: string | null;
+  ban_reason: string | null;
   created_at: string;
   updated_at: string;
 }
