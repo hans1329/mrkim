@@ -15,21 +15,23 @@ function EmptyStatCard({
   title,
   icon: Icon,
   variant = "default",
+  isHero = false,
 }: {
   title: string;
   icon: React.ElementType;
   variant?: "default" | "primary" | "success";
+  isHero?: boolean;
 }) {
   const variantStyles = {
-    default: "bg-muted/30 border border-border/50",
-    primary: "bg-primary/10 border border-primary/30",
-    success: "bg-success/10 border border-success/30",
+    default: isHero ? "bg-white/10 backdrop-blur-md border border-white/15 text-white" : "bg-muted/30 border border-border/50",
+    primary: isHero ? "bg-white/15 backdrop-blur-md border border-white/20 text-white" : "bg-primary/10 border border-primary/30",
+    success: isHero ? "bg-white/15 backdrop-blur-md border border-white/20 text-white" : "bg-success/10 border border-success/30",
   };
 
   const iconStyles = {
-    default: "bg-muted/60 text-muted-foreground/60",
-    primary: "bg-primary/20 text-primary/60",
-    success: "bg-success/20 text-success/60",
+    default: isHero ? "bg-white/20 text-white/60" : "bg-muted/60 text-muted-foreground/60",
+    primary: isHero ? "bg-white/25 text-white/70" : "bg-primary/20 text-primary/60",
+    success: isHero ? "bg-white/25 text-white/70" : "bg-success/20 text-success/60",
   };
 
   return (
@@ -42,12 +44,15 @@ function EmptyStatCard({
           )}>
             <Icon className="h-3.5 w-3.5" />
           </div>
-          <p className="text-xs font-medium text-muted-foreground truncate">
+          <p className={cn(
+            "text-xs font-medium truncate",
+            isHero ? "text-white/70" : "text-muted-foreground"
+          )}>
             {title}
           </p>
         </div>
-        <p className="text-sm font-bold text-muted-foreground/40 text-right">₩0</p>
-        <p className="text-[10px] text-muted-foreground/40 mt-0.5">거래 없음</p>
+        <p className={cn("text-sm font-bold text-right", isHero ? "text-white/40" : "text-muted-foreground/40")}>₩0</p>
+        <p className={cn("text-[10px] mt-0.5", isHero ? "text-white/40" : "text-muted-foreground/40")}>거래 없음</p>
       </CardContent>
     </Card>
   );
@@ -229,10 +234,10 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
       <section>
         <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
         <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
-          <EmptyStatCard title="오늘 매출" icon={TrendingUp} variant="primary" />
-          <EmptyStatCard title="오늘 지출" icon={TrendingDown} />
-          <EmptyStatCard title="이번 달 지출" icon={Wallet} />
-          <EmptyStatCard title="이번 달 순이익" icon={PiggyBank} variant="success" />
+          <EmptyStatCard title="오늘 매출" icon={TrendingUp} variant="primary" isHero={isHero} />
+          <EmptyStatCard title="오늘 지출" icon={TrendingDown} isHero={isHero} />
+          <EmptyStatCard title="이번 달 지출" icon={Wallet} isHero={isHero} />
+          <EmptyStatCard title="이번 달 순이익" icon={PiggyBank} variant="success" isHero={isHero} />
         </div>
         <p className={cn("text-xs text-center mt-3", isHero ? "text-white/70" : "text-muted-foreground")}>
           아직 이번 달 거래 내역이 없어요. 거래가 발생하면 자동으로 업데이트돼요!
