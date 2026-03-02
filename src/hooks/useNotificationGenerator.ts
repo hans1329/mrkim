@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * 대시보드 접속 시 실데이터를 기반으로 notifications 테이블에 알림을 자동 생성합니다.
@@ -8,6 +9,7 @@ import { useConnection } from "@/contexts/ConnectionContext";
  */
 export function useNotificationGenerator() {
   const { isLoggedIn, userId, isAnyConnected } = useConnection();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!isLoggedIn || !userId) return;
@@ -17,11 +19,15 @@ export function useNotificationGenerator() {
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, "1");
 
-    generateNotifications(userId, isAnyConnected);
-  }, [isLoggedIn, userId, isAnyConnected]);
+    generateNotifications(userId, isAnyConnected).then((created) => {
+      if (created) {
+        queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      }
+    });
+  }, [isLoggedIn, userId, isAnyConnected, queryClient]);
 }
 
-async function generateNotifications(userId: string, isAnyConnected: boolean) {
+async function generateNotifications(userId: string, isAnyConnected: boolean): Promise<boolean> {
   try {
     // 오늘 이미 생성된 알림 타입 조회 (중복 방지)
     const todayStart = new Date();
@@ -169,9 +175,13 @@ async function generateNotifications(userId: string, isAnyConnected: boolean) {
         .insert(newNotifications);
       if (error) {
         console.error("Failed to insert notifications:", error);
+        return false;
       }
+      return true;
     }
+    return false;
   } catch (error) {
     console.error("Notification generation error:", error);
+    return false;
   }
 }
