@@ -21,34 +21,33 @@ function EmptyStatCard({
   variant?: "default" | "primary" | "success";
 }) {
   const variantStyles = {
-    default: "bg-card border-dashed border-2 border-muted",
-    primary: "bg-primary/10 border-dashed border-2 border-primary/30",
-    success: "bg-success/10 border-dashed border-2 border-success/30",
+    default: "bg-muted/30 border border-border/50",
+    primary: "bg-primary/5 border border-primary/20",
+    success: "bg-success/5 border border-success/20",
   };
 
   const iconStyles = {
-    default: "bg-muted/50 text-muted-foreground",
-    primary: "bg-primary/20 text-primary",
-    success: "bg-success/20 text-success",
+    default: "bg-muted/60 text-muted-foreground/60",
+    primary: "bg-primary/10 text-primary/50",
+    success: "bg-success/10 text-success/50",
   };
 
   return (
     <Card className={cn("overflow-hidden transition-shadow", variantStyles[variant])}>
       <CardContent className="p-3">
-        <div className="flex items-start gap-2.5">
+        <div className="flex items-center gap-2 mb-1.5">
           <div className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
             iconStyles[variant]
           )}>
-            <Icon className="h-4 w-4" />
+            <Icon className="h-3.5 w-3.5" />
           </div>
-          <div className="flex-1 min-w-0 space-y-0.5">
-            <p className="text-[11px] font-medium text-muted-foreground truncate">
-              {title}
-            </p>
-            <p className="text-sm font-medium text-muted-foreground/60">—</p>
-          </div>
+          <p className="text-xs font-medium text-muted-foreground truncate">
+            {title}
+          </p>
         </div>
+        <p className="text-sm font-bold text-muted-foreground/40 text-right">₩0</p>
+        <p className="text-[10px] text-muted-foreground/40 mt-0.5">거래 없음</p>
       </CardContent>
     </Card>
   );
