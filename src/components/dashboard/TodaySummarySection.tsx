@@ -22,14 +22,14 @@ function EmptyStatCard({
 }) {
   const variantStyles = {
     default: "bg-muted/30 border border-border/50",
-    primary: "bg-primary/5 border border-primary/20",
-    success: "bg-success/5 border border-success/20",
+    primary: "bg-primary/10 border border-primary/30",
+    success: "bg-success/10 border border-success/30",
   };
 
   const iconStyles = {
     default: "bg-muted/60 text-muted-foreground/60",
-    primary: "bg-primary/10 text-primary/50",
-    success: "bg-success/10 text-success/50",
+    primary: "bg-primary/20 text-primary/60",
+    success: "bg-success/20 text-success/60",
   };
 
   return (
