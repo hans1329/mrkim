@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     // 1. Find users with phone alerts enabled
     const { data: profiles, error: profilesErr } = await supabase
       .from("profiles")
-      .select("user_id, name, secretary_name, secretary_voice_id, phone, phone_alert_enabled, phone_alert_items, phone_alert_times, phone_alert_custom_message, phone_alert_custom_days, phone_alert_custom_time")
+      .select("user_id, name, secretary_name, secretary_voice_id, phone, phone_alert_enabled, phone_alert_items, phone_alert_times, phone_alert_custom_message, phone_alert_custom_days, phone_alert_custom_time, phone_alert_custom_repeat")
       .eq("phone_alert_enabled", true)
       .not("phone", "is", null);
 
@@ -113,6 +113,19 @@ Deno.serve(async (req) => {
         await makeOutboundCall(supabase, profile, script);
         callsMade++;
         console.log(`[phone-alert-scheduler] Call triggered for user ${profile.user_id}`);
+
+        // 1회만 모드: 커스텀 알림 발신 후 비활성화
+        if (isCustomAlertTime && profile.phone_alert_custom_repeat === false) {
+          await supabase
+            .from("profiles")
+            .update({
+              phone_alert_custom_message: null,
+              phone_alert_custom_days: null,
+              phone_alert_custom_time: null,
+            })
+            .eq("user_id", profile.user_id);
+          console.log(`[phone-alert-scheduler] One-time custom alert cleared for user ${profile.user_id}`);
+        }
       } catch (userErr) {
         console.error(`[phone-alert-scheduler] Error for user ${profile.user_id}:`, userErr);
       }

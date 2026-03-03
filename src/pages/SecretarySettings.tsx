@@ -123,6 +123,7 @@ export default function SecretarySettings() {
   const [largeTransactionThreshold, setLargeTransactionThreshold] = useState<number>(1000000);
   const [phoneAlertCustomTime, setPhoneAlertCustomTime] = useState("");
   const [phoneAlertCustomDays, setPhoneAlertCustomDays] = useState<string[]>([]);
+  const [phoneAlertCustomRepeat, setPhoneAlertCustomRepeat] = useState(true);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -153,6 +154,7 @@ export default function SecretarySettings() {
       setPhoneAlertCustomMessage(p.phone_alert_custom_message || "");
       setPhoneAlertCustomTime(p.phone_alert_custom_time || "");
       if (Array.isArray(p.phone_alert_custom_days)) setPhoneAlertCustomDays(p.phone_alert_custom_days);
+      setPhoneAlertCustomRepeat(p.phone_alert_custom_repeat !== false);
       setPhoneAlertCustomEnabled(!!(p.phone_alert_custom_message && p.phone_alert_custom_message.trim()));
       setLargeTransactionThreshold(p.large_transaction_threshold ?? 1000000);
     }
@@ -263,6 +265,7 @@ export default function SecretarySettings() {
           phone_alert_custom_message: phoneAlertCustomMessage || null,
           phone_alert_custom_time: phoneAlertCustomTime || null,
           phone_alert_custom_days: phoneAlertCustomDays.length > 0 ? phoneAlertCustomDays : null,
+          phone_alert_custom_repeat: phoneAlertCustomRepeat,
           large_transaction_threshold: largeTransactionThreshold,
         } as any).eq("user_id", user.id);
       }
@@ -275,6 +278,7 @@ export default function SecretarySettings() {
         phone_alert_custom_message: phoneAlertCustomMessage || null,
         phone_alert_custom_time: phoneAlertCustomTime || null,
         phone_alert_custom_days: phoneAlertCustomDays.length > 0 ? phoneAlertCustomDays : null,
+        phone_alert_custom_repeat: phoneAlertCustomRepeat,
         large_transaction_threshold: largeTransactionThreshold,
       } as any);
       toast.success("설정이 저장되었습니다", { duration: 1500 });
@@ -283,7 +287,7 @@ export default function SecretarySettings() {
     profile, secretaryName, secretaryGender, speakingStyle, selectedMetrics,
     secretaryAvatarUrl, secretaryVoiceId, briefingTimes, phoneAlertEnabled,
     selectedPhoneAlertItems, phoneAlertTimes, phoneAlertCustomMessage,
-    phoneAlertCustomTime, phoneAlertCustomDays, largeTransactionThreshold,
+    phoneAlertCustomTime, phoneAlertCustomDays, phoneAlertCustomRepeat, largeTransactionThreshold,
     updateProfile, updateProfileCache,
   ]);
 
@@ -306,7 +310,7 @@ export default function SecretarySettings() {
     secretaryName, secretaryGender, speakingStyle, selectedMetrics,
     secretaryAvatarUrl, secretaryVoiceId, briefingTimes, phoneAlertEnabled,
     selectedPhoneAlertItems, phoneAlertTimes, phoneAlertCustomMessage,
-    phoneAlertCustomTime, phoneAlertCustomDays, largeTransactionThreshold,
+    phoneAlertCustomTime, phoneAlertCustomDays, phoneAlertCustomRepeat, largeTransactionThreshold,
   ]);
 
   const handleBack = () => {
@@ -814,6 +818,7 @@ export default function SecretarySettings() {
                         setPhoneAlertCustomMessage("");
                         setPhoneAlertCustomDays([]);
                         setPhoneAlertCustomTime("");
+                        setPhoneAlertCustomRepeat(true);
                       }
                     }}
                   />
@@ -831,7 +836,7 @@ export default function SecretarySettings() {
                 />
                 {/* 요일 선택 */}
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] sm:text-xs text-muted-foreground">반복 요일</Label>
+                  <Label className="text-[11px] sm:text-xs text-muted-foreground">알림 요일</Label>
                   <div className="flex gap-1 sm:gap-1.5">
                     {[
                       { id: "mon", label: "월" },
@@ -866,6 +871,24 @@ export default function SecretarySettings() {
                     })}
                   </div>
                 </div>
+                {/* 반복 설정 */}
+                <div className="flex items-center justify-between">
+                  <Label className="text-[11px] sm:text-xs text-muted-foreground">매주 반복</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] sm:text-[11px] text-muted-foreground">
+                      {phoneAlertCustomRepeat ? "매주 반복" : "1회만"}
+                    </span>
+                    <Switch
+                      checked={phoneAlertCustomRepeat}
+                      onCheckedChange={setPhoneAlertCustomRepeat}
+                    />
+                  </div>
+                </div>
+                {!phoneAlertCustomRepeat && (
+                  <p className="text-[10px] sm:text-[11px] text-amber-600 dark:text-amber-400">
+                    다음 해당 요일에 1회 발신 후 자동으로 비활성화됩니다
+                  </p>
+                )}
                 {/* 시간 선택 */}
                 <div className="flex items-center gap-2">
                   <Label className="text-[11px] sm:text-xs text-muted-foreground whitespace-nowrap">전화 시각</Label>
