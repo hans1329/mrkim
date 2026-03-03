@@ -48,9 +48,9 @@ Deno.serve(async (req) => {
     // 1. Find users with phone alerts enabled
     const { data: profiles, error: profilesErr } = await supabase
       .from("profiles")
-      .select("user_id, name, secretary_name, secretary_voice_id, phone, phone_alert_enabled, phone_alert_items, phone_alert_times, phone_alert_custom_message, phone_alert_custom_days, phone_alert_custom_time, phone_alert_custom_repeat")
+      .select("user_id, name, secretary_name, secretary_voice_id, phone, secretary_phone, phone_alert_enabled, phone_alert_items, phone_alert_times, phone_alert_custom_message, phone_alert_custom_days, phone_alert_custom_time, phone_alert_custom_repeat")
       .eq("phone_alert_enabled", true)
-      .not("phone", "is", null);
+      .not("secretary_phone", "is", null);
 
     if (profilesErr) throw profilesErr;
     if (!profiles || profiles.length === 0) {
@@ -110,7 +110,9 @@ Deno.serve(async (req) => {
         const script = scriptParts.join(" ");
 
         // Trigger the outbound call
-        await makeOutboundCall(supabase, profile, script);
+        // secretary_phone을 phone 대신 사용
+        const callProfile = { ...profile, phone: profile.secretary_phone || profile.phone };
+        await makeOutboundCall(supabase, callProfile, script);
         callsMade++;
         console.log(`[phone-alert-scheduler] Call triggered for user ${profile.user_id}`);
 
