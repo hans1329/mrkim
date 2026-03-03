@@ -799,12 +799,12 @@ export default function SecretarySettings() {
               </div>
 
               {/* 자유 메시지 전화 알림 */}
-              <div className="space-y-3 p-4 rounded-lg bg-muted/50 border border-dashed border-border">
+              <div className="space-y-2.5 p-3 sm:p-4 rounded-lg bg-muted/50 border border-dashed border-border">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Megaphone className="h-4 w-4 text-primary" />
-                    <Label className="text-sm font-medium">자유 메시지 전화 알림</Label>
-                    <Badge variant="outline" className="text-[10px]">선택</Badge>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Megaphone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />
+                    <Label className="text-xs sm:text-sm font-medium truncate">자유 메시지 전화 알림</Label>
+                    <Badge variant="outline" className="text-[9px] sm:text-[10px] shrink-0">선택</Badge>
                   </div>
                   <Switch
                     checked={phoneAlertCustomEnabled}
@@ -820,19 +820,19 @@ export default function SecretarySettings() {
                 </div>
                 {phoneAlertCustomEnabled && (
                   <>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[11px] sm:text-xs text-muted-foreground">
                   특정 요일과 시간에 원하는 메시지를 전화로 안내받을 수 있습니다
                 </p>
                 <Textarea
                   placeholder="예: 거래처 미팅 있습니다. 자료 준비해주세요."
                   value={phoneAlertCustomMessage}
                   onChange={(e) => setPhoneAlertCustomMessage(e.target.value)}
-                  className="min-h-[80px] text-sm"
+                  className="min-h-[72px] sm:min-h-[80px] text-xs sm:text-sm"
                 />
                 {/* 요일 선택 */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">반복 요일</Label>
-                  <div className="flex gap-1.5">
+                  <Label className="text-[11px] sm:text-xs text-muted-foreground">반복 요일</Label>
+                  <div className="flex gap-1 sm:gap-1.5">
                     {[
                       { id: "mon", label: "월" },
                       { id: "tue", label: "화" },
@@ -847,7 +847,7 @@ export default function SecretarySettings() {
                         <button
                           key={day.id}
                           type="button"
-                          className={`h-9 w-9 rounded-full text-xs font-medium transition-all ${
+                          className={`h-8 w-8 sm:h-9 sm:w-9 rounded-full text-[11px] sm:text-xs font-medium transition-all ${
                             isSelected
                               ? "bg-primary text-primary-foreground"
                               : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -868,11 +868,11 @@ export default function SecretarySettings() {
                 </div>
                 {/* 시간 선택 */}
                 <div className="flex items-center gap-2">
-                  <Label className="text-xs text-muted-foreground whitespace-nowrap">전화 시각</Label>
+                  <Label className="text-[11px] sm:text-xs text-muted-foreground whitespace-nowrap">전화 시각</Label>
                   <select
                     value={phoneAlertCustomTime}
                     onChange={(e) => setPhoneAlertCustomTime(e.target.value)}
-                    className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    className="flex-1 h-8 sm:h-9 rounded-md border border-input bg-background px-2.5 sm:px-3 text-xs sm:text-sm"
                   >
                     <option value="">시간 선택</option>
                     {Array.from({ length: 14 }, (_, i) => i + 8).map((h) => (
