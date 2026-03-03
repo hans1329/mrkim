@@ -119,6 +119,7 @@ export default function SecretarySettings() {
   const [selectedPhoneAlertItems, setSelectedPhoneAlertItems] = useState<string[]>(["tax_deadline", "large_transaction", "salary_reminder", "sales_spike"]);
   const [phoneAlertTimes, setPhoneAlertTimes] = useState<string[]>(["10"]);
   const [phoneAlertCustomMessage, setPhoneAlertCustomMessage] = useState("");
+  const [phoneAlertCustomEnabled, setPhoneAlertCustomEnabled] = useState(false);
   const [largeTransactionThreshold, setLargeTransactionThreshold] = useState<number>(1000000);
   const [phoneAlertCustomTime, setPhoneAlertCustomTime] = useState("");
   const [phoneAlertCustomDays, setPhoneAlertCustomDays] = useState<string[]>([]);
@@ -152,6 +153,7 @@ export default function SecretarySettings() {
       setPhoneAlertCustomMessage(p.phone_alert_custom_message || "");
       setPhoneAlertCustomTime(p.phone_alert_custom_time || "");
       if (Array.isArray(p.phone_alert_custom_days)) setPhoneAlertCustomDays(p.phone_alert_custom_days);
+      setPhoneAlertCustomEnabled(!!(p.phone_alert_custom_message && p.phone_alert_custom_message.trim()));
       setLargeTransactionThreshold(p.large_transaction_threshold ?? 1000000);
     }
   }, [profile]);
@@ -798,11 +800,26 @@ export default function SecretarySettings() {
 
               {/* 자유 메시지 전화 알림 */}
               <div className="space-y-3 p-4 rounded-lg bg-muted/50 border border-dashed border-border">
-                <div className="flex items-center gap-2">
-                  <Megaphone className="h-4 w-4 text-primary" />
-                  <Label className="text-sm font-medium">자유 메시지 전화 알림</Label>
-                  <Badge variant="outline" className="text-[10px]">선택</Badge>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Megaphone className="h-4 w-4 text-primary" />
+                    <Label className="text-sm font-medium">자유 메시지 전화 알림</Label>
+                    <Badge variant="outline" className="text-[10px]">선택</Badge>
+                  </div>
+                  <Switch
+                    checked={phoneAlertCustomEnabled}
+                    onCheckedChange={(checked) => {
+                      setPhoneAlertCustomEnabled(checked);
+                      if (!checked) {
+                        setPhoneAlertCustomMessage("");
+                        setPhoneAlertCustomDays([]);
+                        setPhoneAlertCustomTime("");
+                      }
+                    }}
+                  />
                 </div>
+                {phoneAlertCustomEnabled && (
+                  <>
                 <p className="text-xs text-muted-foreground">
                   특정 요일과 시간에 원하는 메시지를 전화로 안내받을 수 있습니다
                 </p>
@@ -865,6 +882,8 @@ export default function SecretarySettings() {
                     ))}
                   </select>
                 </div>
+                  </>
+                )}
               </div>
             </CardContent>
           )}
