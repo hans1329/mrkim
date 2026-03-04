@@ -44,6 +44,7 @@ import { useNavigate } from "react-router-dom";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { cn } from "@/lib/utils";
 import { TransactionClassifier } from "@/components/transactions/TransactionClassifier";
+import { CsvBulkUploadDialog } from "@/components/transactions/CsvBulkUploadDialog";
 import { useTransactions, useTransactionStats, useAddTransaction, useDeleteTransaction, type TransactionInsert } from "@/hooks/useTransactions";
 import { useCardSync } from "@/hooks/useCardSync";
 import { useBankSync } from "@/hooks/useBankSync";
@@ -379,6 +380,7 @@ export default function Transactions() {
                   <SelectItem value="bank">은행</SelectItem>
                 </SelectContent>
               </Select>
+              <CsvBulkUploadDialog />
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="icon" className="h-8 w-8 shrink-0">
