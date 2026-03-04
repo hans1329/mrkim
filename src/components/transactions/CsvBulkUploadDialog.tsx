@@ -211,7 +211,10 @@ export function CsvBulkUploadDialog() {
 
     bulkAdd.mutate(transactions, {
       onSuccess: (result) => {
-        toast.success(`${result.inserted}건의 거래가 등록되었습니다`);
+        const msg = result.skipped
+          ? `${result.inserted}건 등록, ${result.skipped}건 중복 스킵`
+          : `${result.inserted}건의 거래가 등록되었습니다`;
+        toast.success(msg);
         setParsedRows([]);
         setFileName("");
         setOpen(false);

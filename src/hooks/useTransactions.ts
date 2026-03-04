@@ -249,31 +249,74 @@ export function useBulkAddTransactions() {
     mutationFn: async (inputs: TransactionInsert[]) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("로그인이 필요합니다");
+      const userId = userData.user.id;
 
-      const rows = inputs.map((input) => {
-        let finalInput = { ...input };
-        if (!input.is_manually_classified && !input.category) {
-          if (input.type === "expense") {
-            const classification = classifyTransaction(input.description);
-            finalInput = {
-              ...finalInput,
-              category: classification.category,
-              sub_category: classification.subCategory,
-              category_icon: classification.icon,
-              classification_confidence: classification.confidence,
-            };
-          } else {
-            const incomeResult = classifyIncomeTransaction(input.description);
-            finalInput = {
-              ...finalInput,
-              category: incomeResult.incomeCategory,
-              category_icon: incomeResult.icon,
-              classification_confidence: incomeResult.confidence,
-            };
-          }
+      // 중복 체크: 기존 거래의 날짜+금액+거래처 조합을 가져옴
+      const dates = [...new Set(inputs.map((i) => i.transaction_date))];
+      const existingKeys = new Set<string>();
+
+      // 날짜 범위로 기존 데이터 조회
+      if (dates.length > 0) {
+        const minDate = dates.sort()[0];
+        const maxDate = dates.sort()[dates.length - 1];
+        
+        const PAGE_SIZE = 1000;
+        let from = 0;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data: existing } = await supabase
+            .from("transactions")
+            .select("transaction_date, amount, description")
+            .eq("user_id", userId)
+            .gte("transaction_date", minDate)
+            .lte("transaction_date", maxDate)
+            .range(from, from + PAGE_SIZE - 1);
+
+          (existing || []).forEach((tx) => {
+            existingKeys.add(`${tx.transaction_date}|${tx.amount}|${tx.description}`);
+          });
+
+          hasMore = (existing?.length || 0) === PAGE_SIZE;
+          from += PAGE_SIZE;
         }
-        return { ...finalInput, user_id: userData.user!.id, source_type: input.source_type || "card" };
-      });
+      }
+
+      const rows = inputs
+        .filter((input) => {
+          const key = `${input.transaction_date}|${input.amount}|${input.description}`;
+          return !existingKeys.has(key);
+        })
+        .map((input) => {
+          let finalInput = { ...input };
+          if (!input.is_manually_classified && !input.category) {
+            if (input.type === "expense") {
+              const classification = classifyTransaction(input.description);
+              finalInput = {
+                ...finalInput,
+                category: classification.category,
+                sub_category: classification.subCategory,
+                category_icon: classification.icon,
+                classification_confidence: classification.confidence,
+              };
+            } else {
+              const incomeResult = classifyIncomeTransaction(input.description);
+              finalInput = {
+                ...finalInput,
+                category: incomeResult.incomeCategory,
+                category_icon: incomeResult.icon,
+                classification_confidence: incomeResult.confidence,
+              };
+            }
+          }
+          return { ...finalInput, user_id: userId, source_type: input.source_type || "card" };
+        });
+
+      const skipped = inputs.length - rows.length;
+
+      if (rows.length === 0) {
+        return { inserted: 0, skipped };
+      }
 
       // 배치 처리: 500건씩 나눠서 삽입
       const BATCH_SIZE = 500;
@@ -293,7 +336,7 @@ export function useBulkAddTransactions() {
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
 
-      return { inserted: totalInserted };
+      return { inserted: totalInserted, skipped };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
