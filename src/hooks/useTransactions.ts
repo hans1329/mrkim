@@ -242,7 +242,14 @@ export function useAddTransaction() {
   });
 }
 
-export function useBulkAddTransactions() {
+export interface BulkUploadProgress {
+  phase: "dedup" | "uploading" | "refreshing";
+  current: number;
+  total: number;
+  percent: number;
+}
+
+export function useBulkAddTransactions(onProgress?: (p: BulkUploadProgress) => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -251,11 +258,12 @@ export function useBulkAddTransactions() {
       if (!userData.user) throw new Error("로그인이 필요합니다");
       const userId = userData.user.id;
 
-      // 중복 체크: 기존 거래의 날짜+금액+거래처 조합을 가져옴
+      // 중복 체크 phase
+      onProgress?.({ phase: "dedup", current: 0, total: inputs.length, percent: 0 });
+
       const dates = [...new Set(inputs.map((i) => i.transaction_date))];
       const existingKeys = new Set<string>();
 
-      // 날짜 범위로 기존 데이터 조회
       if (dates.length > 0) {
         const minDate = dates.sort()[0];
         const maxDate = dates.sort()[dates.length - 1];
@@ -318,7 +326,7 @@ export function useBulkAddTransactions() {
         return { inserted: 0, skipped };
       }
 
-      // 배치 처리: 500건씩 나눠서 삽입
+      // 업로드 phase
       const BATCH_SIZE = 500;
       let totalInserted = 0;
 
@@ -332,9 +340,18 @@ export function useBulkAddTransactions() {
         if (error) throw new Error(`배치 ${Math.floor(i / BATCH_SIZE) + 1} 실패: ${error.message}`);
         totalInserted += data?.length || 0;
 
-        // UI 스레드 양보
+        onProgress?.({
+          phase: "uploading",
+          current: totalInserted,
+          total: rows.length,
+          percent: Math.round((totalInserted / rows.length) * 100),
+        });
+
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
+
+      // 리프레시 phase
+      onProgress?.({ phase: "refreshing", current: 0, total: 0, percent: 100 });
 
       return { inserted: totalInserted, skipped };
     },
