@@ -45,6 +45,21 @@ serve(async (req) => {
       });
     }
 
+    // 페이지네이션 헬퍼 (Supabase 1000건 제한 우회)
+    async function fetchAllRows<T = any>(baseQuery: any, pageSize = 1000): Promise<T[]> {
+      const all: T[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await baseQuery.range(from, from + pageSize - 1);
+        if (error) { console.error("fetchAllRows error:", error); break; }
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      return all;
+    }
+
     // 1. 기존 인사이트 삭제
     await supabase.from("ai_insights").delete().eq("user_id", user.id);
 
@@ -53,27 +68,31 @@ serve(async (req) => {
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
     const startDate = threeMonthsAgo.toISOString().split("T")[0];
 
-    const [transactionsRes, employeesRes, depositsRes] = await Promise.all([
-      supabase
-        .from("transactions")
-        .select("type, amount, category, transaction_date, source_type")
-        .eq("user_id", user.id)
-        .gte("transaction_date", startDate),
-      supabase
-        .from("employees")
-        .select("name, employee_type, monthly_salary, status, insurance_national_pension, insurance_health, insurance_employment, insurance_industrial")
-        .eq("user_id", user.id)
-        .eq("status", "재직"),
-      supabase
-        .from("deposits")
-        .select("type, name, amount, target_amount, due_date")
-        .eq("user_id", user.id)
-        .eq("is_active", true),
+    const [transactions, employees, deposits] = await Promise.all([
+      fetchAllRows(
+        supabase
+          .from("transactions")
+          .select("type, amount, category, transaction_date, source_type")
+          .eq("user_id", user.id)
+          .gte("transaction_date", startDate)
+      ),
+      fetchAllRows(
+        supabase
+          .from("employees")
+          .select("name, employee_type, monthly_salary, status, insurance_national_pension, insurance_health, insurance_employment, insurance_industrial")
+          .eq("user_id", user.id)
+          .eq("status", "재직")
+      ),
+      fetchAllRows(
+        supabase
+          .from("deposits")
+          .select("type, name, amount, target_amount, due_date")
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+      ),
     ]);
 
-    const transactions = transactionsRes.data || [];
-    const employees = employeesRes.data || [];
-    const deposits = depositsRes.data || [];
+    console.log(`Data fetched: ${transactions.length} transactions, ${employees.length} employees, ${deposits.length} deposits`);
 
     // 3. 데이터 요약 생성
     const totalIncome = transactions.filter(t => t.type === "income" || t.type === "transfer_in").reduce((sum, t) => sum + t.amount, 0);
