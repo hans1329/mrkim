@@ -148,6 +148,25 @@ function createSupabaseClient(authHeader: string) {
   return createClient(url, key, { global: { headers: { Authorization: authHeader } } });
 }
 
+// ============ 페이지네이션 헬퍼 (1000건 제한 우회) ============
+
+async function fetchAllRows<T = any>(
+  query: any,
+  pageSize = 1000,
+): Promise<T[]> {
+  const all: T[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await query.range(from, from + pageSize - 1);
+    if (error) { console.error("fetchAllRows error:", error); break; }
+    if (!data || data.length === 0) break;
+    all.push(...data);
+    if (data.length < pageSize) break; // 마지막 페이지
+    from += pageSize;
+  }
+  return all;
+}
+
 // ============ 연동 상태 확인 ============
 
 interface ConnectionStatus { hometax: boolean; card: boolean; bank: boolean; }
@@ -291,8 +310,9 @@ async function fetchTransactionData(userId: string, authHeader: string, timePeri
     const sb = createSupabaseClient(authHeader);
     if (!sb || !userId) return null;
     const { startDate, endDate, label: periodLabel } = calculateDateRange(timePeriod);
-    const { data: txs, error } = await sb.from("transactions").select("id, amount, type, category, description, transaction_date").eq("user_id", userId).gte("transaction_date", startDate).lte("transaction_date", endDate).order("transaction_date", { ascending: false });
-    if (error || !txs) return null;
+    const txs = await fetchAllRows(
+      sb.from("transactions").select("id, amount, type, category, description, transaction_date").eq("user_id", userId).gte("transaction_date", startDate).lte("transaction_date", endDate).order("transaction_date", { ascending: false })
+    );
     console.log(`Found ${txs.length} transactions for ${periodLabel}`);
     let totalExpense = 0, totalIncome = 0, expenseCount = 0, incomeCount = 0;
     const catMap = new Map<string, { amount: number; count: number }>();
@@ -358,11 +378,12 @@ async function fetchTaxInvoiceData(userId: string, authHeader: string, timePerio
     const sb = createSupabaseClient(authHeader);
     if (!sb || !userId) return null;
     const { startDate, endDate, label: periodLabel } = calculateDateRange(timePeriod);
-    const { data: invoices, error } = await sb.from("tax_invoices")
-      .select("invoice_type, supply_amount, tax_amount, total_amount, supplier_name, buyer_name, item_name, invoice_date")
-      .eq("user_id", userId).gte("invoice_date", startDate).lte("invoice_date", endDate)
-      .order("invoice_date", { ascending: false });
-    if (error || !invoices) return null;
+    const invoices = await fetchAllRows(
+      sb.from("tax_invoices")
+        .select("invoice_type, supply_amount, tax_amount, total_amount, supplier_name, buyer_name, item_name, invoice_date")
+        .eq("user_id", userId).gte("invoice_date", startDate).lte("invoice_date", endDate)
+        .order("invoice_date", { ascending: false })
+    );
     console.log(`Found ${invoices.length} tax invoices for ${periodLabel}`);
     let salesTotal = 0, salesTax = 0, salesCount = 0;
     let purchaseTotal = 0, purchaseTax = 0, purchaseCount = 0;
