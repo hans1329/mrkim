@@ -547,14 +547,47 @@ function classifyByKeyword(text: string, dbKeywords: { intent: string; keywords:
   const t = text.toLowerCase().trim();
 
   // 기간 감지
-  let timePeriod: { type: string } | undefined;
-  if (/오늘/.test(t)) timePeriod = { type: "today" };
-  else if (/어제/.test(t)) timePeriod = { type: "yesterday" };
-  else if (/이번\s*주|금주/.test(t)) timePeriod = { type: "week" };
-  else if (/지난\s*달|저번\s*달|전월/.test(t)) timePeriod = { type: "last_month" };
-  else if (/이번\s*달|이달|당월/.test(t)) timePeriod = { type: "month" };
-  else if (/분기/.test(t)) timePeriod = { type: "quarter" };
-  else if (/올해|금년/.test(t)) timePeriod = { type: "year" };
+  let timePeriod: { type: string; startDate?: string; endDate?: string } | undefined;
+
+  // 특정 월 감지: "2월", "이월", "삼월", "12월달" 등
+  const koreanMonthMap: Record<string, number> = {
+    "일": 1, "이": 2, "삼": 3, "사": 4, "오": 5, "육": 6,
+    "칠": 7, "팔": 8, "구": 9, "십": 10, "십일": 11, "십이": 12,
+  };
+  const numMonthMatch = t.match(/(\d{1,2})\s*월/);
+  const korMonthMatch = t.match(/(십이|십일|십|일|이|삼|사|오|육|칠|팔|구)\s*월/);
+
+  if (numMonthMatch) {
+    const month = parseInt(numMonthMatch[1]);
+    if (month >= 1 && month <= 12) {
+      const now = new Date();
+      const year = month > now.getMonth() + 1 ? now.getFullYear() - 1 : now.getFullYear();
+      const s = new Date(year, month - 1, 1);
+      const e = new Date(year, month, 0);
+      timePeriod = { type: "custom", startDate: s.toISOString().split('T')[0], endDate: e.toISOString().split('T')[0] };
+    }
+  } else if (korMonthMatch && !/이번|이달/.test(t)) {
+    // "이월" = 2월이지만 "이번 달"의 "이"와 구분 필요
+    const month = koreanMonthMap[korMonthMatch[1]];
+    if (month) {
+      const now = new Date();
+      const year = month > now.getMonth() + 1 ? now.getFullYear() - 1 : now.getFullYear();
+      const s = new Date(year, month - 1, 1);
+      const e = new Date(year, month, 0);
+      timePeriod = { type: "custom", startDate: s.toISOString().split('T')[0], endDate: e.toISOString().split('T')[0] };
+    }
+  }
+
+  // 기존 기간 키워드 (특정 월이 없을 때만)
+  if (!timePeriod) {
+    if (/오늘/.test(t)) timePeriod = { type: "today" };
+    else if (/어제/.test(t)) timePeriod = { type: "yesterday" };
+    else if (/이번\s*주|금주/.test(t)) timePeriod = { type: "week" };
+    else if (/지난\s*달|저번\s*달|전월/.test(t)) timePeriod = { type: "last_month" };
+    else if (/이번\s*달|이달|당월/.test(t)) timePeriod = { type: "month" };
+    else if (/분기/.test(t)) timePeriod = { type: "quarter" };
+    else if (/올해|금년/.test(t)) timePeriod = { type: "year" };
+  }
 
   // 1차: DB 키워드 매칭 (관리자가 추가한 키워드 우선)
   for (const entry of dbKeywords) {
