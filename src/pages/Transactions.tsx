@@ -54,6 +54,7 @@ export default function Transactions() {
     amount: "",
     source_type: "card" as "card" | "bank",
     source_name: "",
+    transaction_date: new Date(),
   });
 
   // 기간 설정
@@ -113,7 +114,7 @@ export default function Transactions() {
     }
 
     const input: TransactionInsert = {
-      transaction_date: new Date().toISOString().split("T")[0],
+      transaction_date: format(newTransaction.transaction_date, "yyyy-MM-dd"),
       description: newTransaction.description,
       amount: parseInt(newTransaction.amount),
       type: newTransaction.type,
@@ -130,6 +131,7 @@ export default function Transactions() {
           amount: "",
           source_type: "card",
           source_name: "",
+          transaction_date: new Date(),
         });
         setIsDialogOpen(false);
       },
@@ -392,6 +394,35 @@ export default function Transactions() {
                           <SelectItem value="expense">매입/지출</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">거래 날짜</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full h-10 justify-start text-left font-normal",
+                              !newTransaction.transaction_date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {format(newTransaction.transaction_date, "yyyy년 M월 d일", { locale: ko })}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={newTransaction.transaction_date}
+                            onSelect={(date) => {
+                              if (date) setNewTransaction({ ...newTransaction, transaction_date: date });
+                            }}
+                            locale={ko}
+                            disabled={(date) => date > new Date()}
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-sm">거래처/내용</Label>
