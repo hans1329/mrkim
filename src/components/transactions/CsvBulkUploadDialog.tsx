@@ -17,9 +17,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Download, X } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Download, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useBulkAddTransactions, type TransactionInsert } from "@/hooks/useTransactions";
+import { useBulkAddTransactions, type TransactionInsert, type BulkUploadProgress } from "@/hooks/useTransactions";
 import { cn } from "@/lib/utils";
 
 interface ParsedRow {
@@ -109,8 +110,9 @@ export function CsvBulkUploadDialog() {
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [fileName, setFileName] = useState("");
   const [defaultType, setDefaultType] = useState<"income" | "expense">("expense");
+  const [uploadProgress, setUploadProgress] = useState<BulkUploadProgress | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const bulkAdd = useBulkAddTransactions();
+  const bulkAdd = useBulkAddTransactions(setUploadProgress);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -215,11 +217,13 @@ export function CsvBulkUploadDialog() {
           ? `${result.inserted}건 등록, ${result.skipped}건 중복 스킵`
           : `${result.inserted}건의 거래가 등록되었습니다`;
         toast.success(msg);
+        setUploadProgress(null);
         setParsedRows([]);
         setFileName("");
         setOpen(false);
       },
       onError: (error) => {
+        setUploadProgress(null);
         toast.error(error.message || "벌크 등록에 실패했습니다");
       },
     });
@@ -364,14 +368,29 @@ export function CsvBulkUploadDialog() {
           )}
         </div>
 
+        {/* 진행 상태 */}
+        {uploadProgress && (
+          <div className="space-y-2 mt-2 p-3 rounded-lg bg-muted/50 border">
+            <div className="flex items-center gap-2 text-sm">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span className="font-medium">
+                {uploadProgress.phase === "dedup" && "중복 체크 중..."}
+                {uploadProgress.phase === "uploading" && `업로드 중... ${uploadProgress.current.toLocaleString()} / ${uploadProgress.total.toLocaleString()}건`}
+                {uploadProgress.phase === "refreshing" && "데이터 갱신 중..."}
+              </span>
+            </div>
+            <Progress value={uploadProgress.phase === "dedup" ? 15 : uploadProgress.phase === "refreshing" ? 100 : uploadProgress.percent} className="h-2" />
+          </div>
+        )}
+
         {/* 등록 버튼 */}
-        {validRows.length > 0 && (
+        {validRows.length > 0 && !uploadProgress && (
           <Button
             onClick={handleUpload}
             disabled={bulkAdd.isPending}
             className="w-full h-11 mt-2"
           >
-            {bulkAdd.isPending ? "등록 중..." : `${validRows.length}건 일괄 등록`}
+            {`${validRows.length}건 일괄 등록`}
           </Button>
         )}
       </DialogContent>
