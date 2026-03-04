@@ -110,6 +110,7 @@ export function CsvBulkUploadDialog() {
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [fileName, setFileName] = useState("");
   const [defaultType, setDefaultType] = useState<"income" | "expense">("expense");
+  const [isParsing, setIsParsing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<BulkUploadProgress | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const bulkAdd = useBulkAddTransactions(setUploadProgress);
@@ -118,11 +119,16 @@ export function CsvBulkUploadDialog() {
     const file = e.target.files?.[0];
     if (!file) return;
     setFileName(file.name);
+    setIsParsing(true);
 
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
-      processCSV(text);
+      // 대용량 파일 파싱 시 UI 블로킹 방지
+      setTimeout(() => {
+        processCSV(text);
+        setIsParsing(false);
+      }, 50);
     };
     reader.readAsText(file, "UTF-8");
   };
@@ -311,8 +317,16 @@ export function CsvBulkUploadDialog() {
             </div>
           )}
 
+          {/* 파싱 로딩 */}
+          {isParsing && (
+            <div className="flex items-center gap-2 p-4 rounded-lg bg-muted/50 border">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">CSV 파일 분석 중...</span>
+            </div>
+          )}
+
           {/* 파싱 결과 미리보기 */}
-          {parsedRows.length > 0 && (
+          {!isParsing && parsedRows.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="text-xs gap-1">
