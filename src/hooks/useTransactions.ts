@@ -202,6 +202,55 @@ export function useAddTransaction() {
   });
 }
 
+export function useBulkAddTransactions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (inputs: TransactionInsert[]) => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("로그인이 필요합니다");
+
+      const rows = inputs.map((input) => {
+        let finalInput = { ...input };
+        if (!input.is_manually_classified && !input.category) {
+          if (input.type === "expense") {
+            const classification = classifyTransaction(input.description);
+            finalInput = {
+              ...finalInput,
+              category: classification.category,
+              sub_category: classification.subCategory,
+              category_icon: classification.icon,
+              classification_confidence: classification.confidence,
+            };
+          } else {
+            const incomeResult = classifyIncomeTransaction(input.description);
+            finalInput = {
+              ...finalInput,
+              category: incomeResult.incomeCategory,
+              category_icon: incomeResult.icon,
+              classification_confidence: incomeResult.confidence,
+            };
+          }
+        }
+        return { ...finalInput, user_id: userData.user!.id, source_type: input.source_type || "card" };
+      });
+
+      const { data, error } = await supabase
+        .from("transactions")
+        .insert(rows)
+        .select();
+
+      if (error) throw error;
+      return { inserted: data?.length || 0 };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["transaction-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-recent-transactions"] });
+    },
+  });
+}
+
 export function useUpdateTransaction() {
   const queryClient = useQueryClient();
 
