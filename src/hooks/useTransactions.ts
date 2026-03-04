@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { classifyTransaction } from "@/lib/transactionClassifier";
+import { classifyTransaction, classifyIncomeTransaction } from "@/lib/transactionClassifier";
 
 export interface Transaction {
   id: string;
@@ -245,9 +245,11 @@ export function useClassifyTransactions() {
   return useMutation({
     mutationFn: async (transactionIds?: string[]) => {
       // 미분류 또는 기타비용으로 분류된 거래 조회 (수동 분류 제외)
+      // 지출 거래만 분류 대상 (매출/입금은 비용 분류 대상이 아님)
       let query = supabase
         .from("transactions")
-        .select("id, description")
+        .select("id, description, type")
+        .eq("type", "expense")
         .or("category.is.null,category.eq.기타비용")
         .neq("is_manually_classified", true);
 
