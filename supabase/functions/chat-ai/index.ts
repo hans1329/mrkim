@@ -568,7 +568,25 @@ function classifyByKeyword(text: string, dbKeywords: { intent: string; keywords:
     }
   }
 
-  // 2차: 기간 키워드 + 조회 동사 (구어체 포함) - 폴백
+  // 2차: 금융 키워드 직접 매칭 (기간 불필요)
+  // 손익/매출/지출 등 명확한 금융 키워드는 기간 없이도 데이터 조회
+  if (/손익|순이익|이익|적자|흑자|수익|마진|영업이익|순수익/.test(t)) {
+    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" } };
+  }
+  if (/매출|매입|매상|장사|벌이|벌었|팔았|팔린|판매/.test(t)) {
+    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" } };
+  }
+  if (/지출|경비|비용|소비|결제|카드값|출금/.test(t)) {
+    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" } };
+  }
+  if (/급여|월급|인건비|급료|페이/.test(t)) {
+    return { needsData: true, dataSource: "employee", requiresConnection: null };
+  }
+  if (/세금계산서|세계서|부가세|부가가치세|매출세액|매입세액/.test(t)) {
+    return { needsData: true, dataSource: "tax_invoice", requiresConnection: "hometax", timePeriod: timePeriod || { type: "month" } };
+  }
+
+  // 3차: 기간 키워드 + 조회 동사 (구어체 포함) - 폴백
   if (timePeriod && /얼마|얼만큼|어때|어떻게|알려|보여|확인|맞아|맞냐|괜찮|잘\s*[됐된돼]|좋았/.test(t)) {
     return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod };
   }
