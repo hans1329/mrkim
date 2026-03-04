@@ -173,14 +173,24 @@ export function useAddTransaction() {
       // 자동 분류 적용 (수동 분류가 아닌 경우)
       let finalInput = { ...input };
       if (!input.is_manually_classified && !input.category) {
-        const classification = classifyTransaction(input.description);
-        finalInput = {
-          ...finalInput,
-          category: classification.category,
-          sub_category: classification.subCategory,
-          category_icon: classification.icon,
-          classification_confidence: classification.confidence,
-        };
+        if (input.type === "expense") {
+          const classification = classifyTransaction(input.description);
+          finalInput = {
+            ...finalInput,
+            category: classification.category,
+            sub_category: classification.subCategory,
+            category_icon: classification.icon,
+            classification_confidence: classification.confidence,
+          };
+        } else {
+          const incomeResult = classifyIncomeTransaction(input.description);
+          finalInput = {
+            ...finalInput,
+            category: incomeResult.incomeCategory,
+            category_icon: incomeResult.icon,
+            classification_confidence: incomeResult.confidence,
+          };
+        }
       }
 
       const { data, error } = await supabase
@@ -198,6 +208,9 @@ export function useAddTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["transaction-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-recent-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-weekly-chart"] });
     },
   });
 }
