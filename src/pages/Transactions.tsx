@@ -20,6 +20,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -28,12 +39,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, PlusCircle, CalendarIcon } from "lucide-react";
+import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, PlusCircle, CalendarIcon, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { cn } from "@/lib/utils";
 import { TransactionClassifier } from "@/components/transactions/TransactionClassifier";
-import { useTransactions, useTransactionStats, useAddTransaction, type TransactionInsert } from "@/hooks/useTransactions";
+import { useTransactions, useTransactionStats, useAddTransaction, useDeleteTransaction, type TransactionInsert } from "@/hooks/useTransactions";
 import { useCardSync } from "@/hooks/useCardSync";
 import { useBankSync } from "@/hooks/useBankSync";
 import { useConnection } from "@/contexts/ConnectionContext";
@@ -91,6 +102,7 @@ export default function Transactions() {
   });
   const { profile, cardConnected, accountConnected } = useConnection();
   const addTransaction = useAddTransaction();
+  const deleteTransaction = useDeleteTransaction();
   const cardSync = useCardSync();
   const bankSync = useBankSync();
 
@@ -562,13 +574,49 @@ export default function Transactions() {
                         </div>
                       </div>
                     </div>
-                    <p className={cn(
-                      "font-semibold text-[13px] shrink-0 ml-2 tabular-nums",
-                      (transaction.type === "income" || transaction.type === "transfer_in") ? "text-green-600" : "text-red-600"
-                    )}>
-                      {(transaction.type === "income" || transaction.type === "transfer_in") ? "+" : "-"}
-                      {formatCurrency(transaction.amount)}
-                    </p>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      <p className={cn(
+                        "font-semibold text-[13px] tabular-nums",
+                        (transaction.type === "income" || transaction.type === "transfer_in") ? "text-green-600" : "text-red-600"
+                      )}>
+                        {(transaction.type === "income" || transaction.type === "transfer_in") ? "+" : "-"}
+                        {formatCurrency(transaction.amount)}
+                      </p>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>거래 삭제</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              "{transaction.description}" ({formatCurrency(transaction.amount)}) 거래를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>취소</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => {
+                                deleteTransaction.mutate(transaction.id, {
+                                  onSuccess: () => toast.success("거래가 삭제되었습니다"),
+                                  onError: () => toast.error("삭제에 실패했습니다"),
+                                });
+                              }}
+                            >
+                              삭제
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 ))}
               </CardContent>
