@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,10 +56,14 @@ import { format, subMonths } from "date-fns";
 import { ko } from "date-fns/locale";
 
 export default function Transactions() {
+  const PAGE_SIZE = 50;
   const [filter, setFilter] = useState<"all" | "income" | "expense">("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "card" | "bank">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteTargetLabel, setDeleteTargetLabel] = useState("");
   const [newTransaction, setNewTransaction] = useState({
     type: "income" as "income" | "expense",
     description: "",
@@ -157,6 +161,19 @@ export default function Transactions() {
   const isEmpty = !isLoading && (!transactions || transactions.length === 0);
   const isCardConnected = cardConnected;
   const isAccountConnected = accountConnected;
+
+  const visibleTransactions = useMemo(() => 
+    transactions?.slice(0, visibleCount) ?? [], 
+    [transactions, visibleCount]
+  );
+  const hasMore = (transactions?.length ?? 0) > visibleCount;
+
+  const handleLoadMore = useCallback(() => {
+    setVisibleCount((prev) => prev + PAGE_SIZE);
+  }, []);
+
+  // 필터 변경 시 페이지네이션 리셋
+  const resetPagination = useCallback(() => setVisibleCount(PAGE_SIZE), []);
 
   return (
     <MainLayout title="매출/매입" subtitle="거래 내역을 관리하세요" showBackButton>
@@ -360,7 +377,7 @@ export default function Transactions() {
               />
             </div>
             <div className="flex gap-1.5">
-              <Select value={filter} onValueChange={(value: "all" | "income" | "expense") => setFilter(value)}>
+              <Select value={filter} onValueChange={(value: "all" | "income" | "expense") => { setFilter(value); resetPagination(); }}>
                 <SelectTrigger className="flex-1 h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -370,7 +387,7 @@ export default function Transactions() {
                   <SelectItem value="expense">지출</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={sourceFilter} onValueChange={(value: "all" | "card" | "bank") => setSourceFilter(value)}>
+              <Select value={sourceFilter} onValueChange={(value: "all" | "card" | "bank") => { setSourceFilter(value); resetPagination(); }}>
                 <SelectTrigger className="flex-1 h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -547,83 +564,105 @@ export default function Transactions() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="overflow-hidden">
-              <CardContent className="divide-y p-0">
-                {transactions?.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between px-3 py-2.5 active:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <div className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-full shrink-0",
-                        (transaction.type === "income" || transaction.type === "transfer_in") ? "bg-green-500/10" : "bg-red-500/10"
-                      )}>
-                        {transaction.category_icon ? (
-                          <span className="text-sm">{transaction.category_icon}</span>
-                        ) : (transaction.type === "income" || transaction.type === "transfer_in") ? (
-                          <TrendingUp className="h-3.5 w-3.5 text-green-600" />
-                        ) : (
-                          <TrendingDown className="h-3.5 w-3.5 text-red-600" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-[13px] leading-tight truncate">{transaction.description}</p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-[10px] text-muted-foreground truncate">{transaction.category || "미분류"}</span>
-                          <span className="text-[10px] text-muted-foreground/50">·</span>
-                          <span className="text-[10px] text-muted-foreground shrink-0">{transaction.transaction_date?.slice(5)}</span>
-                          <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 shrink-0 ml-0.5">
-                            {transaction.source_type === "card" ? "카드" : "계좌"}
-                          </Badge>
+            <>
+              <Card className="overflow-hidden">
+                <CardContent className="divide-y p-0">
+                  {visibleTransactions.map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between px-3 py-2.5 active:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className={cn(
+                          "flex h-8 w-8 items-center justify-center rounded-full shrink-0",
+                          (transaction.type === "income" || transaction.type === "transfer_in") ? "bg-green-500/10" : "bg-red-500/10"
+                        )}>
+                          {transaction.category_icon ? (
+                            <span className="text-sm">{transaction.category_icon}</span>
+                          ) : (transaction.type === "income" || transaction.type === "transfer_in") ? (
+                            <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                          ) : (
+                            <TrendingDown className="h-3.5 w-3.5 text-red-600" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-[13px] leading-tight truncate">{transaction.description}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-[10px] text-muted-foreground truncate">{transaction.category || "미분류"}</span>
+                            <span className="text-[10px] text-muted-foreground/50">·</span>
+                            <span className="text-[10px] text-muted-foreground shrink-0">{transaction.transaction_date?.slice(5)}</span>
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 shrink-0 ml-0.5">
+                              {transaction.source_type === "card" ? "카드" : "계좌"}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
+                      <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                        <p className={cn(
+                          "font-semibold text-[13px] tabular-nums",
+                          (transaction.type === "income" || transaction.type === "transfer_in") ? "text-green-600" : "text-red-600"
+                        )}>
+                          {(transaction.type === "income" || transaction.type === "transfer_in") ? "+" : "-"}
+                          {formatCurrency(transaction.amount)}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTargetId(transaction.id);
+                            setDeleteTargetLabel(`${transaction.description} (${formatCurrency(transaction.amount)})`);
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                      <p className={cn(
-                        "font-semibold text-[13px] tabular-nums",
-                        (transaction.type === "income" || transaction.type === "transfer_in") ? "text-green-600" : "text-red-600"
-                      )}>
-                        {(transaction.type === "income" || transaction.type === "transfer_in") ? "+" : "-"}
-                        {formatCurrency(transaction.amount)}
-                      </p>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>거래 삭제</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              "{transaction.description}" ({formatCurrency(transaction.amount)}) 거래를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>취소</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              onClick={() => {
-                                deleteTransaction.mutate(transaction.id, {
-                                  onSuccess: () => toast.success("거래가 삭제되었습니다"),
-                                  onError: () => toast.error("삭제에 실패했습니다"),
-                                });
-                              }}
-                            >
-                              삭제
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* 더 보기 / 건수 표시 */}
+              <div className="flex flex-col items-center gap-1.5 py-2">
+                <p className="text-[10px] text-muted-foreground">
+                  {visibleCount >= (transactions?.length ?? 0)
+                    ? `총 ${(transactions?.length ?? 0).toLocaleString()}건`
+                    : `${visibleCount.toLocaleString()} / ${(transactions?.length ?? 0).toLocaleString()}건`}
+                </p>
+                {hasMore && (
+                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleLoadMore}>
+                    더 보기 ({Math.min(PAGE_SIZE, (transactions?.length ?? 0) - visibleCount).toLocaleString()}건)
+                  </Button>
+                )}
+              </div>
+            </>
           )}
+
+          {/* 공유 삭제 다이얼로그 (1개만 렌더) */}
+          <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>거래 삭제</AlertDialogTitle>
+                <AlertDialogDescription>
+                  "{deleteTargetLabel}" 거래를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>취소</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => {
+                    if (deleteTargetId) {
+                      deleteTransaction.mutate(deleteTargetId, {
+                        onSuccess: () => { toast.success("거래가 삭제되었습니다"); setDeleteTargetId(null); },
+                        onError: () => toast.error("삭제에 실패했습니다"),
+                      });
+                    }
+                  }}
+                >
+                  삭제
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
 
         <TabsContent value="classify" className="mt-0">
