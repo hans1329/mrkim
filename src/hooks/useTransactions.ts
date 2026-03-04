@@ -68,36 +68,50 @@ export function useTransactions(filters?: TransactionFilters) {
   return useQuery({
     queryKey: ["transactions", filters],
     queryFn: async () => {
-      let query = supabase
-        .from("transactions")
-        .select("*")
-        .order("transaction_date", { ascending: false })
-        .order("transaction_time", { ascending: false, nullsFirst: true });
+      // Supabase 기본 1000건 제한 → 페이지네이션으로 전체 조회
+      const PAGE_SIZE = 1000;
+      let allData: Transaction[] = [];
+      let from = 0;
+      let hasMore = true;
 
-      if (filters?.type) {
-        query = query.eq("type", filters.type);
-      }
-      if (filters?.category) {
-        query = query.eq("category", filters.category);
-      }
-      if (filters?.sourceType) {
-        query = query.eq("source_type", filters.sourceType);
-      }
-      if (filters?.startDate) {
-        query = query.gte("transaction_date", filters.startDate);
-      }
-      if (filters?.endDate) {
-        query = query.lte("transaction_date", filters.endDate);
-      }
-      if (filters?.searchTerm) {
-        query = query.or(
-          `description.ilike.%${filters.searchTerm}%,merchant_name.ilike.%${filters.searchTerm}%`
-        );
+      while (hasMore) {
+        let query = supabase
+          .from("transactions")
+          .select("*")
+          .order("transaction_date", { ascending: false })
+          .order("transaction_time", { ascending: false, nullsFirst: true })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (filters?.type) {
+          query = query.eq("type", filters.type);
+        }
+        if (filters?.category) {
+          query = query.eq("category", filters.category);
+        }
+        if (filters?.sourceType) {
+          query = query.eq("source_type", filters.sourceType);
+        }
+        if (filters?.startDate) {
+          query = query.gte("transaction_date", filters.startDate);
+        }
+        if (filters?.endDate) {
+          query = query.lte("transaction_date", filters.endDate);
+        }
+        if (filters?.searchTerm) {
+          query = query.or(
+            `description.ilike.%${filters.searchTerm}%,merchant_name.ilike.%${filters.searchTerm}%`
+          );
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        allData = allData.concat(data as Transaction[]);
+        hasMore = (data?.length || 0) === PAGE_SIZE;
+        from += PAGE_SIZE;
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as Transaction[];
+      return allData;
     },
   });
 }
@@ -106,21 +120,34 @@ export function useTransactionStats(filters?: { startDate?: string; endDate?: st
   return useQuery({
     queryKey: ["transaction-stats", filters],
     queryFn: async () => {
-      let query = supabase
-        .from("transactions")
-        .select("type, amount, category, category_icon, transaction_date");
+      // 페이지네이션으로 전체 통계 데이터 조회
+      const PAGE_SIZE = 1000;
+      let allData: Pick<Transaction, "type" | "amount" | "category" | "category_icon" | "transaction_date">[] = [];
+      let from = 0;
+      let hasMore = true;
 
-      if (filters?.startDate) {
-        query = query.gte("transaction_date", filters.startDate);
+      while (hasMore) {
+        let query = supabase
+          .from("transactions")
+          .select("type, amount, category, category_icon, transaction_date")
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (filters?.startDate) {
+          query = query.gte("transaction_date", filters.startDate);
+        }
+        if (filters?.endDate) {
+          query = query.lte("transaction_date", filters.endDate);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        allData = allData.concat(data as any[]);
+        hasMore = (data?.length || 0) === PAGE_SIZE;
+        from += PAGE_SIZE;
       }
-      if (filters?.endDate) {
-        query = query.lte("transaction_date", filters.endDate);
-      }
 
-      const { data, error } = await query;
-      if (error) throw error;
-
-      const transactions = data as Pick<Transaction, "type" | "amount" | "category" | "category_icon" | "transaction_date">[];
+      const transactions = allData;
 
       // 데이터 기간 계산
       const dates = transactions.map((t) => t.transaction_date).filter(Boolean).sort();
@@ -248,18 +275,32 @@ export function useBulkAddTransactions() {
         return { ...finalInput, user_id: userData.user!.id, source_type: input.source_type || "card" };
       });
 
-      const { data, error } = await supabase
-        .from("transactions")
-        .insert(rows)
-        .select();
+      // 배치 처리: 500건씩 나눠서 삽입
+      const BATCH_SIZE = 500;
+      let totalInserted = 0;
 
-      if (error) throw error;
-      return { inserted: data?.length || 0 };
+      for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+        const batch = rows.slice(i, i + BATCH_SIZE);
+        const { data, error } = await supabase
+          .from("transactions")
+          .insert(batch)
+          .select("id");
+
+        if (error) throw new Error(`배치 ${Math.floor(i / BATCH_SIZE) + 1} 실패: ${error.message}`);
+        totalInserted += data?.length || 0;
+
+        // UI 스레드 양보
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+
+      return { inserted: totalInserted };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["transaction-stats"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-recent-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-weekly-chart"] });
     },
   });
 }
