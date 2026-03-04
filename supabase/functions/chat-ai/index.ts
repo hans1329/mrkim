@@ -822,6 +822,278 @@ function buildVisualization(dataSource: DataSource, data: any, question?: string
   }
 }
 
+// ============ 복합 질문 감지 ============
+
+function isComplexQuery(text: string): boolean {
+  const t = text.toLowerCase();
+  // 비교/대비/비율 패턴
+  if (/대비|비교|비율|대비해|비해|차이|변화|추이|증감|늘었|줄었|얼마나\s*(더|많|적)|vs|versus/.test(t)) return true;
+  // 2개 이상 데이터 소스 키워드 동시 존재
+  const sourceKeywords = [
+    { src: "transaction", re: /매출|매입|지출|수입|결제|거래|손익|이익/ },
+    { src: "employee", re: /직원|급여|월급|인건비|알바/ },
+    { src: "tax_invoice", re: /세금계산서|부가세|매출세액|매입세액/ },
+    { src: "deposit", re: /예치금|적립금|비상금/ },
+    { src: "savings", re: /저축|예금|적금|투자/ },
+    { src: "auto_transfer", re: /자동이체/ },
+  ];
+  const matched = sourceKeywords.filter(s => s.re.test(t));
+  if (matched.length >= 2) return true;
+  // 여러 기간 동시 언급
+  const periodCount = [/이번\s*달|이달|당월/, /지난\s*달|전월|저번/, /오늘/, /어제/, /이번\s*주/, /올해/]
+    .filter(r => r.test(t)).length;
+  if (periodCount >= 2) return true;
+  return false;
+}
+
+// ============ Gemini Tool Calling 도구 정의 ============
+
+const TOOL_DECLARATIONS = {
+  functionDeclarations: [
+    {
+      name: "get_transactions",
+      description: "지정 기간의 매출/지출 거래 내역을 조회합니다. 매출, 지출, 손익, 카테고리별 분석에 사용합니다.",
+      parameters: {
+        type: "object",
+        properties: {
+          period_type: {
+            type: "string",
+            enum: ["today", "yesterday", "week", "month", "last_month", "quarter", "year", "custom"],
+            description: "조회 기간 유형",
+          },
+          start_date: { type: "string", description: "custom일 때 시작일 (YYYY-MM-DD)" },
+          end_date: { type: "string", description: "custom일 때 종료일 (YYYY-MM-DD)" },
+        },
+        required: ["period_type"],
+      },
+    },
+    {
+      name: "get_employees",
+      description: "재직 중인 직원 목록과 급여 정보를 조회합니다.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+    {
+      name: "get_tax_invoices",
+      description: "지정 기간의 세금계산서(매출/매입) 현황을 조회합니다.",
+      parameters: {
+        type: "object",
+        properties: {
+          period_type: {
+            type: "string",
+            enum: ["today", "yesterday", "week", "month", "last_month", "quarter", "year", "custom"],
+            description: "조회 기간 유형",
+          },
+          start_date: { type: "string", description: "custom일 때 시작일 (YYYY-MM-DD)" },
+          end_date: { type: "string", description: "custom일 때 종료일 (YYYY-MM-DD)" },
+        },
+        required: ["period_type"],
+      },
+    },
+    {
+      name: "get_deposits",
+      description: "활성 예치금(부가세, 급여 적립금 등) 현황을 조회합니다.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+    {
+      name: "get_savings",
+      description: "저축/투자 계좌 현황을 조회합니다.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+    {
+      name: "get_auto_transfers",
+      description: "등록된 자동이체 규칙 목록을 조회합니다.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+  ],
+};
+
+// Tool call 실행
+async function executeToolCall(
+  fnName: string,
+  args: any,
+  userId: string,
+  authHeader: string,
+): Promise<string> {
+  try {
+    const timePeriod = args?.period_type ? {
+      type: args.period_type,
+      startDate: args.start_date,
+      endDate: args.end_date,
+    } : undefined;
+
+    switch (fnName) {
+      case "get_transactions": {
+        const data = await fetchTransactionData(userId, authHeader, timePeriod);
+        if (!data) return JSON.stringify({ error: "거래 데이터를 조회할 수 없습니다." });
+        return JSON.stringify(data);
+      }
+      case "get_employees": {
+        const data = await fetchEmployeeData(userId, authHeader);
+        if (!data) return JSON.stringify({ error: "직원 데이터를 조회할 수 없습니다." });
+        return JSON.stringify(data);
+      }
+      case "get_tax_invoices": {
+        const data = await fetchTaxInvoiceData(userId, authHeader, timePeriod);
+        if (!data) return JSON.stringify({ error: "세금계산서 데이터를 조회할 수 없습니다." });
+        return JSON.stringify(data);
+      }
+      case "get_deposits": {
+        const data = await fetchDepositData(userId, authHeader);
+        if (!data) return JSON.stringify({ error: "예치금 데이터를 조회할 수 없습니다." });
+        return JSON.stringify(data);
+      }
+      case "get_savings": {
+        const data = await fetchSavingsData(userId, authHeader);
+        if (!data) return JSON.stringify({ error: "저축 데이터를 조회할 수 없습니다." });
+        return JSON.stringify(data);
+      }
+      case "get_auto_transfers": {
+        const data = await fetchAutoTransferData(userId, authHeader);
+        if (!data) return JSON.stringify({ error: "자동이체 데이터를 조회할 수 없습니다." });
+        return JSON.stringify(data);
+      }
+      default:
+        return JSON.stringify({ error: `알 수 없는 함수: ${fnName}` });
+    }
+  } catch (e) {
+    console.error(`Tool execution error (${fnName}):`, e);
+    return JSON.stringify({ error: `${fnName} 실행 중 오류 발생` });
+  }
+}
+
+// 복합 질문 Tool Calling 파이프라인
+async function handleComplexQuery(
+  apiKey: string,
+  geminiMessages: any[],
+  lastMsg: string,
+  userId: string,
+  authHeader: string,
+  secretaryName: string,
+  genderDesc: string,
+  toneInst: string,
+  voiceMode: boolean,
+  voiceDataInst: string,
+): Promise<{ response: string; visualization?: Visualization | null; sources?: any }> {
+  const systemPrompt = `당신은 "${secretaryName}"입니다. 소상공인 사장님의 AI 경영 비서입니다.
+성별: ${genderDesc}
+
+## 말투 규칙 (반드시 준수!)
+${toneInst}
+
+## 핵심 역할
+사장님의 복합적인 경영 질문에 정확하게 답변합니다.
+필요한 데이터를 도구(function)를 사용하여 직접 조회한 후, 분석 결과를 전달합니다.
+
+## 중요 규칙
+- 반드시 도구를 호출하여 실제 데이터를 확인한 후 답변하세요
+- 데이터에 없는 숫자는 절대 만들지 마세요
+- 비교/비율 질문 시 양쪽 데이터를 모두 조회하세요
+- 금액은 만원 단위로 반올림하여 표현 (1만원 미만은 천원 단위)
+${voiceDataInst}`;
+
+  // 1단계: Gemini에게 도구와 함께 질문 전달
+  const contents = [
+    { role: "user", parts: [{ text: systemPrompt }] },
+    { role: "model", parts: [{ text: "네, 필요한 데이터를 도구로 조회하여 정확하게 답변하겠습니다." }] },
+    ...geminiMessages,
+  ];
+
+  await waitForSlot();
+  console.log("Complex query: calling Gemini with tools");
+  const apiUrl = GEMINI_API_URL_THINKING;
+  const firstResponse = await fetch(`${apiUrl}?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents,
+      tools: [TOOL_DECLARATIONS],
+      generationConfig: { ...GENERATION_CONFIG, maxOutputTokens: 8192 },
+      safetySettings: SAFETY_SETTINGS,
+    }),
+  });
+
+  if (!firstResponse.ok) {
+    const errText = await firstResponse.text();
+    console.error("Complex query Gemini error:", firstResponse.status, errText);
+    throw { status: firstResponse.status, body: errText };
+  }
+
+  const firstResult = await firstResponse.json();
+  const firstCandidate = firstResult.candidates?.[0];
+  const firstParts = firstCandidate?.content?.parts || [];
+
+  // 도구 호출이 없으면 일반 텍스트 응답 반환
+  const functionCalls = firstParts.filter((p: any) => p.functionCall);
+  if (functionCalls.length === 0) {
+    const textResponse = firstParts.find((p: any) => p.text)?.text || "데이터를 분석할 수 없습니다.";
+    return { response: textResponse };
+  }
+
+  // 2단계: 도구 실행 (병렬)
+  console.log(`Complex query: executing ${functionCalls.length} tool calls`);
+  const toolResults = await Promise.all(
+    functionCalls.map(async (part: any) => {
+      const { name, args } = part.functionCall;
+      console.log(`  Tool: ${name}`, JSON.stringify(args));
+      const result = await executeToolCall(name, args, userId, authHeader);
+      return { functionResponse: { name, response: { content: result } } };
+    })
+  );
+
+  // 3단계: 도구 결과를 Gemini에 피드백
+  const followUpContents = [
+    ...contents,
+    firstCandidate.content, // Gemini의 tool call 요청
+    { role: "user", parts: toolResults }, // 도구 결과
+  ];
+
+  await waitForSlot();
+  console.log("Complex query: calling Gemini with tool results");
+  const secondResponse = await fetch(`${apiUrl}?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: followUpContents,
+      generationConfig: GENERATION_CONFIG,
+      safetySettings: SAFETY_SETTINGS,
+    }),
+  });
+
+  if (!secondResponse.ok) {
+    const errText = await secondResponse.text();
+    console.error("Complex query 2nd Gemini error:", secondResponse.status, errText);
+    throw { status: secondResponse.status, body: errText };
+  }
+
+  const secondResult = await secondResponse.json();
+  const response = secondResult.candidates?.[0]?.content?.parts?.[0]?.text || "분석 결과를 생성하지 못했습니다.";
+
+  // 시각화: 첫 번째 tool call 결과 기반으로 생성
+  let visualization: Visualization | null = null;
+  if (functionCalls.length > 0) {
+    const firstToolName = functionCalls[0].functionCall.name;
+    const toolToSource: Record<string, DataSource> = {
+      get_transactions: "transaction",
+      get_employees: "employee",
+      get_tax_invoices: "tax_invoice",
+      get_deposits: "deposit",
+      get_savings: "savings",
+      get_auto_transfers: "auto_transfer",
+    };
+    const source = toolToSource[firstToolName];
+    if (source) {
+      try {
+        const parsedData = JSON.parse(toolResults[0].functionResponse.response.content);
+        if (!parsedData.error) {
+          visualization = buildVisualization(source, parsedData, lastMsg);
+        }
+      } catch { /* ignore */ }
+    }
+  }
+
+  return { response, visualization };
+}
+
 // ============ 일일 할당량 ============
 
 const DEFAULT_DAILY_LIMIT = 100;
@@ -934,6 +1206,27 @@ serve(async (req) => {
     const dbKeywords = await loadIntentKeywords(authHeader);
     const classified = classifyByKeyword(lastMsg, dbKeywords);
     console.log("Classification:", { needsData: classified.needsData, source: classified.dataSource, period: classified.timePeriod?.type });
+
+    // ━━━ Case 0: 복합 질문 → Tool Calling 파이프라인 ━━━
+    const complexQuery = isComplexQuery(lastMsg);
+    if (complexQuery && !voiceMode) {
+      console.log("Complex query detected → Tool Calling pipeline");
+      try {
+        const complexResult = await handleComplexQuery(
+          GEMINI_API_KEY, geminiMessages, lastMsg, userId, authHeader,
+          secretaryName, genderDesc, toneInst, voiceMode, voiceDataInst,
+        );
+        return new Response(JSON.stringify({
+          response: complexResult.response,
+          visualization: complexResult.visualization || null,
+          sources: complexResult.sources || null,
+          quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      } catch (toolErr: any) {
+        console.warn("Complex query fallback to simple pipeline:", toolErr?.status || toolErr);
+        // Tool calling 실패 시 기존 파이프라인으로 폴백
+      }
+    }
 
     // ━━━ Case 1: 데이터 불필요 → 자유 대화 ━━━
     if (!classified.needsData || !classified.dataSource) {
