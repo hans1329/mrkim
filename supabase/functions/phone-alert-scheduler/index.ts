@@ -6,14 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-/**
- * Phone Alert Scheduler
- * - Called every hour by pg_cron
- * - Checks which users have phone alerts enabled for the current KST hour
- * - Generates alert scripts based on configured items
- * - Triggers outbound calls via Twilio with the user's secretary voice
- */
-
 const ALERT_ITEM_LABELS: Record<string, string> = {
   tax_deadline: "세금 납부 마감",
   large_transaction: "대규모 입출금",
@@ -43,7 +35,7 @@ Deno.serve(async (req) => {
     const todayDayId = DAY_MAP[kstDay];
     const currentHourStr = String(kstHour);
 
-    console.log(`[phone-alert-scheduler] Running at KST hour=${kstHour}, day=${todayDayId}`);
+    console.log(`[phone-alert-scheduler] Running at KST hour=${kstHour}, day=${todayDayId} (UTC=${now.toISOString()})`);
 
     // 1. Find users with phone alerts enabled
     const { data: profiles, error: profilesErr } = await supabase
@@ -60,7 +52,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    let callsMade = 0;
+    console.log(`[phone-alert-scheduler] Found ${profiles.length} users with alerts enabled`);
+
+    // 2. Filter eligible users and build scripts SYNCHRONOUSLY (fast, no external calls)
+    const callTasks: Array<{ profile: any; script: string; isCustom: boolean }> = [];
 
     for (const profile of profiles) {
       try {
@@ -70,10 +65,7 @@ Deno.serve(async (req) => {
         const customTime = profile.phone_alert_custom_time || "";
         const customMessage = profile.phone_alert_custom_message || "";
 
-        // Check if current hour matches any standard alert time
         const isStandardAlertTime = alertTimes.includes(currentHourStr);
-
-        // Check if current hour/day matches custom alert
         const isCustomAlertTime =
           customMessage &&
           customTime === currentHourStr &&
@@ -81,11 +73,13 @@ Deno.serve(async (req) => {
 
         if (!isStandardAlertTime && !isCustomAlertTime) continue;
 
+        console.log(`[phone-alert-scheduler] User ${profile.user_id} matched: standard=${isStandardAlertTime}, custom=${isCustomAlertTime}`);
+
         const userName = profile.name || "사장님";
         const secretaryName = profile.secretary_name || "김비서";
         const scriptParts: string[] = [];
 
-        // Standard alerts
+        // Standard alerts - gather data
         if (isStandardAlertTime && alertItems.length > 0) {
           const alertData = await gatherAlertData(supabase, profile.user_id, alertItems);
           if (alertData.length > 0) {
@@ -109,31 +103,30 @@ Deno.serve(async (req) => {
         scriptParts.push("이상입니다. 좋은 하루 보내세요!");
         const script = scriptParts.join(" ");
 
-        // Trigger the outbound call
-        // secretary_phone을 phone 대신 사용
-        const callProfile = { ...profile, phone: profile.secretary_phone || profile.phone };
-        await makeOutboundCall(supabase, callProfile, script);
-        callsMade++;
-        console.log(`[phone-alert-scheduler] Call triggered for user ${profile.user_id}`);
-
-        // 1회만 모드: 커스텀 알림 발신 후 비활성화
-        if (isCustomAlertTime && profile.phone_alert_custom_repeat === false) {
-          await supabase
-            .from("profiles")
-            .update({
-              phone_alert_custom_message: null,
-              phone_alert_custom_days: null,
-              phone_alert_custom_time: null,
-            })
-            .eq("user_id", profile.user_id);
-          console.log(`[phone-alert-scheduler] One-time custom alert cleared for user ${profile.user_id}`);
-        }
+        callTasks.push({ profile, script, isCustom: isCustomAlertTime });
       } catch (userErr) {
-        console.error(`[phone-alert-scheduler] Error for user ${profile.user_id}:`, userErr);
+        console.error(`[phone-alert-scheduler] Error preparing user ${profile.user_id}:`, userErr);
       }
     }
 
-    return new Response(JSON.stringify({ processed: callsMade }), {
+    if (callTasks.length === 0) {
+      console.log("[phone-alert-scheduler] No eligible users for current time slot");
+      return new Response(JSON.stringify({ processed: 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log(`[phone-alert-scheduler] ${callTasks.length} calls to make, starting background processing`);
+
+    // 3. Return immediately, process calls in background
+    // @ts-ignore - EdgeRuntime.waitUntil is available in Supabase Edge Functions
+    EdgeRuntime.waitUntil(
+      processCallsInBackground(supabase, callTasks).catch((err) => {
+        console.error("[phone-alert-scheduler] Background processing error:", err);
+      })
+    );
+
+    return new Response(JSON.stringify({ processed: callTasks.length, status: "queued" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
@@ -144,6 +137,37 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+async function processCallsInBackground(
+  supabase: ReturnType<typeof createClient>,
+  callTasks: Array<{ profile: any; script: string; isCustom: boolean }>
+) {
+  for (const task of callTasks) {
+    try {
+      const callProfile = {
+        ...task.profile,
+        phone: task.profile.secretary_phone || task.profile.phone,
+      };
+      await makeOutboundCall(supabase, callProfile, task.script);
+      console.log(`[phone-alert-scheduler] Call completed for user ${task.profile.user_id}`);
+
+      // 1회만 모드: 커스텀 알림 발신 후 비활성화
+      if (task.isCustom && task.profile.phone_alert_custom_repeat === false) {
+        await supabase
+          .from("profiles")
+          .update({
+            phone_alert_custom_message: null,
+            phone_alert_custom_days: null,
+            phone_alert_custom_time: null,
+          })
+          .eq("user_id", task.profile.user_id);
+        console.log(`[phone-alert-scheduler] One-time custom alert cleared for user ${task.profile.user_id}`);
+      }
+    } catch (err) {
+      console.error(`[phone-alert-scheduler] Call failed for user ${task.profile.user_id}:`, err);
+    }
+  }
+}
 
 async function gatherAlertData(
   supabase: ReturnType<typeof createClient>,
@@ -159,18 +183,14 @@ async function gatherAlertData(
     try {
       switch (item) {
         case "large_transaction": {
-          // Check for large transactions in the last 24 hours
-          const yesterday = new Date(kstNow.getTime() - 24 * 60 * 60 * 1000)
-            .toISOString();
-          
-          // 사용자별 기준 금액 조회
+          const yesterday = new Date(kstNow.getTime() - 24 * 60 * 60 * 1000).toISOString();
           const { data: profileData } = await supabase
             .from("profiles")
             .select("large_transaction_threshold")
             .eq("user_id", userId)
             .single();
           const threshold = (profileData as any)?.large_transaction_threshold ?? 1000000;
-          
+
           const { data: txns } = await supabase
             .from("transactions")
             .select("amount, type, description")
@@ -194,7 +214,6 @@ async function gatherAlertData(
           break;
         }
         case "tax_deadline": {
-          // Check if tax deadline is approaching (매월 25일 부가세 등)
           const dayOfMonth = kstNow.getDate();
           if (dayOfMonth >= 20 && dayOfMonth <= 25) {
             parts.push("세금 납부 마감일이 다가오고 있습니다. 확인 부탁드립니다.");
@@ -202,7 +221,6 @@ async function gatherAlertData(
           break;
         }
         case "salary_reminder": {
-          // Check if salary day is approaching (usually 10th or 25th)
           const day = kstNow.getDate();
           if (day === 9 || day === 24) {
             const { count } = await supabase
@@ -217,7 +235,6 @@ async function gatherAlertData(
           break;
         }
         case "sales_spike": {
-          // Compare today's sales vs 7-day average
           const weekAgo = new Date(kstNow.getTime() - 7 * 24 * 60 * 60 * 1000)
             .toISOString()
             .split("T")[0];
@@ -239,13 +256,9 @@ async function gatherAlertData(
               : 0;
 
             if (avgDaily > 0 && todaySales > avgDaily * 1.5) {
-              parts.push(
-                `오늘 매출이 ${todaySales.toLocaleString()}원으로, 평균 대비 크게 증가했습니다.`
-              );
+              parts.push(`오늘 매출이 ${todaySales.toLocaleString()}원으로, 평균 대비 크게 증가했습니다.`);
             } else if (avgDaily > 0 && todaySales < avgDaily * 0.5 && todaySales > 0) {
-              parts.push(
-                `오늘 매출이 ${todaySales.toLocaleString()}원으로, 평균 대비 감소했습니다. 확인해보시기 바랍니다.`
-              );
+              parts.push(`오늘 매출이 ${todaySales.toLocaleString()}원으로, 평균 대비 감소했습니다. 확인해보시기 바랍니다.`);
             }
           }
           break;
@@ -275,13 +288,23 @@ async function makeOutboundCall(
 
   const voiceId = profile.secretary_voice_id || "uyVNoMrnUku1dZyVEXwD";
 
+  // Format phone number to E.164
+  let recipientPhone = (profile.phone || "").replace(/[^0-9+]/g, "");
+  if (recipientPhone.startsWith("0") && !recipientPhone.startsWith("+")) {
+    recipientPhone = "+82" + recipientPhone.slice(1);
+  } else if (!recipientPhone.startsWith("+")) {
+    recipientPhone = "+" + recipientPhone;
+  }
+
+  console.log(`[phone-alert-scheduler] Making call to ${recipientPhone} for user ${profile.user_id}`);
+
   // 1. Create call log
   const { data: callLog, error: logErr } = await supabase
     .from("ai_call_logs")
     .insert({
       user_id: profile.user_id,
       call_type: "scheduled_alert",
-      recipient_phone: profile.phone,
+      recipient_phone: recipientPhone,
       recipient_name: profile.name || null,
       script,
       status: "pending",
@@ -291,7 +314,7 @@ async function makeOutboundCall(
 
   if (logErr) throw logErr;
 
-  // 2. Generate TTS with user's secretary voice
+  // 2. Generate TTS
   const ttsResponse = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
     {
@@ -302,10 +325,11 @@ async function makeOutboundCall(
       },
       body: JSON.stringify({
         text: script,
-        model_id: "eleven_multilingual_v2",
+        model_id: "eleven_turbo_v2_5",
         voice_settings: {
           stability: 0.5,
           similarity_boost: 0.75,
+          use_speaker_boost: true,
         },
       }),
     }
@@ -337,7 +361,7 @@ async function makeOutboundCall(
   const twilioAuth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
 
   const formData = new URLSearchParams();
-  formData.append("To", profile.phone);
+  formData.append("To", recipientPhone);
   formData.append("From", twilioPhoneNumber);
   formData.append("Twiml", twiml);
 
