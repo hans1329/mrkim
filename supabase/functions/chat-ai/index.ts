@@ -884,12 +884,14 @@ serve(async (req) => {
       fetchSyncMetadata(userId, authHeader, classified.dataSource),
     ]);
 
-    // 실제 데이터가 없을 때만 연동 상태 확인 (CSV 수동 등록 데이터가 있으면 연동 체크 스킵)
+    // 데이터 조회 결과 확인: result가 null이 아니면 쿼리 자체는 성공한 것
+    // → 해당 기간에 0건이어도 연동 안내 불필요 (과거 데이터 또는 CSV 업로드 데이터 존재)
     const hasData = result && hasActualData(classified.dataSource, result.data);
-    if (!hasData && classified.requiresConnection) {
+    if (!result && classified.requiresConnection) {
       const connStatus = await checkConnectionStatus(userId, authHeader);
       const missingSource = checkConnectionForSource(classified.requiresConnection, connStatus);
       if (missingSource) {
+        console.log("Connection required:", missingSource);
         return new Response(
           JSON.stringify({ response: buildConnectionRequiredResponse(missingSource, voiceMode), requiresConnection: true, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }),
         );
