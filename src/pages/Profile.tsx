@@ -417,11 +417,11 @@ export default function Profile() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">닉네임</Label>
+                  <Label className="text-xs">커뮤니티용 별명</Label>
                   <Input 
                     value={nickname} 
                     onChange={(e) => setNickname(e.target.value)}
-                    placeholder="앱에서 표시될 이름"
+                    placeholder="커뮤니티에서 사용할 별명"
                     className="h-9"
                   />
                 </div>
@@ -453,7 +453,7 @@ export default function Profile() {
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between py-1.5">
-                  <span className="text-xs text-muted-foreground">닉네임</span>
+                  <span className="text-xs text-muted-foreground">커뮤니티용 별명</span>
                   <span className="text-sm">{profile.nickname || "미등록"}</span>
                 </div>
               </div>
