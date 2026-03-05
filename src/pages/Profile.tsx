@@ -474,7 +474,7 @@ export default function Profile() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bot className="h-4 w-4 text-primary" />
-                <CardTitle className="text-sm">김비서 연락 번호</CardTitle>
+                <CardTitle className="text-sm">김비서 연락받을 내 번호</CardTitle>
               </div>
               {profile.secretary_phone_verified && (
                 <Badge variant="secondary" className="gap-1 bg-green-100 text-green-700 text-xs">
