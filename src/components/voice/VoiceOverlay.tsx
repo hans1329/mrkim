@@ -273,8 +273,12 @@ export function VoiceOverlay() {
                   ) : (
                     <Sparkles className="h-12 w-12 animate-pulse" />
                   )
-                ) : isListening ? (
-                  <Mic className="h-12 w-12" />
+              ) : isListening ? (
+                  secretaryAvatarUrl ? (
+                    <img src={secretaryAvatarUrl} alt={secretaryName} className="h-full w-full rounded-full object-cover" />
+                  ) : (
+                    <Mic className="h-12 w-12" />
+                  )
                 ) : secretaryAvatarUrl ? (
                   <img src={secretaryAvatarUrl} alt={secretaryName} className="h-full w-full rounded-full object-cover" />
                 ) : (
