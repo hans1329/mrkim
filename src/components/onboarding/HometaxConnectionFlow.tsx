@@ -31,10 +31,14 @@ interface BusinessInfo {
 }
 
 export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionFlowProps) {
-  const [step, setStep] = useState<"input" | "verifying" | "confirmed">("input");
+  const { refetch: refetchProfile, connectService, hometaxConnected, profile } = useConnection();
+  
+  // 이미 연동된 경우 "already" 상태로 시작
+  const [step, setStep] = useState<"already" | "input" | "verifying" | "confirmed">(
+    hometaxConnected ? "already" : "input"
+  );
   const [businessNumber, setBusinessNumber] = useState("");
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo | null>(null);
-  const { refetch: refetchProfile, connectService } = useConnection();
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -131,6 +135,55 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
           <p className="text-sm text-muted-foreground">사업자등록번호로 연동합니다</p>
         </div>
       </div>
+
+      {/* Step: Already connected */}
+      {step === "already" && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          <div className="flex justify-center mb-4">
+            <div className="h-14 w-14 rounded-full bg-green-500/10 flex items-center justify-center">
+              <CheckCircle2 className="h-8 w-8 text-green-500" />
+            </div>
+          </div>
+
+          <div className="text-center mb-2">
+            <p className="text-lg font-bold">이미 연동되어 있습니다</p>
+            <p className="text-sm text-muted-foreground">국세청 연동이 완료된 상태입니다</p>
+          </div>
+
+          {profile?.business_registration_number && (
+            <div className="bg-muted/50 rounded-xl p-4 space-y-3">
+              {profile.business_name && (
+                <InfoRow label="사업장명" value={profile.business_name} highlight />
+              )}
+              <InfoRow 
+                label="사업자등록번호" 
+                value={formatBusinessNumber(profile.business_registration_number)} 
+              />
+              {profile.business_type && (
+                <InfoRow label="업종" value={profile.business_type} />
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2 pt-2">
+            <Button onClick={onBack} size="lg" className="w-full">
+              확인
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setStep("input")}
+              className="text-muted-foreground"
+            >
+              다른 사업자번호로 재연동
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Step: Input */}
       {step === "input" && (
