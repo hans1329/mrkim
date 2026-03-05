@@ -410,6 +410,11 @@ export function useAIChat() {
     setShowSessionList(false);
   }, []);
 
+  // 외부에서 데이터 새로고침 (음성→텍스트 전환 등)
+  const refresh = useCallback(async () => {
+    await Promise.all([loadSessions(), loadTodayMessages(), loadQuota()]);
+  }, [loadSessions, loadTodayMessages, loadQuota]);
+
   return {
     messages,
     sessions,
@@ -428,5 +433,6 @@ export function useAIChat() {
     secretaryAvatarUrl,
     getPlaceholderText,
     quota,
+    refresh,
   };
 }
