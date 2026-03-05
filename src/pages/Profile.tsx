@@ -456,13 +456,6 @@ export default function Profile() {
                   <span className="text-xs text-muted-foreground">닉네임</span>
                   <span className="text-sm">{profile.nickname || "미등록"}</span>
                 </div>
-                <Separator />
-                <div className="flex items-center justify-between py-1.5">
-                  <span className="text-xs text-muted-foreground">휴대폰</span>
-                  <span className="text-sm">
-                    {profile.phone?.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3") || "미등록"}
-                  </span>
-                </div>
               </div>
             )}
           </CardContent>
