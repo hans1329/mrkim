@@ -338,7 +338,6 @@ export function useElevenLabsConversation() {
     try {
       await conversation.endSession();
     } finally {
-      // Ideally onDisconnect resets endingRef. As a fallback, clear it after a short delay.
       setTimeout(() => {
         endingRef.current = false;
       }, 1500);
@@ -346,6 +345,35 @@ export function useElevenLabsConversation() {
 
     setMessages([]);
     hasStartedRef.current = false;
+  }, [conversation]);
+
+  // iOS Safari: 브라우저/탭 닫힐 때 세션 강제 종료
+  useEffect(() => {
+    const handlePageHide = () => {
+      if (hasStartedRef.current) {
+        endingRef.current = true;
+        try { conversation.endSession(); } catch {}
+        hasStartedRef.current = false;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden" && hasStartedRef.current) {
+        endingRef.current = true;
+        try { conversation.endSession(); } catch {}
+        hasStartedRef.current = false;
+      }
+    };
+
+    window.addEventListener("pagehide", handlePageHide);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handlePageHide);
+
+    return () => {
+      window.removeEventListener("pagehide", handlePageHide);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handlePageHide);
+    };
   }, [conversation]);
 
   const resetPermission = useCallback(() => {
