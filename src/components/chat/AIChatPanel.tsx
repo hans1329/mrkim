@@ -64,6 +64,7 @@ export function AIChatPanel() {
     secretaryAvatarUrl,
     getPlaceholderText,
     quota,
+    refresh,
   } = useAIChat();
   const [input, setInput] = useState("");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -78,9 +79,17 @@ export function AIChatPanel() {
     }
   };
 
+  // 패널이 열릴 때마다 데이터 새로고침 (음성→텍스트 전환 시 동기화)
+  const prevOpenRef = useRef(false);
+  useEffect(() => {
+    if (isOpen && !prevOpenRef.current) {
+      refresh();
+    }
+    prevOpenRef.current = isOpen;
+  }, [isOpen, refresh]);
+
   useEffect(() => {
     if (isOpen) {
-      // 약간의 딜레이를 줘서 DOM 업데이트 후 스크롤
       setTimeout(scrollToBottom, 50);
     }
   }, [messages, isOpen]);
