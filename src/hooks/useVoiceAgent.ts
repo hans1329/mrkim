@@ -209,7 +209,7 @@ export function useVoiceAgent() {
   const overrides = useMemo(() => ({
     agent: {
       prompt: { prompt: systemPrompt },
-      firstMessage,
+      firstMessage: "",
       language: "ko",
     },
     tts: {
@@ -218,7 +218,7 @@ export function useVoiceAgent() {
       stability: 0.7,
       similarity_boost: 0.8,
     },
-  }), [firstMessage, systemPrompt, voiceId]);
+  }), [systemPrompt, voiceId]);
 
   // --- 할당량 로드 ---
   const loadQuota = useCallback(async () => {
@@ -353,20 +353,12 @@ export function useVoiceAgent() {
     isConnectingRef.current = false;
     interruptedRef.current = false;
     setLastError(null);
-    waitingFirstMessageRef.current = true;
-    setVoiceStatus("speaking");
+    waitingFirstMessageRef.current = false;
+    setVoiceStatus("listening");
     sessionActiveRef.current = true;
 
-    // 콜드스타트 인사말 깨짐 방지:
-    // 연결 직후 볼륨을 0에서 시작해 점진적으로 fade-in
-    // (WebRTC 재연결 직후 오디오 컨텍스트가 불안정할 때 깨짐 현상 방지)
-    try { conversationRef.current?.setVolume({ volume: 0 }); } catch (_) {}
-    setTimeout(() => {
-      try { conversationRef.current?.setVolume({ volume: 0.3 }); } catch (_) {}
-    }, 150);
-    setTimeout(() => {
-      try { conversationRef.current?.setVolume({ volume: volumeRef.current }); } catch (_) {}
-    }, 350);
+    // 볼륨을 즉시 정상 레벨로 설정
+    try { conversationRef.current?.setVolume({ volume: volumeRef.current }); } catch (_) {}
   }, []);
 
   const handleDisconnect = useCallback((details: any) => {

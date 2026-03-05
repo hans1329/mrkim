@@ -243,8 +243,17 @@ export function VoiceOverlay() {
                     : "bg-white/20 text-white hover:bg-white/30 hover:scale-105 active:scale-100"
                 )}
               >
-                {isConnecting ? (
-                  <Loader2 className="h-12 w-12 animate-spin opacity-70" />
+              {isConnecting ? (
+                  secretaryAvatarUrl ? (
+                    <div className="relative h-full w-full">
+                      <img src={secretaryAvatarUrl} alt={secretaryName} className="h-full w-full rounded-full object-cover opacity-80" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-white drop-shadow-lg" />
+                      </div>
+                    </div>
+                  ) : (
+                    <Loader2 className="h-12 w-12 animate-spin opacity-70" />
+                  )
                 ) : isProcessing ? (
                   secretaryAvatarUrl ? (
                     <div className="relative h-full w-full">
