@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     // 1. Find users with phone alerts enabled
     const { data: profiles, error: profilesErr } = await supabase
       .from("profiles")
-      .select("user_id, name, secretary_name, secretary_voice_id, phone, secretary_phone, phone_alert_enabled, phone_alert_items, phone_alert_times, phone_alert_custom_message, phone_alert_custom_days, phone_alert_custom_time, phone_alert_custom_repeat")
+      .select("user_id, name, secretary_name, secretary_voice_id, phone, secretary_phone, phone_alert_enabled, phone_alert_items, phone_alert_times, phone_alert_custom_message, phone_alert_custom_days, phone_alert_custom_time, phone_alert_custom_repeat, salary_day, salary_reminder_days")
       .eq("phone_alert_enabled", true)
       .not("secretary_phone", "is", null);
 
@@ -222,13 +222,14 @@ async function gatherAlertData(
         }
         case "salary_reminder": {
           const day = kstNow.getDate();
-          // 사용자별 기본 급여일 조회
+          // 사용자별 기본 급여일 & 리마인드 일수 조회
           const { data: salaryProfile } = await supabase
             .from("profiles")
-            .select("salary_day")
+            .select("salary_day, salary_reminder_days")
             .eq("user_id", userId)
             .single();
           const defaultSalaryDay = (salaryProfile as any)?.salary_day || 10;
+          const reminderDays = (salaryProfile as any)?.salary_reminder_days || 1;
 
           // 직원별 급여일 조회 (개별 설정 or 기본값)
           const { data: empList } = await supabase
@@ -238,15 +239,16 @@ async function gatherAlertData(
             .eq("status", "재직");
 
           if (empList && empList.length > 0) {
-            // 내일이 급여일인 직원 필터
-            const tomorrow = day + 1 > 28 ? 1 : day + 1; // 간소화
+            // reminderDays일 후가 급여일인 직원 필터
+            const targetDay = day + reminderDays;
             const dueEmployees = empList.filter((e: any) => {
               const empDay = e.salary_day || defaultSalaryDay;
-              return empDay === tomorrow;
+              return empDay === targetDay || (targetDay > 28 && empDay === targetDay - 28);
             });
 
             if (dueEmployees.length > 0) {
-              parts.push(`내일은 급여일입니다. ${dueEmployees.length}명의 급여 지급을 준비해주세요.`);
+              const daysText = reminderDays === 1 ? "내일" : `${reminderDays}일 후`;
+              parts.push(`${daysText}은 급여일입니다. ${dueEmployees.length}명의 급여 지급을 준비해주세요.`);
             }
           }
           break;
