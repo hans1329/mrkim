@@ -345,30 +345,41 @@ async function fetchEmployeeData(userId: string, authHeader: string) {
     const sb = createSupabaseClient(authHeader);
     if (!sb || !userId) return null;
     const { data: emps, error } = await sb.from("employees")
-      .select("name, employee_type, monthly_salary, hourly_rate, weekly_hours, position, status, insurance_national_pension, insurance_health, insurance_employment, insurance_industrial")
+      .select("name, employee_type, monthly_salary, hourly_rate, weekly_hours, position, status, salary_day, insurance_national_pension, insurance_health, insurance_employment, insurance_industrial")
       .eq("user_id", userId).eq("status", "재직");
     if (error || !emps) return null;
-    console.log(`Found ${emps.length} active employees`);
+
+    // 기본 급여일 조회
+    const { data: profileData } = await sb.from("profiles")
+      .select("salary_day").eq("user_id", userId).single();
+    const defaultSalaryDay = (profileData as any)?.salary_day || 10;
+
+    console.log(`Found ${emps.length} active employees, default salary day: ${defaultSalaryDay}`);
     let totalSalary = 0;
     const employees = emps.map(emp => {
       let salary = 0;
       if (emp.monthly_salary) { salary = emp.monthly_salary; }
       else if (emp.hourly_rate && emp.weekly_hours) { salary = Math.round(emp.hourly_rate * emp.weekly_hours * 4.345); }
       totalSalary += salary;
-      return { name: emp.name, type: emp.employee_type, salary, position: emp.position };
+      return { name: emp.name, type: emp.employee_type, salary, position: emp.position, salaryDay: (emp as any).salary_day || defaultSalaryDay };
     });
-    return { totalSalary, employees, count: emps.length };
+    return { totalSalary, employees, count: emps.length, defaultSalaryDay };
   } catch (e) { console.error("fetchEmployeeData error:", e); return null; }
 }
 
 function formatEmployeePrompt(data: any): string {
   let p = `\n\n## 📊 직원 급여 현황\n`;
   p += `- **재직 중인 직원**: ${data.count}명\n- **이번 달 예상 총 급여**: ${fmt(data.totalSalary)}원\n`;
+  p += `- **기본 급여 지급일**: 매월 ${data.defaultSalaryDay}일\n`;
   if (data.employees.length > 0) {
     p += `\n### 직원별 급여\n`;
-    for (const emp of data.employees) p += `- ${emp.name} (${emp.type}${emp.position ? `, ${emp.position}` : ""}): ${fmt(emp.salary)}원/월\n`;
+    for (const emp of data.employees) {
+      const dayInfo = emp.salaryDay !== data.defaultSalaryDay ? ` (급여일: ${emp.salaryDay}일)` : "";
+      p += `- ${emp.name} (${emp.type}${emp.position ? `, ${emp.position}` : ""}): ${fmt(emp.salary)}원/월${dayInfo}\n`;
+    }
   }
   p += `\n이 달에 **지급 예정인 금액**으로 안내하세요. 과거형("지출된", "사용된")이 아닌 미래/현재형("지급 예정", "나가야 할")으로 표현하세요.`;
+  p += `\n급여일 질문 시 기본 급여일과 개별 급여일을 구분하여 안내하세요.`;
   return p;
 }
 
