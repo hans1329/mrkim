@@ -109,7 +109,7 @@ export default function Employees() {
 
   // 급여일 설정
   const { profile, updateProfile } = useProfile();
-  const [salaryDay, setSalaryDay] = useState<number>(10);
+  const [salaryDay, setSalaryDay] = useState<number | string>(10);
 
   useEffect(() => {
     if (profile?.salary_day) {
@@ -118,7 +118,8 @@ export default function Employees() {
   }, [profile?.salary_day]);
 
   const handleSalaryDayBlur = async () => {
-    const clamped = Math.min(31, Math.max(1, salaryDay));
+    const num = typeof salaryDay === 'string' ? parseInt(salaryDay) : salaryDay;
+    const clamped = Math.min(31, Math.max(1, isNaN(num) ? 10 : num));
     setSalaryDay(clamped);
     await updateProfile({ salary_day: clamped } as any, true);
   };
@@ -179,7 +180,7 @@ export default function Employees() {
                 min={1}
                 max={31}
                 value={salaryDay}
-                onChange={(e) => setSalaryDay(parseInt(e.target.value) || 1)}
+                onChange={(e) => setSalaryDay(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
                 onBlur={handleSalaryDayBlur}
                 className="w-14 h-8 text-center text-sm"
               />
