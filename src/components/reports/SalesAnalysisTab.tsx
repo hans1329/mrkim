@@ -217,6 +217,21 @@ export function SalesAnalysisTab() {
                     stroke="hsl(var(--chart-1))"
                     strokeWidth={2}
                     dot={{ r: 3 }}
+                    label={({ x, y, value }: { x: number; y: number; value: number }) => (
+                      <text
+                        x={x}
+                        y={y - 10}
+                        fill="hsl(var(--foreground))"
+                        fontSize={10}
+                        textAnchor="middle"
+                      >
+                        {value >= 1000000
+                          ? `${(value / 1000000).toFixed(1)}M`
+                          : value >= 10000
+                            ? `${Math.round(value / 10000)}만`
+                            : formatCurrency(value)}
+                      </text>
+                    )}
                   />
                 </LineChart>
               </ResponsiveContainer>
