@@ -145,7 +145,7 @@ export function SalesAnalysisTab() {
         </Card>
         <Card>
           <CardContent className="p-3">
-            <span className="text-xs text-muted-foreground">월 평균</span>
+            <span className="text-xs text-muted-foreground">월 평균 (6개월)</span>
             <p className="mt-1 text-base font-bold text-chart-1">{formatCurrency(stats.avgMonthly)}</p>
           </CardContent>
         </Card>
