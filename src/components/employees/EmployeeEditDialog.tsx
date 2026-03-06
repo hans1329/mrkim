@@ -54,6 +54,7 @@ export function EmployeeEditDialog({ open, onOpenChange, employee }: EmployeeEdi
     insurance_industrial: employee.insurance_industrial,
     start_date: employee.start_date || "",
     memo: employee.memo || "",
+    salary_day: employee.salary_day ?? ("" as number | string),
   });
 
   useEffect(() => {
@@ -72,6 +73,7 @@ export function EmployeeEditDialog({ open, onOpenChange, employee }: EmployeeEdi
       insurance_industrial: employee.insurance_industrial,
       start_date: employee.start_date || "",
       memo: employee.memo || "",
+      salary_day: employee.salary_day ?? ("" as number | string),
     });
   }, [employee]);
 
@@ -101,6 +103,7 @@ export function EmployeeEditDialog({ open, onOpenChange, employee }: EmployeeEdi
         insurance_industrial: form.insurance_industrial,
         start_date: form.start_date || null,
         memo: form.memo || null,
+        salary_day: typeof form.salary_day === 'number' ? form.salary_day : null,
       } as any,
       {
         onSuccess: () => {
@@ -245,6 +248,18 @@ export function EmployeeEditDialog({ open, onOpenChange, employee }: EmployeeEdi
                 value={form.memo}
                 onChange={(e) => setForm({ ...form, memo: e.target.value })}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>급여일 (개별)</Label>
+              <Input
+                type="number"
+                min={1}
+                max={31}
+                placeholder="기본값 사용"
+                value={form.salary_day === "" ? "" : form.salary_day}
+                onChange={(e) => setForm({ ...form, salary_day: e.target.value === "" ? "" : parseInt(e.target.value) || "" })}
+              />
+              <p className="text-[10px] text-muted-foreground">비워두면 기본 급여일 사용</p>
             </div>
           </div>
 
