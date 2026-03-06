@@ -82,7 +82,7 @@ const interestMetrics = [
 const phoneAlertItems = [
   { id: "large_transaction", label: "대규모 입출금 감지", icon: DollarSign, description: "설정 금액 이상의 입금/출금 발생 시" },
   { id: "tax_deadline", label: "세금 납부 기한 임박", icon: CalendarClock, description: "부가세, 종소세 마감 3일/1일 전 리마인드" },
-  { id: "salary_reminder", label: "급여 지급일 리마인드", icon: Users, description: "급여일 전날 미지급 건 알림" },
+  { id: "salary_reminder", label: "급여 지급일 리마인드", icon: Users, description: "급여일 N일 전 리마인드 전화" },
   { id: "sales_spike", label: "매출 급변동 감지", icon: AlertTriangle, description: "전일 대비 30% 이상 증감 시" },
 ];
 
@@ -121,6 +121,7 @@ export default function SecretarySettings() {
   const [phoneAlertCustomMessage, setPhoneAlertCustomMessage] = useState("");
   const [phoneAlertCustomEnabled, setPhoneAlertCustomEnabled] = useState(false);
   const [largeTransactionThreshold, setLargeTransactionThreshold] = useState<number>(1000000);
+  const [salaryReminderDays, setSalaryReminderDays] = useState<number>(1);
   const [phoneAlertCustomTime, setPhoneAlertCustomTime] = useState("");
   const [phoneAlertCustomDays, setPhoneAlertCustomDays] = useState<string[]>([]);
   const [phoneAlertCustomRepeat, setPhoneAlertCustomRepeat] = useState(true);
@@ -157,6 +158,7 @@ export default function SecretarySettings() {
       setPhoneAlertCustomRepeat(p.phone_alert_custom_repeat !== false);
       setPhoneAlertCustomEnabled(!!(p.phone_alert_custom_message && p.phone_alert_custom_message.trim()));
       setLargeTransactionThreshold(p.large_transaction_threshold ?? 1000000);
+      setSalaryReminderDays(p.salary_reminder_days ?? 1);
     }
   }, [profile]);
 
@@ -267,6 +269,7 @@ export default function SecretarySettings() {
           phone_alert_custom_days: phoneAlertCustomDays.length > 0 ? phoneAlertCustomDays : null,
           phone_alert_custom_repeat: phoneAlertCustomRepeat,
           large_transaction_threshold: largeTransactionThreshold,
+          salary_reminder_days: salaryReminderDays,
         } as any).eq("user_id", user.id);
       }
       updateProfileCache({
@@ -280,6 +283,7 @@ export default function SecretarySettings() {
         phone_alert_custom_days: phoneAlertCustomDays.length > 0 ? phoneAlertCustomDays : null,
         phone_alert_custom_repeat: phoneAlertCustomRepeat,
         large_transaction_threshold: largeTransactionThreshold,
+        salary_reminder_days: salaryReminderDays,
       } as any);
       toast.success("설정이 저장되었습니다", { duration: 1500 });
     }
@@ -288,6 +292,7 @@ export default function SecretarySettings() {
     secretaryAvatarUrl, secretaryVoiceId, briefingTimes, phoneAlertEnabled,
     selectedPhoneAlertItems, phoneAlertTimes, phoneAlertCustomMessage,
     phoneAlertCustomTime, phoneAlertCustomDays, phoneAlertCustomRepeat, largeTransactionThreshold,
+    salaryReminderDays,
     updateProfile, updateProfileCache,
   ]);
 
@@ -761,6 +766,37 @@ export default function SecretarySettings() {
                                 onClick={() => setLargeTransactionThreshold(preset.value)}
                               >
                                 {preset.label}원
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {/* 급여 리마인드 일수 설정 */}
+                      {item.id === "salary_reminder" && isSelected && (
+                        <div className="p-3 rounded-lg border border-border bg-muted/40 space-y-2.5">
+                          <Label className="text-xs text-muted-foreground">급여일 며칠 전 알림</Label>
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              type="number"
+                              min={1}
+                              max={7}
+                              className="h-9 text-sm w-16 text-center font-mono"
+                              value={salaryReminderDays}
+                              onChange={(e) => setSalaryReminderDays(Math.min(7, Math.max(1, parseInt(e.target.value) || 1)))}
+                            />
+                            <span className="text-xs text-muted-foreground">일 전</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {[1, 2, 3, 5].map((d) => (
+                              <Button
+                                key={d}
+                                type="button"
+                                variant={salaryReminderDays === d ? "default" : "outline"}
+                                size="sm"
+                                className="h-7 text-xs px-2.5"
+                                onClick={() => setSalaryReminderDays(d)}
+                              >
+                                {d}일 전
                               </Button>
                             ))}
                           </div>

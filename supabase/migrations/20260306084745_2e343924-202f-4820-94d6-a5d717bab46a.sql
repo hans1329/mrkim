@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN salary_reminder_days integer DEFAULT 1;
