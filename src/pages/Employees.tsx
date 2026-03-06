@@ -117,10 +117,10 @@ export default function Employees() {
     }
   }, [profile?.salary_day]);
 
-  const handleSalaryDayChange = async (value: string) => {
-    const day = parseInt(value);
-    setSalaryDay(day);
-    await updateProfile({ salary_day: day } as any, true);
+  const handleSalaryDayBlur = async () => {
+    const clamped = Math.min(31, Math.max(1, salaryDay));
+    setSalaryDay(clamped);
+    await updateProfile({ salary_day: clamped } as any, true);
   };
 
   return (
@@ -172,16 +172,19 @@ export default function Employees() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">급여 지급일</span>
             </div>
-            <Select value={String(salaryDay)} onValueChange={handleSalaryDayChange}>
-              <SelectTrigger className="w-[100px] h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 5, 10, 15, 20, 25].map((d) => (
-                  <SelectItem key={d} value={String(d)}>매월 {d}일</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm text-muted-foreground">매월</span>
+              <Input
+                type="number"
+                min={1}
+                max={31}
+                value={salaryDay}
+                onChange={(e) => setSalaryDay(parseInt(e.target.value) || 1)}
+                onBlur={handleSalaryDayBlur}
+                className="w-14 h-8 text-center text-sm"
+              />
+              <span className="text-sm text-muted-foreground">일</span>
+            </div>
           </CardContent>
         </Card>
 
