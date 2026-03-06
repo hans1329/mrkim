@@ -29,6 +29,8 @@ export interface Profile {
   card_connected_at: string | null;
   account_connected: boolean | null;
   account_connected_at: string | null;
+  // 급여일
+  salary_day: number | null;
   is_banned: boolean;
   banned_at: string | null;
   ban_reason: string | null;

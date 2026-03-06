@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,10 +23,11 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Users, Wallet, Shield, User, LinkIcon, Heart, Pencil } from "lucide-react";
+import { Plus, Users, Wallet, Shield, User, LinkIcon, Heart, Pencil, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { PraiseDialog } from "@/components/employees/PraiseDialog";
+import { useProfile } from "@/hooks/useProfile";
 import { EmployeeEditDialog } from "@/components/employees/EmployeeEditDialog";
 import { usePraiseCount } from "@/hooks/useEmployeePraises";
 import {
@@ -106,6 +107,22 @@ export default function Employees() {
 
   const isEmpty = !isLoading && (!employees || employees.length === 0);
 
+  // 급여일 설정
+  const { profile, updateProfile } = useProfile();
+  const [salaryDay, setSalaryDay] = useState<number>(10);
+
+  useEffect(() => {
+    if (profile?.salary_day) {
+      setSalaryDay(profile.salary_day);
+    }
+  }, [profile?.salary_day]);
+
+  const handleSalaryDayChange = async (value: string) => {
+    const day = parseInt(value);
+    setSalaryDay(day);
+    await updateProfile({ salary_day: day } as any, true);
+  };
+
   return (
     <MainLayout title="직원 관리" subtitle="직원 정보를 관리하세요" showBackButton>
       <div className="space-y-4">
@@ -147,6 +164,26 @@ export default function Employees() {
             </CardContent>
           </Card>
         </div>
+
+        {/* 급여일 설정 */}
+        <Card>
+          <CardContent className="flex items-center justify-between p-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">급여 지급일</span>
+            </div>
+            <Select value={String(salaryDay)} onValueChange={handleSalaryDayChange}>
+              <SelectTrigger className="w-[100px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 5, 10, 15, 20, 25].map((d) => (
+                  <SelectItem key={d} value={String(d)}>매월 {d}일</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
 
         {/* 직원 추가 버튼 */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
