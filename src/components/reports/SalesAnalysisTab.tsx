@@ -192,7 +192,13 @@ export function SalesAnalysisTab() {
                   />
                   <YAxis
                     tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                    tickFormatter={(value) => `${Math.round(value / 1000000)}M`}
+                    tickFormatter={(value) =>
+                      value >= 1000000
+                        ? `${(value / 1000000).toFixed(1)}M`
+                        : value >= 10000
+                          ? `${Math.round(value / 10000)}만`
+                          : `${value}`
+                    }
                   />
                   <Tooltip
                     content={({ active, payload, label }) => {
@@ -261,7 +267,13 @@ export function SalesAnalysisTab() {
                   />
                   <YAxis
                     tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                    tickFormatter={(value) => `${Math.round(value / 1000000)}M`}
+                    tickFormatter={(value) =>
+                      value >= 1000000
+                        ? `${(value / 1000000).toFixed(1)}M`
+                        : value >= 10000
+                          ? `${Math.round(value / 10000)}만`
+                          : `${value}`
+                    }
                   />
                   <Tooltip
                     content={({ active, payload, label }) => {
