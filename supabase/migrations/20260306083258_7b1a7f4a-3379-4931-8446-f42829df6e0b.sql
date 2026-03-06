@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN salary_day integer DEFAULT 10;

@@ -757,6 +757,7 @@ export type Database = {
           phone_alert_items: Json | null
           phone_alert_times: Json | null
           priority_metrics: Json | null
+          salary_day: number | null
           secretary_avatar_url: string | null
           secretary_gender: string | null
           secretary_name: string | null
@@ -797,6 +798,7 @@ export type Database = {
           phone_alert_items?: Json | null
           phone_alert_times?: Json | null
           priority_metrics?: Json | null
+          salary_day?: number | null
           secretary_avatar_url?: string | null
           secretary_gender?: string | null
           secretary_name?: string | null
@@ -837,6 +839,7 @@ export type Database = {
           phone_alert_items?: Json | null
           phone_alert_times?: Json | null
           priority_metrics?: Json | null
+          salary_day?: number | null
           secretary_avatar_url?: string | null
           secretary_gender?: string | null
           secretary_name?: string | null

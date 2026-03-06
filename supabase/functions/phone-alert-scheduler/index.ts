@@ -222,7 +222,15 @@ async function gatherAlertData(
         }
         case "salary_reminder": {
           const day = kstNow.getDate();
-          if (day === 9 || day === 24) {
+          // 사용자별 급여일 조회
+          const { data: salaryProfile } = await supabase
+            .from("profiles")
+            .select("salary_day")
+            .eq("user_id", userId)
+            .single();
+          const salaryDay = (salaryProfile as any)?.salary_day || 10;
+          // 급여일 전날에 알림
+          if (day === salaryDay - 1 || (salaryDay === 1 && day === 28)) {
             const { count } = await supabase
               .from("employees")
               .select("*", { count: "exact", head: true })
