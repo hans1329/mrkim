@@ -564,6 +564,7 @@ export type Database = {
           name: string
           phone: string | null
           position: string | null
+          salary_day: number | null
           source: string
           start_date: string | null
           status: string
@@ -588,6 +589,7 @@ export type Database = {
           name: string
           phone?: string | null
           position?: string | null
+          salary_day?: number | null
           source?: string
           start_date?: string | null
           status?: string
@@ -612,6 +614,7 @@ export type Database = {
           name?: string
           phone?: string | null
           position?: string | null
+          salary_day?: number | null
           source?: string
           start_date?: string | null
           status?: string

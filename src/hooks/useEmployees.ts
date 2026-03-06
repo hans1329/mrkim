@@ -22,6 +22,7 @@ export interface Employee {
   source: "hometax" | "manual";
   external_id: string | null;
   memo: string | null;
+  salary_day: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -41,6 +42,7 @@ export interface EmployeeInsert {
   insurance_industrial?: boolean;
   start_date?: string;
   memo?: string;
+  salary_day?: number;
   source?: "hometax" | "manual";
   external_id?: string;
 }
@@ -63,6 +65,7 @@ export interface EmployeeUpdate {
   end_date?: string;
   status?: "재직" | "퇴사";
   memo?: string;
+  salary_day?: number | null;
   source?: "hometax" | "manual";
   external_id?: string;
 }

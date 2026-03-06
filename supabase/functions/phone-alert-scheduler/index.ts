@@ -222,22 +222,31 @@ async function gatherAlertData(
         }
         case "salary_reminder": {
           const day = kstNow.getDate();
-          // 사용자별 급여일 조회
+          // 사용자별 기본 급여일 조회
           const { data: salaryProfile } = await supabase
             .from("profiles")
             .select("salary_day")
             .eq("user_id", userId)
             .single();
-          const salaryDay = (salaryProfile as any)?.salary_day || 10;
-          // 급여일 전날에 알림
-          if (day === salaryDay - 1 || (salaryDay === 1 && day === 28)) {
-            const { count } = await supabase
-              .from("employees")
-              .select("*", { count: "exact", head: true })
-              .eq("user_id", userId)
-              .eq("status", "재직");
-            if (count && count > 0) {
-              parts.push(`내일은 급여일입니다. 현재 재직 중인 직원 ${count}명의 급여 지급을 준비해주세요.`);
+          const defaultSalaryDay = (salaryProfile as any)?.salary_day || 10;
+
+          // 직원별 급여일 조회 (개별 설정 or 기본값)
+          const { data: empList } = await supabase
+            .from("employees")
+            .select("name, salary_day")
+            .eq("user_id", userId)
+            .eq("status", "재직");
+
+          if (empList && empList.length > 0) {
+            // 내일이 급여일인 직원 필터
+            const tomorrow = day + 1 > 28 ? 1 : day + 1; // 간소화
+            const dueEmployees = empList.filter((e: any) => {
+              const empDay = e.salary_day || defaultSalaryDay;
+              return empDay === tomorrow;
+            });
+
+            if (dueEmployees.length > 0) {
+              parts.push(`내일은 급여일입니다. ${dueEmployees.length}명의 급여 지급을 준비해주세요.`);
             }
           }
           break;
