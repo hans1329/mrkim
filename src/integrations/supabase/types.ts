@@ -444,6 +444,213 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_orders: {
+        Row: {
+          ad_fee: number | null
+          add_tax: number | null
+          card_fee: number | null
+          created_at: string
+          delivery_amt: number | null
+          delivery_type: string | null
+          detail_list: Json | null
+          discnt_amt: number | null
+          id: string
+          mfd_discount_amount: number | null
+          order_div: string | null
+          order_dt: string | null
+          order_fee: number | null
+          order_name: string | null
+          order_no: string
+          order_tm: string | null
+          platform: string
+          raw_data: Json | null
+          settle_amt: number | null
+          settle_dt: string | null
+          store_id: string | null
+          synced_at: string
+          total_amt: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ad_fee?: number | null
+          add_tax?: number | null
+          card_fee?: number | null
+          created_at?: string
+          delivery_amt?: number | null
+          delivery_type?: string | null
+          detail_list?: Json | null
+          discnt_amt?: number | null
+          id?: string
+          mfd_discount_amount?: number | null
+          order_div?: string | null
+          order_dt?: string | null
+          order_fee?: number | null
+          order_name?: string | null
+          order_no: string
+          order_tm?: string | null
+          platform?: string
+          raw_data?: Json | null
+          settle_amt?: number | null
+          settle_dt?: string | null
+          store_id?: string | null
+          synced_at?: string
+          total_amt?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ad_fee?: number | null
+          add_tax?: number | null
+          card_fee?: number | null
+          created_at?: string
+          delivery_amt?: number | null
+          delivery_type?: string | null
+          detail_list?: Json | null
+          discnt_amt?: number | null
+          id?: string
+          mfd_discount_amount?: number | null
+          order_div?: string | null
+          order_dt?: string | null
+          order_fee?: number | null
+          order_name?: string | null
+          order_no?: string
+          order_tm?: string | null
+          platform?: string
+          raw_data?: Json | null
+          settle_amt?: number | null
+          settle_dt?: string | null
+          store_id?: string | null
+          synced_at?: string
+          total_amt?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      delivery_settlements: {
+        Row: {
+          balance: number | null
+          biz_no: string | null
+          cal_date: string
+          created_at: string
+          id: string
+          platform: string
+          raw_data: Json | null
+          settlement_amt: number | null
+          settlement_details: Json | null
+          store_id: string | null
+          synced_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          biz_no?: string | null
+          cal_date: string
+          created_at?: string
+          id?: string
+          platform?: string
+          raw_data?: Json | null
+          settlement_amt?: number | null
+          settlement_details?: Json | null
+          store_id?: string | null
+          synced_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          biz_no?: string | null
+          cal_date?: string
+          created_at?: string
+          id?: string
+          platform?: string
+          raw_data?: Json | null
+          settlement_amt?: number | null
+          settlement_details?: Json | null
+          store_id?: string | null
+          synced_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      delivery_stores: {
+        Row: {
+          addr: string | null
+          addr_detail: string | null
+          biz_no: string | null
+          country_origin: string | null
+          created_at: string
+          deposit_account: string | null
+          deposit_bank: string | null
+          id: string
+          main_category: string[] | null
+          platform: string
+          raw_data: Json | null
+          refund_account: string | null
+          refund_bank: string | null
+          rep_name: string | null
+          status: string | null
+          store_id: string
+          store_name: string
+          store_notice: string | null
+          sub_category: string[] | null
+          tel_no: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          addr?: string | null
+          addr_detail?: string | null
+          biz_no?: string | null
+          country_origin?: string | null
+          created_at?: string
+          deposit_account?: string | null
+          deposit_bank?: string | null
+          id?: string
+          main_category?: string[] | null
+          platform?: string
+          raw_data?: Json | null
+          refund_account?: string | null
+          refund_bank?: string | null
+          rep_name?: string | null
+          status?: string | null
+          store_id: string
+          store_name: string
+          store_notice?: string | null
+          sub_category?: string[] | null
+          tel_no?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          addr?: string | null
+          addr_detail?: string | null
+          biz_no?: string | null
+          country_origin?: string | null
+          created_at?: string
+          deposit_account?: string | null
+          deposit_bank?: string | null
+          id?: string
+          main_category?: string[] | null
+          platform?: string
+          raw_data?: Json | null
+          refund_account?: string | null
+          refund_bank?: string | null
+          rep_name?: string | null
+          status?: string | null
+          store_id?: string
+          store_name?: string
+          store_notice?: string | null
+          sub_category?: string[] | null
+          tel_no?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           amount: number
