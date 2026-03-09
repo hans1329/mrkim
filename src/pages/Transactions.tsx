@@ -210,7 +210,7 @@ export default function Transactions() {
           )}
 
           {/* 동기화 배너 - 모바일: 세로 스택, 넓은 화면: 2열 */}
-          {(isCardConnected || isAccountConnected) && (
+          {(isCardConnected || isAccountConnected || isCoupangeatsConnected || isBaeminConnected) && (
             <div className="flex flex-col sm:grid sm:grid-cols-2 gap-1.5">
               {/* 카드 */}
               <div className={cn(
