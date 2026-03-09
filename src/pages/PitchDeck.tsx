@@ -119,7 +119,7 @@ export default function PitchDeck() {
     >
       {/* Navigation Dots */}
       <nav className="fixed right-6 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col gap-2">
-        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+        {Array.from({ length: 10 }).map((_, i) => (
           <button
             key={i}
             onClick={() => scrollToSection(i)}
