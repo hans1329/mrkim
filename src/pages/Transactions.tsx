@@ -50,6 +50,7 @@ import { useCardSync } from "@/hooks/useCardSync";
 import { useBankSync } from "@/hooks/useBankSync";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { useCardConnectionInfo, useBankConnectionInfo } from "@/hooks/useCardConnectionInfo";
+import { useConnectorInstances } from "@/hooks/useConnectors";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { format, subMonths } from "date-fns";
