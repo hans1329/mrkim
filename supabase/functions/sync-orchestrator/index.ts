@@ -33,6 +33,7 @@ const SYNC_HANDLERS: Record<
   codef_hometax_tax_invoice: syncHometaxInvoices,
   codef_card_usage: syncCardTransactions,
   codef_bank_account: syncBankTransactions,
+  hyphen_coupangeats: syncCoupangeats,
 };
 
 // 기본 동기화 간격 (분)
