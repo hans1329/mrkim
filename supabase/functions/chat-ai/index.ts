@@ -1204,7 +1204,7 @@ serve(async (req) => {
 - 100 이상 조수사는 숫자 허용: "150건"
 - 숫자와 단위 사이에 공백 없이 붙여쓰기`
       : `\n- 금액 숫자 규칙: 반드시 아라비아 숫자와 단위를 붙여서 표기. 예: "4,431,570원", "234만원", "50만원". 숫자와 단위 사이에 공백 없이 붙여 쓰세요: "320만원" (O), "320만 원" (X), "5건" (O), "5 건" (X)`;
-    const voiceInst = voiceMode ? `\n\n## 🔊 음성 모드\n- 구어체로 자연스럽게 2~3문장\n- 마크다운 금지${secretaryTone === "cute" ? "" : ", 이모지 금지"}${numberRule}\n- "사장님~" 호칭 사용${followUpInst}` : "";
+    const voiceInst = voiceMode ? `\n\n## 🔊 음성 모드\n- 구어체로 자연스럽게 2~3문장\n- 마크다운 금지${secretaryTone === "cute" ? "" : ", 이모지 금지"}${numberRule}\n- "대표님~" 호칭 사용${followUpInst}` : "";
     const voiceDataInst = voiceMode ? `\n- 구어체로 짧게 2~3문장으로 핵심만 답변\n- 마크다운 사용 금지${secretaryTone === "cute" ? "" : ", 이모지 사용 금지"}${numberRule}${followUpInst}` : "";
 
     const geminiMessages = messages.map((msg: any) => ({
