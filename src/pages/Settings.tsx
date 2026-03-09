@@ -43,6 +43,8 @@ import {
   Save,
   Pencil,
   Trash2,
+  Bike,
+  UtensilsCrossed,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useOnboarding } from "@/hooks/useOnboarding";
