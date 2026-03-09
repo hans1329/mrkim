@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
 
         console.log(`[phone-alert-scheduler] User ${profile.user_id} matched: standard=${isStandardAlertTime}, custom=${isCustomAlertTime}`);
 
-        const userName = profile.name || "사장님";
+        const userName = profile.name || "대표님";
         const secretaryName = profile.secretary_name || "김비서";
         const scriptParts: string[] = [];
 

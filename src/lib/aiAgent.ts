@@ -4,7 +4,7 @@ import { mockTransactions, mockEmployees, mockDeposits, mockAutoTransfers, getTo
 // ============================================
 // 시스템 프롬프트 (실제 LLM 연동 시 사용)
 // ============================================
-export const SYSTEM_PROMPT = `당신은 '김비서', 소상공인 사장님을 위한 업무 전문 AI입니다.
+export const SYSTEM_PROMPT = `당신은 '김비서', 소상공인 대표님을 위한 업무 전문 AI입니다.
 
 【할 수 있는 일】
 - 자금 조회/이체/예치 관리
@@ -624,7 +624,7 @@ export function generateAgentResponse(input: string): AgentResponse {
   switch (intent.type) {
     case "greeting":
       return {
-        message: `안녕하세요, 사장님! 👋\n\n김비서입니다. 오늘도 사업 번창하시길 바랍니다.\n\n무엇을 도와드릴까요?\n\n💡 **추천 명령**:\n• "오늘 매출 알려줘"\n• "직원 목록 보여줘"\n• "부가세 현황 확인"`,
+        message: `안녕하세요, 대표님! 👋\n\n김비서입니다. 오늘도 사업 번창하시길 바랍니다.\n\n무엇을 도와드릴까요?\n\n💡 **추천 명령**:\n• "오늘 매출 알려줘"\n• "직원 목록 보여줘"\n• "부가세 현황 확인"`,
         intent,
       };
 

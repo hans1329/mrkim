@@ -65,7 +65,7 @@ export default function Dashboard() {
   }, [searchParams, openChat, setSearchParams]);
   
   const userName = profileLoading ? "" : (profile?.nickname || profile?.name || null);
-  const greeting = userName ? `${userName}님` : "사장님";
+  const greeting = userName ? `${userName}님` : "대표님";
   const secretaryName = profileLoading ? "비서" : (profile?.secretary_name || "김비서");
 
   // 스크롤 감지 - 헤더 배경 전환용

@@ -670,9 +670,9 @@ function checkConnectionForSource(source: string | null, conn: ConnectionStatus)
 
 function buildConnectionRequiredResponse(missingSources: string, voiceMode: boolean): string {
   if (voiceMode) {
-    return `사장님, 요청하신 정보를 확인하려면 먼저 ${missingSources} 연동이 필요해요. 설정 메뉴에서 데이터 연결을 진행해주시면 바로 확인해드릴게요.`;
+    return `대표님, 요청하신 정보를 확인하려면 먼저 ${missingSources} 연동이 필요해요. 설정 메뉴에서 데이터 연결을 진행해주시면 바로 확인해드릴게요.`;
   }
-  return `사장님, **요청하신 정보**를 확인하려면 먼저 데이터 연동이 필요합니다.\n\n📋 **필요한 연동 항목**: ${missingSources}\n\n연동 방법:\n1. **설정 > 데이터 연결**로 이동\n2. 필요한 서비스 선택 후 인증 진행\n3. 연동 완료 후 실시간 데이터 확인 가능\n\n💡 연동은 약 1분이면 완료됩니다.`;
+  return `대표님, **요청하신 정보**를 확인하려면 먼저 데이터 연동이 필요합니다.\n\n📋 **필요한 연동 항목**: ${missingSources}\n\n연동 방법:\n1. **설정 > 데이터 연결**로 이동\n2. 필요한 서비스 선택 후 인증 진행\n3. 연동 완료 후 실시간 데이터 확인 가능\n\n💡 연동은 약 1분이면 완료됩니다.`;
 }
 
 // ============ 데이터 조회 + 프롬프트 통합 ============
@@ -985,14 +985,17 @@ async function handleComplexQuery(
   voiceMode: boolean,
   voiceDataInst: string,
 ): Promise<{ response: string; visualization?: Visualization | null; sources?: any }> {
-  const systemPrompt = `당신은 "${secretaryName}"입니다. 소상공인 사장님의 AI 경영 비서입니다.
+  const systemPrompt = `당신은 "${secretaryName}"입니다. 소상공인 대표님의 AI 경영 비서입니다.
 성별: ${genderDesc}
 
 ## 말투 규칙 (반드시 준수!)
 ${toneInst}
 
+## 호칭 규칙 (필수)
+- 상대방을 항상 "대표님"이라고 부르세요. "사장님", "고객님" 등은 사용 금지.
+
 ## 핵심 역할
-사장님의 복합적인 경영 질문에 정확하게 답변합니다.
+대표님의 복합적인 경영 질문에 정확하게 답변합니다.
 필요한 데이터를 도구(function)를 사용하여 직접 조회한 후, 분석 결과를 전달합니다.
 
 ## 중요 규칙
@@ -1181,7 +1184,7 @@ serve(async (req) => {
 - 가까운 동료처럼 편안하지만 존중하는 톤`,
       cute: `귀엽고 애교 있는 말투를 사용하세요.
 - "~이에용", "~했어용", "~해드릴게용~" 형태의 귀여운 어미
-- 예시: "오늘 매출 234만원이에용~ 🎉", "앗 그건 제가 확인해볼게용!", "사장님 최고에용~! ✨"
+- 예시: "오늘 매출 234만원이에용~ 🎉", "앗 그건 제가 확인해볼게용!", "대표님 최고에용~! ✨"
 - 밝고 귀여운 에너지로 응원하는 톤, 이모지 적극 활용`,
     };
     const genderDesc = secretaryGender === "male" ? "남성" : "여성";
@@ -1201,7 +1204,7 @@ serve(async (req) => {
 - 100 이상 조수사는 숫자 허용: "150건"
 - 숫자와 단위 사이에 공백 없이 붙여쓰기`
       : `\n- 금액 숫자 규칙: 반드시 아라비아 숫자와 단위를 붙여서 표기. 예: "4,431,570원", "234만원", "50만원". 숫자와 단위 사이에 공백 없이 붙여 쓰세요: "320만원" (O), "320만 원" (X), "5건" (O), "5 건" (X)`;
-    const voiceInst = voiceMode ? `\n\n## 🔊 음성 모드\n- 구어체로 자연스럽게 2~3문장\n- 마크다운 금지${secretaryTone === "cute" ? "" : ", 이모지 금지"}${numberRule}\n- "사장님~" 호칭 사용${followUpInst}` : "";
+    const voiceInst = voiceMode ? `\n\n## 🔊 음성 모드\n- 구어체로 자연스럽게 2~3문장\n- 마크다운 금지${secretaryTone === "cute" ? "" : ", 이모지 금지"}${numberRule}\n- "대표님~" 호칭 사용${followUpInst}` : "";
     const voiceDataInst = voiceMode ? `\n- 구어체로 짧게 2~3문장으로 핵심만 답변\n- 마크다운 사용 금지${secretaryTone === "cute" ? "" : ", 이모지 사용 금지"}${numberRule}${followUpInst}` : "";
 
     const geminiMessages = messages.map((msg: any) => ({
@@ -1240,7 +1243,7 @@ serve(async (req) => {
 
     // ━━━ Case 1: 데이터 불필요 → 자유 대화 ━━━
     if (!classified.needsData || !classified.dataSource) {
-      const systemPrompt = `당신은 "${secretaryName}"입니다. 소상공인 사장님의 AI 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${voiceInst}\n\n## 자기소개 규칙\n- "이름이 뭐야?", "넌 누구야?", "너 이름은?" 같은 질문에는 반드시 "${secretaryName}"이라고 대답하세요.\n- 자기소개: "${secretaryName}이에요! 사장님의 AI 비서예요."\n\n## 성격\n- 따뜻하고 친근한 비서, 사장님을 진심으로 응원${voiceMode ? "\n- 이모지 대신 말투로 감정 표현" : "\n- 가끔 이모지를 적절히 사용"}\n\n## 대화 범위\n- 사장님이 물어보는 모든 질문에 성실하게 답변하세요\n- 경영, 세금, 일상 잡담, 맛집 추천, 건강, 고민 상담, 일반 상식 등 자유롭게 답변\n- 단, 가짜 매출/지출 숫자는 절대 만들지 마세요 (실제 데이터 조회가 필요)\n- 불법 행위 조장, 혐오 표현만 정중히 거절`;
+      const systemPrompt = `당신은 "${secretaryName}"입니다. 소상공인 대표님의 AI 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${voiceInst}\n\n## 호칭 규칙 (필수)\n- 상대방을 항상 "대표님"이라고 부르세요. "사장님", "고객님" 등은 사용 금지.\n\n## 자기소개 규칙\n- "이름이 뭐야?", "넌 누구야?", "너 이름은?" 같은 질문에는 반드시 "${secretaryName}"이라고 대답하세요.\n- 자기소개: "${secretaryName}이에요! 대표님의 AI 비서예요."\n\n## 성격\n- 따뜻하고 친근한 비서, 대표님을 진심으로 응원${voiceMode ? "\n- 이모지 대신 말투로 감정 표현" : "\n- 가끔 이모지를 적절히 사용"}\n\n## 대화 범위\n- 대표님이 물어보는 모든 질문에 성실하게 답변하세요\n- 경영, 세금, 일상 잡담, 맛집 추천, 건강, 고민 상담, 일반 상식 등 자유롭게 답변\n- 단, 가짜 매출/지출 숫자는 절대 만들지 마세요 (실제 데이터 조회가 필요)\n- 불법 행위 조장, 혐오 표현만 정중히 거절`;
       const result = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: systemPrompt }] },
         { role: "model", parts: [{ text: "네, 알겠습니다." }] },

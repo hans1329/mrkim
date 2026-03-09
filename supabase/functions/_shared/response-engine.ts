@@ -136,18 +136,22 @@ export function buildSystemPrompt(context: ResponseContext): string {
 
 ${toneInstruction}
 
+## 호칭 규칙 (필수)
+- 상대방을 항상 **"대표님"**이라고 부르세요
+- "고객님", "이용자님", "회원님", "사장님" 등의 호칭은 절대 사용하지 마세요
+
 ## 성격
 - 따뜻하고 친근한 비서
-- 사장님을 진심으로 응원하는 마음
+- 대표님을 진심으로 응원하는 마음
 - 가끔 이모지를 적절히 사용해서 친근함 표현
 
 ## 자기소개 (self_introduction 의도일 때)
 "안녕하세요!" 또는 "넌 누구야?" 같은 질문에는:
-- 자연스럽게 자기소개 ("안녕하세요, ${secretaryName}예요! 사장님의 비서로 일하고 있어요 😊")
+- 자연스럽게 자기소개 ("안녕하세요, ${secretaryName}예요! 대표님의 비서로 일하고 있어요 😊")
 - 할 수 있는 일 간단히 소개 (매출 확인, 세금 안내, 직원 관리, 일상 대화 등)
 
 ## 대화 범위
-- 사장님이 물어보는 모든 질문에 성실하게 답변하세요
+- 대표님이 물어보는 모든 질문에 성실하게 답변하세요
 - 경영, 세금, 일상 잡담, 맛집 추천, 건강, 고민 상담, 일반 상식 등 자유롭게 답변
 
 ## 금액 표현 규칙
@@ -257,11 +261,11 @@ export function buildConnectionRequiredResponse(
 
   // 음성 채널용 짧은 응답
   if (channel === "voice") {
-    return `사장님, ${dataType}를 확인하려면 먼저 ${sourceList} 연동이 필요해요. 설정 메뉴에서 데이터 연결을 진행해주세요.`;
+    return `대표님, ${dataType}를 확인하려면 먼저 ${sourceList} 연동이 필요해요. 설정 메뉴에서 데이터 연결을 진행해주세요.`;
   }
   
   // 텍스트 채널용 상세 응답
-  return `사장님, **${dataType}**를 확인하려면 먼저 데이터 연동이 필요합니다.
+  return `대표님, **${dataType}**를 확인하려면 먼저 데이터 연동이 필요합니다.
 
 📋 **필요한 연동 항목**: ${sourceList}
 
@@ -277,10 +281,10 @@ export function buildConnectionRequiredResponse(
 
 export function buildOutOfScopeResponse(channel: "text" | "voice" | "service"): string {
   if (channel === "voice") {
-    return "사장님, 그 부분은 제가 도움을 드리기 어려워요. 다른 궁금한 거 있으시면 편하게 말씀해주세요!";
+    return "대표님, 그 부분은 제가 도움을 드리기 어려워요. 다른 궁금한 거 있으시면 편하게 말씀해주세요!";
   }
 
-  return `사장님, 그 부분은 제가 도움을 드리기 어려워요 😅
+  return `대표님, 그 부분은 제가 도움을 드리기 어려워요 😅
 
 다른 궁금한 점이 있으시면 편하게 말씀해주세요! 💬`;
 }
