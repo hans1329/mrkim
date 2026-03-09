@@ -33,6 +33,7 @@ const SYNC_HANDLERS: Record<
   codef_hometax_tax_invoice: syncHometaxInvoices,
   codef_card_usage: syncCardTransactions,
   codef_bank_account: syncBankTransactions,
+  hyphen_coupangeats: syncCoupangeats,
 };
 
 // 기본 동기화 간격 (분)
@@ -296,6 +297,7 @@ function getConnectorLabel(connectorId: string): string {
     codef_hometax_tax_invoice: "홈택스 세금계산서",
     codef_card_usage: "카드 거래내역",
     codef_bank_account: "은행 거래내역",
+    hyphen_coupangeats: "쿠팡이츠 매출",
   };
   return labels[connectorId] || connectorId;
 }
@@ -847,4 +849,228 @@ function decodeField(value: string | undefined | null): string | null {
   } catch {
     return value;
   }
+}
+
+// ─── 쿠팡이츠 동기화 핸들러 ────────────────────────────
+
+const HYPHEN_API_URL = "https://api.hyphen.im";
+
+async function callHyphenCoupangeats(
+  action: string,
+  ceUserId: string,
+  ceUserPw: string,
+  extra: Record<string, unknown> = {}
+): Promise<any> {
+  const HYPHEN_USER_ID = Deno.env.get("HYPHEN_USER_ID");
+  const HYPHEN_HKEY = Deno.env.get("HYPHEN_HKEY");
+  if (!HYPHEN_USER_ID || !HYPHEN_HKEY) {
+    throw new Error("HYPHEN_USER_ID 또는 HYPHEN_HKEY가 설정되지 않았습니다.");
+  }
+
+  const endpoints: Record<string, string> = {
+    verify: "/in0024000079",
+    sales: "/in0024000080",
+    settlement: "/in0024000081",
+    store_info: "/in0024000082",
+    orders: "/in0024000086",
+    my_store: "/in0024000955",
+  };
+
+  const endpoint = endpoints[action];
+  if (!endpoint) throw new Error(`지원하지 않는 action: ${action}`);
+
+  const response = await fetch(`${HYPHEN_API_URL}${endpoint}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "user-id": HYPHEN_USER_ID,
+      Hkey: HYPHEN_HKEY,
+    },
+    body: JSON.stringify({ userId: ceUserId, userPw: ceUserPw, ...extra }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Hyphen API 실패 [${response.status}]: ${await response.text()}`);
+  }
+
+  const data = await response.json();
+  if (data.common?.errYn === "Y") {
+    throw new Error(`Hyphen 오류 [${data.common.errCd}]: ${data.common.errMsg}`);
+  }
+  return data;
+}
+
+async function syncCoupangeats(
+  supabase: ReturnType<typeof createClient>,
+  instance: any,
+  _job: any
+): Promise<{ recordsFetched: number; recordsSaved: number }> {
+  // credentials_meta에서 쿠팡이츠 로그인 정보 가져오기
+  const meta = instance.credentials_meta || {};
+  const ceUserId = meta.ce_user_id as string;
+  const ceUserPw = meta.ce_user_pw as string;
+
+  if (!ceUserId || !ceUserPw) {
+    throw new Error("쿠팡이츠 로그인 정보가 없습니다. 재연동이 필요합니다.");
+  }
+
+  const userId = instance.user_id;
+  let totalFetched = 0;
+  let totalSaved = 0;
+
+  // 동기화 기간 결정
+  const now = new Date();
+  let startDate: string;
+  if (instance.last_sync_at) {
+    const lastSync = new Date(instance.last_sync_at);
+    lastSync.setDate(lastSync.getDate() - 1);
+    startDate = lastSync.toISOString().slice(0, 10).replace(/-/g, "");
+  } else {
+    const threeMonthsAgo = new Date(now);
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    startDate = threeMonthsAgo.toISOString().slice(0, 10).replace(/-/g, "");
+  }
+  const endDate = now.toISOString().slice(0, 10).replace(/-/g, "");
+
+  // 1. 가게 정보 동기화
+  try {
+    const storeRes = await callHyphenCoupangeats("store_info", ceUserId, ceUserPw);
+    const storeList = storeRes.data?.storeList || [];
+
+    for (const store of storeList) {
+      await supabase.from("delivery_stores").upsert(
+        {
+          user_id: userId,
+          platform: "coupangeats",
+          store_id: store.storeId || store.storeName,
+          store_name: store.storeName || "",
+          biz_no: store.bizNo || null,
+          rep_name: store.repName || null,
+          tel_no: store.telNo || null,
+          addr: store.addr || null,
+          addr_detail: store.addrDetail || null,
+          store_notice: store.storeNotice || null,
+          country_origin: store.countryOrigin || null,
+          main_category: store.mainCategory || [],
+          sub_category: store.subCategory || [],
+          raw_data: store,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,store_id" }
+      );
+    }
+  } catch (e) {
+    console.error("가게 정보 동기화 실패:", e);
+  }
+
+  // 2. 매출(주문) 데이터 동기화
+  try {
+    const salesRes = await callHyphenCoupangeats("sales", ceUserId, ceUserPw, {
+      dateFrom: startDate,
+      dateTo: endDate,
+      detailListYn: "Y",
+    });
+
+    const orderList = salesRes.data?.touchOrderList || [];
+    totalFetched += orderList.length;
+
+    for (const order of orderList) {
+      const { error } = await supabase.from("delivery_orders").upsert(
+        {
+          user_id: userId,
+          platform: "coupangeats",
+          store_id: order.storeId || null,
+          order_no: order.orderNo,
+          order_div: order.orderDiv || null,
+          order_dt: order.orderDt || null,
+          order_tm: order.orderTm || null,
+          settle_dt: order.settleDt || null,
+          order_name: order.orderName || null,
+          delivery_type: order.deliveryType || null,
+          total_amt: parseInt(order.totalAmt || "0", 10),
+          discnt_amt: parseInt(order.discntAmt || "0", 10),
+          order_fee: parseInt(order.orderFee || "0", 10),
+          card_fee: parseInt(order.cardFee || "0", 10),
+          delivery_amt: parseInt(order.deliveryAmt || "0", 10),
+          add_tax: parseInt(order.addTax || "0", 10),
+          ad_fee: parseInt(order.adFee || "0", 10),
+          mfd_discount_amount: parseInt(order.mfdDiscountAmount || "0", 10),
+          settle_amt: parseInt(order.settleAmt || "0", 10),
+          detail_list: order.detailList || [],
+          raw_data: order,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,order_no" }
+      );
+      if (!error) totalSaved++;
+    }
+
+    // 매출을 transactions 테이블에도 반영 (source_type: delivery)
+    for (const order of orderList) {
+      if (!order.orderNo || !order.orderDt) continue;
+      const txDate = formatDateStr(order.orderDt);
+      const amount = parseInt(order.settleAmt || order.totalAmt || "0", 10);
+
+      await supabase.from("transactions").upsert(
+        {
+          user_id: userId,
+          source_type: "delivery",
+          source_name: "쿠팡이츠",
+          external_tx_id: `ce_${order.orderNo}`,
+          transaction_date: txDate,
+          transaction_time: order.orderTm
+            ? `${order.orderTm.slice(0, 2)}:${order.orderTm.slice(2, 4)}:00`
+            : null,
+          amount,
+          type: "income",
+          description: `쿠팡이츠 주문 ${order.orderName || order.orderNo}`,
+          category: "배달매출",
+          category_icon: "🛵",
+          merchant_name: "쿠팡이츠",
+          synced_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,external_tx_id" }
+      );
+    }
+  } catch (e) {
+    console.error("매출 동기화 실패:", e);
+  }
+
+  // 3. 정산 내역 동기화
+  try {
+    const settleRes = await callHyphenCoupangeats("settlement", ceUserId, ceUserPw, {
+      dateFrom: startDate,
+      dateTo: endDate,
+      allTransYn: "Y",
+    });
+
+    const calList = settleRes.data?.calList || [];
+
+    for (const cal of calList) {
+      const settlementList = cal.settlementList || [];
+      const details = settlementList.length > 0 ? settlementList[0].details || {} : {};
+
+      await supabase.from("delivery_settlements").upsert(
+        {
+          user_id: userId,
+          platform: "coupangeats",
+          store_id: cal.storeId || null,
+          biz_no: cal.bizNo || null,
+          cal_date: cal.calDate,
+          settlement_amt: parseInt(cal.settlementAmt || "0", 10),
+          balance: parseInt(cal.balance || "0", 10),
+          settlement_details: details,
+          raw_data: cal,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,store_id,cal_date" }
+      );
+    }
+  } catch (e) {
+    console.error("정산 동기화 실패:", e);
+  }
+
+  return { recordsFetched: totalFetched, recordsSaved: totalSaved };
 }
