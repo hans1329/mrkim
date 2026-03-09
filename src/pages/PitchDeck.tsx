@@ -929,6 +929,11 @@ export default function PitchDeck() {
                     → 광고 중단 또는 타겟 변경 권고
                   </p>
                 </div>
+                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-[11px] text-white/50 leading-relaxed">
+                    💡 <span className="text-white/70 font-medium">어떻게 가능?</span> — 배민 ad_management API에서 광고비·노출·클릭 데이터를, sales API에서 같은 기간 매출 변화를 가져와 자동 대조. 광고 ON/OFF 기간의 매출 차이로 증분 효과를 계산합니다.
+                  </p>
+                </div>
               </div>
             </div>
 
