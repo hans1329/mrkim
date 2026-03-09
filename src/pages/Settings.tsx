@@ -58,6 +58,7 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { resetOnboarding } = useOnboarding();
   const { profile, loading, updating, updateProfile, resetConnections } = useProfile();
+  const { data: connectorInstances = [] } = useConnectorInstances();
   
   // 사업장 정보 편집 상태
   const [isEditing, setIsEditing] = useState(false);
