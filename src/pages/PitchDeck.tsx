@@ -619,9 +619,6 @@ export default function PitchDeck() {
       <Slide className="bg-[#0a0a0f] relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent" />
         <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <p className="text-2xl md:text-3xl text-white/40 font-light mb-8 tracking-wider">
-            그런데...
-          </p>
           <h2 className="text-5xl md:text-6xl lg:text-8xl font-black mb-6">
             <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-red-400 bg-clip-text text-transparent">
               One More Thing.
