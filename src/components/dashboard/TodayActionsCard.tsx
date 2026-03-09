@@ -5,11 +5,12 @@ import { useProfile } from "@/hooks/useProfile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Clock, AlertTriangle, ChevronRight, MessageCircle, CalendarClock, Link2, TrendingUp, TrendingDown, FileText, Tags } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, ChevronRight, MessageCircle, CalendarClock, Link2, TrendingUp, TrendingDown, FileText, Tags, Wallet, ArrowLeftRight, Banknote } from "lucide-react";
 import { cn, josa } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChat } from "@/contexts/ChatContext";
 import { useActionData } from "@/hooks/useDashboardStats";
+import { formatCurrency } from "@/data/mockData";
 
 type ActionPriority = "urgent" | "warning" | "normal";
 type ActionStatus = "pending" | "completed" | "postponed";
