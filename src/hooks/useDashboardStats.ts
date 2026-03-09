@@ -193,24 +193,31 @@ export function useUnclassifiedCount(enabled = true) {
   });
 }
 
-// TodayActionsCard용 - 이번 달 vs 지난 달 매출 비교
-interface MonthlyComparison {
+// TodayActionsCard용 - 이번 달 vs 지난 달 매출 비교 + 날짜 기반 할 일
+interface ActionData {
   thisMonthIncome: number;
   lastMonthIncome: number;
   unclassifiedCount: number;
+  // 급여 관련
+  salaryDay: number | null;
+  salaryReminderDays: number;
+  employeesForSalary: { count: number; totalAmount: number; individualDays: { day: number; count: number; total: number }[] };
+  // 자동이체 관련
+  todayAutoTransfers: { count: number; totalAmount: number; names: string[] };
 }
 
-async function fetchActionData(): Promise<MonthlyComparison | null> {
+async function fetchActionData(): Promise<ActionData | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0];
+  const currentDay = today.getDate();
   const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
   const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split("T")[0];
   const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split("T")[0];
 
-  const [thisMonthResult, lastMonthResult, unclassifiedResult] = await Promise.all([
+  const [thisMonthResult, lastMonthResult, unclassifiedResult, profileResult, employeesResult, autoTransfersResult] = await Promise.all([
     supabase
       .from("transactions")
       .select("amount, type")
@@ -228,6 +235,21 @@ async function fetchActionData(): Promise<MonthlyComparison | null> {
       .select("*", { count: "exact", head: true })
       .eq("user_id", user.id)
       .is("category", null),
+    supabase
+      .from("profiles")
+      .select("salary_day, salary_reminder_days")
+      .eq("user_id", user.id)
+      .single(),
+    supabase
+      .from("employees")
+      .select("id, name, monthly_salary, hourly_rate, weekly_hours, employee_type, salary_day")
+      .eq("user_id", user.id)
+      .eq("status", "재직"),
+    supabase
+      .from("auto_transfers")
+      .select("id, name, amount, schedule_type, schedule_day")
+      .eq("user_id", user.id)
+      .eq("is_active", true),
   ]);
 
   const thisMonthIncome = (thisMonthResult.data || [])
@@ -237,10 +259,46 @@ async function fetchActionData(): Promise<MonthlyComparison | null> {
     .filter((t) => t.type === "income" || t.type === "transfer_in")
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
+  // 급여 계산
+  const globalSalaryDay = profileResult.data?.salary_day ?? 10;
+  const salaryReminderDays = profileResult.data?.salary_reminder_days ?? 1;
+  const employees = employeesResult.data || [];
+
+  // 직원별 급여일 그룹핑
+  const salaryDayMap = new Map<number, { count: number; total: number }>();
+  for (const emp of employees) {
+    const empSalaryDay = emp.salary_day ?? globalSalaryDay;
+    let salary = Number(emp.monthly_salary || 0);
+    if (!salary && emp.hourly_rate && emp.weekly_hours) {
+      salary = Math.round(Number(emp.hourly_rate) * Number(emp.weekly_hours) * 4.345);
+    }
+    const existing = salaryDayMap.get(empSalaryDay) || { count: 0, total: 0 };
+    salaryDayMap.set(empSalaryDay, { count: existing.count + 1, total: existing.total + salary });
+  }
+
+  const individualDays = Array.from(salaryDayMap.entries()).map(([day, v]) => ({ day, ...v }));
+  const totalSalaryAmount = individualDays.reduce((s, d) => s + d.total, 0);
+  const totalSalaryCount = individualDays.reduce((s, d) => s + d.count, 0);
+
+  // 오늘 실행 예정 자동이체
+  const autoTransfers = autoTransfersResult.data || [];
+  const todayTransfers = autoTransfers.filter((at) => {
+    if (at.schedule_type === "monthly" && at.schedule_day === currentDay) return true;
+    return false;
+  });
+
   return {
     thisMonthIncome,
     lastMonthIncome,
     unclassifiedCount: unclassifiedResult.count || 0,
+    salaryDay: globalSalaryDay,
+    salaryReminderDays,
+    employeesForSalary: { count: totalSalaryCount, totalAmount: totalSalaryAmount, individualDays },
+    todayAutoTransfers: {
+      count: todayTransfers.length,
+      totalAmount: todayTransfers.reduce((s, t) => s + Number(t.amount), 0),
+      names: todayTransfers.map((t) => t.name),
+    },
   };
 }
 
