@@ -116,6 +116,7 @@ serve(async (req) => {
     if (dateTo) apiBody.dateTo = dateTo;
     if (detailListYn) apiBody.detailListYn = detailListYn;
     if (allTransYn) apiBody.allTransYn = allTransYn;
+    if (langType) apiBody.langType = langType;
 
     const result = await callHyphenAPI(endpoint, apiBody);
 
