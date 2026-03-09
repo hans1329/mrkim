@@ -30,6 +30,10 @@ import {
   MapPin,
   Megaphone,
   LineChart,
+  MessagesSquare,
+  Mic,
+  Brain,
+  Handshake,
 } from "lucide-react";
 
 // Slide Component
