@@ -922,7 +922,7 @@ export default function PitchDeck() {
         `}</style>
       </Slide>
 
-      {/* Slide 8: Ask */}
+      {/* Slide 10: Ask */}
       <Slide className="bg-gradient-to-br from-[#0d0d14] via-[#0a0a0f] to-[#0d0d14]">
         <div className="max-w-4xl mx-auto text-center">
           <Badge className="mb-6 bg-white/10 text-white/90 border-white/20">Investment</Badge>
