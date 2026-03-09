@@ -615,7 +615,139 @@ export default function PitchDeck() {
         </div>
       </Slide>
 
-      {/* Slide 7: Roadmap */}
+      {/* Slide 7: One More Thing */}
+      <Slide className="bg-[#0a0a0f] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent" />
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <p className="text-2xl md:text-3xl text-white/40 font-light mb-8 tracking-wider">
+            그런데...
+          </p>
+          <h2 className="text-5xl md:text-6xl lg:text-8xl font-black mb-6">
+            <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-red-400 bg-clip-text text-transparent">
+              One More Thing.
+            </span>
+          </h2>
+          <p className="text-xl md:text-2xl text-white/60 font-light leading-relaxed max-w-2xl mx-auto">
+            김비서는 단순히 돈을 관리하는 것을 넘어,<br />
+            <span className="text-white font-semibold">사장님의 매장을 성장</span>시킵니다.
+          </p>
+        </div>
+      </Slide>
+
+      {/* Slide 8: 데이터를 활용한 마법 */}
+      <Slide className="bg-[#0d0d14]">
+        <div className="max-w-6xl mx-auto">
+          <Badge className="mb-4 bg-amber-500/20 text-amber-400 border-amber-500/30">Data Magic</Badge>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-2">
+            데이터를 활용한 <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">마법</span>
+          </h2>
+          <p className="text-xl text-white/50 mb-10">
+            배달앱 연동 데이터로 매장 경영을 혁신합니다
+          </p>
+
+          {/* Data Sources */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            {[
+              { icon: UtensilsCrossed, label: "메뉴 데이터", desc: "판매량·마진 분석" },
+              { icon: Star, label: "리뷰 분석", desc: "AI 감성 분석" },
+              { icon: LineChart, label: "매출 통계", desc: "시간대·요일 패턴" },
+              { icon: MapPin, label: "상권 분석", desc: "인근 매출 비교" },
+            ].map((item, i) => (
+              <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+                <item.icon className="h-7 w-7 mx-auto mb-2 text-amber-400" />
+                <p className="font-bold text-sm">{item.label}</p>
+                <p className="text-white/40 text-xs mt-1">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Killer Insight Example */}
+          <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-red-500/10 border border-amber-500/20 mb-8">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                <Lightbulb className="h-6 w-6 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg mb-2 text-amber-400">AI가 발견하는 인사이트 예시</h3>
+                <div className="p-4 rounded-xl bg-black/30 border border-white/10">
+                  <p className="text-white/80 text-sm leading-relaxed italic">
+                    "사장님, <span className="text-amber-400 font-semibold">김치찌개 매출이 지난달 대비 20% 감소</span>했어요. 
+                    같은 기간 '맛이 변했다'는 리뷰가 3건 증가했습니다. 
+                    반면 <span className="text-green-400 font-semibold">된장찌개는 리뷰 평점 4.8점</span>으로 주문이 늘고 있어요. 
+                    메뉴 구성 조정을 권합니다."
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature Grid */}
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* 리뷰 감성 분석 */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg bg-rose-500/20 flex items-center justify-center">
+                  <MessageSquare className="h-5 w-5 text-rose-400" />
+                </div>
+                <h3 className="font-bold">리뷰 감성 분석</h3>
+              </div>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-rose-400 shrink-0" />긍정/부정 키워드 자동 분류</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-rose-400 shrink-0" />부정 리뷰 급증 시 즉시 알림</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-rose-400 shrink-0" />메뉴별 리뷰 만족도 추적</li>
+              </ul>
+            </div>
+
+            {/* 메뉴 최적화 */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <UtensilsCrossed className="h-5 w-5 text-emerald-400" />
+                </div>
+                <h3 className="font-bold">메뉴 성과 분석</h3>
+              </div>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />메뉴별 판매량 & 매출 랭킹</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />가격 변경 후 주문 변화 추적</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />저성과 메뉴 정리 제안</li>
+              </ul>
+            </div>
+
+            {/* 광고 ROI & 상권 */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                  <Megaphone className="h-5 w-5 text-blue-400" />
+                </div>
+                <h3 className="font-bold">광고·상권 인텔리전스</h3>
+              </div>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-blue-400 shrink-0" />광고비 대비 매출 ROI 자동 계산</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-blue-400 shrink-0" />인근 경쟁업체 대비 포지셔닝</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-blue-400 shrink-0" />요일·시간대별 최적 프로모션 제안</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Impact */}
+          <div className="mt-8 grid md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+              <p className="text-2xl font-bold text-amber-400">배민 + 쿠팡이츠</p>
+              <p className="text-white/50 text-sm mt-1">14 + 9개 API 완전 연동</p>
+            </div>
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+              <p className="text-2xl font-bold text-amber-400">실시간</p>
+              <p className="text-white/50 text-sm mt-1">6시간 자동 동기화</p>
+            </div>
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+              <p className="text-2xl font-bold text-amber-400">AI 브리핑</p>
+              <p className="text-white/50 text-sm mt-1">매일 아침 핵심 변화 알림</p>
+            </div>
+          </div>
+        </div>
+      </Slide>
+
+      {/* Slide 9: Roadmap */}
       <Slide>
         <div className="max-w-5xl mx-auto">
           <Badge className="mb-4 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">Roadmap</Badge>
