@@ -1077,3 +1077,212 @@ async function syncCoupangeats(
 
   return { recordsFetched: totalFetched, recordsSaved: totalSaved };
 }
+
+// ─── 배달의민족 동기화 핸들러 ────────────────────────────
+
+async function callHyphenBaemin(
+  action: string,
+  bmUserId: string,
+  bmUserPw: string,
+  extra: Record<string, unknown> = {}
+): Promise<any> {
+  const HYPHEN_USER_ID = Deno.env.get("HYPHEN_USER_ID");
+  const HYPHEN_HKEY = Deno.env.get("HYPHEN_HKEY");
+  if (!HYPHEN_USER_ID || !HYPHEN_HKEY) {
+    throw new Error("HYPHEN_USER_ID 또는 HYPHEN_HKEY가 설정되지 않았습니다.");
+  }
+
+  const endpoints: Record<string, string> = {
+    verify: "/in0022000062",
+    sales: "/in0022000063",
+    settlement: "/in0022000064",
+    store_info: "/in0022000067",
+    orders: "/in0022000083",
+    my_store: "/in0022000953",
+  };
+
+  const endpoint = endpoints[action];
+  if (!endpoint) throw new Error(`지원하지 않는 action: ${action}`);
+
+  const response = await fetch(`${HYPHEN_API_URL}${endpoint}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "user-id": HYPHEN_USER_ID,
+      Hkey: HYPHEN_HKEY,
+    },
+    body: JSON.stringify({ userId: bmUserId, userPw: bmUserPw, ...extra }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Hyphen API 실패 [${response.status}]: ${await response.text()}`);
+  }
+
+  const data = await response.json();
+  if (data.common?.errYn === "Y") {
+    throw new Error(`Hyphen 오류 [${data.common.errCd}]: ${data.common.errMsg}`);
+  }
+  return data;
+}
+
+async function syncBaemin(
+  supabase: ReturnType<typeof createClient>,
+  instance: any,
+  _job: any
+): Promise<{ recordsFetched: number; recordsSaved: number }> {
+  const meta = instance.credentials_meta || {};
+  const bmUserId = meta.bm_user_id as string;
+  const bmUserPw = meta.bm_user_pw as string;
+
+  if (!bmUserId || !bmUserPw) {
+    throw new Error("배달의민족 로그인 정보가 없습니다. 재연동이 필요합니다.");
+  }
+
+  const userId = instance.user_id;
+  let totalFetched = 0;
+  let totalSaved = 0;
+
+  const now = new Date();
+  let startDate: string;
+  if (instance.last_sync_at) {
+    const lastSync = new Date(instance.last_sync_at);
+    lastSync.setDate(lastSync.getDate() - 1);
+    startDate = lastSync.toISOString().slice(0, 10).replace(/-/g, "");
+  } else {
+    const threeMonthsAgo = new Date(now);
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    startDate = threeMonthsAgo.toISOString().slice(0, 10).replace(/-/g, "");
+  }
+  const endDate = now.toISOString().slice(0, 10).replace(/-/g, "");
+
+  // 1. 가게 정보 동기화
+  try {
+    const storeRes = await callHyphenBaemin("store_info", bmUserId, bmUserPw);
+    const storeList = storeRes.data?.storeList || [];
+
+    for (const store of storeList) {
+      await supabase.from("delivery_stores").upsert(
+        {
+          user_id: userId,
+          platform: "baemin",
+          store_id: store.storeId || store.storeName,
+          store_name: store.storeName || "",
+          biz_no: store.bizNo || null,
+          tel_no: store.telNo || null,
+          addr: store.addr || null,
+          raw_data: store,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,store_id" }
+      );
+    }
+  } catch (e) {
+    console.error("배민 가게 정보 동기화 실패:", e);
+  }
+
+  // 2. 매출(주문) 데이터 동기화
+  try {
+    const salesRes = await callHyphenBaemin("sales", bmUserId, bmUserPw, {
+      dateFrom: startDate,
+      dateTo: endDate,
+      detailListYn: "Y",
+    });
+
+    const orderList = salesRes.data?.touchOrderList || [];
+    totalFetched += orderList.length;
+
+    for (const order of orderList) {
+      const { error } = await supabase.from("delivery_orders").upsert(
+        {
+          user_id: userId,
+          platform: "baemin",
+          store_id: order.storeId || null,
+          order_no: order.orderNo,
+          order_div: order.orderDiv || null,
+          order_dt: order.orderDt || null,
+          order_tm: order.orderTm || null,
+          settle_dt: order.settleDt || null,
+          order_name: order.orderName || null,
+          delivery_type: order.deliveryType || null,
+          total_amt: parseInt(order.orderAmt || order.salesAmt || "0", 10),
+          discnt_amt: parseInt(order.discntAmt || "0", 10),
+          order_fee: parseInt(order.orderFee || "0", 10),
+          card_fee: parseInt(order.cardFee || "0", 10),
+          delivery_amt: parseInt(order.deliveryAmt || "0", 10),
+          add_tax: parseInt(order.addTax || "0", 10),
+          settle_amt: parseInt(order.settleAmt || "0", 10),
+          detail_list: order.detailList || [],
+          raw_data: order,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,order_no" }
+      );
+      if (!error) totalSaved++;
+    }
+
+    // transactions 테이블에도 반영
+    for (const order of orderList) {
+      if (!order.orderNo || !order.orderDt) continue;
+      const txDate = formatDateStr(order.orderDt);
+      const amount = parseInt(order.settleAmt || order.salesAmt || order.orderAmt || "0", 10);
+
+      await supabase.from("transactions").upsert(
+        {
+          user_id: userId,
+          source_type: "delivery",
+          source_name: "배달의민족",
+          external_tx_id: `bm_${order.orderNo}`,
+          transaction_date: txDate,
+          transaction_time: order.orderTm
+            ? `${order.orderTm.slice(0, 2)}:${order.orderTm.slice(2, 4)}:00`
+            : null,
+          amount,
+          type: "income",
+          description: `배달의민족 주문 ${order.orderName || order.orderNo}`,
+          category: "배달매출",
+          category_icon: "🛵",
+          merchant_name: "배달의민족",
+          synced_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,external_tx_id" }
+      );
+    }
+  } catch (e) {
+    console.error("배민 매출 동기화 실패:", e);
+  }
+
+  // 3. 정산 내역 동기화
+  try {
+    const settleRes = await callHyphenBaemin("settlement", bmUserId, bmUserPw, {
+      dateFrom: startDate,
+      dateTo: endDate,
+    });
+
+    const calList = settleRes.data?.calList || [];
+
+    for (const cal of calList) {
+      const typeDetails = cal.typeSettlementDetails || [];
+
+      await supabase.from("delivery_settlements").upsert(
+        {
+          user_id: userId,
+          platform: "baemin",
+          store_id: cal.bizNo || null,
+          biz_no: cal.bizNo || null,
+          cal_date: cal.calDate,
+          settlement_amt: parseInt(cal.getAmt || "0", 10),
+          settlement_details: typeDetails.length > 0 ? typeDetails[0] : {},
+          raw_data: cal,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,store_id,cal_date" }
+      );
+    }
+  } catch (e) {
+    console.error("배민 정산 동기화 실패:", e);
+  }
+
+  return { recordsFetched: totalFetched, recordsSaved: totalSaved };
+}
