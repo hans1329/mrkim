@@ -266,6 +266,50 @@ export default function Transactions() {
                   </Button>
                 )}
               </div>
+              {/* 쿠팡이츠 */}
+              <div className={cn(
+                "flex items-center justify-between rounded-lg px-3 py-2",
+                isCoupangeatsConnected ? "bg-muted/50 border border-border" : "bg-muted/50 border border-dashed border-muted-foreground/20"
+              )}>
+                <p className="text-xs font-medium truncate">🛵 쿠팡이츠</p>
+                {isCoupangeatsConnected ? (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                    <RefreshCw className="h-3 w-3" />
+                    <Button size="sm" variant="ghost" onClick={() => openDrawer("coupangeats")}
+                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
+                      재연동
+                    </Button>
+                  </span>
+                ) : (
+                  <Button size="sm" variant="ghost" onClick={() => openDrawer("coupangeats")}
+                    className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10 shrink-0">
+                    <LinkIcon className="h-3 w-3" />
+                    연동
+                  </Button>
+                )}
+              </div>
+              {/* 배달의민족 */}
+              <div className={cn(
+                "flex items-center justify-between rounded-lg px-3 py-2",
+                isBaeminConnected ? "bg-muted/50 border border-border" : "bg-muted/50 border border-dashed border-muted-foreground/20"
+              )}>
+                <p className="text-xs font-medium truncate">🏍️ 배달의민족</p>
+                {isBaeminConnected ? (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                    <RefreshCw className="h-3 w-3" />
+                    <Button size="sm" variant="ghost" onClick={() => openDrawer("baemin")}
+                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
+                      재연동
+                    </Button>
+                  </span>
+                ) : (
+                  <Button size="sm" variant="ghost" onClick={() => openDrawer("baemin")}
+                    className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10 shrink-0">
+                    <LinkIcon className="h-3 w-3" />
+                    연동
+                  </Button>
+                )}
+              </div>
             </div>
           )}
 
