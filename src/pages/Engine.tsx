@@ -1276,13 +1276,13 @@ export default function Engine() {
           </Card>
 
 
-          {/* API 통합 미구현 현황 */}
+          {/* API 통합 현황 */}
           <Card className="border-2 border-dashed border-muted">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CircleDot className="h-5 w-5 text-muted-foreground" />
-                API 통합 미구현 현황
-                <Badge variant="outline" className="text-xs ml-auto">2026-02-18</Badge>
+                API 통합 현황
+                <Badge variant="outline" className="text-xs ml-auto">2026-03-09</Badge>
               </CardTitle>
               <p className="text-sm text-muted-foreground">구현 완료 시 업데이트됩니다.</p>
             </CardHeader>
@@ -1298,33 +1298,59 @@ export default function Engine() {
                 <div className="space-y-2 pl-4">
                   {[
                     {
+                      label: "홈택스 세금계산서 조회",
+                      desc: "codef-tax-invoice Edge Function으로 매출/매입 세금계산서 동기화 구현 완료",
+                      done: true,
+                    },
+                    {
+                      label: "은행 계좌 거래내역",
+                      desc: "codef-bank Edge Function으로 계좌 거래내역 수집 구현 완료",
+                      done: true,
+                    },
+                    {
+                      label: "카드 사용 내역",
+                      desc: "codef-card Edge Function으로 카드 지출 내역 수집 구현 완료",
+                      done: true,
+                    },
+                    {
                       label: "정식 환경 전환",
                       desc: "development.codef.io → api.codef.io (서비스 출시 시 계약 필요)",
+                      done: false,
                     },
                     {
                       label: "카드 매출 조회",
                       desc: "현재는 카드 지출만 수집. 여신금융협회 API를 통한 POS 매출 데이터 별도 연동 필요",
+                      done: false,
                     },
                     {
                       label: "홈택스 현금영수증",
                       desc: "현금영수증 발행·수취 내역 endpoint 미구현 (/v1/kr/public/nt/cash-receipt/...)",
+                      done: false,
                     },
                     {
                       label: "홈택스 공동인증서 로그인",
                       desc: "현재 간편인증(loginType: 0)만 지원. 공동인증서(loginType: 5) 방식 추가 필요",
+                      done: false,
                     },
                     {
                       label: "실시간 잔액 조회 API",
                       desc: "계좌 잔액을 거래내역에서 추정 중. 별도 잔액 조회 endpoint 호출로 정확도 개선 필요",
+                      done: false,
                     },
                   ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
-                      <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                    <div key={i} className={`flex items-start gap-3 p-3 rounded-lg ${item.done ? 'bg-green-500/5' : 'bg-muted/30'}`}>
+                      {item.done ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                      ) : (
+                        <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                      )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{item.label}</p>
+                        <p className={`text-sm font-medium ${item.done ? 'text-muted-foreground line-through' : ''}`}>{item.label}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
                       </div>
-                      <Badge variant="outline" className="text-xs shrink-0">미구현</Badge>
+                      <Badge variant="outline" className={`text-xs shrink-0 ${item.done ? 'border-green-500/30 text-green-600' : ''}`}>
+                        {item.done ? '완료' : '미구현'}
+                      </Badge>
                     </div>
                   ))}
                 </div>
@@ -1337,42 +1363,64 @@ export default function Engine() {
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 rounded-full bg-purple-500" />
                   <h3 className="font-semibold">하이픈 (Hyphen)</h3>
-                  <Badge className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/20">구조만 준비됨</Badge>
+                  <Badge className="text-xs bg-green-500/10 text-green-600 border-green-500/20">배달앱 연동 완료</Badge>
                 </div>
                 <div className="space-y-2 pl-4">
                   {[
                     {
+                      label: "쿠팡이츠 연동",
+                      desc: "hyphen-coupangeats Edge Function (9개 API). 매출·주문·정산 동기화 및 sync-orchestrator 통합 완료",
+                      done: true,
+                    },
+                    {
+                      label: "배달의민족 연동",
+                      desc: "hyphen-baemin Edge Function (14개 API). 매출·주문·정산·리뷰·광고 등 동기화 완료",
+                      done: true,
+                    },
+                    {
                       label: "API 키 발급 및 시크릿 등록",
-                      desc: "HYPHEN_CLIENT_ID, HYPHEN_CLIENT_SECRET 미등록. 하이픈 계약 후 Supabase Secrets에 추가 필요",
+                      desc: "HYPHEN_USER_ID, HYPHEN_HKEY Supabase Secrets 등록 완료",
+                      done: true,
                     },
                     {
                       label: "hyphen-transfer Edge Function",
                       desc: "자동이체 실행 로직 없음. auto_transfers 테이블에 규칙은 저장되나 실제 이체 미실행",
+                      done: false,
                     },
                     {
                       label: "전자금융거래 동의 UI (ARS/OTP)",
                       desc: "이체 실행 전 connected_accounts.hyphen_consent_at 기록 필요. 동의 플로우 UI 미구현",
+                      done: false,
                     },
                     {
                       label: "hyphen-payroll Edge Function",
                       desc: "employees.monthly_salary 데이터와 하이픈 급여 API 연결 없음",
+                      done: false,
                     },
                     {
                       label: "이체 실행 트리거",
                       desc: "schedule_type(monthly/weekly/on_income)에 따른 실행 로직 없음. pg_cron 또는 수동 트리거 필요",
+                      done: false,
                     },
                     {
                       label: "auto_transfer_logs 테이블",
                       desc: "이체 실행 이력 기록 테이블 미생성. 성공/실패/금액/실행시간 로그 추적 불가",
+                      done: false,
                     },
                   ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
-                      <AlertCircle className="h-4 w-4 text-purple-500 mt-0.5 shrink-0" />
+                    <div key={i} className={`flex items-start gap-3 p-3 rounded-lg ${item.done ? 'bg-green-500/5' : 'bg-muted/30'}`}>
+                      {item.done ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-purple-500 mt-0.5 shrink-0" />
+                      )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{item.label}</p>
+                        <p className={`text-sm font-medium ${item.done ? 'text-muted-foreground line-through' : ''}`}>{item.label}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
                       </div>
-                      <Badge variant="outline" className="text-xs shrink-0">미구현</Badge>
+                      <Badge variant="outline" className={`text-xs shrink-0 ${item.done ? 'border-green-500/30 text-green-600' : ''}`}>
+                        {item.done ? '완료' : '미구현'}
+                      </Badge>
                     </div>
                   ))}
                 </div>
@@ -1383,40 +1431,56 @@ export default function Engine() {
               {/* 트윌로 */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-2 h-2 rounded-full bg-destructive" />
-                  <h3 className="font-semibold">트윌로 (Twilio)</h3>
-                  <Badge className="text-xs bg-destructive/10 text-destructive border-destructive/20">미착수</Badge>
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <h3 className="font-semibold">트윌로 (Twilio) / Vonage</h3>
+                  <Badge className="text-xs bg-green-500/10 text-green-600 border-green-500/20">실서비스 적용</Badge>
                 </div>
                 <div className="space-y-2 pl-4">
                   {[
                     {
-                      label: "API 키 발급 및 시크릿 등록",
-                      desc: "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER 미등록",
+                      label: "API 키 등록",
+                      desc: "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER Supabase Secrets 등록 완료",
+                      done: true,
                     },
                     {
-                      label: "twilio-call Edge Function",
-                      desc: "AI 비서가 전화로 알림·브리핑을 발신하는 핵심 기능. TwiML로 음성 합성 후 발신",
+                      label: "twilio-outbound-call Edge Function",
+                      desc: "AI 비서 전화 발신 기능 구현 완료. ElevenLabs TTS + Twilio 발신",
+                      done: true,
+                    },
+                    {
+                      label: "phone-alert-scheduler",
+                      desc: "pg_cron 매시간 실행하여 대상자 식별 및 자동 전화 발신 구현 완료",
+                      done: true,
+                    },
+                    {
+                      label: "Vonage Voice API 대안",
+                      desc: "Twilio 번호 인증 지연 대비 Vonage NCCO 기반 발신 대안 운용 중",
+                      done: true,
+                    },
+                    {
+                      label: "ai_call_logs 테이블",
+                      desc: "발신 이력(상태/통화시간/스크립트/TTS URL) 로깅 구현 완료",
+                      done: true,
                     },
                     {
                       label: "secretary_phone 인증 플로우",
-                      desc: "profiles.secretary_phone_verified가 false인 상태. 실제 전화번호 OTP 인증 후 전환 필요",
-                    },
-                    {
-                      label: "전화 발신 스케줄러",
-                      desc: "briefing_frequency/briefing_times 설정값 기반으로 pg_cron이 twilio-call을 트리거하는 구조 미완성",
-                    },
-                    {
-                      label: "발신 이력 로깅",
-                      desc: "call_logs 테이블 없음. 발신 결과(연결/부재/실패)·통화 시간·TwiML 내용 기록 미구현",
+                      desc: "profiles.secretary_phone_verified 전환을 위한 OTP 인증 플로우 미완성",
+                      done: false,
                     },
                   ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
-                      <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                    <div key={i} className={`flex items-start gap-3 p-3 rounded-lg ${item.done ? 'bg-green-500/5' : 'bg-muted/30'}`}>
+                      {item.done ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                      )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{item.label}</p>
+                        <p className={`text-sm font-medium ${item.done ? 'text-muted-foreground line-through' : ''}`}>{item.label}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
                       </div>
-                      <Badge variant="outline" className="text-xs shrink-0">미구현</Badge>
+                      <Badge variant="outline" className={`text-xs shrink-0 ${item.done ? 'border-green-500/30 text-green-600' : ''}`}>
+                        {item.done ? '완료' : '미구현'}
+                      </Badge>
                     </div>
                   ))}
                 </div>
