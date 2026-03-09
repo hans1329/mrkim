@@ -396,28 +396,28 @@ export default function Transactions() {
 
           {/* 요약 카드 - 모바일 최적화: 3열 한 줄로 */}
           <div className="grid grid-cols-3 gap-1.5">
-            <div className="rounded-lg bg-card border p-2.5">
+            <div className="rounded-lg bg-card border p-2 min-w-0">
               <p className="text-[10px] text-muted-foreground mb-0.5">매출</p>
               {isStatsLoading ? (
                 <Skeleton className="h-5 w-full" />
               ) : (
-                <p className="text-sm font-bold text-green-600 truncate">{formatCurrency(stats?.totalIncome || 0)}</p>
+                <p className="text-[11px] sm:text-sm font-bold text-green-600 break-all leading-tight">{formatCurrency(stats?.totalIncome || 0)}</p>
               )}
             </div>
-            <div className="rounded-lg bg-card border p-2.5">
+            <div className="rounded-lg bg-card border p-2 min-w-0">
               <p className="text-[10px] text-muted-foreground mb-0.5">지출</p>
               {isStatsLoading ? (
                 <Skeleton className="h-5 w-full" />
               ) : (
-                <p className="text-sm font-bold text-red-600 truncate">{formatCurrency(stats?.totalExpense || 0)}</p>
+                <p className="text-[11px] sm:text-sm font-bold text-red-600 break-all leading-tight">{formatCurrency(stats?.totalExpense || 0)}</p>
               )}
             </div>
-            <div className="rounded-lg bg-primary/5 border border-primary/20 p-2.5">
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-2 min-w-0">
               <p className="text-[10px] text-muted-foreground mb-0.5">순이익</p>
               {isStatsLoading ? (
                 <Skeleton className="h-5 w-full" />
               ) : (
-                <p className="text-sm font-bold text-primary truncate">{formatCurrency(stats?.netProfit || 0)}</p>
+                <p className="text-[11px] sm:text-sm font-bold text-primary break-all leading-tight">{formatCurrency(stats?.netProfit || 0)}</p>
               )}
             </div>
           </div>
