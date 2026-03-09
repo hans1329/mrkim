@@ -5,11 +5,12 @@ import { useProfile } from "@/hooks/useProfile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Clock, AlertTriangle, ChevronRight, MessageCircle, CalendarClock, Link2, TrendingUp, TrendingDown, FileText, Tags } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, ChevronRight, MessageCircle, CalendarClock, Link2, TrendingUp, TrendingDown, FileText, Tags, Wallet, ArrowLeftRight, Banknote } from "lucide-react";
 import { cn, josa } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChat } from "@/contexts/ChatContext";
 import { useActionData } from "@/hooks/useDashboardStats";
+import { formatCurrency } from "@/data/mockData";
 
 type ActionPriority = "urgent" | "warning" | "normal";
 type ActionStatus = "pending" | "completed" | "postponed";
@@ -125,27 +126,96 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
     const currentMonth = today.getMonth() + 1;
     const currentDay = today.getDate();
 
-    // 1. 부가세 신고
-    const vatMonths = [1, 4, 7, 10];
-    if (vatMonths.includes(currentMonth) && currentDay <= 25) {
-      const daysUntilDeadline = 25 - currentDay;
-      const priority: ActionPriority = daysUntilDeadline <= 3 ? "urgent" : daysUntilDeadline <= 7 ? "warning" : "normal";
+    // 1. 세금 납부 마감일 (당일 포함 + 3일 이내)
+    const taxDeadlines = [
+      { month: 1, day: 25, label: "부가세 납부", navTab: "tax" },
+      { month: 3, day: 31, label: "법인세 납부", navTab: "tax" },
+      { month: 5, day: 31, label: "종합소득세 납부", navTab: "expense" },
+      { month: 7, day: 25, label: "부가세 납부", navTab: "tax" },
+      { month: 10, day: 25, label: "부가세 예정 납부", navTab: "tax" },
+    ];
+
+    for (const td of taxDeadlines) {
+      if (currentMonth === td.month) {
+        const daysUntil = td.day - currentDay;
+        if (daysUntil >= 0 && daysUntil <= 7) {
+          const priority: ActionPriority = daysUntil === 0 ? "urgent" : daysUntil <= 3 ? "warning" : "normal";
+          actionItems.push({
+            id: `tax-${td.month}-${td.day}`,
+            title: daysUntil === 0 ? `오늘 ${td.label} 마감일입니다` : `${td.label} 마감 D-${daysUntil}`,
+            description: `${currentMonth}월 ${td.day}일까지 ${td.label}을 완료해주세요.`,
+            priority,
+            dueText: daysUntil === 0 ? "오늘" : `D-${daysUntil}`,
+            status: "pending",
+            icon: Banknote,
+            actions: {
+              primary: { label: "세금 확인", action: () => navigate(`/reports?tab=${td.navTab}`) },
+              secondary: { label: "완료", action: () => {} },
+            },
+          });
+        }
+      }
+    }
+
+    // 2. 급여 지급일 알림 (D-day 및 리마인더)
+    if (actionData.employeesForSalary.count > 0) {
+      const reminderDays = actionData.salaryReminderDays;
+      
+      for (const dayGroup of actionData.employeesForSalary.individualDays) {
+        const daysUntil = dayGroup.day - currentDay;
+        
+        if (daysUntil === 0) {
+          // 오늘이 급여일
+          actionItems.push({
+            id: `salary-today-${dayGroup.day}`,
+            title: `오늘 급여 지급일입니다`,
+            description: `${dayGroup.count}명, 총 ${formatCurrency(dayGroup.total)} 지급 예정`,
+            priority: "urgent",
+            dueText: "오늘",
+            status: "pending",
+            icon: Wallet,
+            actions: {
+              primary: { label: "직원 관리", action: () => navigate("/employees") },
+              secondary: { label: "지급 완료", action: () => {} },
+            },
+          });
+        } else if (daysUntil > 0 && daysUntil <= reminderDays) {
+          // 급여일 임박 리마인더
+          actionItems.push({
+            id: `salary-remind-${dayGroup.day}`,
+            title: `급여 지급 D-${daysUntil}`,
+            description: `${dayGroup.count}명, 총 ${formatCurrency(dayGroup.total)} 지급 예정 (매월 ${dayGroup.day}일)`,
+            priority: "warning",
+            dueText: `D-${daysUntil}`,
+            status: "pending",
+            icon: Wallet,
+            actions: {
+              primary: { label: "직원 확인", action: () => navigate("/employees") },
+              secondary: { label: "확인 완료", action: () => {} },
+            },
+          });
+        }
+      }
+    }
+
+    // 3. 오늘 예정 자동이체
+    if (actionData.todayAutoTransfers.count > 0) {
       actionItems.push({
-        id: "vat",
-        title: "부가세 신고 준비",
-        description: `${currentMonth}월 25일까지 부가세 신고가 필요합니다. 매입/매출 세금계산서를 확인하세요.`,
-        priority,
-        dueText: daysUntilDeadline === 0 ? "오늘" : `D-${daysUntilDeadline}`,
+        id: "auto-transfer-today",
+        title: `오늘 자동이체 ${actionData.todayAutoTransfers.count}건 예정`,
+        description: `총 ${formatCurrency(actionData.todayAutoTransfers.totalAmount)} · ${actionData.todayAutoTransfers.names.join(", ")}`,
+        priority: "warning",
+        dueText: "오늘",
         status: "pending",
-        icon: FileText,
+        icon: ArrowLeftRight,
         actions: {
-          primary: { label: "세금계산서 확인", action: () => navigate("/reports?tab=tax") },
+          primary: { label: "이체 확인", action: () => navigate("/funds") },
           secondary: { label: "확인 완료", action: () => {} },
         },
       });
     }
 
-    // 2. 매출 비교
+    // 4. 매출 비교
     if (actionData.lastMonthIncome > 0 && actionData.thisMonthIncome > 0) {
       const changePercent = Math.round(((actionData.thisMonthIncome - actionData.lastMonthIncome) / actionData.lastMonthIncome) * 100);
       if (changePercent >= 10) {
@@ -174,7 +244,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
       }
     }
 
-    // 3. 미분류 거래
+    // 5. 미분류 거래
     if (actionData.unclassifiedCount > 0) {
       actionItems.push({
         id: "unclassified",
@@ -190,7 +260,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
       });
     }
 
-    // 4. 모든 할 일 없으면 긍정 메시지
+    // 6. 모든 할 일 없으면 긍정 메시지
     if (actionItems.length === 0) {
       actionItems.push({
         id: "all-good",
@@ -202,6 +272,10 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
         actions: { primary: { label: "리포트 보기", action: () => navigate("/reports") } },
       });
     }
+
+    // 우선순위 정렬: urgent → warning → normal
+    const priorityOrder = { urgent: 0, warning: 1, normal: 2 };
+    actionItems.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 
     return actionItems;
   }, [isLoggedOut, isAnyConnected, loading, actionData, secretaryName, navigate]);
