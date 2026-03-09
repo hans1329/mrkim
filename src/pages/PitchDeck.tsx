@@ -828,13 +828,17 @@ export default function PitchDeck() {
               </div>
               <div className="space-y-4">
                 <div className="p-4 rounded-xl bg-black/30 border border-white/10">
-                  <p className="text-white/50 text-xs mb-2">매출 트렌드 차트</p>
-                  <div className="flex items-end gap-1 h-16">
+                  <p className="text-white/50 text-xs mb-2">일별 매출 트렌드</p>
+                  <div className="flex items-end gap-1" style={{ height: 64 }}>
                     {[40, 55, 45, 70, 65, 85, 90].map((h, i) => (
-                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                        <div className="w-full rounded-t bg-gradient-to-t from-cyan-500 to-cyan-400" style={{ height: `${h}%` }} />
-                        <span className="text-[9px] text-white/30">{['월','화','수','목','금','토','일'][i]}</span>
+                      <div key={i} className="flex-1 flex flex-col items-end gap-1" style={{ height: '100%' }}>
+                        <div className="w-full rounded-t bg-gradient-to-t from-cyan-500 to-cyan-400 mt-auto" style={{ height: `${h}%` }} />
                       </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-1 mt-1">
+                    {['월','화','수','목','금','토','일'].map((d, i) => (
+                      <span key={i} className="flex-1 text-center text-[9px] text-white/30">{d}</span>
                     ))}
                   </div>
                 </div>
@@ -923,6 +927,11 @@ export default function PitchDeck() {
                   <p className="text-sm text-white/70">
                     <span className="text-red-400 font-semibold">"광고 효율 53% — 비용 대비 효과 낮음"</span><br />
                     → 광고 중단 또는 타겟 변경 권고
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <p className="text-[11px] text-white/50 leading-relaxed">
+                    💡 <span className="text-white/70 font-medium">어떻게 가능?</span> — 배민 ad_management API에서 광고비·노출·클릭 데이터를, sales API에서 같은 기간 매출 변화를 가져와 자동 대조. 광고 ON/OFF 기간의 매출 차이로 증분 효과를 계산합니다.
                   </p>
                 </div>
               </div>
