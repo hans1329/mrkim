@@ -828,13 +828,17 @@ export default function PitchDeck() {
               </div>
               <div className="space-y-4">
                 <div className="p-4 rounded-xl bg-black/30 border border-white/10">
-                  <p className="text-white/50 text-xs mb-2">매출 트렌드 차트</p>
-                  <div className="flex items-end gap-1 h-16">
+                  <p className="text-white/50 text-xs mb-2">일별 매출 트렌드</p>
+                  <div className="flex items-end gap-1" style={{ height: 64 }}>
                     {[40, 55, 45, 70, 65, 85, 90].map((h, i) => (
-                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                        <div className="w-full rounded-t bg-gradient-to-t from-cyan-500 to-cyan-400" style={{ height: `${h}%` }} />
-                        <span className="text-[9px] text-white/30">{['월','화','수','목','금','토','일'][i]}</span>
+                      <div key={i} className="flex-1 flex flex-col items-end gap-1" style={{ height: '100%' }}>
+                        <div className="w-full rounded-t bg-gradient-to-t from-cyan-500 to-cyan-400 mt-auto" style={{ height: `${h}%` }} />
                       </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-1 mt-1">
+                    {['월','화','수','목','금','토','일'].map((d, i) => (
+                      <span key={i} className="flex-1 text-center text-[9px] text-white/30">{d}</span>
                     ))}
                   </div>
                 </div>
