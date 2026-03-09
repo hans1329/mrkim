@@ -792,7 +792,7 @@ export default function PitchDeck() {
         <div className="max-w-6xl mx-auto">
           <Badge className="mb-4 bg-amber-500/20 text-amber-400 border-amber-500/30">Data Magic</Badge>
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-2">
-            데이터를 활용한 <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">마법</span>
+            데이터들이 만드는 <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">마법!</span>
           </h2>
           <p className="text-xl text-white/50 mb-10">
             배달앱 연동 데이터로 매장 경영을 혁신합니다
