@@ -34,6 +34,7 @@ const SYNC_HANDLERS: Record<
   codef_card_usage: syncCardTransactions,
   codef_bank_account: syncBankTransactions,
   hyphen_coupangeats: syncCoupangeats,
+  hyphen_baemin: syncBaemin,
 };
 
 // 기본 동기화 간격 (분)
