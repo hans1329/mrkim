@@ -20,6 +20,7 @@ const ENDPOINTS: Record<string, string> = {
   reviews: "/in0024000800",      // 리뷰내역조회
   my_store: "/in0024000955",     // 내 가게 조회
   menu: "/in0024000976",         // 메뉴조회
+  pg_sales: "/in0024000150",     // PG매출 조회
 };
 
 interface HyphenResponse {
