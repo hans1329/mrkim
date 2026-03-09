@@ -4,8 +4,9 @@ import { CardConnectionFlow } from "./CardConnectionFlow";
 import { AccountConnectionFlow } from "./AccountConnectionFlow";
 import { HometaxConnectionFlow } from "./HometaxConnectionFlow";
 import { CoupangeatsConnectionFlow } from "./CoupangeatsConnectionFlow";
+import { BaeminConnectionFlow } from "./BaeminConnectionFlow";
 
-export type ConnectionType = "hometax" | "card" | "account" | "coupangeats";
+export type ConnectionType = "hometax" | "card" | "account" | "coupangeats" | "baemin";
 
 interface ConnectionDrawerProps {
   open: boolean;
@@ -19,6 +20,7 @@ const TITLES: Record<ConnectionType, string> = {
   card: "카드사 연동",
   account: "계좌 연동",
   coupangeats: "쿠팡이츠 연동",
+  baemin: "배달의민족 연동",
 };
 
 export function ConnectionDrawer({ open, type, onClose, onComplete }: ConnectionDrawerProps) {
@@ -54,6 +56,9 @@ export function ConnectionDrawer({ open, type, onClose, onComplete }: Connection
           )}
           {type === "coupangeats" && (
             <CoupangeatsConnectionFlow onComplete={handleComplete} onBack={handleBack} />
+          )}
+          {type === "baemin" && (
+            <BaeminConnectionFlow onComplete={handleComplete} onBack={handleBack} />
           )}
         </div>
       </DrawerContent>
