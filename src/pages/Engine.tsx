@@ -1425,6 +1425,100 @@ export default function Engine() {
             </CardContent>
           </Card>
 
+          {/* 알림 트리거 현황 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-amber-500" />
+                알림 트리거 현황
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                <code className="text-xs bg-muted px-1 rounded">useNotificationGenerator</code> 훅이 대시보드 접속 시 실행되며, 
+                아래 조건에 해당하면 <code className="text-xs bg-muted px-1 rounded">notifications</code> 테이블에 자동 삽입합니다. 
+                동일 타입은 <strong>하루 1회</strong>만 생성됩니다.
+              </p>
+
+              <div className="space-y-3">
+                {[
+                  {
+                    icon: <Calendar className="h-4 w-4 text-red-500" />,
+                    title: "세금 마감일 알림",
+                    type: "warning",
+                    condition: "D-14 이내",
+                    detail: "부가세(1/25, 7/25), 종합소득세(5/31) 마감일까지 14일 이내일 때 트리거",
+                    requiresConnection: false,
+                  },
+                  {
+                    icon: <Search className="h-4 w-4 text-blue-500" />,
+                    title: "미분류 거래 알림",
+                    type: "info",
+                    condition: "미분류 ≥ 5건",
+                    detail: "transactions 테이블에서 category가 null인 거래가 5건 이상일 때 트리거",
+                    requiresConnection: true,
+                  },
+                  {
+                    icon: <ArrowLeftRight className="h-4 w-4 text-orange-500" />,
+                    title: "지출 변동 알림",
+                    type: "warning / success",
+                    condition: "전월 대비 ±10~20%",
+                    detail: "이번 달 지출이 전월 대비 20% 이상 증가 시 경고, 10% 이상 감소 시 격려 알림",
+                    requiresConnection: true,
+                  },
+                  {
+                    icon: <FileText className="h-4 w-4 text-green-500" />,
+                    title: "새 세금계산서 수집 알림",
+                    type: "info",
+                    condition: "24시간 내 신규",
+                    detail: "tax_invoices 테이블에서 최근 24시간 내 synced_at인 건이 1건 이상일 때 트리거",
+                    requiresConnection: true,
+                  },
+                ].map((trigger, i) => (
+                  <div key={i} className="p-4 rounded-lg border bg-card">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5">{trigger.icon}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-semibold">{trigger.title}</p>
+                          <Badge variant="outline" className="text-[10px]">{trigger.type}</Badge>
+                          {trigger.requiresConnection && (
+                            <Badge variant="secondary" className="text-[10px]">연동 필요</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{trigger.detail}</p>
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                            조건: {trigger.condition}
+                          </Badge>
+                        </div>
+                      </div>
+                      <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 실행 흐름 */}
+              <div className="p-4 rounded-lg bg-muted/30">
+                <p className="text-xs font-medium mb-3">⚙️ 실행 흐름</p>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <Badge variant="outline">대시보드 접속</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">sessionStorage 중복 체크</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">오늘 기생성 title 조회</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">4개 트리거 순차 평가</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge>일괄 INSERT</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="outline">React Query 캐시 무효화</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <p className="text-center text-xs text-muted-foreground pb-8">
             © 2026 김비서 · 내부 문서
           </p>
