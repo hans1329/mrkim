@@ -24,6 +24,12 @@ import {
   Coins,
   CircleDollarSign,
   Wallet,
+  Star,
+  MessageSquare,
+  UtensilsCrossed,
+  MapPin,
+  Megaphone,
+  LineChart,
 } from "lucide-react";
 
 // Slide Component
