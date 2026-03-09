@@ -281,10 +281,10 @@ export function buildConnectionRequiredResponse(
 
 export function buildOutOfScopeResponse(channel: "text" | "voice" | "service"): string {
   if (channel === "voice") {
-    return "사장님, 그 부분은 제가 도움을 드리기 어려워요. 다른 궁금한 거 있으시면 편하게 말씀해주세요!";
+    return "대표님, 그 부분은 제가 도움을 드리기 어려워요. 다른 궁금한 거 있으시면 편하게 말씀해주세요!";
   }
 
-  return `사장님, 그 부분은 제가 도움을 드리기 어려워요 😅
+  return `대표님, 그 부분은 제가 도움을 드리기 어려워요 😅
 
 다른 궁금한 점이 있으시면 편하게 말씀해주세요! 💬`;
 }
