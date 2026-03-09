@@ -297,6 +297,7 @@ function getConnectorLabel(connectorId: string): string {
     codef_hometax_tax_invoice: "홈택스 세금계산서",
     codef_card_usage: "카드 거래내역",
     codef_bank_account: "은행 거래내역",
+    hyphen_coupangeats: "쿠팡이츠 매출",
   };
   return labels[connectorId] || connectorId;
 }
