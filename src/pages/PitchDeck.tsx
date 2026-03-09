@@ -975,7 +975,170 @@ export default function PitchDeck() {
         </div>
       </Slide>
 
-      {/* Slide 10: Roadmap */}
+      {/* Slide 10: 데이터 비즈니스 확장 */}
+      <Slide className="bg-gradient-to-br from-[#0a0a14] via-[#0d0d1a] to-[#0a0a14]">
+        <div className="max-w-5xl mx-auto">
+          <Badge className="mb-4 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border-amber-500/30">Data Business</Badge>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
+            점주 데이터가 모이면<br />
+            <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
+              플랫폼이 된다
+            </span>
+          </h2>
+          <p className="text-xl text-white/60 mb-10">
+            수천 점주의 익명 집계 데이터 → B2B 데이터 비즈니스
+          </p>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* 상권 인텔리전스 */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                  <MapPin className="h-5 w-5 text-amber-400" />
+                </div>
+                <h3 className="font-bold">상권 인텔리전스</h3>
+              </div>
+              <p className="text-white/50 text-sm mb-3">프랜차이즈 본사·부동산 개발사·지자체 대상</p>
+              <div className="p-3 rounded-xl bg-black/30 border border-white/10 text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-white/40">강남역 치킨 평균 월매출</span>
+                  <span className="text-amber-400 font-bold">₩820만</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/40">전년 대비</span>
+                  <span className="text-emerald-400 font-bold">+12%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/40">신규 출점 추천 지수</span>
+                  <span className="text-orange-400 font-bold">B+</span>
+                </div>
+              </div>
+              <p className="text-amber-400/60 text-[11px] mt-2">💰 리포트당 ₩50~200만 / 구독 모델</p>
+            </div>
+
+            {/* 대안 신용평가 */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <Shield className="h-5 w-5 text-blue-400" />
+                </div>
+                <h3 className="font-bold">대안 신용평가</h3>
+              </div>
+              <p className="text-white/50 text-sm mb-3">은행·핀테크 대출 심사 보조 데이터</p>
+              <div className="p-3 rounded-xl bg-black/30 border border-white/10 text-xs space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-white/60">6개월 연속 매출 상승</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-white/60">배민 리뷰 4.5★ 이상</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-white/60">월 정산 안정적</span>
+                </div>
+                <div className="mt-2 pt-2 border-t border-white/10 flex justify-between">
+                  <span className="text-white/40">AI 신용 점수</span>
+                  <span className="text-blue-400 font-bold">82 / 100</span>
+                </div>
+              </div>
+              <p className="text-blue-400/60 text-[11px] mt-2">💰 건당 데이터 라이선싱 수수료</p>
+            </div>
+
+            {/* 식자재 수요 예측 */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <UtensilsCrossed className="h-5 w-5 text-emerald-400" />
+                </div>
+                <h3 className="font-bold">식자재 수요 예측</h3>
+              </div>
+              <p className="text-white/50 text-sm mb-3">식자재 유통사 대상 수요 데이터</p>
+              <div className="p-3 rounded-xl bg-black/30 border border-white/10">
+                <p className="text-[10px] text-white/40 mb-2">마포구 치킨업종 주간 수요 예측</p>
+                <div className="flex items-end gap-0.5" style={{ height: 40 }}>
+                  {[65, 50, 70, 80, 60, 95, 85].map((h, i) => (
+                    <div key={i} className="flex-1 flex flex-col" style={{ height: '100%' }}>
+                      <div className="w-full rounded-t bg-gradient-to-t from-emerald-600 to-emerald-400 mt-auto" style={{ height: `${h}%` }} />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-0.5 mt-1">
+                  {['월','화','수','목','금','토','일'].map((d, i) => (
+                    <span key={i} className="flex-1 text-center text-[8px] text-white/30">{d}</span>
+                  ))}
+                </div>
+              </div>
+              <p className="text-emerald-400/60 text-[11px] mt-2">💰 공급 매칭 중개 수수료</p>
+            </div>
+
+            {/* 광고 타겟팅 */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Megaphone className="h-5 w-5 text-purple-400" />
+                </div>
+                <h3 className="font-bold">점주 타겟 광고</h3>
+              </div>
+              <p className="text-white/50 text-sm mb-3">세그먼트 기반 B2B 광고 네트워크</p>
+              <div className="p-3 rounded-xl bg-black/30 border border-white/10 text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-white/50">매출 하락 점주</span>
+                  <span className="text-purple-400 text-[10px]">→ 배달앱 광고</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/50">인력 부족 시간대</span>
+                  <span className="text-purple-400 text-[10px]">→ 구인 플랫폼</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/50">대출 적격 점주</span>
+                  <span className="text-purple-400 text-[10px]">→ 금융 상품</span>
+                </div>
+              </div>
+              <p className="text-purple-400/60 text-[11px] mt-2">💰 CPC/CPA 기반 광고 수익</p>
+            </div>
+
+            {/* 벤치마크 구독 */}
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                  <BarChart3 className="h-5 w-5 text-cyan-400" />
+                </div>
+                <h3 className="font-bold">벤치마크 구독</h3>
+              </div>
+              <p className="text-white/50 text-sm mb-3">점주에게 프리미엄 인사이트 업셀링</p>
+              <div className="p-3 rounded-xl bg-black/30 border border-white/10">
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <span className="text-white/50">우리 동네 치킨 상위 20%</span>
+                  <span className="text-cyan-400 font-bold">₩1,050만</span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-300" style={{ width: '78%' }} />
+                </div>
+                <p className="text-[10px] text-white/40 mt-1">내 위치: 상위 28%</p>
+              </div>
+              <p className="text-cyan-400/60 text-[11px] mt-2">💰 월 ₩9,900~₩29,900 구독</p>
+            </div>
+
+            {/* 데이터 플라이휠 */}
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 hover:from-amber-500/15 hover:to-orange-500/15 transition-all group flex flex-col justify-center items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center mb-3">
+                <Sparkles className="h-6 w-6 text-amber-400" />
+              </div>
+              <h3 className="font-bold text-lg mb-2">데이터 플라이휠</h3>
+              <p className="text-white/50 text-sm leading-relaxed">
+                점주 ↑ → 데이터 ↑<br />
+                → 인사이트 정확도 ↑<br />
+                → 점주 유입 ↑<br />
+                → <span className="text-amber-400 font-semibold">B2B 매출 ↑</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </Slide>
+
+      {/* Slide 11: Roadmap */}
       <Slide>
         <div className="max-w-5xl mx-auto">
           <Badge className="mb-4 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">Roadmap</Badge>
