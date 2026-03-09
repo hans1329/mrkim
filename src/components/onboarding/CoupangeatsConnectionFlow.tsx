@@ -180,8 +180,8 @@ export function CoupangeatsConnectionFlow({ onComplete, onBack }: CoupangeatsCon
             animate={{ opacity: 1, scale: 1 }}
             className="flex flex-col items-center py-8 space-y-4"
           >
-            <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <CheckCircle2 className="w-8 h-8 text-primary" />
             </div>
             <div className="text-center space-y-1">
               <h3 className="font-semibold text-lg">연동 완료!</h3>
