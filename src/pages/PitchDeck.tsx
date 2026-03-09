@@ -119,7 +119,7 @@ export default function PitchDeck() {
     >
       {/* Navigation Dots */}
       <nav className="fixed right-6 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col gap-2">
-        {Array.from({ length: 10 }).map((_, i) => (
+        {Array.from({ length: 11 }).map((_, i) => (
           <button
             key={i}
             onClick={() => scrollToSection(i)}
@@ -747,7 +747,175 @@ export default function PitchDeck() {
         </div>
       </Slide>
 
-      {/* Slide 9: Roadmap */}
+      {/* Slide 9: 배민 독점 데이터 */}
+      <Slide>
+        <div className="max-w-6xl mx-auto">
+          <Badge className="mb-4 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">Baemin Exclusive</Badge>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-2">
+            배민 <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">독점 인텔리전스</span>
+          </h2>
+          <p className="text-xl text-white/50 mb-10">
+            배달의민족만 제공하는 4가지 전략 데이터
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* 매출 통계 */}
+            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                  <BarChart3 className="h-6 w-6 text-cyan-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">매출 통계</h3>
+                  <p className="text-white/40 text-sm">statistics API</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-black/30 border border-white/10">
+                  <p className="text-white/50 text-xs mb-2">매출 트렌드 차트</p>
+                  <div className="flex items-end gap-1 h-16">
+                    {[40, 55, 45, 70, 65, 85, 90].map((h, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <div className="w-full rounded-t bg-gradient-to-t from-cyan-500 to-cyan-400" style={{ height: `${h}%` }} />
+                        <span className="text-[9px] text-white/30">{['월','화','수','목','금','토','일'][i]}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                  <p className="text-sm text-white/70">
+                    <span className="text-cyan-400 font-semibold">"토요일 저녁 6~9시가 매출 피크"</span><br />
+                    → 해당 시간대 인력 보강 제안
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 인근지역매출 */}
+            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <MapPin className="h-6 w-6 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">상권 분석</h3>
+                  <p className="text-white/40 text-sm">nearby_sales API</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-black/30 border border-white/10">
+                  <p className="text-white/50 text-xs mb-3">내 가게 vs 인근 평균</p>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-emerald-400 font-medium">우리 가게</span>
+                        <span className="text-emerald-400">₩820만</span>
+                      </div>
+                      <div className="h-3 rounded-full bg-white/10 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400" style={{ width: '82%' }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-white/50">동네 평균</span>
+                        <span className="text-white/50">₩680만</span>
+                      </div>
+                      <div className="h-3 rounded-full bg-white/10 overflow-hidden">
+                        <div className="h-full rounded-full bg-white/30" style={{ width: '68%' }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <p className="text-sm text-white/70">
+                    <span className="text-emerald-400 font-semibold">"인근 치킨집 평균 대비 120%"</span><br />
+                    → 경쟁 포지셔닝 & 가격 전략 제안
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 광고관리 */}
+            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center">
+                  <Megaphone className="h-6 w-6 text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">광고 ROI 분석</h3>
+                  <p className="text-white/40 text-sm">ad_management API</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-black/30 border border-white/10">
+                  <p className="text-white/50 text-xs mb-3">이번 주 광고 성과</p>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <p className="text-lg font-bold text-orange-400">₩15만</p>
+                      <p className="text-white/40 text-[10px]">광고비</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-white/60">→</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-red-400">₩8만</p>
+                      <p className="text-white/40 text-[10px]">매출 증가분</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <p className="text-sm text-white/70">
+                    <span className="text-red-400 font-semibold">"광고 효율 53% — 비용 대비 효과 낮음"</span><br />
+                    → 광고 중단 또는 타겟 변경 권고
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 우리가게NOW */}
+            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Zap className="h-6 w-6 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">실시간 모니터링</h3>
+                  <p className="text-white/40 text-sm">store_now API</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-black/30 border border-white/10">
+                  <p className="text-white/50 text-xs mb-3">가게 상태 대시보드</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-green-500/10">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                        <span className="text-sm text-white/80">강남점</span>
+                      </div>
+                      <span className="text-xs text-green-400 font-medium">영업중</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-white/5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-white/30" />
+                        <span className="text-sm text-white/50">홍대점</span>
+                      </div>
+                      <span className="text-xs text-white/40 font-medium">마감</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                  <p className="text-sm text-white/70">
+                    <span className="text-purple-400 font-semibold">다점포 사장님 필수</span><br />
+                    → 가게별 영업 상태 한눈에 파악
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Slide>
+
+      {/* Slide 10: Roadmap */}
       <Slide>
         <div className="max-w-5xl mx-auto">
           <Badge className="mb-4 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">Roadmap</Badge>
@@ -922,7 +1090,7 @@ export default function PitchDeck() {
         `}</style>
       </Slide>
 
-      {/* Slide 10: Ask */}
+      {/* Slide 11: Ask */}
       <Slide className="bg-gradient-to-br from-[#0d0d14] via-[#0a0a0f] to-[#0d0d14]">
         <div className="max-w-4xl mx-auto text-center">
           <Badge className="mb-6 bg-white/10 text-white/90 border-white/20">Investment</Badge>
