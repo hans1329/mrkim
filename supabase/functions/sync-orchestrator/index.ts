@@ -874,6 +874,7 @@ async function callHyphenCoupangeats(
     store_info: "/in0024000082",
     orders: "/in0024000086",
     my_store: "/in0024000955",
+    pg_sales: "/in0024000150",
   };
 
   const endpoint = endpoints[action];
