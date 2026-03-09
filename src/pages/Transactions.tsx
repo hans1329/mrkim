@@ -372,6 +372,14 @@ export default function Transactions() {
                     }}
                     locale={ko}
                     disabled={(date) => date > new Date()}
+                    modifiers={{
+                      rangeStart: customStartDate ? [customStartDate] : [],
+                      rangeEnd: customEndDate ? [customEndDate] : [],
+                    }}
+                    modifiersStyles={{
+                      rangeStart: { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', borderRadius: '9999px' },
+                      rangeEnd: { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', borderRadius: '9999px' },
+                    }}
                     className="p-3 pointer-events-auto"
                   />
                 </div>
