@@ -43,10 +43,13 @@ import {
   Save,
   Pencil,
   Trash2,
+  Bike,
+  UtensilsCrossed,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useProfile } from "@/hooks/useProfile";
+import { useConnectorInstances } from "@/hooks/useConnectors";
 import { toast } from "sonner";
 
 export default function Settings() {
@@ -55,6 +58,7 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { resetOnboarding } = useOnboarding();
   const { profile, loading, updating, updateProfile, resetConnections } = useProfile();
+  const { data: connectorInstances = [] } = useConnectorInstances();
   
   // 사업장 정보 편집 상태
   const [isEditing, setIsEditing] = useState(false);
@@ -352,6 +356,52 @@ export default function Settings() {
                 </span>
               ) : (
                 <Button variant="outline" size="sm" onClick={() => openDrawer("account")}>
+                  연결
+                </Button>
+              )}
+            </div>
+            <Separator />
+            {/* 쿠팡이츠 */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <UtensilsCrossed className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">쿠팡이츠</p>
+                  <p className="text-xs text-muted-foreground">배달 매출·정산 데이터</p>
+                </div>
+              </div>
+              {connectorInstances.some(i => i.connector_id === "hyphen_coupangeats" && i.status === "connected") ? (
+                <span className="flex items-center gap-1 text-green-500 text-xs">
+                  <CheckCircle2 className="h-3 w-3" />
+                  연결됨
+                </span>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => openDrawer("coupangeats")}>
+                  연결
+                </Button>
+              )}
+            </div>
+            <Separator />
+            {/* 배달의민족 */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Bike className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">배달의민족</p>
+                  <p className="text-xs text-muted-foreground">배달 매출·정산 데이터</p>
+                </div>
+              </div>
+              {connectorInstances.some(i => i.connector_id === "hyphen_baemin" && i.status === "connected") ? (
+                <span className="flex items-center gap-1 text-green-500 text-xs">
+                  <CheckCircle2 className="h-3 w-3" />
+                  연결됨
+                </span>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => openDrawer("baemin")}>
                   연결
                 </Button>
               )}

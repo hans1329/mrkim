@@ -39,7 +39,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, PlusCircle, CalendarIcon, Trash2 } from "lucide-react";
+import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, PlusCircle, CalendarIcon, Trash2, Bike, UtensilsCrossed } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { cn } from "@/lib/utils";
@@ -50,6 +50,7 @@ import { useCardSync } from "@/hooks/useCardSync";
 import { useBankSync } from "@/hooks/useBankSync";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { useCardConnectionInfo, useBankConnectionInfo } from "@/hooks/useCardConnectionInfo";
+import { useConnectorInstances } from "@/hooks/useConnectors";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { format, subMonths } from "date-fns";
@@ -115,6 +116,10 @@ export default function Transactions() {
   const { openDrawer } = useConnectionDrawer();
   const cardInfo = useCardConnectionInfo();
   const bankInfo = useBankConnectionInfo();
+  const { data: connectorInstances = [] } = useConnectorInstances();
+
+  const isCoupangeatsConnected = connectorInstances.some(i => i.connector_id === "hyphen_coupangeats" && i.status === "connected");
+  const isBaeminConnected = connectorInstances.some(i => i.connector_id === "hyphen_baemin" && i.status === "connected");
 
   const handleCardSync = () => {
     openDrawer("card");
@@ -205,7 +210,7 @@ export default function Transactions() {
           )}
 
           {/* 동기화 배너 - 모바일: 세로 스택, 넓은 화면: 2열 */}
-          {(isCardConnected || isAccountConnected) && (
+          {(isCardConnected || isAccountConnected || isCoupangeatsConnected || isBaeminConnected) && (
             <div className="flex flex-col sm:grid sm:grid-cols-2 gap-1.5">
               {/* 카드 */}
               <div className={cn(
@@ -256,6 +261,50 @@ export default function Transactions() {
                 ) : (
                   <Button size="sm" variant="ghost" onClick={() => openDrawer("account")}
                     className="h-6 px-2 gap-1 text-xs text-success hover:text-success hover:bg-success/10 shrink-0">
+                    <LinkIcon className="h-3 w-3" />
+                    연동
+                  </Button>
+                )}
+              </div>
+              {/* 쿠팡이츠 */}
+              <div className={cn(
+                "flex items-center justify-between rounded-lg px-3 py-2",
+                isCoupangeatsConnected ? "bg-muted/50 border border-border" : "bg-muted/50 border border-dashed border-muted-foreground/20"
+              )}>
+                <p className="text-xs font-medium truncate">🛵 쿠팡이츠</p>
+                {isCoupangeatsConnected ? (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                    <RefreshCw className="h-3 w-3" />
+                    <Button size="sm" variant="ghost" onClick={() => openDrawer("coupangeats")}
+                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
+                      재연동
+                    </Button>
+                  </span>
+                ) : (
+                  <Button size="sm" variant="ghost" onClick={() => openDrawer("coupangeats")}
+                    className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10 shrink-0">
+                    <LinkIcon className="h-3 w-3" />
+                    연동
+                  </Button>
+                )}
+              </div>
+              {/* 배달의민족 */}
+              <div className={cn(
+                "flex items-center justify-between rounded-lg px-3 py-2",
+                isBaeminConnected ? "bg-muted/50 border border-border" : "bg-muted/50 border border-dashed border-muted-foreground/20"
+              )}>
+                <p className="text-xs font-medium truncate">🏍️ 배달의민족</p>
+                {isBaeminConnected ? (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                    <RefreshCw className="h-3 w-3" />
+                    <Button size="sm" variant="ghost" onClick={() => openDrawer("baemin")}
+                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
+                      재연동
+                    </Button>
+                  </span>
+                ) : (
+                  <Button size="sm" variant="ghost" onClick={() => openDrawer("baemin")}
+                    className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10 shrink-0">
                     <LinkIcon className="h-3 w-3" />
                     연동
                   </Button>
