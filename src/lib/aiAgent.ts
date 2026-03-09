@@ -4,7 +4,7 @@ import { mockTransactions, mockEmployees, mockDeposits, mockAutoTransfers, getTo
 // ============================================
 // 시스템 프롬프트 (실제 LLM 연동 시 사용)
 // ============================================
-export const SYSTEM_PROMPT = `당신은 '김비서', 소상공인 사장님을 위한 업무 전문 AI입니다.
+export const SYSTEM_PROMPT = `당신은 '김비서', 소상공인 대표님을 위한 업무 전문 AI입니다.
 
 【할 수 있는 일】
 - 자금 조회/이체/예치 관리
