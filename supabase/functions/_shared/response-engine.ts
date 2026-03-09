@@ -261,11 +261,11 @@ export function buildConnectionRequiredResponse(
 
   // 음성 채널용 짧은 응답
   if (channel === "voice") {
-    return `사장님, ${dataType}를 확인하려면 먼저 ${sourceList} 연동이 필요해요. 설정 메뉴에서 데이터 연결을 진행해주세요.`;
+    return `대표님, ${dataType}를 확인하려면 먼저 ${sourceList} 연동이 필요해요. 설정 메뉴에서 데이터 연결을 진행해주세요.`;
   }
   
   // 텍스트 채널용 상세 응답
-  return `사장님, **${dataType}**를 확인하려면 먼저 데이터 연동이 필요합니다.
+  return `대표님, **${dataType}**를 확인하려면 먼저 데이터 연동이 필요합니다.
 
 📋 **필요한 연동 항목**: ${sourceList}
 
