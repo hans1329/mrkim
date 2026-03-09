@@ -88,6 +88,7 @@ serve(async (req) => {
       storeId,
       detailListYn,
       allTransYn,
+      langType,
     } = body;
 
     if (!action) {
