@@ -647,18 +647,74 @@ export default function PitchDeck() {
 
           {/* Data Sources */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-            {[
-              { icon: UtensilsCrossed, label: "메뉴 데이터", desc: "판매량·마진 분석" },
-              { icon: Star, label: "리뷰 분석", desc: "AI 감성 분석" },
-              { icon: LineChart, label: "매출 통계", desc: "시간대·요일 패턴" },
-              { icon: MapPin, label: "상권 분석", desc: "인근 매출 비교" },
-            ].map((item, i) => (
-              <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
-                <item.icon className="h-7 w-7 mx-auto mb-2 text-amber-400" />
-                <p className="font-bold text-sm">{item.label}</p>
-                <p className="text-white/40 text-xs mt-1">{item.desc}</p>
+            {/* 메뉴 데이터 */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <UtensilsCrossed className="h-7 w-7 mx-auto mb-2 text-amber-400" />
+              <p className="font-bold text-sm">메뉴 데이터</p>
+              <p className="text-white/40 text-xs mt-1">판매량·마진 분석</p>
+              <div className="flex items-end justify-center gap-0.5 h-8 mt-2">
+                {[60, 90, 45, 75, 30].map((h, i) => (
+                  <div key={i} className="w-3 rounded-t bg-amber-400/40" style={{ height: `${h}%` }} />
+                ))}
               </div>
-            ))}
+            </div>
+            {/* 리뷰 분석 */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <Star className="h-7 w-7 mx-auto mb-2 text-amber-400" />
+              <p className="font-bold text-sm">리뷰 분석</p>
+              <p className="text-white/40 text-xs mt-1">AI 감성 분석</p>
+              <div className="flex items-center justify-center gap-1 mt-2">
+                {[4.2, 4.5, 4.3, 4.7, 4.8].map((v, i) => (
+                  <div key={i} className="flex flex-col items-center">
+                    <div className="w-2 h-2 rounded-full bg-amber-400" style={{ opacity: 0.4 + v / 8 }} />
+                  </div>
+                ))}
+                <span className="text-amber-400 text-[10px] font-bold ml-1">4.8★</span>
+              </div>
+            </div>
+            {/* 매출 통계 */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <LineChart className="h-7 w-7 mx-auto mb-2 text-amber-400" />
+              <p className="font-bold text-sm">매출 통계</p>
+              <p className="text-white/40 text-xs mt-1">시간대·요일 패턴</p>
+              <svg viewBox="0 0 100 32" className="w-full h-8 mt-2">
+                <polyline
+                  points="0,28 15,22 30,25 45,15 60,18 75,8 100,5"
+                  fill="none"
+                  stroke="rgb(251 191 36)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.7"
+                />
+                <polyline
+                  points="0,28 15,22 30,25 45,15 60,18 75,8 100,5"
+                  fill="url(#goldGrad)"
+                  stroke="none"
+                  opacity="0.15"
+                />
+                <defs>
+                  <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="rgb(251 191 36)" />
+                    <stop offset="100%" stopColor="transparent" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            {/* 상권 분석 */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <MapPin className="h-7 w-7 mx-auto mb-2 text-amber-400" />
+              <p className="font-bold text-sm">상권 분석</p>
+              <p className="text-white/40 text-xs mt-1">인근 매출 비교</p>
+              <div className="mt-2 space-y-1">
+                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-full rounded-full bg-amber-400/60" style={{ width: '78%' }} />
+                </div>
+                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-full rounded-full bg-white/20" style={{ width: '55%' }} />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Killer Insight Example */}
