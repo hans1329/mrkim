@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useServiceFAQ } from "@/hooks/useServiceFAQ";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
