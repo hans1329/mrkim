@@ -302,23 +302,27 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
                 </div>
               )}
 
-              {/* 로그인 방식 안내 */}
-              <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                {isCertBank ? (
-                  <>
+              {/* 로그인 방식 선택 */}
+              <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  {useCertLogin ? (
                     <Lock className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">공동인증서</span> 로그인이 필요한 은행입니다
-                    </span>
-                  </>
-                ) : (
-                  <>
+                  ) : (
                     <Smartphone className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">아이디/비밀번호</span> 로그인 지원 은행입니다
-                    </span>
-                  </>
-                )}
+                  )}
+                  <span className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">
+                      {useCertLogin ? "공동인증서" : "아이디/비밀번호"}
+                    </span> 로그인
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setUseCertLogin(!useCertLogin)}
+                  className="text-xs text-primary font-medium hover:underline"
+                >
+                  {useCertLogin ? "아이디/비번으로 전환" : "인증서로 전환"}
+                </button>
               </div>
 
               {/* 인증서 로그인 */}
