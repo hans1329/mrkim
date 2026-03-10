@@ -26,8 +26,7 @@ import { useAccountConnection } from "@/hooks/useAccountConnection";
 import { useBankSync } from "@/hooks/useBankSync";
 import { useConnection } from "@/contexts/ConnectionContext";
 
-// 아이디/PW 로그인 지원 은행 (인터넷 전문은행)
-const ID_PW_BANKS = new Set(["kakao", "toss", "kbank"]);
+// 모든 은행에서 아이디/비밀번호 로그인을 기본 지원하며, 인증서 로그인은 선택 옵션
 
 // 은행 목록
 const BANKS = [
@@ -75,8 +74,9 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const [currentConnectedId, setCurrentConnectedId] = useState<string | null>(null);
   const certFileInputRef = useRef<HTMLInputElement>(null);
 
-  // 선택된 은행의 로그인 방식 결정
-  const isCertBank = selectedBank ? !ID_PW_BANKS.has(selectedBank) : false;
+  // 로그인 방식: 기본 아이디/비번, 인증서는 사용자 선택
+  const [useCertLogin, setUseCertLogin] = useState(false);
+  const isCertBank = useCertLogin;
 
   const { isLoading, registerBankAccount, getAccounts } = useAccountConnection();
   const bankSync = useBankSync();
@@ -302,23 +302,27 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
                 </div>
               )}
 
-              {/* 로그인 방식 안내 */}
-              <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                {isCertBank ? (
-                  <>
+              {/* 로그인 방식 선택 */}
+              <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  {useCertLogin ? (
                     <Lock className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">공동인증서</span> 로그인이 필요한 은행입니다
-                    </span>
-                  </>
-                ) : (
-                  <>
+                  ) : (
                     <Smartphone className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">아이디/비밀번호</span> 로그인 지원 은행입니다
-                    </span>
-                  </>
-                )}
+                  )}
+                  <span className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">
+                      {useCertLogin ? "공동인증서" : "아이디/비밀번호"}
+                    </span> 로그인
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setUseCertLogin(!useCertLogin)}
+                  className="text-xs text-primary font-medium hover:underline"
+                >
+                  {useCertLogin ? "아이디/비번으로 전환" : "인증서로 전환"}
+                </button>
               </div>
 
               {/* 인증서 로그인 */}
