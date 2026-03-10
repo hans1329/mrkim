@@ -74,8 +74,9 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const [currentConnectedId, setCurrentConnectedId] = useState<string | null>(null);
   const certFileInputRef = useRef<HTMLInputElement>(null);
 
-  // 선택된 은행의 로그인 방식 결정
-  const isCertBank = selectedBank ? !ID_PW_BANKS.has(selectedBank) : false;
+  // 로그인 방식: 기본 아이디/비번, 인증서는 사용자 선택
+  const [useCertLogin, setUseCertLogin] = useState(false);
+  const isCertBank = useCertLogin;
 
   const { isLoading, registerBankAccount, getAccounts } = useAccountConnection();
   const bankSync = useBankSync();
