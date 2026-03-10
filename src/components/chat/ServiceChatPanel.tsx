@@ -126,7 +126,7 @@ export function ServiceChatPanel() {
       {/* Quick Questions */}
       <div className="border-t px-4 py-2">
         <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
-          {QUICK_QUESTIONS.map((q) => (
+          {(quickQuestions.length > 0 ? quickQuestions : ["김비서가 뭐야?", "어떤 기능이 있어?", "요금은 얼마야?", "무료 체험 가능해?"]).map((q) => (
             <Button
               key={q}
               variant="outline"
