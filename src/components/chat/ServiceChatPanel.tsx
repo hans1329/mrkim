@@ -8,14 +8,7 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { useServiceChat } from "@/contexts/ServiceChatContext";
 import { useServiceChatAI } from "@/hooks/useServiceChat";
-
-// 빠른 질문 목록
-const QUICK_QUESTIONS = [
-  "김비서가 뭐야?",
-  "어떤 기능이 있어?",
-  "요금은 얼마야?",
-  "무료 체험 가능해?",
-];
+import { useServiceFAQ } from "@/hooks/useServiceFAQ";
 
 export function ServiceChatPanel() {
   const { isChatOpen, closeChat, switchToVoice } = useServiceChat();
