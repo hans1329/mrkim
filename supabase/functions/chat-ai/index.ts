@@ -635,7 +635,7 @@ function classifyByKeyword(text: string, dbKeywords: { intent: string; keywords:
 
   // 2차: 금융 키워드 직접 매칭 (기간 불필요)
   // 손익/매출/지출 등 명확한 금융 키워드는 기간 없이도 데이터 조회
-  if (/손익|순이익|이익|적자|흑자|수익|마진|영업이익|순수익/.test(t)) {
+  if (/손익|순이익|이익|적자|흑자|수익|마진|영업이익|순수익|현금흐름|현금\s*흐름|캐시플로|자금흐름|자금\s*사정|자금\s*현황|돈\s*흐름|자금\s*상황|현금\s*상황/.test(t)) {
     return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" } };
   }
   if (/매출|매입|매상|장사|벌이|벌었|팔았|팔린|판매/.test(t)) {
