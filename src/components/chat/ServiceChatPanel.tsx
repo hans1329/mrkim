@@ -8,18 +8,12 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { useServiceChat } from "@/contexts/ServiceChatContext";
 import { useServiceChatAI } from "@/hooks/useServiceChat";
-
-// 빠른 질문 목록
-const QUICK_QUESTIONS = [
-  "김비서가 뭐야?",
-  "어떤 기능이 있어?",
-  "요금은 얼마야?",
-  "무료 체험 가능해?",
-];
+import { useServiceFAQ } from "@/hooks/useServiceFAQ";
 
 export function ServiceChatPanel() {
   const { isChatOpen, closeChat, switchToVoice } = useServiceChat();
   const { messages, isLoading, sendMessage } = useServiceChatAI();
+  const { quickQuestions, isLoading: faqLoading } = useServiceFAQ();
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -132,7 +126,7 @@ export function ServiceChatPanel() {
       {/* Quick Questions */}
       <div className="border-t px-4 py-2">
         <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
-          {QUICK_QUESTIONS.map((q) => (
+          {(quickQuestions.length > 0 ? quickQuestions : ["김비서가 뭐야?", "어떤 기능이 있어?", "요금은 얼마야?", "무료 체험 가능해?"]).map((q) => (
             <Button
               key={q}
               variant="outline"

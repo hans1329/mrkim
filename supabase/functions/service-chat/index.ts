@@ -21,8 +21,48 @@ async function waitForSlot(): Promise<void> {
   lastGeminiCallTime = Date.now();
 }
 
-// 서비스 안내 전용 시스템 프롬프트
-const SERVICE_SYSTEM_PROMPT = `당신은 김비서 서비스 안내 담당입니다.
+// FAQ 캐시 (5분)
+let faqCache: { data: string; fetchedAt: number } | null = null;
+const FAQ_CACHE_TTL = 5 * 60 * 1000;
+
+async function getFAQContext(): Promise<string> {
+  const now = Date.now();
+  if (faqCache && (now - faqCache.fetchedAt) < FAQ_CACHE_TTL) {
+    return faqCache.data;
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data, error } = await supabase
+      .from("service_faq")
+      .select("question, answer")
+      .eq("is_active", true)
+      .order("priority", { ascending: false });
+
+    if (error || !data || data.length === 0) {
+      console.error("FAQ fetch error:", error);
+      return "";
+    }
+
+    const faqText = data
+      .map((f: { question: string; answer: string }, i: number) => `Q${i + 1}: ${f.question}\nA${i + 1}: ${f.answer}`)
+      .join("\n\n");
+
+    const context = `\n\n## 서비스 FAQ 데이터베이스\n아래 FAQ를 참고하여 정확하게 답변하세요. FAQ에 있는 내용은 그대로 활용하되, 자연스럽게 응답하세요.\n\n${faqText}`;
+
+    faqCache = { data: context, fetchedAt: now };
+    return context;
+  } catch (e) {
+    console.error("FAQ context error:", e);
+    return "";
+  }
+}
+
+// 서비스 안내 전용 시스템 프롬프트 (기본)
+const SERVICE_SYSTEM_PROMPT_BASE = `당신은 김비서 서비스 안내 담당입니다.
 
 ## 역할
 - 김비서 서비스에 대해 친절하게 안내
@@ -38,30 +78,13 @@ const SERVICE_SYSTEM_PROMPT = `당신은 김비서 서비스 안내 담당입니
 ## 김비서 서비스 소개
 김비서는 소상공인을 위한 AI 경영 비서 서비스입니다.
 
-### 주요 기능
-1. **매출/지출 자동 관리**: 카드사, 은행 연동으로 자동 기록
-2. **세금 안내**: 부가세, 종합소득세 신고 일정 및 예상 세액 안내
-3. **경영 브리핑**: 매일 사업 현황 요약 제공
-4. **AI 상담**: 경영 관련 질문에 실시간 답변
-5. **음성 대화**: 음성으로 편하게 질문하고 답변 받기
-
-### 데이터 연동
-- 홈택스: 사업자등록증, 세금 정보
-- 카드사: 매출/지출 내역
-- 은행: 계좌 잔액, 거래 내역
-
-### 요금제
-- **무료 체험**: 14일간 모든 기능 무료
-- **베이직**: 월 9,900원 (기본 기능)
-- **프로**: 월 19,900원 (고급 분석 + 우선 상담)
-
 ## 응답 가이드
 - 친근하고 간결하게 응답
 - 마크다운 형식으로 정리
 - 이모지를 적절히 사용하여 친근함 표현
+- FAQ 데이터베이스에 해당하는 질문이면 해당 내용을 기반으로 답변
 - 일상적인 대화에도 친근하게 응대 (딱딱하게 거절하지 않기)
   - 예: "심심해요" → "저도 대표님이랑 대화하니까 좋아요! 😊 김비서에 대해 궁금한 거 있으시면 물어보세요~"
-  - 예: "맛집 추천해줘" → "맛집은 제 전문 분야는 아니지만... 😄 혹시 사업 운영에 대해 궁금한 건 없으세요? 세금, 매출 관리 등 도와드릴 수 있어요!"
   - 예: "넌 누구야?" → "안녕하세요! 저는 김비서예요 😊 소상공인 대표님들의 경영을 도와드리는 AI 비서입니다!"
 - 불법적이거나 부적절한 요청만 정중히 거절`;
 
@@ -82,9 +105,13 @@ serve(async (req) => {
       throw new Error("message is required");
     }
 
+    // FAQ 컨텍스트를 DB에서 가져와서 시스템 프롬프트에 추가
+    const faqContext = await getFAQContext();
+    const fullSystemPrompt = SERVICE_SYSTEM_PROMPT_BASE + faqContext;
+
     // 대화 히스토리 구성
     const geminiMessages = [
-      { role: "user", parts: [{ text: SERVICE_SYSTEM_PROMPT }] },
+      { role: "user", parts: [{ text: fullSystemPrompt }] },
       { role: "model", parts: [{ text: "네, 알겠습니다. 저는 김비서 서비스 안내 담당이에요! 😊 궁금한 점이 있으시면 편하게 물어보세요." }] },
     ];
 
