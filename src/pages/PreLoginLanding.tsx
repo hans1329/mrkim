@@ -305,10 +305,16 @@ const PreLoginLandingContent = () => {
           </div>
 
           <Accordion type="single" collapsible className="space-y-3">
-            {faqs.map((faq, i) => (
+            {faqLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-card rounded-xl shadow-sm px-5 py-4">
+                  <Skeleton className="h-5 w-3/4" />
+                </div>
+              ))
+            ) : dbFaqs.slice(0, 6).map((faq) => (
               <AccordionItem 
-                key={i} 
-                value={`faq-${i}`}
+                key={faq.id} 
+                value={`faq-${faq.id}`}
                 className="bg-card rounded-xl border-0 shadow-sm px-5"
               >
                 <AccordionTrigger className="text-left font-semibold hover:no-underline py-4">
