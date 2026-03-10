@@ -26,8 +26,7 @@ import { useAccountConnection } from "@/hooks/useAccountConnection";
 import { useBankSync } from "@/hooks/useBankSync";
 import { useConnection } from "@/contexts/ConnectionContext";
 
-// 아이디/PW 로그인 지원 은행 (인터넷 전문은행)
-const ID_PW_BANKS = new Set(["kakao", "toss", "kbank"]);
+// 모든 은행에서 아이디/비밀번호 로그인을 기본 지원하며, 인증서 로그인은 선택 옵션
 
 // 은행 목록
 const BANKS = [
