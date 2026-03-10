@@ -13,6 +13,7 @@ import { useServiceFAQ } from "@/hooks/useServiceFAQ";
 export function ServiceChatPanel() {
   const { isChatOpen, closeChat, switchToVoice } = useServiceChat();
   const { messages, isLoading, sendMessage } = useServiceChatAI();
+  const { quickQuestions, isLoading: faqLoading } = useServiceFAQ();
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
