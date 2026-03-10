@@ -86,19 +86,7 @@ const PreLoginLandingContent = () => {
     text: "매출 분석 리포트 덕분에 어떤 시술이 수익성 좋은지 한눈에 파악돼요."
   }];
 
-  const faqs = [{
-    question: "정말 무료인가요?",
-    answer: "네! 기본 기능은 평생 무료입니다. 계좌 연동, 매출/지출 분석, AI 상담 등 핵심 기능을 무료로 이용하실 수 있어요. 세무 신고 대행, 급여 자동 이체 등 고급 기능은 프로 플랜에서 제공됩니다."
-  }, {
-    question: "내 금융 정보는 안전한가요?",
-    answer: "물론입니다. 금융보안원 인증을 받은 보안 시스템을 사용하며, 모든 데이터는 암호화되어 저장됩니다. 김비서는 조회만 가능하고 출금이나 이체 권한은 없어요."
-  }, {
-    question: "어떤 은행/카드사를 연동할 수 있나요?",
-    answer: "국내 대부분의 시중은행(국민, 신한, 우리, 하나, 기업 등)과 주요 카드사를 지원합니다. 토스, 카카오뱅크 등 인터넷은행도 연동 가능해요."
-  }, {
-    question: "세무사가 없어도 되나요?",
-    answer: "간단한 세금 신고는 김비서가 자동으로 처리해드려요. 복잡한 세무 상담이 필요하시면 협력 세무사를 연결해드릴 수도 있습니다."
-  }];
+  const { faqs: dbFaqs, isLoading: faqLoading } = useServiceFAQ();
   return <div className="fixed inset-0 overflow-y-auto flex flex-col text-[15px] lg:text-[15px] bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
