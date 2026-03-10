@@ -202,10 +202,14 @@ export default function Transactions() {
               <p className="text-xs text-muted-foreground mb-2.5">
                 연동하면 거래 내역이 자동으로 수집됩니다
               </p>
-              <Button size="sm" className="gap-1 h-8" onClick={() => openDrawer("card")}>
-                <Sparkles className="h-3.5 w-3.5" />
-                연동하러 가기
-              </Button>
+              <div className="flex gap-2 justify-center">
+                <Button size="sm" variant="outline" className="gap-1 h-8" onClick={() => openDrawer("card")}>
+                  💳 카드 연동
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1 h-8" onClick={() => openDrawer("account")}>
+                  🏦 계좌 연동
+                </Button>
+              </div>
             </div>
           )}
 
