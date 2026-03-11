@@ -46,6 +46,7 @@ import AdminFeedback from "./pages/admin/AdminFeedback";
 import AdminApiUsage from "./pages/admin/AdminApiUsage";
 import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
 import AdminIntentKeywords from "./pages/admin/AdminIntentKeywords";
+import AdminTaxAccountants from "./pages/admin/AdminTaxAccountants";
 
 const queryClient = new QueryClient();
 
