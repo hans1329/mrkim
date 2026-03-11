@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.hyphen-baemin]
 verify_jwt = false
+
+[functions.send-tax-consultation]
+verify_jwt = false
