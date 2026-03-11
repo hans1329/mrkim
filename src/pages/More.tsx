@@ -8,6 +8,7 @@ import {
   Settings,
   HelpCircle,
   ChevronRight,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
