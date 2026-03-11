@@ -266,6 +266,40 @@ export default function TaxAccountant() {
                       </>
                     )}
                   </div>
+                  {c.status === "pending" && assignment && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full mt-3 text-xs"
+                      onClick={async () => {
+                        try {
+                          const { data: { session } } = await supabase.auth.getSession();
+                          const res = await fetch(
+                            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-tax-consultation`,
+                            {
+                              method: "POST",
+                              headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${session?.access_token}`,
+                                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                              },
+                              body: JSON.stringify({ consultationId: c.id }),
+                            }
+                          );
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error);
+                          toast.success(`${data.accountantName} 세무사에게 전달되었습니다`);
+                          // Refresh
+                          window.location.reload();
+                        } catch (e: unknown) {
+                          toast.error((e as Error).message || "전달에 실패했습니다");
+                        }
+                      }}
+                    >
+                      <Mail className="h-3.5 w-3.5 mr-1.5" />
+                      세무사에게 이메일 전달
+                    </Button>
+                  )}
                   {c.accountant_response && (
                     <div className="mt-3 p-3 rounded-lg bg-muted/50">
                       <p className="text-xs font-medium mb-1">세무사 답변</p>
