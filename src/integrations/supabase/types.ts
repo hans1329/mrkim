@@ -1309,6 +1309,222 @@ export type Database = {
           },
         ]
       }
+      tax_accountant_assignments: {
+        Row: {
+          accountant_id: string
+          assigned_at: string
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accountant_id: string
+          assigned_at?: string
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accountant_id?: string
+          assigned_at?: string
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_accountant_assignments_accountant_id_fkey"
+            columns: ["accountant_id"]
+            isOneToOne: false
+            referencedRelation: "tax_accountants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_accountants: {
+        Row: {
+          bio: string | null
+          created_at: string
+          email: string
+          firm_name: string | null
+          id: string
+          industry_types: string[] | null
+          is_active: boolean | null
+          name: string
+          phone: string | null
+          pricing_info: Json | null
+          profile_image_url: string | null
+          region: string | null
+          specialties: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          email: string
+          firm_name?: string | null
+          id?: string
+          industry_types?: string[] | null
+          is_active?: boolean | null
+          name: string
+          phone?: string | null
+          pricing_info?: Json | null
+          profile_image_url?: string | null
+          region?: string | null
+          specialties?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          email?: string
+          firm_name?: string | null
+          id?: string
+          industry_types?: string[] | null
+          is_active?: boolean | null
+          name?: string
+          phone?: string | null
+          pricing_info?: Json | null
+          profile_image_url?: string | null
+          region?: string | null
+          specialties?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tax_consultations: {
+        Row: {
+          accountant_id: string | null
+          accountant_response: string | null
+          ai_preliminary_answer: string | null
+          consultation_type: string
+          created_at: string
+          data_package: Json | null
+          email_sent_at: string | null
+          id: string
+          responded_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+          user_question: string
+        }
+        Insert: {
+          accountant_id?: string | null
+          accountant_response?: string | null
+          ai_preliminary_answer?: string | null
+          consultation_type?: string
+          created_at?: string
+          data_package?: Json | null
+          email_sent_at?: string | null
+          id?: string
+          responded_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+          user_question: string
+        }
+        Update: {
+          accountant_id?: string | null
+          accountant_response?: string | null
+          ai_preliminary_answer?: string | null
+          consultation_type?: string
+          created_at?: string
+          data_package?: Json | null
+          email_sent_at?: string | null
+          id?: string
+          responded_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+          user_question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_consultations_accountant_id_fkey"
+            columns: ["accountant_id"]
+            isOneToOne: false
+            referencedRelation: "tax_accountants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_filing_tasks: {
+        Row: {
+          accountant_id: string | null
+          created_at: string
+          data_prepared_at: string | null
+          deadline: string
+          filing_method: string | null
+          filing_type: string
+          id: string
+          notified_at: string | null
+          prepared_data: Json | null
+          reminder_at: string | null
+          review_notes: Json | null
+          status: string
+          submitted_at: string | null
+          tax_period: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accountant_id?: string | null
+          created_at?: string
+          data_prepared_at?: string | null
+          deadline: string
+          filing_method?: string | null
+          filing_type: string
+          id?: string
+          notified_at?: string | null
+          prepared_data?: Json | null
+          reminder_at?: string | null
+          review_notes?: Json | null
+          status?: string
+          submitted_at?: string | null
+          tax_period: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accountant_id?: string | null
+          created_at?: string
+          data_prepared_at?: string | null
+          deadline?: string
+          filing_method?: string | null
+          filing_type?: string
+          id?: string
+          notified_at?: string | null
+          prepared_data?: Json | null
+          reminder_at?: string | null
+          review_notes?: Json | null
+          status?: string
+          submitted_at?: string | null
+          tax_period?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_filing_tasks_accountant_id_fkey"
+            columns: ["accountant_id"]
+            isOneToOne: false
+            referencedRelation: "tax_accountants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tax_invoices: {
         Row: {
           buyer_business_number: string | null
