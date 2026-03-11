@@ -44,6 +44,7 @@ const menuGroups = [
       { path: "/admin/announcements", label: "공지사항", icon: Megaphone },
       { path: "/admin/push", label: "푸시 알림", icon: Bell },
       { path: "/admin/feedback", label: "피드백/문의", icon: HelpCircle },
+      { path: "/admin/tax-accountants", label: "세무사 관리", icon: Users },
     ],
   },
   {
