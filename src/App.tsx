@@ -100,6 +100,7 @@ const App = () => (
                         <Route path="/engine" element={<Engine />} />
                         <Route path="/community" element={<Community />} />
                         <Route path="/help" element={<Help />} />
+                        <Route path="/tax-accountant" element={<TaxAccountant />} />
                       </Route>
 
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
