@@ -32,6 +32,7 @@ import Engine from "./pages/Engine";
 import NotFound from "./pages/NotFound";
 import Community from "./pages/Community";
 import Help from "./pages/Help";
+import TaxAccountant from "./pages/TaxAccountant";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 // Admin pages
