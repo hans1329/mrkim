@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Save, Check, Mail, KeyRound, UserPlus, MailCheck, Loader2, Eye, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Save, Check, Mail, KeyRound, UserPlus, MailCheck, Loader2, Eye, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { type EmailDesign, buildDesignedEmailHtml } from "./EmailDesignForm";
+import { type EmailDesign } from "./EmailDesignForm";
 
 const AUTH_EMAIL_TYPES = [
   {
@@ -36,7 +39,13 @@ const AUTH_EMAIL_TYPES = [
 
 type AuthEmailType = typeof AUTH_EMAIL_TYPES[number]["id"];
 
-const TEMPLATE_CONTENT: Record<AuthEmailType, { heading: string; body: string; ctaText: string }> = {
+interface TemplateContent {
+  heading: string;
+  body: string;
+  ctaText: string;
+}
+
+const DEFAULT_TEMPLATE_CONTENT: Record<AuthEmailType, TemplateContent> = {
   signup: {
     heading: "가입을 환영합니다! 🎉",
     body: "김비서에 가입해 주셔서 감사합니다.\n\n아래 버튼을 클릭하여 이메일 인증을 완료해주세요.\n인증이 완료되면 김비서의 모든 기능을 이용하실 수 있습니다.",
@@ -59,8 +68,7 @@ const TEMPLATE_CONTENT: Record<AuthEmailType, { heading: string; body: string; c
   },
 };
 
-function buildAuthPreviewHtml(design: EmailDesign, type: AuthEmailType): string {
-  const content = TEMPLATE_CONTENT[type];
+function buildAuthPreviewHtml(design: EmailDesign, content: TemplateContent): string {
   const confirmationUrl = "https://mrkim.today/auth/confirm?token=example";
 
   return `<!DOCTYPE html>
@@ -97,12 +105,52 @@ export default function AuthEmailTemplates({ design }: AuthEmailTemplatesProps) 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [previewType, setPreviewType] = useState<AuthEmailType>("signup");
+  const [editingType, setEditingType] = useState<AuthEmailType | null>(null);
+  const [templateContent, setTemplateContent] = useState<Record<AuthEmailType, TemplateContent>>(
+    () => ({ ...DEFAULT_TEMPLATE_CONTENT })
+  );
+
+  // DB에서 저장된 컨텐츠 불러오기
+  useEffect(() => {
+    const loadSavedContent = async () => {
+      try {
+        const { data } = await supabase
+          .from("site_settings")
+          .select("value")
+          .eq("key", "auth_email_content")
+          .single();
+
+        if (data?.value && typeof data.value === "object") {
+          const saved = data.value as Record<string, TemplateContent>;
+          setTemplateContent((prev) => {
+            const merged = { ...prev };
+            for (const key of Object.keys(merged) as AuthEmailType[]) {
+              if (saved[key]) {
+                merged[key] = { ...merged[key], ...saved[key] };
+              }
+            }
+            return merged;
+          });
+        }
+      } catch {
+        // 저장된 데이터 없으면 기본값 사용
+      }
+    };
+    loadSavedContent();
+  }, []);
+
+  const updateContent = (type: AuthEmailType, partial: Partial<TemplateContent>) => {
+    setTemplateContent((prev) => ({
+      ...prev,
+      [type]: { ...prev[type], ...partial },
+    }));
+  };
 
   const handleSaveDesign = async () => {
     try {
       setSaving(true);
 
-      // site_settings에 auth_email_design 저장 (upsert)
+      // 1. 디자인 저장
       const designToSave = {
         headerTitle: design.headerTitle,
         headerSubtitle: design.headerSubtitle,
@@ -116,13 +164,13 @@ export default function AuthEmailTemplates({ design }: AuthEmailTemplatesProps) 
         footerText: design.footerText,
       };
 
-      const { data: existing } = await supabase
+      const { data: existingDesign } = await supabase
         .from("site_settings")
         .select("id")
         .eq("key", "auth_email_design")
         .single();
 
-      if (existing) {
+      if (existingDesign) {
         const { error } = await supabase
           .from("site_settings")
           .update({ value: designToSave as any, updated_at: new Date().toISOString() })
@@ -135,16 +183,39 @@ export default function AuthEmailTemplates({ design }: AuthEmailTemplatesProps) 
         if (error) throw error;
       }
 
+      // 2. 컨텐츠 저장
+      const { data: existingContent } = await supabase
+        .from("site_settings")
+        .select("id")
+        .eq("key", "auth_email_content")
+        .single();
+
+      if (existingContent) {
+        const { error } = await supabase
+          .from("site_settings")
+          .update({ value: templateContent as any, updated_at: new Date().toISOString() })
+          .eq("key", "auth_email_content");
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("site_settings")
+          .insert({ key: "auth_email_content", value: templateContent as any, description: "인증 이메일 컨텐츠 설정" });
+        if (error) throw error;
+      }
+
       setSaved(true);
-      toast.success("인증 이메일 디자인이 저장되었습니다. 이제 회원가입/비밀번호 재설정 시 이 디자인이 적용됩니다.");
+      setEditingType(null);
+      toast.success("인증 이메일 디자인과 컨텐츠가 저장되었습니다.");
       setTimeout(() => setSaved(false), 3000);
     } catch (error: any) {
       console.error("Save auth design error:", error);
-      toast.error("디자인 저장에 실패했습니다: " + error.message);
+      toast.error("저장에 실패했습니다: " + error.message);
     } finally {
       setSaving(false);
     }
   };
+
+  const currentContent = templateContent[previewType];
 
   return (
     <div className="space-y-4">
@@ -153,7 +224,7 @@ export default function AuthEmailTemplates({ design }: AuthEmailTemplatesProps) 
         <CardContent className="pt-4 pb-3">
           <p className="text-sm text-foreground">
             <strong>디자인 탭</strong>에서 설정한 헤더, 색상, 푸터가 인증 이메일에 자동 적용됩니다.
-            디자인을 수정한 후 아래 <strong>"인증 메일에 적용"</strong> 버튼을 눌러 저장하세요.
+            각 유형의 <Pencil className="w-3 h-3 inline mx-0.5" /> 버튼으로 제목/본문/버튼 텍스트를 수정할 수 있습니다.
           </p>
         </CardContent>
       </Card>
@@ -170,7 +241,7 @@ export default function AuthEmailTemplates({ design }: AuthEmailTemplatesProps) 
         ) : saved ? (
           <><Check className="w-4 h-4 mr-2" /> 저장 완료!</>
         ) : (
-          <><Save className="w-4 h-4 mr-2" /> 현재 디자인을 인증 메일에 적용</>
+          <><Save className="w-4 h-4 mr-2" /> 현재 디자인 + 컨텐츠를 인증 메일에 적용</>
         )}
       </Button>
 
@@ -179,35 +250,81 @@ export default function AuthEmailTemplates({ design }: AuthEmailTemplatesProps) 
         <CardHeader>
           <CardTitle className="text-base">인증 이메일 유형</CardTitle>
           <CardDescription>
-            각 유형을 클릭하면 현재 디자인이 적용된 미리보기를 확인할 수 있습니다
+            유형을 클릭하여 미리보기, 편집 버튼으로 내용을 수정할 수 있습니다
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {AUTH_EMAIL_TYPES.map((emailType) => (
-            <div
-              key={emailType.id}
-              className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
-                previewType === emailType.id
-                  ? "border-primary bg-primary/5"
-                  : "bg-card hover:bg-muted/50"
-              }`}
-              onClick={() => setPreviewType(emailType.id)}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                  previewType === emailType.id ? "bg-primary/20" : "bg-primary/10"
-                }`}>
-                  <emailType.icon className="w-4 h-4 text-primary" />
+            <div key={emailType.id}>
+              <div
+                className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                  previewType === emailType.id
+                    ? "border-primary bg-primary/5"
+                    : "bg-card hover:bg-muted/50"
+                }`}
+                onClick={() => setPreviewType(emailType.id)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                    previewType === emailType.id ? "bg-primary/20" : "bg-primary/10"
+                  }`}>
+                    <emailType.icon className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{emailType.label}</p>
+                    <p className="text-xs text-muted-foreground">{emailType.description}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-sm">{emailType.label}</p>
-                  <p className="text-xs text-muted-foreground">{emailType.description}</p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingType(editingType === emailType.id ? null : emailType.id);
+                      setPreviewType(emailType.id);
+                    }}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  {previewType === emailType.id && (
+                    <Badge variant="default" className="text-xs">
+                      <Eye className="w-3 h-3 mr-1" /> 미리보기
+                    </Badge>
+                  )}
                 </div>
               </div>
-              {previewType === emailType.id && (
-                <Badge variant="default" className="text-xs">
-                  <Eye className="w-3 h-3 mr-1" /> 미리보기
-                </Badge>
+
+              {/* 인라인 편집 폼 */}
+              {editingType === emailType.id && (
+                <div className="mt-2 ml-12 mr-2 p-4 rounded-lg border bg-muted/30 space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">제목 (헤더 서브타이틀)</Label>
+                    <Input
+                      value={templateContent[emailType.id].heading}
+                      onChange={(e) => updateContent(emailType.id, { heading: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">본문</Label>
+                    <Textarea
+                      value={templateContent[emailType.id].body}
+                      onChange={(e) => updateContent(emailType.id, { body: e.target.value })}
+                      rows={4}
+                      className="text-sm resize-none"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">버튼 텍스트</Label>
+                    <Input
+                      value={templateContent[emailType.id].ctaText}
+                      onChange={(e) => updateContent(emailType.id, { ctaText: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
               )}
             </div>
           ))}
@@ -225,16 +342,13 @@ export default function AuthEmailTemplates({ design }: AuthEmailTemplatesProps) 
           <div className="border rounded-lg overflow-hidden shadow-sm mx-auto" style={{ maxWidth: 500 }}>
             <div
               dangerouslySetInnerHTML={{
-                __html: buildAuthPreviewHtml(design, previewType),
+                __html: buildAuthPreviewHtml(design, currentContent),
               }}
               className="bg-white"
             />
           </div>
         </CardContent>
       </Card>
-
-
-
     </div>
   );
 }
