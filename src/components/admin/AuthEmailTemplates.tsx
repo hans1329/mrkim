@@ -233,34 +233,8 @@ export default function AuthEmailTemplates({ design }: AuthEmailTemplatesProps) 
         </CardContent>
       </Card>
 
-      {/* Supabase 설정 안내 */}
-      <Card>
-        <CardContent className="pt-4 pb-3">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-              <ExternalLink className="w-4 h-4 text-amber-600" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Supabase Auth Hook 설정 필요</p>
-              <p className="text-xs text-muted-foreground">
-                Supabase 대시보드 → Authentication → Hooks에서 "Send Email" hook을
-                <code className="mx-1 px-1 py-0.5 bg-muted rounded text-[11px]">auth-email-hook</code>
-                엣지 함수로 연결해주세요.
-              </p>
-              <Button variant="outline" size="sm" className="mt-2 gap-2" asChild>
-                <a
-                  href="https://supabase.com/dashboard/project/kuxpsfxkumbfuqsvcucx/auth/hooks"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  Auth Hook 설정 열기
-                </a>
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
+
     </div>
   );
 }
