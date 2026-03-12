@@ -59,7 +59,7 @@ export default function AdminEmail() {
   const [sentHistory, setSentHistory] = useState<Array<{
     id: string;
     subject: string;
-    recipientCount: number;
+    recipients: string[];
     template: string;
     sentAt: Date;
   }>>([]);
