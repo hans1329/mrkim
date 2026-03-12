@@ -183,7 +183,8 @@ export default function AdminEmail() {
       ]);
 
       toast.success(`${recipients.length}명에게 이메일이 발송되었습니다`);
-      setFormData({ subject: EMAIL_TEMPLATES[selectedTemplate].defaultSubject, body: "", replyTo: "" });
+      setFormData({ subject: EMAIL_TEMPLATES[selectedTemplate].defaultSubject, replyTo: "" });
+      setEmailDesign({ ...DEFAULT_DESIGN });
       setRecipients([]);
     } catch (error: any) {
       console.error("Email send error:", error);
