@@ -317,12 +317,12 @@ export default function AdminEmail() {
               </CardContent>
             </Card>
 
-            {/* Compose */}
+            {/* Subject & Reply-To */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <template.icon className="w-4 h-4" />
-                  {template.label} 이메일 작성
+                  {template.label} 이메일 설정
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -334,18 +334,6 @@ export default function AdminEmail() {
                     placeholder="이메일 제목"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label>본문</Label>
-                  <Textarea
-                    value={formData.body}
-                    onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                    rows={10}
-                    placeholder={template.placeholder}
-                    className="font-mono text-sm"
-                  />
-                </div>
-
                 <div className="space-y-2">
                   <Label>회신 주소 (선택)</Label>
                   <Input
@@ -355,26 +343,20 @@ export default function AdminEmail() {
                     placeholder="reply@example.com"
                   />
                 </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setPreviewOpen(true)}
-                    disabled={!formData.body.trim()}
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    미리보기
-                  </Button>
-                  <Button
-                    onClick={handleSend}
-                    disabled={sending || recipients.length === 0 || !formData.subject.trim() || !formData.body.trim()}
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    {sending ? "발송 중..." : `${recipients.length}명에게 발송`}
-                  </Button>
-                </div>
+                <Button
+                  onClick={handleSend}
+                  disabled={sending || recipients.length === 0 || !formData.subject.trim() || !emailDesign.body.trim()}
+                  className="w-full"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {sending ? "발송 중..." : `${recipients.length}명에게 발송`}
+                </Button>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="design" className="space-y-4">
+            <EmailDesignForm design={emailDesign} onChange={setEmailDesign} />
           </TabsContent>
 
           <TabsContent value="history">
