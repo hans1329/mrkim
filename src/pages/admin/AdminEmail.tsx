@@ -398,8 +398,20 @@ export default function AdminEmail() {
                           <p className="font-medium text-sm">{item.subject}</p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Badge variant="outline" className="text-xs">{item.template}</Badge>
-                            <span>{item.recipientCount}명</span>
+                            <span>{item.recipients.length}명</span>
                             <span>{item.sentAt.toLocaleString("ko-KR")}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.recipients.slice(0, 5).map((email) => (
+                              <Badge key={email} variant="secondary" className="text-[10px] py-0">
+                                {email}
+                              </Badge>
+                            ))}
+                            {item.recipients.length > 5 && (
+                              <Badge variant="secondary" className="text-[10px] py-0">
+                                +{item.recipients.length - 5}명
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <Badge variant="default">발송완료</Badge>
