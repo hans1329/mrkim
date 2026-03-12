@@ -408,24 +408,6 @@ export default function AdminEmail() {
           </TabsContent>
         </Tabs>
 
-        {/* Preview Dialog */}
-        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>이메일 미리보기</DialogTitle>
-            </DialogHeader>
-            <div className="border rounded-lg overflow-hidden">
-              <div className="p-3 bg-muted border-b">
-                <p className="text-sm"><span className="font-medium">제목:</span> {formData.subject}</p>
-                <p className="text-sm"><span className="font-medium">수신:</span> {recipients.join(", ") || "미지정"}</p>
-              </div>
-              <div
-                dangerouslySetInnerHTML={{ __html: buildEmailHtml(formData.body) }}
-                className="bg-white"
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </AdminLayout>
   );
