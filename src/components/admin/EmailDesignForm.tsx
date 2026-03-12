@@ -20,6 +20,9 @@ const DESIGN_TEMPLATES = [
     ctaBg: "#2563eb",
     ctaTextColor: "#ffffff",
     footerBg: "#f9fafb",
+    sampleSubtitle: "서비스 공지사항",
+    sampleBody: "안녕하세요, 김비서를 이용해 주셔서 감사합니다.\n\n새로운 기능이 추가되었습니다. 지금 바로 확인해 보세요!",
+    sampleCta: "자세히 보기",
   },
   {
     id: "dark",
@@ -31,6 +34,9 @@ const DESIGN_TEMPLATES = [
     ctaBg: "#1f2937",
     ctaTextColor: "#ffffff",
     footerBg: "#111827",
+    sampleSubtitle: "중요 안내",
+    sampleBody: "안녕하세요, 사장님.\n\n이번 달 매출 리포트가 준비되었습니다.\n주요 지표를 한눈에 확인하세요.",
+    sampleCta: "리포트 확인",
   },
   {
     id: "warm",
@@ -42,6 +48,9 @@ const DESIGN_TEMPLATES = [
     ctaBg: "#ea580c",
     ctaTextColor: "#ffffff",
     footerBg: "#fff7ed",
+    sampleSubtitle: "🎉 특별 이벤트",
+    sampleBody: "사장님, 반가운 소식이 있어요!\n\n지금 김비서 프리미엄을 시작하시면 첫 달 50% 할인 혜택을 드립니다.\n놓치지 마세요!",
+    sampleCta: "지금 시작하기",
   },
   {
     id: "minimal",
@@ -53,6 +62,9 @@ const DESIGN_TEMPLATES = [
     ctaBg: "#111827",
     ctaTextColor: "#ffffff",
     footerBg: "#f9fafb",
+    sampleSubtitle: "",
+    sampleBody: "안녕하세요.\n\n예정된 시스템 점검 안내 드립니다.\n3월 15일(토) 02:00~06:00 동안 서비스 이용이 일시 제한됩니다.\n\n이용에 불편을 드려 죄송합니다.",
+    sampleCta: "",
   },
 ];
 
@@ -146,6 +158,10 @@ export default function EmailDesignForm({ design, onChange }: EmailDesignFormPro
       ctaBg: tmpl.ctaBg,
       ctaTextColor: tmpl.ctaTextColor,
       footerBg: tmpl.footerBg,
+      headerSubtitle: tmpl.sampleSubtitle,
+      body: tmpl.sampleBody,
+      ctaEnabled: !!tmpl.sampleCta,
+      ctaText: tmpl.sampleCta || "자세히 보기",
     });
   };
 
@@ -160,27 +176,52 @@ export default function EmailDesignForm({ design, onChange }: EmailDesignFormPro
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {DESIGN_TEMPLATES.map((tmpl) => (
               <button
                 key={tmpl.id}
                 onClick={() => applyTemplate(tmpl.id)}
-                className="group rounded-lg border p-2 hover:border-primary/50 transition-all text-center space-y-1.5"
+                className="group rounded-lg border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all text-left"
               >
-                <div className="flex flex-col rounded overflow-hidden border">
+                {/* Mini email preview */}
+                <div className="text-[6px] leading-[1.4]" style={{ fontFamily: "sans-serif" }}>
                   <div
-                    className="h-4"
-                    style={{ background: tmpl.headerBg }}
-                  />
-                  <div className="h-6 bg-white" />
+                    className="px-2 py-1.5 text-center"
+                    style={{ background: tmpl.headerBg, color: tmpl.headerTextColor }}
+                  >
+                    <div className="font-bold text-[8px]">김비서</div>
+                    {tmpl.sampleSubtitle && (
+                      <div className="opacity-80 text-[5px] mt-0.5">{tmpl.sampleSubtitle}</div>
+                    )}
+                  </div>
                   <div
-                    className="h-2"
-                    style={{ background: tmpl.footerBg }}
-                  />
+                    className="px-2 py-2"
+                    style={{ background: tmpl.bodyBg, color: tmpl.bodyTextColor }}
+                  >
+                    <div className="line-clamp-2 whitespace-pre-wrap">{tmpl.sampleBody}</div>
+                    {tmpl.sampleCta && (
+                      <div className="mt-1.5 text-center">
+                        <span
+                          className="inline-block px-2 py-0.5 rounded text-[5px] font-semibold"
+                          style={{ background: tmpl.ctaBg, color: tmpl.ctaTextColor }}
+                        >
+                          {tmpl.sampleCta}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    className="px-2 py-1 text-center text-[4px]"
+                    style={{ background: tmpl.footerBg, color: "#9ca3af", borderTop: "1px solid #e5e7eb" }}
+                  >
+                    © 김비서
+                  </div>
                 </div>
-                <p className="text-xs font-medium text-muted-foreground group-hover:text-foreground">
-                  {tmpl.label}
-                </p>
+                <div className="px-2 py-1.5 border-t text-center">
+                  <p className="text-xs font-medium text-muted-foreground group-hover:text-foreground">
+                    {tmpl.label}
+                  </p>
+                </div>
               </button>
             ))}
           </div>
