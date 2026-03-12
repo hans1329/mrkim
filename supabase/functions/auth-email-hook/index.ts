@@ -116,8 +116,9 @@ Deno.serve(async (req: Request) => {
     const tokenHash = emailData.token_hash;
     const redirectTo = emailData.redirect_to || "https://mrkim.today";
 
-    // Confirmation URL 구성
-    const confirmationUrl = `${supabaseUrl}/auth/v1/verify?token=${tokenHash}&type=${emailActionType}&redirect_to=${encodeURIComponent(redirectTo)}`;
+    // Confirmation URL 구성 (커스텀 도메인 사용)
+    const supabaseCustomDomain = "https://app.mrkim.today";
+    const confirmationUrl = `${supabaseCustomDomain}/auth/v1/verify?token=${tokenHash}&type=${emailActionType}&redirect_to=${encodeURIComponent(redirectTo)}`;
 
     // DB에서 저장된 디자인 읽기
     let design: EmailDesign = { ...DEFAULT_DESIGN };
