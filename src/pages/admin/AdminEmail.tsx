@@ -230,6 +230,10 @@ export default function AdminEmail() {
               <FileText className="w-4 h-4 mr-2" />
               발송 내역
             </TabsTrigger>
+            <TabsTrigger value="auth">
+              <ShieldCheck className="w-4 h-4 mr-2" />
+              인증 메일
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="compose" className="space-y-4">
