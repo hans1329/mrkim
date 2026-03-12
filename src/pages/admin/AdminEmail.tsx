@@ -378,6 +378,10 @@ export default function AdminEmail() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="auth">
+            <AuthEmailTemplates />
+          </TabsContent>
         </Tabs>
 
       </div>
