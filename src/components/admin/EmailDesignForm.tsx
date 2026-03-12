@@ -176,27 +176,52 @@ export default function EmailDesignForm({ design, onChange }: EmailDesignFormPro
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {DESIGN_TEMPLATES.map((tmpl) => (
               <button
                 key={tmpl.id}
                 onClick={() => applyTemplate(tmpl.id)}
-                className="group rounded-lg border p-2 hover:border-primary/50 transition-all text-center space-y-1.5"
+                className="group rounded-lg border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all text-left"
               >
-                <div className="flex flex-col rounded overflow-hidden border">
+                {/* Mini email preview */}
+                <div className="text-[6px] leading-[1.4]" style={{ fontFamily: "sans-serif" }}>
                   <div
-                    className="h-4"
-                    style={{ background: tmpl.headerBg }}
-                  />
-                  <div className="h-6 bg-white" />
+                    className="px-2 py-1.5 text-center"
+                    style={{ background: tmpl.headerBg, color: tmpl.headerTextColor }}
+                  >
+                    <div className="font-bold text-[8px]">김비서</div>
+                    {tmpl.sampleSubtitle && (
+                      <div className="opacity-80 text-[5px] mt-0.5">{tmpl.sampleSubtitle}</div>
+                    )}
+                  </div>
                   <div
-                    className="h-2"
-                    style={{ background: tmpl.footerBg }}
-                  />
+                    className="px-2 py-2"
+                    style={{ background: tmpl.bodyBg, color: tmpl.bodyTextColor }}
+                  >
+                    <div className="line-clamp-2 whitespace-pre-wrap">{tmpl.sampleBody}</div>
+                    {tmpl.sampleCta && (
+                      <div className="mt-1.5 text-center">
+                        <span
+                          className="inline-block px-2 py-0.5 rounded text-[5px] font-semibold"
+                          style={{ background: tmpl.ctaBg, color: tmpl.ctaTextColor }}
+                        >
+                          {tmpl.sampleCta}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    className="px-2 py-1 text-center text-[4px]"
+                    style={{ background: tmpl.footerBg, color: "#9ca3af", borderTop: "1px solid #e5e7eb" }}
+                  >
+                    © 김비서
+                  </div>
                 </div>
-                <p className="text-xs font-medium text-muted-foreground group-hover:text-foreground">
-                  {tmpl.label}
-                </p>
+                <div className="px-2 py-1.5 border-t text-center">
+                  <p className="text-xs font-medium text-muted-foreground group-hover:text-foreground">
+                    {tmpl.label}
+                  </p>
+                </div>
               </button>
             ))}
           </div>
