@@ -20,6 +20,9 @@ const DESIGN_TEMPLATES = [
     ctaBg: "#2563eb",
     ctaTextColor: "#ffffff",
     footerBg: "#f9fafb",
+    sampleSubtitle: "서비스 공지사항",
+    sampleBody: "안녕하세요, 김비서를 이용해 주셔서 감사합니다.\n\n새로운 기능이 추가되었습니다. 지금 바로 확인해 보세요!",
+    sampleCta: "자세히 보기",
   },
   {
     id: "dark",
@@ -31,6 +34,9 @@ const DESIGN_TEMPLATES = [
     ctaBg: "#1f2937",
     ctaTextColor: "#ffffff",
     footerBg: "#111827",
+    sampleSubtitle: "중요 안내",
+    sampleBody: "안녕하세요, 사장님.\n\n이번 달 매출 리포트가 준비되었습니다.\n주요 지표를 한눈에 확인하세요.",
+    sampleCta: "리포트 확인",
   },
   {
     id: "warm",
@@ -42,6 +48,9 @@ const DESIGN_TEMPLATES = [
     ctaBg: "#ea580c",
     ctaTextColor: "#ffffff",
     footerBg: "#fff7ed",
+    sampleSubtitle: "🎉 특별 이벤트",
+    sampleBody: "사장님, 반가운 소식이 있어요!\n\n지금 김비서 프리미엄을 시작하시면 첫 달 50% 할인 혜택을 드립니다.\n놓치지 마세요!",
+    sampleCta: "지금 시작하기",
   },
   {
     id: "minimal",
@@ -53,6 +62,9 @@ const DESIGN_TEMPLATES = [
     ctaBg: "#111827",
     ctaTextColor: "#ffffff",
     footerBg: "#f9fafb",
+    sampleSubtitle: "",
+    sampleBody: "안녕하세요.\n\n예정된 시스템 점검 안내 드립니다.\n3월 15일(토) 02:00~06:00 동안 서비스 이용이 일시 제한됩니다.\n\n이용에 불편을 드려 죄송합니다.",
+    sampleCta: "",
   },
 ];
 
