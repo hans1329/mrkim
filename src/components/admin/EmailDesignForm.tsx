@@ -158,6 +158,10 @@ export default function EmailDesignForm({ design, onChange }: EmailDesignFormPro
       ctaBg: tmpl.ctaBg,
       ctaTextColor: tmpl.ctaTextColor,
       footerBg: tmpl.footerBg,
+      headerSubtitle: tmpl.sampleSubtitle,
+      body: tmpl.sampleBody,
+      ctaEnabled: !!tmpl.sampleCta,
+      ctaText: tmpl.sampleCta || "자세히 보기",
     });
   };
 
