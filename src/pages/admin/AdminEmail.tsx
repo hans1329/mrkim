@@ -380,7 +380,7 @@ export default function AdminEmail() {
           </TabsContent>
 
           <TabsContent value="auth">
-            <AuthEmailTemplates />
+            <AuthEmailTemplates design={emailDesign} />
           </TabsContent>
         </Tabs>
 
