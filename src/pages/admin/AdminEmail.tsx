@@ -138,7 +138,7 @@ export default function AdminEmail() {
       toast.error("제목을 입력해주세요");
       return;
     }
-    if (!formData.body.trim()) {
+    if (!emailDesign.body.trim()) {
       toast.error("본문을 입력해주세요");
       return;
     }
