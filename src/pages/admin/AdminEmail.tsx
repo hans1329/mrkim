@@ -95,39 +95,6 @@ export default function AdminEmail() {
     }
   };
 
-  const loadAllUserEmails = async () => {
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      if (!token) throw new Error("인증 필요");
-
-      // profiles 테이블에서 user_id 목록 가져온 후 auth.users에서 이메일을 가져오는 대신
-      // admin RPC나 별도 방법이 필요하므로, 여기서는 수동 입력 안내
-      toast.info("전체 발송은 수신자 이메일을 직접 입력하거나, CSV로 붙여넣기 해주세요");
-    } catch {
-      toast.error("사용자 목록을 불러오지 못했습니다");
-    }
-  };
-
-  const buildEmailHtml = (body: string): string => {
-    return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;max-width:600px;margin:0 auto;padding:0;color:#333;background:#ffffff;">
-  <div style="background:#2563eb;padding:32px 24px;text-align:center;">
-    <h1 style="margin:0;font-size:22px;color:#ffffff;font-weight:700;">김비서</h1>
-  </div>
-  <div style="padding:32px 24px;">
-    <div style="font-size:15px;line-height:1.8;color:#374151;white-space:pre-wrap;">${body}</div>
-  </div>
-  <div style="padding:24px;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:center;">
-    <p style="margin:0;font-size:12px;color:#9ca3af;">이 이메일은 김비서에서 발송되었습니다.</p>
-    <p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">© ${new Date().getFullYear()} 김비서. All rights reserved.</p>
-  </div>
-</body>
-</html>`;
-  };
 
   const handleSend = async () => {
     if (recipients.length === 0) {
