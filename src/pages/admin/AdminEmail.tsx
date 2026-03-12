@@ -178,7 +178,7 @@ export default function AdminEmail() {
         {
           id: result.id || crypto.randomUUID(),
           subject: formData.subject,
-          recipientCount: recipients.length,
+          recipients: [...recipients],
           template: EMAIL_TEMPLATES[selectedTemplate].label,
           sentAt: new Date(),
         },
