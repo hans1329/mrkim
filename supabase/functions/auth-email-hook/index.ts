@@ -136,8 +136,24 @@ Deno.serve(async (req: Request) => {
       console.log("Using default design (no saved design found):", e);
     }
 
-    // 컨텐츠 결정
-    const content = AUTH_CONTENT[emailActionType] || AUTH_CONTENT.signup;
+    // DB에서 저장된 컨텐츠 읽기
+    let content = AUTH_CONTENT[emailActionType] || AUTH_CONTENT.signup;
+    try {
+      const { data: contentData } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "auth_email_content")
+        .single();
+
+      if (contentData?.value && typeof contentData.value === "object") {
+        const savedContent = contentData.value as Record<string, { heading: string; body: string; ctaText: string }>;
+        if (savedContent[emailActionType]) {
+          content = { ...content, ...savedContent[emailActionType] };
+        }
+      }
+    } catch (e) {
+      console.log("Using default content:", e);
+    }
 
     // 이메일 제목 결정
     const subjects: Record<string, string> = {
