@@ -44,7 +44,7 @@ const menuGroups = [
     items: [
       { path: "/admin/announcements", label: "공지사항", icon: Megaphone },
       { path: "/admin/push", label: "푸시 알림", icon: Bell },
-      { path: "/admin/email", label: "이메일 발송", icon: Mail },
+      { path: "/admin/email", label: "이메일 관리", icon: Mail },
       { path: "/admin/feedback", label: "피드백/문의", icon: HelpCircle },
       { path: "/admin/tax-accountants", label: "세무사 관리", icon: Users },
     ],
