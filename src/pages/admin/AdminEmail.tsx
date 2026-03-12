@@ -5,14 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Send, Users, FileText, Megaphone, Bell, Plus, X, Eye } from "lucide-react";
+import { Mail, Send, Users, FileText, Megaphone, Bell, Plus, X, Palette } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import EmailDesignForm, { DEFAULT_DESIGN, buildDesignedEmailHtml, type EmailDesign } from "@/components/admin/EmailDesignForm";
 
 const EMAIL_TEMPLATES = {
   notice: {
