@@ -162,7 +162,7 @@ export default function AdminEmail() {
           body: JSON.stringify({
             to: recipients,
             subject: formData.subject,
-            html: buildEmailHtml(formData.body),
+            html: buildDesignedEmailHtml(emailDesign),
             replyTo: formData.replyTo || undefined,
           }),
         }
