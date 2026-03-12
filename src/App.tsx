@@ -84,6 +84,7 @@ const App = () => (
                       <Route path="/admin/intent-keywords" element={<AdminIntentKeywords />} />
                       <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
                       <Route path="/admin/tax-accountants" element={<AdminTaxAccountants />} />
+                      <Route path="/admin/email" element={<AdminEmail />} />
 
                       {/* 공통 레이아웃 적용 페이지 */}
                       <Route element={<LayoutRoute />}>
