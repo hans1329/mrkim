@@ -5,14 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Send, Users, FileText, Megaphone, Bell, Plus, X, Eye } from "lucide-react";
+import { Mail, Send, Users, FileText, Megaphone, Bell, Plus, X, Palette } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import EmailDesignForm, { DEFAULT_DESIGN, buildDesignedEmailHtml, type EmailDesign } from "@/components/admin/EmailDesignForm";
 
 const EMAIL_TEMPLATES = {
   notice: {
@@ -46,14 +44,13 @@ type TemplateType = keyof typeof EMAIL_TEMPLATES;
 export default function AdminEmail() {
   const { isAdmin, loading: authLoading } = useAdminAuth();
   const [sending, setSending] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>("notice");
   const [recipients, setRecipients] = useState<string[]>([]);
   const [recipientInput, setRecipientInput] = useState("");
   const [recipientMode, setRecipientMode] = useState<"manual" | "all">("manual");
+  const [emailDesign, setEmailDesign] = useState<EmailDesign>({ ...DEFAULT_DESIGN });
   const [formData, setFormData] = useState({
     subject: EMAIL_TEMPLATES.notice.defaultSubject,
-    body: "",
     replyTo: "",
   });
   const [sentHistory, setSentHistory] = useState<Array<{
@@ -98,39 +95,6 @@ export default function AdminEmail() {
     }
   };
 
-  const loadAllUserEmails = async () => {
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      if (!token) throw new Error("인증 필요");
-
-      // profiles 테이블에서 user_id 목록 가져온 후 auth.users에서 이메일을 가져오는 대신
-      // admin RPC나 별도 방법이 필요하므로, 여기서는 수동 입력 안내
-      toast.info("전체 발송은 수신자 이메일을 직접 입력하거나, CSV로 붙여넣기 해주세요");
-    } catch {
-      toast.error("사용자 목록을 불러오지 못했습니다");
-    }
-  };
-
-  const buildEmailHtml = (body: string): string => {
-    return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;max-width:600px;margin:0 auto;padding:0;color:#333;background:#ffffff;">
-  <div style="background:#2563eb;padding:32px 24px;text-align:center;">
-    <h1 style="margin:0;font-size:22px;color:#ffffff;font-weight:700;">김비서</h1>
-  </div>
-  <div style="padding:32px 24px;">
-    <div style="font-size:15px;line-height:1.8;color:#374151;white-space:pre-wrap;">${body}</div>
-  </div>
-  <div style="padding:24px;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:center;">
-    <p style="margin:0;font-size:12px;color:#9ca3af;">이 이메일은 김비서에서 발송되었습니다.</p>
-    <p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">© ${new Date().getFullYear()} 김비서. All rights reserved.</p>
-  </div>
-</body>
-</html>`;
-  };
 
   const handleSend = async () => {
     if (recipients.length === 0) {
@@ -141,7 +105,7 @@ export default function AdminEmail() {
       toast.error("제목을 입력해주세요");
       return;
     }
-    if (!formData.body.trim()) {
+    if (!emailDesign.body.trim()) {
       toast.error("본문을 입력해주세요");
       return;
     }
@@ -165,7 +129,7 @@ export default function AdminEmail() {
           body: JSON.stringify({
             to: recipients,
             subject: formData.subject,
-            html: buildEmailHtml(formData.body),
+            html: buildDesignedEmailHtml(emailDesign),
             replyTo: formData.replyTo || undefined,
           }),
         }
@@ -186,7 +150,8 @@ export default function AdminEmail() {
       ]);
 
       toast.success(`${recipients.length}명에게 이메일이 발송되었습니다`);
-      setFormData({ subject: EMAIL_TEMPLATES[selectedTemplate].defaultSubject, body: "", replyTo: "" });
+      setFormData({ subject: EMAIL_TEMPLATES[selectedTemplate].defaultSubject, replyTo: "" });
+      setEmailDesign({ ...DEFAULT_DESIGN });
       setRecipients([]);
     } catch (error: any) {
       console.error("Email send error:", error);
@@ -256,6 +221,10 @@ export default function AdminEmail() {
               <Mail className="w-4 h-4 mr-2" />
               작성
             </TabsTrigger>
+            <TabsTrigger value="design">
+              <Palette className="w-4 h-4 mr-2" />
+              디자인
+            </TabsTrigger>
             <TabsTrigger value="history">
               <FileText className="w-4 h-4 mr-2" />
               발송 내역
@@ -315,12 +284,12 @@ export default function AdminEmail() {
               </CardContent>
             </Card>
 
-            {/* Compose */}
+            {/* Subject & Reply-To */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <template.icon className="w-4 h-4" />
-                  {template.label} 이메일 작성
+                  {template.label} 이메일 설정
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -332,18 +301,6 @@ export default function AdminEmail() {
                     placeholder="이메일 제목"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label>본문</Label>
-                  <Textarea
-                    value={formData.body}
-                    onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                    rows={10}
-                    placeholder={template.placeholder}
-                    className="font-mono text-sm"
-                  />
-                </div>
-
                 <div className="space-y-2">
                   <Label>회신 주소 (선택)</Label>
                   <Input
@@ -353,26 +310,20 @@ export default function AdminEmail() {
                     placeholder="reply@example.com"
                   />
                 </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setPreviewOpen(true)}
-                    disabled={!formData.body.trim()}
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    미리보기
-                  </Button>
-                  <Button
-                    onClick={handleSend}
-                    disabled={sending || recipients.length === 0 || !formData.subject.trim() || !formData.body.trim()}
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    {sending ? "발송 중..." : `${recipients.length}명에게 발송`}
-                  </Button>
-                </div>
+                <Button
+                  onClick={handleSend}
+                  disabled={sending || recipients.length === 0 || !formData.subject.trim() || !emailDesign.body.trim()}
+                  className="w-full"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {sending ? "발송 중..." : `${recipients.length}명에게 발송`}
+                </Button>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="design" className="space-y-4">
+            <EmailDesignForm design={emailDesign} onChange={setEmailDesign} />
           </TabsContent>
 
           <TabsContent value="history">
@@ -424,24 +375,6 @@ export default function AdminEmail() {
           </TabsContent>
         </Tabs>
 
-        {/* Preview Dialog */}
-        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>이메일 미리보기</DialogTitle>
-            </DialogHeader>
-            <div className="border rounded-lg overflow-hidden">
-              <div className="p-3 bg-muted border-b">
-                <p className="text-sm"><span className="font-medium">제목:</span> {formData.subject}</p>
-                <p className="text-sm"><span className="font-medium">수신:</span> {recipients.join(", ") || "미지정"}</p>
-              </div>
-              <div
-                dangerouslySetInnerHTML={{ __html: buildEmailHtml(formData.body) }}
-                className="bg-white"
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </AdminLayout>
   );
