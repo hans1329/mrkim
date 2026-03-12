@@ -44,14 +44,13 @@ type TemplateType = keyof typeof EMAIL_TEMPLATES;
 export default function AdminEmail() {
   const { isAdmin, loading: authLoading } = useAdminAuth();
   const [sending, setSending] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>("notice");
   const [recipients, setRecipients] = useState<string[]>([]);
   const [recipientInput, setRecipientInput] = useState("");
   const [recipientMode, setRecipientMode] = useState<"manual" | "all">("manual");
+  const [emailDesign, setEmailDesign] = useState<EmailDesign>({ ...DEFAULT_DESIGN });
   const [formData, setFormData] = useState({
     subject: EMAIL_TEMPLATES.notice.defaultSubject,
-    body: "",
     replyTo: "",
   });
   const [sentHistory, setSentHistory] = useState<Array<{
