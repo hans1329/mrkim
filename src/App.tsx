@@ -47,6 +47,7 @@ import AdminApiUsage from "./pages/admin/AdminApiUsage";
 import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
 import AdminIntentKeywords from "./pages/admin/AdminIntentKeywords";
 import AdminTaxAccountants from "./pages/admin/AdminTaxAccountants";
+import AdminEmail from "./pages/admin/AdminEmail";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,7 @@ const App = () => (
                       <Route path="/admin/intent-keywords" element={<AdminIntentKeywords />} />
                       <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
                       <Route path="/admin/tax-accountants" element={<AdminTaxAccountants />} />
+                      <Route path="/admin/email" element={<AdminEmail />} />
 
                       {/* 공통 레이아웃 적용 페이지 */}
                       <Route element={<LayoutRoute />}>
