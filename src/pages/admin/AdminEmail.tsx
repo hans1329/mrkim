@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Send, Users, FileText, Megaphone, Bell, Plus, X, Palette } from "lucide-react";
+import { Mail, Send, Users, FileText, Megaphone, Bell, Plus, X, Palette, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import EmailDesignForm, { DEFAULT_DESIGN, buildDesignedEmailHtml, type EmailDesign } from "@/components/admin/EmailDesignForm";
+import AuthEmailTemplates from "@/components/admin/AuthEmailTemplates";
 
 const EMAIL_TEMPLATES = {
   notice: {
@@ -229,6 +230,10 @@ export default function AdminEmail() {
               <FileText className="w-4 h-4 mr-2" />
               발송 내역
             </TabsTrigger>
+            <TabsTrigger value="auth">
+              <ShieldCheck className="w-4 h-4 mr-2" />
+              인증 메일
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="compose" className="space-y-4">
@@ -372,6 +377,10 @@ export default function AdminEmail() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="auth">
+            <AuthEmailTemplates />
           </TabsContent>
         </Tabs>
 
