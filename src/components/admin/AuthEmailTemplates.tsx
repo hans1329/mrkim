@@ -121,7 +121,7 @@ export default function AuthEmailTemplates({ design }: AuthEmailTemplatesProps) 
           .single();
 
         if (data?.value && typeof data.value === "object") {
-          const saved = data.value as Record<string, TemplateContent>;
+          const saved = data.value as unknown as Record<string, TemplateContent>;
           setTemplateContent((prev) => {
             const merged = { ...prev };
             for (const key of Object.keys(merged) as AuthEmailType[]) {
