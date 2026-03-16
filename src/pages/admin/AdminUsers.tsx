@@ -203,8 +203,10 @@ export default function AdminUsers() {
     }
   };
 
-  const isOrphanedProfile = (user: UserWithRoles) =>
-    (!user.roles || user.roles.length === 0) && !user.name && !user.business_name && !user.phone && !user.nickname;
+  const getUserRoles = (user?: UserWithRoles | null) => user?.roles ?? [];
+
+  const isOrphanedProfile = (user?: UserWithRoles | null) =>
+    getUserRoles(user).length === 0 && !user?.name && !user?.business_name && !user?.phone && !user?.nickname;
 
   const handleCleanupAllOrphaned = async () => {
     const orphaned = users.filter(isOrphanedProfile);
