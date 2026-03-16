@@ -95,6 +95,15 @@ export function AIChatCard() {
   } = useProfileQuery();
   const isMobile = useIsMobile();
   const [input, setInput] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  const requireAuth = (action: () => void) => {
+    if (!isLoggedIn) {
+      navigate("/login");
+      return;
+    }
+    action();
+  };
   const [response, setResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isBriefingResponse, setIsBriefingResponse] = useState(false);
