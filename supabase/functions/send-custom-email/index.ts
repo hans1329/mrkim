@@ -115,7 +115,25 @@ Deno.serve(async (req: Request) => {
 
     if (!roleData) throw new Error("관리자 권한이 필요합니다");
 
-    const { to, subject, html, text, replyTo, templateType, fetchAllUsers } = await req.json();
+    const { to, subject, html, text, replyTo, templateType, fetchAllUsers, countOnly } = await req.json();
+
+    // ── countOnly 모드: 유저 수만 반환 ──
+    if (countOnly) {
+      const allEmails = await listAllUsers(supabase);
+      const { data: unsubscribes } = await supabase
+        .from("email_unsubscribes")
+        .select("email");
+      const unsubCount = (unsubscribes || []).length;
+      const sendableCount = allEmails.length - unsubCount;
+      return new Response(
+        JSON.stringify({
+          totalUsers: allEmails.length,
+          unsubscribeCount: unsubCount,
+          sendableCount: Math.max(0, sendableCount),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!subject || (!html && !text)) {
       throw new Error("subject, html 또는 text가 필요합니다");

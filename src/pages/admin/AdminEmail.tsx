@@ -99,6 +99,9 @@ export default function AdminEmail() {
 
   // All users count
   const [allUserCount, setAllUserCount] = useState<number | null>(null);
+  const [unsubscribeCount, setUnsubscribeCount] = useState<number>(0);
+  const [sendableCount, setSendableCount] = useState<number | null>(null);
+  const [countLoading, setCountLoading] = useState(false);
 
   const filteredHistory = sentHistory.filter((item) => {
     if (historyFilterType !== "all" && item.template_type !== historyFilterType) return false;
