@@ -1,14 +1,45 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Mail, Loader2 } from "lucide-react";
+import { ArrowLeft, Mail, Loader2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { WelcomeModal } from "@/components/auth/WelcomeModal";
 const iccLogo = "/images/icc-2.webp";
+
+const passwordRules = [
+  { key: "length", label: "8자 이상", test: (p: string) => p.length >= 8 },
+  { key: "lower", label: "영문 소문자 포함", test: (p: string) => /[a-z]/.test(p) },
+  { key: "upper", label: "영문 대문자 포함", test: (p: string) => /[A-Z]/.test(p) },
+  { key: "digit", label: "숫자 포함", test: (p: string) => /[0-9]/.test(p) },
+  { key: "special", label: "특수문자 포함 (!@#$% 등)", test: (p: string) => /[!@#$%^&*()_+\-=\[\]{};':"\\|<>?,./`~]/.test(p) },
+];
+
+function PasswordChecklist({ password }: { password: string }) {
+  if (!password) return null;
+  return (
+    <ul className="space-y-1 mt-2">
+      {passwordRules.map((rule) => {
+        const passed = rule.test(password);
+        return (
+          <li key={rule.key} className="flex items-center gap-1.5 text-xs">
+            {passed ? (
+              <Check className="h-3 w-3 text-green-400 shrink-0" />
+            ) : (
+              <X className="h-3 w-3 text-red-400 shrink-0" />
+            )}
+            <span className={passed ? "text-green-300" : "text-red-300"}>
+              {rule.label}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -19,6 +50,9 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+
+  const allRulesPassed = useMemo(() => passwordRules.every((r) => r.test(password)), [password]);
+  const passwordsMatch = password === confirmPassword;
 
   const handleGoogleSignup = async () => {
     setIsLoading(true);
@@ -51,13 +85,13 @@ export default function Signup() {
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (password !== confirmPassword) {
-      toast.error("비밀번호가 일치하지 않습니다.");
+    if (!allRulesPassed) {
+      toast.error("비밀번호 조건을 모두 충족해주세요.");
       return;
     }
-    
-    if (password.length < 6) {
-      toast.error("비밀번호는 6자 이상이어야 합니다.");
+
+    if (!passwordsMatch) {
+      toast.error("비밀번호가 일치하지 않습니다.");
       return;
     }
     
@@ -75,7 +109,14 @@ export default function Signup() {
     });
     
     if (error) {
-      toast.error("회원가입 실패: " + error.message);
+      // 서버 에러 메시지를 친절하게 변환
+      if (error.message.toLowerCase().includes("password")) {
+        toast.error("비밀번호가 보안 조건을 충족하지 않습니다. 아래 체크리스트를 확인해주세요.");
+      } else if (error.message.toLowerCase().includes("already registered")) {
+        toast.error("이미 가입된 이메일입니다. 로그인을 시도해주세요.");
+      } else {
+        toast.error("회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      }
       setIsLoading(false);
       return;
     }
@@ -248,7 +289,7 @@ export default function Signup() {
                     className="bg-white/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="password" className="text-primary-foreground">
                     비밀번호
                   </Label>
@@ -261,8 +302,9 @@ export default function Signup() {
                     required
                     className="bg-white/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
                   />
+                  <PasswordChecklist password={password} />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label
                     htmlFor="confirmPassword"
                     className="text-primary-foreground"
@@ -278,11 +320,23 @@ export default function Signup() {
                     required
                     className="bg-white/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
                   />
+                  {confirmPassword && !passwordsMatch && (
+                    <p className="flex items-center gap-1.5 text-xs text-red-300 mt-1">
+                      <X className="h-3 w-3" />
+                      비밀번호가 일치하지 않습니다
+                    </p>
+                  )}
+                  {confirmPassword && passwordsMatch && (
+                    <p className="flex items-center gap-1.5 text-xs text-green-300 mt-1">
+                      <Check className="h-3 w-3" />
+                      비밀번호가 일치합니다
+                    </p>
+                  )}
                 </div>
                 <Button
                   type="submit"
                   className="w-full h-12 bg-white text-primary hover:bg-white/90"
-                  disabled={isLoading}
+                  disabled={isLoading || !allRulesPassed || !passwordsMatch || !confirmPassword}
                 >
                   {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "가입하기"}
                 </Button>
