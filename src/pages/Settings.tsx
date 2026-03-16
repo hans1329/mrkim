@@ -183,6 +183,9 @@ export default function Settings() {
       setFeedbackSubject("");
       setFeedbackContent("");
       setFeedbackCategory("general");
+      setFeedbackDrawerOpen(false);
+      setFeedbackContent("");
+      setFeedbackCategory("general");
     } catch (err: any) {
       toast.error(err.message || "문의 접수에 실패했습니다");
     } finally {
