@@ -320,12 +320,12 @@ export function AIChatCard() {
   };
   const handleQuickAsk = async (question: string) => {
     setInput("");
-    openChatWithMessage(question);
+    requireAuth(() => openChatWithMessage(question));
   };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-    openChatWithMessage(input.trim());
+    requireAuth(() => openChatWithMessage(input.trim()));
     setInput("");
   };
 
