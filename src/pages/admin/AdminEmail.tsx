@@ -67,11 +67,25 @@ export default function AdminEmail() {
   const [recipients, setRecipients] = useState<string[]>([]);
   const [recipientInput, setRecipientInput] = useState("");
   const [recipientMode, setRecipientMode] = useState<"manual" | "all">("manual");
-  const [emailDesign, setEmailDesign] = useState<EmailDesign>({ ...DEFAULT_DESIGN });
   const [formData, setFormData] = useState({
     subject: EMAIL_TEMPLATES.notice.defaultSubject,
     replyTo: "",
   });
+
+  // 유형별 디자인 저장
+  const [designsByType, setDesignsByType] = useState<Record<TemplateType, EmailDesign>>({
+    notice: { ...DEFAULT_DESIGN },
+    marketing: { ...DEFAULT_DESIGN },
+    notification: { ...DEFAULT_DESIGN },
+    custom: { ...DEFAULT_DESIGN },
+  });
+  const [designLoading, setDesignLoading] = useState(true);
+  const [designSaving, setDesignSaving] = useState(false);
+
+  const emailDesign = designsByType[selectedTemplate];
+  const setEmailDesign = (design: EmailDesign) => {
+    setDesignsByType((prev) => ({ ...prev, [selectedTemplate]: design }));
+  };
 
   // DB-backed history
   const [sentHistory, setSentHistory] = useState<EmailHistory[]>([]);
@@ -91,6 +105,48 @@ export default function AdminEmail() {
     if (historyFilterStatus !== "all" && item.status !== historyFilterStatus) return false;
     return true;
   });
+
+  // 유형별 디자인 DB에서 로드
+  useEffect(() => {
+    if (!isAdmin) return;
+    const loadDesigns = async () => {
+      setDesignLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .like("key", "email_design_%");
+        if (!error && data) {
+          const updated = { ...designsByType };
+          for (const row of data) {
+            const type = row.key.replace("email_design_", "") as TemplateType;
+            if (type in updated) {
+              updated[type] = { ...DEFAULT_DESIGN, ...(row.value as any) };
+            }
+          }
+          setDesignsByType(updated);
+        }
+      } catch {}
+      setDesignLoading(false);
+    };
+    loadDesigns();
+  }, [isAdmin]);
+
+  // 디자인 저장
+  const saveDesign = async (type: TemplateType) => {
+    setDesignSaving(true);
+    try {
+      const key = `email_design_${type}`;
+      const { error } = await supabase
+        .from("site_settings")
+        .upsert({ key, value: designsByType[type] as any, description: `${EMAIL_TEMPLATES[type].label} 이메일 디자인` }, { onConflict: "key" });
+      if (error) throw error;
+      toast.success(`${EMAIL_TEMPLATES[type].label} 디자인이 저장되었습니다`);
+    } catch {
+      toast.error("디자인 저장에 실패했습니다");
+    }
+    setDesignSaving(false);
+  };
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -221,7 +277,6 @@ export default function AdminEmail() {
 
       toast.success(`${result.recipientCount || result.successCount}명에게 이메일이 발송되었습니다${result.failCount ? ` (${result.failCount}건 실패)` : ""}`);
       setFormData({ subject: EMAIL_TEMPLATES[selectedTemplate].defaultSubject, replyTo: "" });
-      setEmailDesign({ ...DEFAULT_DESIGN });
       setRecipients([]);
       loadHistory();
     } catch (error: any) {
@@ -436,7 +491,45 @@ export default function AdminEmail() {
           </TabsContent>
 
           <TabsContent value="design" className="space-y-4">
-            <EmailDesignForm design={emailDesign} onChange={setEmailDesign} />
+            {/* 유형 선택 */}
+            <div className="flex flex-wrap items-center gap-2">
+              {(Object.entries(EMAIL_TEMPLATES) as [TemplateType, typeof EMAIL_TEMPLATES[TemplateType]][]).map(
+                ([key, tmpl]) => (
+                  <Button
+                    key={key}
+                    variant={selectedTemplate === key ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedTemplate(key)}
+                    className="gap-1.5"
+                  >
+                    <tmpl.icon className="w-3.5 h-3.5" />
+                    {tmpl.label}
+                  </Button>
+                )
+              )}
+            </div>
+
+            {designLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            ) : (
+              <>
+                <EmailDesignForm design={emailDesign} onChange={setEmailDesign} />
+                <Button
+                  onClick={() => saveDesign(selectedTemplate)}
+                  disabled={designSaving}
+                  className="w-full"
+                >
+                  {designSaving ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 저장 중...</>
+                  ) : (
+                    <>{EMAIL_TEMPLATES[selectedTemplate].label} 디자인 저장</>
+                  )}
+                </Button>
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="history">
