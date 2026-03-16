@@ -134,21 +134,23 @@ export default function EmailDesignForm({ design, onChange }: EmailDesignFormPro
           <div className="mx-4 mb-4 border rounded-lg overflow-hidden shadow-sm" style={{ maxWidth: 480 }}>
             {/* Header section */}
             <div
-              className="px-5 py-5 text-center space-y-2"
+              className="px-5 py-5 space-y-2"
               style={{ background: design.headerBg }}
             >
-              <img 
-                src="/images/icc-5.webp" 
-                alt="김비서" 
-                className="h-10 w-auto mx-auto mb-2"
-              />
-              <input
-                value={design.headerTitle}
-                onChange={(e) => update({ headerTitle: e.target.value })}
-                className="w-full text-center text-lg font-bold bg-transparent border-none outline-none focus:ring-1 focus:ring-white/30 rounded px-2 py-1"
-                style={{ color: design.headerTextColor }}
-                placeholder="헤더 타이틀"
-              />
+              <div className="flex items-center justify-center gap-2">
+                <img 
+                  src="/images/icc-5.webp" 
+                  alt="김비서" 
+                  className="h-10 w-auto"
+                />
+                <input
+                  value={design.headerTitle}
+                  onChange={(e) => update({ headerTitle: e.target.value })}
+                  className="text-lg font-bold bg-transparent border-none outline-none focus:ring-1 focus:ring-white/30 rounded px-2 py-1"
+                  style={{ color: design.headerTextColor, width: `${Math.max(design.headerTitle.length, 4)}ch` }}
+                  placeholder="타이틀"
+                />
+              </div>
               <input
                 value={design.headerSubtitle}
                 onChange={(e) => update({ headerSubtitle: e.target.value })}
