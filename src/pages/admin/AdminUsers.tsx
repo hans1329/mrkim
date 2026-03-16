@@ -311,12 +311,19 @@ export default function AdminUsers() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredUsers.map((user) => (
-                      <TableRow key={user.id} className={user.is_banned ? "opacity-60 bg-destructive/5" : ""}>
+                    filteredUsers.map((user) => {
+                      const isOrphaned = isOrphanedProfile(user);
+                      return (
+                      <TableRow key={user.id} className={
+                        isOrphaned ? "opacity-50 bg-muted/30" :
+                        user.is_banned ? "opacity-60 bg-destructive/5" : ""
+                      }>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                              {user.is_banned ? (
+                              {isOrphaned ? (
+                                <UserX className="w-4 h-4 text-muted-foreground" />
+                              ) : user.is_banned ? (
                                 <Ban className="w-4 h-4 text-destructive" />
                               ) : (
                                 <User className="w-4 h-4 text-muted-foreground" />
@@ -324,14 +331,23 @@ export default function AdminUsers() {
                             </div>
                             <div>
                               <div className="font-medium flex items-center gap-2">
-                                {user.nickname || user.name || "이름 없음"}
-                                {user.is_banned && (
+                                {isOrphaned ? (
+                                  <span className="text-muted-foreground italic">탈퇴 추정 회원</span>
+                                ) : (
+                                  user.nickname || user.name || "이름 없음"
+                                )}
+                                {user.is_banned && !isOrphaned && (
                                   <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
                                     차단됨
                                   </Badge>
                                 )}
+                                {isOrphaned && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+                                    잔여 데이터
+                                  </Badge>
+                                )}
                               </div>
-                              {user.nickname && user.name && (
+                              {!isOrphaned && user.nickname && user.name && (
                                 <div className="text-xs text-muted-foreground">{user.name}</div>
                               )}
                               {user.is_banned && user.ban_reason && (
@@ -365,6 +381,17 @@ export default function AdminUsers() {
                           {new Date(user.created_at).toLocaleDateString("ko-KR")}
                         </TableCell>
                         <TableCell className="text-right">
+                          {isOrphaned ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteOrphanedProfile(user)}
+                              className="gap-1 text-muted-foreground"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              삭제
+                            </Button>
+                          ) : (
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="outline"
@@ -397,9 +424,11 @@ export default function AdminUsers() {
                               </Button>
                             )}
                           </div>
+                          )}
                         </TableCell>
                       </TableRow>
-                    ))
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
