@@ -151,6 +151,40 @@ export default function AdminEmail() {
     setDesignSaving(false);
   };
 
+  // Fetch user count when "all" mode is selected
+  const fetchUserCount = async () => {
+    setCountLoading(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL || "https://app.mrkim.today"}/functions/v1/send-custom-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
+          },
+          body: JSON.stringify({ countOnly: true }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setAllUserCount(data.totalUsers);
+        setUnsubscribeCount(data.unsubscribeCount);
+        setSendableCount(data.sendableCount);
+      }
+    } catch {}
+    setCountLoading(false);
+  };
+
+  useEffect(() => {
+    if (recipientMode === "all" && allUserCount === null && isAdmin) {
+      fetchUserCount();
+    }
+  }, [recipientMode, isAdmin]);
+
   useEffect(() => {
     if (!isAdmin) return;
     loadHistory();
