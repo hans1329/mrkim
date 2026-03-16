@@ -199,7 +199,42 @@ function LoginContent() {
                 <Mail className="h-5 w-5" />
                 이메일로 계속하기
               </Button>
-            </div> : <div className="space-y-4">
+            </div> : isForgotMode ? (
+              <div className="space-y-4">
+                <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={() => { setIsForgotMode(false); setResetSent(false); }}>
+                  <ArrowLeft className="h-4 w-4" />
+                  로그인으로 돌아가기
+                </Button>
+
+                {resetSent ? (
+                  <div className="text-center space-y-3 py-4">
+                    <Mail className="h-10 w-10 mx-auto text-primary-foreground/80" />
+                    <p className="text-primary-foreground font-medium">메일을 확인해주세요</p>
+                    <p className="text-primary-foreground/70 text-sm">
+                      <span className="font-medium text-primary-foreground">{email}</span>으로<br />
+                      비밀번호 재설정 링크를 보냈습니다.
+                    </p>
+                    <Button variant="ghost" className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-sm" onClick={() => { setResetSent(false); }}>
+                      다시 보내기
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div className="space-y-1">
+                      <h2 className="text-lg font-semibold text-primary-foreground">비밀번호 재설정</h2>
+                      <p className="text-sm text-primary-foreground/70">가입한 이메일을 입력하시면 비밀번호 재설정 링크를 보내드립니다.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-email" className="text-primary-foreground">이메일</Label>
+                      <Input id="reset-email" type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} required className="bg-white/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50" />
+                    </div>
+                    <Button type="submit" className="w-full h-12 bg-white text-primary hover:bg-white/90" disabled={isLoading}>
+                      {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "재설정 링크 보내기"}
+                    </Button>
+                  </form>
+                )}
+              </div>
+            ) : <div className="space-y-4">
               <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={() => setIsEmailMode(false)}>
                 <ArrowLeft className="h-4 w-4" />
                 뒤로
@@ -224,7 +259,7 @@ function LoginContent() {
               </form>
 
               <div className="text-center">
-                <Button variant="link" className="text-sm text-primary-foreground/70 p-0 h-auto hover:text-primary-foreground">
+                <Button variant="link" className="text-sm text-primary-foreground/70 p-0 h-auto hover:text-primary-foreground" onClick={() => setIsForgotMode(true)}>
                   비밀번호를 잊으셨나요?
                 </Button>
               </div>
