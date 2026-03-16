@@ -209,6 +209,9 @@ export default function EmailDesignForm({ design, onChange }: EmailDesignFormPro
               <p className="text-[11px] mt-0.5" style={{ color: "#9ca3af" }}>
                 © {new Date().getFullYear()} 김비서
               </p>
+              <p className="text-[11px] mt-1.5">
+                <span className="underline" style={{ color: "#9ca3af" }}>수신 거부</span>
+              </p>
             </div>
           </div>
         </CardContent>
