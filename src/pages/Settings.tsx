@@ -609,7 +609,7 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* (feedback drawer moved below) */}
+        
 
         <Card>
           <CardHeader className="pb-3">
