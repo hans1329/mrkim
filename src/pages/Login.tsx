@@ -120,7 +120,11 @@ function LoginContent() {
     });
     setIsLoading(false);
     if (error) {
-      toast.error("비밀번호 재설정 메일 발송에 실패했습니다.");
+      if (error.message?.includes("rate limit") || error.status === 429) {
+        toast.error("너무 많이 요청하셨습니다. 잠시 후 다시 시도해주세요.");
+      } else {
+        toast.error("비밀번호 재설정 메일 발송에 실패했습니다.");
+      }
       return;
     }
     setResetSent(true);
