@@ -77,6 +77,7 @@ export default function Settings() {
   const [feedbackSubject, setFeedbackSubject] = useState("");
   const [feedbackContent, setFeedbackContent] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
+  const [feedbackDrawerOpen, setFeedbackDrawerOpen] = useState(false);
 
   // 프로필 로드 시 초기값 설정
   useEffect(() => {
