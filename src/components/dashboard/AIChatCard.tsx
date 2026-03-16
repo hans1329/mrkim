@@ -539,7 +539,7 @@ export function AIChatCard() {
           <button
             type="button"
             disabled={isTyping}
-            onClick={() => triggerBriefing(true)}
+            onClick={() => requireAuth(() => triggerBriefing(true))}
             className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-primary/40 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
           >
             <Sparkles className="h-3 w-3" />브리핑
