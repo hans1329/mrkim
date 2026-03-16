@@ -248,36 +248,6 @@ export default function AdminEmail() {
   return (
     <AdminLayout title="이메일 발송">
       <div className="space-y-6 max-w-4xl">
-        {/* Template Selection */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {(Object.entries(EMAIL_TEMPLATES) as [TemplateType, typeof EMAIL_TEMPLATES[TemplateType]][]).map(
-            ([key, tmpl]) => (
-              <Card
-                key={key}
-                className={`cursor-pointer transition-all hover:shadow-md ${
-                  selectedTemplate === key
-                    ? "ring-2 ring-primary border-primary"
-                    : "hover:border-primary/30"
-                }`}
-                onClick={() => handleTemplateChange(key)}
-              >
-                <CardContent className="pt-4 pb-3 text-center">
-                  <tmpl.icon
-                    className={`w-6 h-6 mx-auto mb-2 ${
-                      selectedTemplate === key ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  />
-                  <p className={`text-sm font-medium ${
-                    selectedTemplate === key ? "text-primary" : "text-foreground"
-                  }`}>
-                    {tmpl.label}
-                  </p>
-                </CardContent>
-              </Card>
-            )
-          )}
-        </div>
-
         <Tabs defaultValue="compose" className="space-y-4">
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="compose">
@@ -303,6 +273,36 @@ export default function AdminEmail() {
           </TabsList>
 
           <TabsContent value="compose" className="space-y-4">
+            {/* Template Selection */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {(Object.entries(EMAIL_TEMPLATES) as [TemplateType, typeof EMAIL_TEMPLATES[TemplateType]][]).map(
+                ([key, tmpl]) => (
+                  <Card
+                    key={key}
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      selectedTemplate === key
+                        ? "ring-2 ring-primary border-primary"
+                        : "hover:border-primary/30"
+                    }`}
+                    onClick={() => handleTemplateChange(key)}
+                  >
+                    <CardContent className="pt-4 pb-3 text-center">
+                      <tmpl.icon
+                        className={`w-6 h-6 mx-auto mb-2 ${
+                          selectedTemplate === key ? "text-primary" : "text-muted-foreground"
+                        }`}
+                      />
+                      <p className={`text-sm font-medium ${
+                        selectedTemplate === key ? "text-primary" : "text-foreground"
+                      }`}>
+                        {tmpl.label}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )
+              )}
+            </div>
+
             {/* Recipients */}
             <Card>
               <CardHeader className="pb-3">
