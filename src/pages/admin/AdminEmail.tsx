@@ -492,7 +492,45 @@ export default function AdminEmail() {
           </TabsContent>
 
           <TabsContent value="design" className="space-y-4">
-            <EmailDesignForm design={emailDesign} onChange={setEmailDesign} />
+            {/* 유형 선택 */}
+            <div className="flex flex-wrap items-center gap-2">
+              {(Object.entries(EMAIL_TEMPLATES) as [TemplateType, typeof EMAIL_TEMPLATES[TemplateType]][]).map(
+                ([key, tmpl]) => (
+                  <Button
+                    key={key}
+                    variant={selectedTemplate === key ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedTemplate(key)}
+                    className="gap-1.5"
+                  >
+                    <tmpl.icon className="w-3.5 h-3.5" />
+                    {tmpl.label}
+                  </Button>
+                )
+              )}
+            </div>
+
+            {designLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            ) : (
+              <>
+                <EmailDesignForm design={emailDesign} onChange={setEmailDesign} />
+                <Button
+                  onClick={() => saveDesign(selectedTemplate)}
+                  disabled={designSaving}
+                  className="w-full"
+                >
+                  {designSaving ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 저장 중...</>
+                  ) : (
+                    <>{EMAIL_TEMPLATES[selectedTemplate].label} 디자인 저장</>
+                  )}
+                </Button>
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="history">
