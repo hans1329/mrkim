@@ -434,8 +434,39 @@ export default function AdminEmail() {
           <TabsContent value="history">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">발송 내역</CardTitle>
-                <CardDescription>최근 50건의 이메일 발송 기록</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base">발송 내역</CardTitle>
+                    <CardDescription>최근 50건의 이메일 발송 기록</CardDescription>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={loadHistory} className="text-xs">
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    새로고침
+                  </Button>
+                </div>
+                {/* Filters */}
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <select
+                    value={historyFilterType}
+                    onChange={(e) => setHistoryFilterType(e.target.value)}
+                    className="h-8 rounded-md border bg-background px-2 text-xs"
+                  >
+                    <option value="all">전체 유형</option>
+                    {Object.entries(EMAIL_TEMPLATES).map(([key, tmpl]) => (
+                      <option key={key} value={key}>{tmpl.label}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={historyFilterStatus}
+                    onChange={(e) => setHistoryFilterStatus(e.target.value)}
+                    className="h-8 rounded-md border bg-background px-2 text-xs"
+                  >
+                    <option value="all">전체 상태</option>
+                    <option value="sent">발송완료</option>
+                    <option value="failed">실패</option>
+                    <option value="partial">부분실패</option>
+                  </select>
+                </div>
               </CardHeader>
               <CardContent>
                 {historyLoading ? (
@@ -444,14 +475,17 @@ export default function AdminEmail() {
                       <Skeleton key={i} className="h-20 w-full" />
                     ))}
                   </div>
-                ) : sentHistory.length === 0 ? (
+                ) : filteredHistory.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Mail className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                    <p>발송 내역이 없습니다</p>
+                    <p>{sentHistory.length === 0 ? "발송 내역이 없습니다" : "필터 조건에 맞는 내역이 없습니다"}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {sentHistory.map((item) => (
+                    <p className="text-xs text-muted-foreground">
+                      총 <span className="font-semibold text-foreground">{filteredHistory.length}</span>건
+                    </p>
+                    {filteredHistory.map((item) => (
                       <div
                         key={item.id}
                         className="flex items-center justify-between p-3 rounded-lg border bg-card"
