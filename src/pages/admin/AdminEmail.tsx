@@ -86,6 +86,12 @@ export default function AdminEmail() {
   // All users count
   const [allUserCount, setAllUserCount] = useState<number | null>(null);
 
+  const filteredHistory = sentHistory.filter((item) => {
+    if (historyFilterType !== "all" && item.template_type !== historyFilterType) return false;
+    if (historyFilterStatus !== "all" && item.status !== historyFilterStatus) return false;
+    return true;
+  });
+
   useEffect(() => {
     if (!isAdmin) return;
     loadHistory();
