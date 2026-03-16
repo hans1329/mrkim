@@ -314,7 +314,7 @@ const PreLoginLandingContent = () => {
                   <Skeleton className="h-5 w-3/4" />
                 </div>
               ))
-            ) : dbFaqs.slice(0, 6).map((faq) => (
+            ) : (showAllFaqs ? dbFaqs : dbFaqs.slice(0, 6)).map((faq) => (
               <AccordionItem 
                 key={faq.id} 
                 value={`faq-${faq.id}`}
@@ -329,6 +329,31 @@ const PreLoginLandingContent = () => {
               </AccordionItem>
             ))}
           </Accordion>
+
+          {!faqLoading && dbFaqs.length > 6 && !showAllFaqs && (
+            <div className="text-center mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowAllFaqs(true)}
+                className="rounded-full px-6"
+              >
+                더보기 ({dbFaqs.length - 6}개)
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          {showAllFaqs && dbFaqs.length > 6 && (
+            <div className="text-center mt-6">
+              <Button
+                variant="ghost"
+                onClick={() => setShowAllFaqs(false)}
+                className="rounded-full px-6 text-muted-foreground"
+              >
+                접기
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 
