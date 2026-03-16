@@ -232,9 +232,7 @@ export default function AdminUsers() {
     setIsDeleting(true);
     try {
       for (const user of orphaned) {
-        await supabase.functions.invoke("delete-account", {
-          body: { targetUserId: user.user_id },
-        });
+        await invokeDeleteAccount(user.user_id);
       }
       toast.success(`${orphaned.length}명이 완전 삭제되었습니다.`);
       fetchUsers();
