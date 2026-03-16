@@ -59,6 +59,24 @@ export default function AdminUsers() {
   const [selectedRole, setSelectedRole] = useState<AppRole | "">("");
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const invokeDeleteAccount = async (targetUserId: string) => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const { data, error } = await supabase.functions.invoke("delete-account", {
+      body: { targetUserId },
+      headers: session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : undefined,
+    });
+
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+
+    return data;
+  };
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -188,11 +206,7 @@ export default function AdminUsers() {
     if (!selectedUser) return;
     setIsDeleting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("delete-account", {
-        body: { targetUserId: selectedUser.user_id },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      await invokeDeleteAccount(selectedUser.user_id);
       toast.success(`${selectedUser.nickname || selectedUser.name || "사용자"}님이 완전 삭제되었습니다`);
       setDeleteDialogOpen(false);
       fetchUsers();
@@ -218,9 +232,7 @@ export default function AdminUsers() {
     setIsDeleting(true);
     try {
       for (const user of orphaned) {
-        await supabase.functions.invoke("delete-account", {
-          body: { targetUserId: user.user_id },
-        });
+        await invokeDeleteAccount(user.user_id);
       }
       toast.success(`${orphaned.length}명이 완전 삭제되었습니다.`);
       fetchUsers();
