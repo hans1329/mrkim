@@ -138,7 +138,7 @@ export default function EmailDesignForm({ design, onChange }: EmailDesignFormPro
               style={{ background: design.headerBg }}
             >
               <img 
-                src="/images/icc-white.webp" 
+                src="/images/icc-5.webp" 
                 alt="김비서" 
                 className="h-10 w-auto mx-auto mb-2"
               />
