@@ -23,10 +23,23 @@ export default function ResetPassword() {
       }
     });
 
-    // Check hash for recovery token
+    // Check hash for recovery token (implicit flow)
     const hash = window.location.hash;
     if (hash.includes("type=recovery")) {
       setIsRecovery(true);
+    }
+
+    // Handle PKCE flow: exchange code for session
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) {
+          toast.error("링크가 만료되었거나 이미 사용된 링크입니다. 다시 요청해주세요.");
+        } else {
+          setIsRecovery(true);
+        }
+      });
     }
 
     return () => subscription.unsubscribe();
