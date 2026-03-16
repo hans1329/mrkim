@@ -63,7 +63,7 @@ export default function Signup() {
       },
     });
     if (error) {
-      toast.error("Google 가입 실패: " + error.message);
+      toast.error("Google 가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
       setIsLoading(false);
     }
   };
@@ -77,7 +77,7 @@ export default function Signup() {
       },
     });
     if (error) {
-      toast.error("카카오 가입 실패: " + error.message);
+      toast.error("카카오 가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
       setIsLoading(false);
     }
   };
@@ -109,11 +109,17 @@ export default function Signup() {
     });
     
     if (error) {
-      // 서버 에러 메시지를 친절하게 변환
-      if (error.message.toLowerCase().includes("password")) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes("password")) {
         toast.error("비밀번호가 보안 조건을 충족하지 않습니다. 아래 체크리스트를 확인해주세요.");
-      } else if (error.message.toLowerCase().includes("already registered")) {
+      } else if (msg.includes("already registered") || msg.includes("already been registered")) {
         toast.error("이미 가입된 이메일입니다. 로그인을 시도해주세요.");
+      } else if (msg.includes("valid email") || msg.includes("invalid email")) {
+        toast.error("올바른 이메일 형식을 입력해주세요.");
+      } else if (msg.includes("rate limit") || msg.includes("too many requests")) {
+        toast.error("요청이 너무 많습니다. 잠시 후 다시 시도해주세요.");
+      } else if (msg.includes("signup is disabled")) {
+        toast.error("현재 회원가입이 일시적으로 중단되었습니다.");
       } else {
         toast.error("회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
       }

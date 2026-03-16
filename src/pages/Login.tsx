@@ -57,7 +57,7 @@ function LoginContent() {
       },
     });
     if (error) {
-      toast.error("Google 로그인 실패: " + error.message);
+      toast.error("Google 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.");
       setIsLoading(false);
     }
   };
@@ -71,7 +71,7 @@ function LoginContent() {
       },
     });
     if (error) {
-      toast.error("카카오 로그인 실패: " + error.message);
+      toast.error("카카오 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.");
       setIsLoading(false);
     }
   };
@@ -86,7 +86,18 @@ function LoginContent() {
     });
     
     if (error) {
-      toast.error("로그인 실패: " + error.message);
+      const msg = error.message.toLowerCase();
+      if (msg.includes("invalid login credentials") || msg.includes("invalid_credentials")) {
+        toast.error("이메일 또는 비밀번호가 올바르지 않습니다.");
+      } else if (msg.includes("email not confirmed")) {
+        toast.error("이메일 인증이 완료되지 않았습니다. 메일함을 확인해주세요.");
+      } else if (msg.includes("too many requests") || msg.includes("rate limit")) {
+        toast.error("로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.");
+      } else if (msg.includes("user not found")) {
+        toast.error("가입되지 않은 이메일입니다. 회원가입을 먼저 진행해주세요.");
+      } else {
+        toast.error("로그인에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      }
       setIsLoading(false);
       return;
     }
