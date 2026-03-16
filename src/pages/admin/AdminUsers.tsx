@@ -203,8 +203,10 @@ export default function AdminUsers() {
     }
   };
 
-  const isOrphanedProfile = (user: UserWithRoles) =>
-    (!user.roles || user.roles.length === 0) && !user.name && !user.business_name && !user.phone && !user.nickname;
+  const getUserRoles = (user?: UserWithRoles | null) => user?.roles ?? [];
+
+  const isOrphanedProfile = (user?: UserWithRoles | null) =>
+    getUserRoles(user).length === 0 && !user?.name && !user?.business_name && !user?.phone && !user?.nickname;
 
   const handleCleanupAllOrphaned = async () => {
     const orphaned = users.filter(isOrphanedProfile);
@@ -354,10 +356,10 @@ export default function AdminUsers() {
                             <TableCell>{user.phone || "-"}</TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
-                                {user.roles.length === 0 ? (
+                                {getUserRoles(user).length === 0 ? (
                                   <span className="text-muted-foreground text-sm">-</span>
                                 ) : (
-                                  user.roles.map((role) => (
+                                  getUserRoles(user).map((role) => (
                                     <Badge
                                       key={role}
                                       variant={ROLE_COLORS[role]}
@@ -471,10 +473,10 @@ export default function AdminUsers() {
                       <SelectItem
                         key={role}
                         value={role}
-                        disabled={selectedUser?.roles.includes(role)}
+                        disabled={getUserRoles(selectedUser).includes(role)}
                       >
                         {ROLE_LABELS[role]}
-                        {selectedUser?.roles.includes(role) && " (보유중)"}
+                        {getUserRoles(selectedUser).includes(role) && " (보유중)"}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -523,7 +525,7 @@ export default function AdminUsers() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Trash2 className="w-5 h-5 text-destructive" />
-                  {isOrphanedProfile(selectedUser as any) ? "잔여 데이터 삭제" : "강제 탈퇴"} - {selectedUser?.nickname || selectedUser?.name || "사용자"}
+                  {isOrphanedProfile(selectedUser) ? "잔여 데이터 삭제" : "강제 탈퇴"} - {selectedUser?.nickname || selectedUser?.name || "사용자"}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-3 py-2">
