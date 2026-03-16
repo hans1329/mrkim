@@ -550,7 +550,7 @@ export default function AdminEmail() {
                   {sending ? (
                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 발송 중...</>
                   ) : (
-                    <><Send className="w-4 h-4 mr-2" /> {recipientMode === "all" ? "전체 유저에게 발송" : `${recipients.length}명에게 발송`}</>
+                    <><Send className="w-4 h-4 mr-2" /> {recipientMode === "all" ? `전체 유저에게 발송${sendableCount !== null ? ` (${sendableCount.toLocaleString()}명)` : ""}` : `${recipients.length}명에게 발송`}</>
                   )}
                 </Button>
               </CardContent>
