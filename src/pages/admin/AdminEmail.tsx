@@ -80,6 +80,8 @@ export default function AdminEmail() {
   // Unsubscribes
   const [unsubscribes, setUnsubscribes] = useState<Unsubscribe[]>([]);
   const [unsubLoading, setUnsubLoading] = useState(true);
+  const [historyFilterType, setHistoryFilterType] = useState("all");
+  const [historyFilterStatus, setHistoryFilterStatus] = useState("all");
 
   // All users count
   const [allUserCount, setAllUserCount] = useState<number | null>(null);
