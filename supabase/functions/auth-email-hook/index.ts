@@ -65,27 +65,27 @@ function buildAuthEmailHtml(design: EmailDesign, content: { heading: string; bod
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;max-width:600px;margin:0 auto;padding:0;background:#f3f4f6;">
-  <div style="background:${design.headerBg};padding:32px 24px;text-align:center;">
-    <div style="display:inline-flex;align-items:center;gap:8px;">
-      <img src="https://mrkim.lovable.app/images/icc-5.webp" alt="김비서" style="height:40px;width:auto;" />
-      <h1 style="margin:0;font-size:22px;color:${design.headerTextColor};font-weight:700;">${design.headerTitle}</h1>
+<body style="font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;margin:0;padding:0;background:#f3f4f6;">
+  <div style="max-width:560px;margin:0 auto;">
+    <div style="background:${design.headerBg};padding:32px 24px;text-align:center;">
+      <div style="display:inline-flex;align-items:center;gap:8px;">
+        <img src="https://mrkim.lovable.app/images/icc-5.webp" alt="김비서" style="height:40px;width:auto;" />
+        <h1 style="margin:0;font-size:22px;color:${design.headerTextColor};font-weight:700;">${design.headerTitle}</h1>
+      </div>
+      <p style="margin:8px 0 0;font-size:14px;color:${design.headerTextColor};opacity:0.85;">${content.heading}</p>
     </div>
-    <p style="margin:8px 0 0;font-size:14px;color:${design.headerTextColor};opacity:0.85;">${content.heading}</p>
-  </div>
-  <div style="padding:32px 24px;background:${design.bodyBg};">
-    <div style="font-size:15px;line-height:1.8;color:${design.bodyTextColor};white-space:pre-wrap;">${content.body}</div>
-    <div style="text-align:center;padding:24px 0 8px;">
-      <a href="${confirmationUrl}" target="_blank" style="display:inline-block;padding:14px 32px;background:${design.ctaBg};color:${design.ctaTextColor};text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;">
-        ${content.ctaText}
-      </a>
+    <div style="padding:32px 24px;background:${design.bodyBg};">
+      <div style="font-size:15px;line-height:1.8;color:${design.bodyTextColor};white-space:pre-wrap;">${content.body}</div>
+      <div style="text-align:center;padding:24px 0 8px;">
+        <a href="${confirmationUrl}" target="_blank" style="display:inline-block;padding:14px 32px;background:${design.ctaBg};color:${design.ctaTextColor};text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;">
+          ${content.ctaText}
+        </a>
+      </div>
     </div>
-    <p style="margin-top:16px;font-size:12px;color:#9ca3af;text-align:center;">버튼이 작동하지 않으면 아래 링크를 브라우저에 붙여넣으세요:</p>
-    <p style="font-size:11px;color:#6b7280;word-break:break-all;text-align:center;">${confirmationUrl}</p>
-  </div>
-  <div style="padding:24px;background:${design.footerBg};border-top:1px solid #e5e7eb;text-align:center;">
-    <p style="margin:0;font-size:12px;color:#9ca3af;">${design.footerText}</p>
-    <p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">© ${new Date().getFullYear()} 김비서. All rights reserved.</p>
+    <div style="padding:24px;background:${design.footerBg};border-top:1px solid #e5e7eb;text-align:center;">
+      <p style="margin:0;font-size:12px;color:#9ca3af;">${design.footerText}</p>
+      <p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">© ${new Date().getFullYear()} 김비서. All rights reserved.</p>
+    </div>
   </div>
 </body>
 </html>`;
