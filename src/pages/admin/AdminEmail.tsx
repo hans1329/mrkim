@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Send, Users, FileText, Megaphone, Bell, Plus, X, Palette, ShieldCheck, Loader2, Ban, Trash2 } from "lucide-react";
+import { Mail, Send, Users, FileText, Megaphone, Bell, Plus, X, Palette, ShieldCheck, Loader2, Ban, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmailDesignForm, { DEFAULT_DESIGN, buildDesignedEmailHtml, type EmailDesign } from "@/components/admin/EmailDesignForm";
