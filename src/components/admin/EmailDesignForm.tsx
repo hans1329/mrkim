@@ -143,13 +143,14 @@ export default function EmailDesignForm({ design, onChange }: EmailDesignFormPro
                 <img 
                   src="/images/icc-5.webp" 
                   alt="김비서" 
-                  className="h-10 w-auto"
+                  className="h-10 w-auto shrink-0"
                 />
                 <input
                   value={design.headerTitle}
                   onChange={(e) => update({ headerTitle: e.target.value })}
-                  className="text-lg font-bold bg-transparent border-none outline-none focus:ring-1 focus:ring-white/30 rounded px-2 py-1"
-                  style={{ color: design.headerTextColor, width: `${Math.max(design.headerTitle.length, 4)}ch` }}
+                  className="text-lg font-bold bg-transparent border-none outline-none focus:ring-1 focus:ring-white/30 rounded px-2 py-1 min-w-0 w-auto"
+                  style={{ color: design.headerTextColor }}
+                  size={Math.max(design.headerTitle.length + 1, 4)}
                   placeholder="타이틀"
                 />
               </div>
