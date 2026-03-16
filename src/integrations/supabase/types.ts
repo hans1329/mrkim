@@ -723,6 +723,72 @@ export type Database = {
         }
         Relationships: []
       }
+      email_send_history: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          html_content: string | null
+          id: string
+          recipient_count: number
+          recipients: string[]
+          reply_to: string | null
+          sent_by: string
+          status: string
+          subject: string
+          template_type: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          html_content?: string | null
+          id?: string
+          recipient_count?: number
+          recipients?: string[]
+          reply_to?: string | null
+          sent_by: string
+          status?: string
+          subject: string
+          template_type?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          html_content?: string | null
+          id?: string
+          recipient_count?: number
+          recipients?: string[]
+          reply_to?: string | null
+          sent_by?: string
+          status?: string
+          subject?: string
+          template_type?: string
+        }
+        Relationships: []
+      }
+      email_unsubscribes: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          reason: string | null
+          unsubscribed_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          reason?: string | null
+          unsubscribed_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          reason?: string | null
+          unsubscribed_at?: string
+        }
+        Relationships: []
+      }
       employee_praises: {
         Row: {
           comment: string | null
