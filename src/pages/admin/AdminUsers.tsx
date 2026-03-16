@@ -356,10 +356,10 @@ export default function AdminUsers() {
                             <TableCell>{user.phone || "-"}</TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
-                                {user.roles.length === 0 ? (
+                                {getUserRoles(user).length === 0 ? (
                                   <span className="text-muted-foreground text-sm">-</span>
                                 ) : (
-                                  user.roles.map((role) => (
+                                  getUserRoles(user).map((role) => (
                                     <Badge
                                       key={role}
                                       variant={ROLE_COLORS[role]}
