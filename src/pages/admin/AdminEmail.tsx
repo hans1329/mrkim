@@ -653,36 +653,52 @@ export default function AdminEmail() {
                     <p className="text-xs text-muted-foreground">
                       총 <span className="font-semibold text-foreground">{filteredHistory.length}</span>건
                     </p>
-                    {filteredHistory.map((item) => (
+                    {filteredHistory.map((item) => {
+                      const typeLabel = EMAIL_TEMPLATES[item.template_type as TemplateType]?.label || item.template_type;
+                      const isAllUsers = item.recipient_count > 5;
+                      return (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                        className="p-3 rounded-lg border bg-card space-y-2"
                       >
-                        <div className="space-y-1 min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">{item.subject}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                            <Badge variant="outline" className="text-xs">{item.template_type}</Badge>
-                            <span>{item.recipient_count}명</span>
-                            <span>{new Date(item.created_at).toLocaleString("ko-KR")}</span>
-                          </div>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {(item.recipients || []).slice(0, 3).map((email: string) => (
-                              <Badge key={email} variant="secondary" className="text-[10px] py-0">
-                                {email}
-                              </Badge>
-                            ))}
-                            {(item.recipients || []).length > 3 && (
-                              <Badge variant="secondary" className="text-[10px] py-0">
-                                +{item.recipients.length - 3}명
-                              </Badge>
-                            )}
-                          </div>
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-sm truncate flex-1">{item.subject}</p>
+                          <Badge variant={item.status === "sent" ? "default" : item.status === "failed" ? "destructive" : "secondary"} className="ml-2 shrink-0">
+                            {item.status === "sent" ? "발송완료" : item.status === "failed" ? "실패" : "부분실패"}
+                          </Badge>
                         </div>
-                        <Badge variant={item.status === "sent" ? "default" : item.status === "failed" ? "destructive" : "secondary"}>
-                          {item.status === "sent" ? "발송완료" : item.status === "failed" ? "실패" : "부분실패"}
-                        </Badge>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                          <Badge variant="outline" className="text-[10px]">{typeLabel}</Badge>
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            {item.recipient_count.toLocaleString()}명
+                          </span>
+                          <span>
+                            {new Date(item.created_at).toLocaleString("ko-KR", {
+                              year: "numeric", month: "2-digit", day: "2-digit",
+                              hour: "2-digit", minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        {/* 수신자 목록: 적을 때 전체 표시, 많을 때 요약 */}
+                        <div className="flex flex-wrap gap-1">
+                          {isAllUsers ? (
+                            <Badge variant="secondary" className="text-[10px] py-0">
+                              전체 유저 발송 ({item.recipient_count.toLocaleString()}명)
+                            </Badge>
+                          ) : (
+                            <>
+                              {(item.recipients || []).map((email: string) => (
+                                <Badge key={email} variant="secondary" className="text-[10px] py-0">
+                                  {email}
+                                </Badge>
+                              ))}
+                            </>
+                          )}
+                        </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
