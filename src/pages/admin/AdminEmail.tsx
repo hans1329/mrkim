@@ -277,7 +277,6 @@ export default function AdminEmail() {
 
       toast.success(`${result.recipientCount || result.successCount}명에게 이메일이 발송되었습니다${result.failCount ? ` (${result.failCount}건 실패)` : ""}`);
       setFormData({ subject: EMAIL_TEMPLATES[selectedTemplate].defaultSubject, replyTo: "" });
-      setEmailDesign({ ...DEFAULT_DESIGN });
       setRecipients([]);
       loadHistory();
     } catch (error: any) {
