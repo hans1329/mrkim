@@ -71,6 +71,12 @@ export default function Settings() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeletingSyncData, setIsDeletingSyncData] = useState(false);
 
+  // 피드백/문의 상태
+  const [feedbackCategory, setFeedbackCategory] = useState("general");
+  const [feedbackSubject, setFeedbackSubject] = useState("");
+  const [feedbackContent, setFeedbackContent] = useState("");
+  const [feedbackSending, setFeedbackSending] = useState(false);
+
   // 프로필 로드 시 초기값 설정
   useEffect(() => {
     if (profile) {
