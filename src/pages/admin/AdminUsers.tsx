@@ -258,15 +258,28 @@ export default function AdminUsers() {
   return (
     <AdminLayout title="사용자 관리">
       <div className="space-y-6">
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="이름, 닉네임, 상호명, 전화번호로 검색..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search & Cleanup */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px] max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="이름, 닉네임, 상호명, 전화번호로 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {users.filter(isOrphanedProfile).length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCleanupAllOrphaned}
+              className="gap-1.5 text-muted-foreground"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              탈퇴 추정 회원 일괄 정리 ({users.filter(isOrphanedProfile).length})
+            </Button>
+          )}
         </div>
 
         {/* Users Table */}
