@@ -354,10 +354,6 @@ export default function AdminEmail() {
               <Mail className="w-4 h-4 mr-2" />
               작성
             </TabsTrigger>
-            <TabsTrigger value="design">
-              <Palette className="w-4 h-4 mr-2" />
-              디자인
-            </TabsTrigger>
             <TabsTrigger value="history">
               <FileText className="w-4 h-4 mr-2" />
               발송 내역
