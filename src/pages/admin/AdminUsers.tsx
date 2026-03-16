@@ -204,7 +204,7 @@ export default function AdminUsers() {
   };
 
   const isOrphanedProfile = (user: UserWithRoles) =>
-    user.roles.length === 0 && !user.name && !user.business_name && !user.phone && !user.nickname;
+    (!user.roles || user.roles.length === 0) && !user.name && !user.business_name && !user.phone && !user.nickname;
 
   const handleCleanupAllOrphaned = async () => {
     const orphaned = users.filter(isOrphanedProfile);
