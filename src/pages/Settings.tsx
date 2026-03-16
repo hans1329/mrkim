@@ -737,6 +737,75 @@ export default function Settings() {
           <Home className="h-4 w-4" />
           홈으로 가기
         </Button>
+
+        {/* 회원탈퇴 */}
+        <div className="pt-8 pb-4">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button className="w-full text-center text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors underline underline-offset-2">
+                회원탈퇴
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>정말 탈퇴하시겠습니까?</AlertDialogTitle>
+                <AlertDialogDescription className="space-y-2">
+                  <p>탈퇴 시 아래 데이터가 모두 삭제되며 복구할 수 없습니다.</p>
+                  <ul className="list-disc list-inside text-xs space-y-1">
+                    <li>프로필 및 사업장 정보</li>
+                    <li>연결된 계좌·카드·홈택스 데이터</li>
+                    <li>거래내역, 직원 정보, AI 대화 기록</li>
+                    <li>예적금, 자동이체 설정</li>
+                  </ul>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>취소</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={async () => {
+                    try {
+                      const { data: userData } = await supabase.auth.getUser();
+                      if (!userData.user) {
+                        toast.error("로그인 정보를 확인할 수 없습니다.");
+                        return;
+                      }
+                      const userId = userData.user.id;
+
+                      // 사용자 관련 데이터 삭제 (순서 중요: FK 의존성 고려)
+                      const tables = [
+                        'sync_logs', 'sync_jobs', 'connector_instances',
+                        'ai_call_logs', 'ai_insights', 'chat_messages',
+                        'notifications', 'device_tokens',
+                        'auto_transfers', 'deposits', 'savings_accounts',
+                        'transactions', 'tax_invoices', 'tax_consultations',
+                        'tax_filing_tasks', 'tax_accountant_assignments',
+                        'employee_praises', 'employees',
+                        'delivery_orders', 'delivery_settlements', 'delivery_stores',
+                        'connected_accounts', 'hometax_sync_status',
+                        'user_feedback', 'user_roles', 'profiles',
+                      ] as const;
+
+                      for (const table of tables) {
+                        const col = table === 'employee_praises' ? 'praiser_user_id' : 'user_id';
+                        await supabase.from(table).delete().eq(col, userId);
+                      }
+
+                      // 로그아웃
+                      await supabase.auth.signOut();
+                      toast.success("탈퇴가 완료되었습니다. 이용해 주셔서 감사합니다.");
+                      navigate("/");
+                    } catch (err: any) {
+                      toast.error(err.message || "탈퇴 처리 중 오류가 발생했습니다.");
+                    }
+                  }}
+                >
+                  탈퇴하기
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     </MainLayout>
   );
