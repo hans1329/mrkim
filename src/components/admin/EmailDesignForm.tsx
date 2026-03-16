@@ -137,6 +137,11 @@ export default function EmailDesignForm({ design, onChange }: EmailDesignFormPro
               className="px-5 py-5 text-center space-y-2"
               style={{ background: design.headerBg }}
             >
+              <img 
+                src="/images/icc-white.webp" 
+                alt="김비서" 
+                className="h-10 w-auto mx-auto mb-2"
+              />
               <input
                 value={design.headerTitle}
                 onChange={(e) => update({ headerTitle: e.target.value })}
