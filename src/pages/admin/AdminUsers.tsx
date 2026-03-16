@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, Shield, User, Ban, ShieldCheck } from "lucide-react";
+import { Search, Shield, User, Ban, ShieldCheck, UserX, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Database } from "@/integrations/supabase/types";
@@ -201,12 +201,46 @@ export default function AdminUsers() {
     }
   };
 
+  // 탈퇴 추정 회원 판별 (roles 없고, 이름/사업장/전화번호 모두 없음)
+  const isOrphanedProfile = (user: UserWithRoles) =>
+    user.roles.length === 0 && !user.name && !user.business_name && !user.phone && !user.nickname;
+
+  const handleDeleteOrphanedProfile = async (user: UserWithRoles) => {
+    if (!confirm("이 탈퇴 추정 회원의 잔여 데이터를 삭제하시겠습니까?")) return;
+    try {
+      await supabase.from("profiles").delete().eq("user_id", user.user_id);
+      toast.success("잔여 프로필이 삭제되었습니다.");
+      fetchUsers();
+    } catch (error) {
+      toast.error("삭제에 실패했습니다.");
+    }
+  };
+
+  const handleCleanupAllOrphaned = async () => {
+    const orphaned = users.filter(isOrphanedProfile);
+    if (orphaned.length === 0) {
+      toast.info("정리할 탈퇴 추정 회원이 없습니다.");
+      return;
+    }
+    if (!confirm(`탈퇴 추정 회원 ${orphaned.length}명의 잔여 데이터를 모두 삭제하시겠습니까?`)) return;
+    try {
+      for (const user of orphaned) {
+        await supabase.from("profiles").delete().eq("user_id", user.user_id);
+      }
+      toast.success(`${orphaned.length}명의 잔여 프로필이 삭제되었습니다.`);
+      fetchUsers();
+    } catch (error) {
+      toast.error("일괄 삭제 중 오류가 발생했습니다.");
+    }
+  };
+
   const filteredUsers = users.filter(
     (user) =>
       (user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       (user.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       (user.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
-      (user.phone?.includes(searchQuery) ?? false)
+      (user.phone?.includes(searchQuery) ?? false) ||
+      (isOrphanedProfile(user) && "탈퇴".includes(searchQuery))
   );
 
   if (authLoading) {
@@ -224,15 +258,28 @@ export default function AdminUsers() {
   return (
     <AdminLayout title="사용자 관리">
       <div className="space-y-6">
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="이름, 닉네임, 상호명, 전화번호로 검색..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search & Cleanup */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px] max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="이름, 닉네임, 상호명, 전화번호로 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {users.filter(isOrphanedProfile).length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCleanupAllOrphaned}
+              className="gap-1.5 text-muted-foreground"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              탈퇴 추정 회원 일괄 정리 ({users.filter(isOrphanedProfile).length})
+            </Button>
+          )}
         </div>
 
         {/* Users Table */}
@@ -264,12 +311,19 @@ export default function AdminUsers() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredUsers.map((user) => (
-                      <TableRow key={user.id} className={user.is_banned ? "opacity-60 bg-destructive/5" : ""}>
+                    filteredUsers.map((user) => {
+                      const isOrphaned = isOrphanedProfile(user);
+                      return (
+                      <TableRow key={user.id} className={
+                        isOrphaned ? "opacity-50 bg-muted/30" :
+                        user.is_banned ? "opacity-60 bg-destructive/5" : ""
+                      }>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                              {user.is_banned ? (
+                              {isOrphaned ? (
+                                <UserX className="w-4 h-4 text-muted-foreground" />
+                              ) : user.is_banned ? (
                                 <Ban className="w-4 h-4 text-destructive" />
                               ) : (
                                 <User className="w-4 h-4 text-muted-foreground" />
@@ -277,14 +331,23 @@ export default function AdminUsers() {
                             </div>
                             <div>
                               <div className="font-medium flex items-center gap-2">
-                                {user.nickname || user.name || "이름 없음"}
-                                {user.is_banned && (
+                                {isOrphaned ? (
+                                  <span className="text-muted-foreground italic">탈퇴 추정 회원</span>
+                                ) : (
+                                  user.nickname || user.name || "이름 없음"
+                                )}
+                                {user.is_banned && !isOrphaned && (
                                   <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
                                     차단됨
                                   </Badge>
                                 )}
+                                {isOrphaned && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+                                    잔여 데이터
+                                  </Badge>
+                                )}
                               </div>
-                              {user.nickname && user.name && (
+                              {!isOrphaned && user.nickname && user.name && (
                                 <div className="text-xs text-muted-foreground">{user.name}</div>
                               )}
                               {user.is_banned && user.ban_reason && (
@@ -318,6 +381,17 @@ export default function AdminUsers() {
                           {new Date(user.created_at).toLocaleDateString("ko-KR")}
                         </TableCell>
                         <TableCell className="text-right">
+                          {isOrphaned ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteOrphanedProfile(user)}
+                              className="gap-1 text-muted-foreground"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              삭제
+                            </Button>
+                          ) : (
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="outline"
@@ -350,9 +424,11 @@ export default function AdminUsers() {
                               </Button>
                             )}
                           </div>
+                          )}
                         </TableCell>
                       </TableRow>
-                    ))
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
