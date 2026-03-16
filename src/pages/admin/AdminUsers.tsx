@@ -59,6 +59,24 @@ export default function AdminUsers() {
   const [selectedRole, setSelectedRole] = useState<AppRole | "">("");
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const invokeDeleteAccount = async (targetUserId: string) => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const { data, error } = await supabase.functions.invoke("delete-account", {
+      body: { targetUserId },
+      headers: session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : undefined,
+    });
+
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+
+    return data;
+  };
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
