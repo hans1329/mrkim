@@ -497,7 +497,7 @@ export function AIChatCard() {
                 {/* 본문 */}
                 <div
                   className="px-4 py-3 cursor-pointer"
-                  onClick={isBriefingDisplay ? handleBriefingTTS : openChat}
+                  onClick={isBriefingDisplay ? handleBriefingTTS : () => requireAuth(openChat)}
                 >
                   <p className="text-xs text-foreground/85 leading-relaxed whitespace-pre-line">{displayMessage}</p>
                 </div>
