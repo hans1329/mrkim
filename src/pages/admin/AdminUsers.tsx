@@ -473,10 +473,10 @@ export default function AdminUsers() {
                       <SelectItem
                         key={role}
                         value={role}
-                        disabled={selectedUser?.roles.includes(role)}
+                        disabled={getUserRoles(selectedUser).includes(role)}
                       >
                         {ROLE_LABELS[role]}
-                        {selectedUser?.roles.includes(role) && " (보유중)"}
+                        {getUserRoles(selectedUser).includes(role) && " (보유중)"}
                       </SelectItem>
                     ))}
                   </SelectContent>
