@@ -201,12 +201,46 @@ export default function AdminUsers() {
     }
   };
 
+  // 탈퇴 추정 회원 판별 (roles 없고, 이름/사업장/전화번호 모두 없음)
+  const isOrphanedProfile = (user: UserWithRoles) =>
+    user.roles.length === 0 && !user.name && !user.business_name && !user.phone && !user.nickname;
+
+  const handleDeleteOrphanedProfile = async (user: UserWithRoles) => {
+    if (!confirm("이 탈퇴 추정 회원의 잔여 데이터를 삭제하시겠습니까?")) return;
+    try {
+      await supabase.from("profiles").delete().eq("user_id", user.user_id);
+      toast.success("잔여 프로필이 삭제되었습니다.");
+      fetchUsers();
+    } catch (error) {
+      toast.error("삭제에 실패했습니다.");
+    }
+  };
+
+  const handleCleanupAllOrphaned = async () => {
+    const orphaned = users.filter(isOrphanedProfile);
+    if (orphaned.length === 0) {
+      toast.info("정리할 탈퇴 추정 회원이 없습니다.");
+      return;
+    }
+    if (!confirm(`탈퇴 추정 회원 ${orphaned.length}명의 잔여 데이터를 모두 삭제하시겠습니까?`)) return;
+    try {
+      for (const user of orphaned) {
+        await supabase.from("profiles").delete().eq("user_id", user.user_id);
+      }
+      toast.success(`${orphaned.length}명의 잔여 프로필이 삭제되었습니다.`);
+      fetchUsers();
+    } catch (error) {
+      toast.error("일괄 삭제 중 오류가 발생했습니다.");
+    }
+  };
+
   const filteredUsers = users.filter(
     (user) =>
       (user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       (user.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       (user.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
-      (user.phone?.includes(searchQuery) ?? false)
+      (user.phone?.includes(searchQuery) ?? false) ||
+      (isOrphanedProfile(user) && "탈퇴".includes(searchQuery))
   );
 
   if (authLoading) {
