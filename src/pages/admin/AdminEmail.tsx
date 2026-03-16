@@ -156,7 +156,6 @@ export default function AdminEmail() {
       console.error("Design save error:", err);
       toast.error(`디자인 저장 실패: ${err.message || "알 수 없는 오류"}`);
     }
-    }
     setDesignSaving(false);
   };
 
