@@ -772,36 +772,32 @@ export default function Settings() {
                       }
                       const userId = userData.user.id;
 
-                      // 사용자 관련 데이터 삭제 (순서 중요: FK 의존성 고려)
-                      const deleteTasks: Promise<any>[] = [
-                        supabase.from('sync_logs').delete().eq('user_id', userId),
-                        supabase.from('sync_jobs').delete().eq('user_id', userId),
-                        supabase.from('connector_instances').delete().eq('user_id', userId),
-                        supabase.from('ai_call_logs').delete().eq('user_id', userId),
-                        supabase.from('ai_insights').delete().eq('user_id', userId),
-                        supabase.from('chat_messages').delete().eq('user_id', userId),
-                        supabase.from('notifications').delete().eq('user_id', userId),
-                        supabase.from('device_tokens').delete().eq('user_id', userId),
-                        supabase.from('auto_transfers').delete().eq('user_id', userId),
-                        supabase.from('deposits').delete().eq('user_id', userId),
-                        supabase.from('savings_accounts').delete().eq('user_id', userId),
-                        supabase.from('transactions').delete().eq('user_id', userId),
-                        supabase.from('tax_invoices').delete().eq('user_id', userId),
-                        supabase.from('tax_consultations').delete().eq('user_id', userId),
-                        supabase.from('tax_filing_tasks').delete().eq('user_id', userId),
-                        supabase.from('tax_accountant_assignments').delete().eq('user_id', userId),
-                        supabase.from('employee_praises').delete().eq('praiser_user_id', userId),
-                        supabase.from('employees').delete().eq('user_id', userId),
-                        supabase.from('delivery_orders').delete().eq('user_id', userId),
-                        supabase.from('delivery_settlements').delete().eq('user_id', userId),
-                        supabase.from('delivery_stores').delete().eq('user_id', userId),
-                        supabase.from('connected_accounts').delete().eq('user_id', userId),
-                        supabase.from('hometax_sync_status').delete().eq('user_id', userId),
-                        supabase.from('user_feedback').delete().eq('user_id', userId),
-                        supabase.from('user_roles').delete().eq('user_id', userId),
-                      ];
-                      await Promise.all(deleteTasks);
-                      // profiles 마지막에 삭제
+                      // 사용자 관련 데이터 삭제
+                      await supabase.from('sync_logs').delete().eq('user_id', userId);
+                      await supabase.from('sync_jobs').delete().eq('user_id', userId);
+                      await supabase.from('connector_instances').delete().eq('user_id', userId);
+                      await supabase.from('ai_call_logs').delete().eq('user_id', userId);
+                      await supabase.from('ai_insights').delete().eq('user_id', userId);
+                      await supabase.from('chat_messages').delete().eq('user_id', userId);
+                      await supabase.from('notifications').delete().eq('user_id', userId);
+                      await supabase.from('device_tokens').delete().eq('user_id', userId);
+                      await supabase.from('auto_transfers').delete().eq('user_id', userId);
+                      await supabase.from('deposits').delete().eq('user_id', userId);
+                      await supabase.from('savings_accounts').delete().eq('user_id', userId);
+                      await supabase.from('transactions').delete().eq('user_id', userId);
+                      await supabase.from('tax_invoices').delete().eq('user_id', userId);
+                      await supabase.from('tax_consultations').delete().eq('user_id', userId);
+                      await supabase.from('tax_filing_tasks').delete().eq('user_id', userId);
+                      await supabase.from('tax_accountant_assignments').delete().eq('user_id', userId);
+                      await supabase.from('employee_praises').delete().eq('praiser_user_id', userId);
+                      await supabase.from('employees').delete().eq('user_id', userId);
+                      await supabase.from('delivery_orders').delete().eq('user_id', userId);
+                      await supabase.from('delivery_settlements').delete().eq('user_id', userId);
+                      await supabase.from('delivery_stores').delete().eq('user_id', userId);
+                      await supabase.from('connected_accounts').delete().eq('user_id', userId);
+                      await supabase.from('hometax_sync_status').delete().eq('user_id', userId);
+                      await supabase.from('user_feedback').delete().eq('user_id', userId);
+                      await supabase.from('user_roles').delete().eq('user_id', userId);
                       await supabase.from('profiles').delete().eq('user_id', userId);
 
                       // 로그아웃
