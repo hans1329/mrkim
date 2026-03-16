@@ -3,7 +3,8 @@ import { useServiceFAQ } from "@/hooks/useServiceFAQ";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Bot, ArrowRight, Shield, Zap, TrendingUp, Calculator, Users, FileText, Phone, MessageCircle, Link2, Sparkles, CheckCircle2, Star, Mail } from "lucide-react";
+import { Bot, ArrowRight, Shield, Zap, TrendingUp, Calculator, Users, FileText, Phone, MessageCircle, Link2, Sparkles, CheckCircle2, Star, Mail, ChevronDown } from "lucide-react";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import mainIllust from "@/assets/main-illust.webp";
 import mainIllust2 from "@/assets/main-illust2.webp";
@@ -22,7 +23,8 @@ const PreLoginLandingContent = () => {
   const navigate = useNavigate();
   const { isEnabled } = useSiteSettings();
   const showAppDownload = isEnabled("show_app_download");
-  
+  const [showAllFaqs, setShowAllFaqs] = useState(false);
+
   const features = [{
     icon: Calculator,
     title: "세무 자동화",
@@ -312,7 +314,7 @@ const PreLoginLandingContent = () => {
                   <Skeleton className="h-5 w-3/4" />
                 </div>
               ))
-            ) : dbFaqs.slice(0, 6).map((faq) => (
+            ) : (showAllFaqs ? dbFaqs : dbFaqs.slice(0, 6)).map((faq) => (
               <AccordionItem 
                 key={faq.id} 
                 value={`faq-${faq.id}`}
@@ -327,6 +329,31 @@ const PreLoginLandingContent = () => {
               </AccordionItem>
             ))}
           </Accordion>
+
+          {!faqLoading && dbFaqs.length > 6 && !showAllFaqs && (
+            <div className="text-center mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowAllFaqs(true)}
+                className="rounded-full px-6"
+              >
+                더보기 ({dbFaqs.length - 6}개)
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          {showAllFaqs && dbFaqs.length > 6 && (
+            <div className="text-center mt-6">
+              <Button
+                variant="ghost"
+                onClick={() => setShowAllFaqs(false)}
+                className="rounded-full px-6 text-muted-foreground"
+              >
+                접기
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 
