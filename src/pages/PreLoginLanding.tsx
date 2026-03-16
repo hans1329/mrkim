@@ -23,7 +23,8 @@ const PreLoginLandingContent = () => {
   const navigate = useNavigate();
   const { isEnabled } = useSiteSettings();
   const showAppDownload = isEnabled("show_app_download");
-  
+  const [showAllFaqs, setShowAllFaqs] = useState(false);
+
   const features = [{
     icon: Calculator,
     title: "세무 자동화",
