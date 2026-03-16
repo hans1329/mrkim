@@ -95,6 +95,15 @@ export function AIChatCard() {
   } = useProfileQuery();
   const isMobile = useIsMobile();
   const [input, setInput] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  const requireAuth = (action: () => void) => {
+    if (!isLoggedIn) {
+      navigate("/login");
+      return;
+    }
+    action();
+  };
   const [response, setResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isBriefingResponse, setIsBriefingResponse] = useState(false);
@@ -136,13 +145,14 @@ export function AIChatCard() {
           }
         } = await supabase.auth.getUser();
         if (!user) {
+          setIsLoggedIn(false);
           setRealStats(prev => ({
             ...prev,
             isLoading: false
           }));
           setHasConversationHistory(false);
-          return;
         }
+        setIsLoggedIn(true);
         const today = new Date();
         const todayStr = today.toISOString().split("T")[0];
         const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
@@ -310,12 +320,12 @@ export function AIChatCard() {
   };
   const handleQuickAsk = async (question: string) => {
     setInput("");
-    openChatWithMessage(question);
+    requireAuth(() => openChatWithMessage(question));
   };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-    openChatWithMessage(input.trim());
+    requireAuth(() => openChatWithMessage(input.trim()));
     setInput("");
   };
 
@@ -441,7 +451,7 @@ export function AIChatCard() {
           </div>
 
           {/* 우상단: 마이크 아이콘 */}
-          <Button variant="ghost" size="sm" onClick={openVoice} className="gap-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary px-3">
+          <Button variant="ghost" size="sm" onClick={() => requireAuth(openVoice)} className="gap-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary px-3">
             <Mic className="h-4 w-4" />
             대화
           </Button>
@@ -487,7 +497,7 @@ export function AIChatCard() {
                 {/* 본문 */}
                 <div
                   className="px-4 py-3 cursor-pointer"
-                  onClick={isBriefingDisplay ? handleBriefingTTS : openChat}
+                  onClick={isBriefingDisplay ? handleBriefingTTS : () => requireAuth(openChat)}
                 >
                   <p className="text-xs text-foreground/85 leading-relaxed whitespace-pre-line">{displayMessage}</p>
                 </div>
@@ -498,7 +508,7 @@ export function AIChatCard() {
                     variant="ghost"
                     size="sm"
                     className="gap-1.5 text-primary hover:bg-primary/10 rounded-full text-xs h-7 px-3"
-                    onClick={openChat}
+                    onClick={() => requireAuth(openChat)}
                   >
                     <Mic className="h-3.5 w-3.5" />비서와 대화하기
                   </Button>
@@ -529,7 +539,7 @@ export function AIChatCard() {
           <button
             type="button"
             disabled={isTyping}
-            onClick={() => triggerBriefing(true)}
+            onClick={() => requireAuth(() => triggerBriefing(true))}
             className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-primary/40 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
           >
             <Sparkles className="h-3 w-3" />브리핑
