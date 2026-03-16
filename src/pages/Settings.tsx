@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -45,6 +46,8 @@ import {
   Trash2,
   Bike,
   UtensilsCrossed,
+  MessageSquare,
+  Send,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -67,6 +70,12 @@ export default function Settings() {
   const [businessType, setBusinessType] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeletingSyncData, setIsDeletingSyncData] = useState(false);
+
+  // 피드백/문의 상태
+  const [feedbackCategory, setFeedbackCategory] = useState("general");
+  const [feedbackSubject, setFeedbackSubject] = useState("");
+  const [feedbackContent, setFeedbackContent] = useState("");
+  const [feedbackSending, setFeedbackSending] = useState(false);
 
   // 프로필 로드 시 초기값 설정
   useEffect(() => {
@@ -146,6 +155,37 @@ export default function Settings() {
     setBusinessRegNumber(profile?.business_registration_number || "");
     setBusinessType(profile?.business_type || "");
     setIsEditing(false);
+  };
+
+  // 피드백 제출
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackSubject.trim() || !feedbackContent.trim()) {
+      toast.error("제목과 내용을 모두 입력해주세요");
+      return;
+    }
+    setFeedbackSending(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("로그인이 필요합니다");
+
+      const { error } = await supabase.from("user_feedback").insert({
+        user_id: userData.user.id,
+        user_email: userData.user.email || null,
+        category: feedbackCategory,
+        subject: feedbackSubject.trim(),
+        content: feedbackContent.trim(),
+      });
+      if (error) throw error;
+
+      toast.success("문의가 접수되었습니다. 빠르게 확인하겠습니다!");
+      setFeedbackSubject("");
+      setFeedbackContent("");
+      setFeedbackCategory("general");
+    } catch (err: any) {
+      toast.error(err.message || "문의 접수에 실패했습니다");
+    } finally {
+      setFeedbackSending(false);
+    }
   };
 
   return (
@@ -561,6 +601,67 @@ export default function Settings() {
             </div>
             <Separator />
             <Button variant="outline" className="w-full">비밀번호 변경</Button>
+          </CardContent>
+        </Card>
+
+        {/* 문의/피드백 */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base">문의 / 피드백</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs">카테고리</Label>
+              <Select value={feedbackCategory} onValueChange={setFeedbackCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">일반 문의</SelectItem>
+                  <SelectItem value="bug">오류 신고</SelectItem>
+                  <SelectItem value="feature">기능 제안</SelectItem>
+                  <SelectItem value="billing">결제/요금</SelectItem>
+                  <SelectItem value="other">기타</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">제목</Label>
+              <Input
+                placeholder="문의 제목을 입력하세요"
+                value={feedbackSubject}
+                onChange={(e) => setFeedbackSubject(e.target.value)}
+                maxLength={100}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">내용</Label>
+              <Textarea
+                placeholder="문의 내용을 상세하게 작성해주세요"
+                value={feedbackContent}
+                onChange={(e) => setFeedbackContent(e.target.value)}
+                rows={4}
+                maxLength={2000}
+              />
+              <p className="text-[10px] text-muted-foreground text-right">
+                {feedbackContent.length}/2000
+              </p>
+            </div>
+            <Button
+              onClick={handleFeedbackSubmit}
+              disabled={feedbackSending || !feedbackSubject.trim() || !feedbackContent.trim()}
+              className="w-full gap-2"
+            >
+              {feedbackSending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              문의 보내기
+            </Button>
           </CardContent>
         </Card>
 
