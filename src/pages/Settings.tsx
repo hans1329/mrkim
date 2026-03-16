@@ -737,6 +737,84 @@ export default function Settings() {
           <Home className="h-4 w-4" />
           홈으로 가기
         </Button>
+
+        {/* 회원탈퇴 */}
+        <div className="pt-8 pb-4">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button className="w-full text-center text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors underline underline-offset-2">
+                회원탈퇴
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>정말 탈퇴하시겠습니까?</AlertDialogTitle>
+                <AlertDialogDescription className="space-y-2">
+                  <p>탈퇴 시 아래 데이터가 모두 삭제되며 복구할 수 없습니다.</p>
+                  <ul className="list-disc list-inside text-xs space-y-1">
+                    <li>프로필 및 사업장 정보</li>
+                    <li>연결된 계좌·카드·홈택스 데이터</li>
+                    <li>거래내역, 직원 정보, AI 대화 기록</li>
+                    <li>예적금, 자동이체 설정</li>
+                  </ul>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>취소</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={async () => {
+                    try {
+                      const { data: userData } = await supabase.auth.getUser();
+                      if (!userData.user) {
+                        toast.error("로그인 정보를 확인할 수 없습니다.");
+                        return;
+                      }
+                      const userId = userData.user.id;
+
+                      // 사용자 관련 데이터 삭제
+                      await supabase.from('sync_logs').delete().eq('user_id', userId);
+                      await supabase.from('sync_jobs').delete().eq('user_id', userId);
+                      await supabase.from('connector_instances').delete().eq('user_id', userId);
+                      await supabase.from('ai_call_logs').delete().eq('user_id', userId);
+                      await supabase.from('ai_insights').delete().eq('user_id', userId);
+                      await supabase.from('chat_messages').delete().eq('user_id', userId);
+                      await supabase.from('notifications').delete().eq('user_id', userId);
+                      await supabase.from('device_tokens').delete().eq('user_id', userId);
+                      await supabase.from('auto_transfers').delete().eq('user_id', userId);
+                      await supabase.from('deposits').delete().eq('user_id', userId);
+                      await supabase.from('savings_accounts').delete().eq('user_id', userId);
+                      await supabase.from('transactions').delete().eq('user_id', userId);
+                      await supabase.from('tax_invoices').delete().eq('user_id', userId);
+                      await supabase.from('tax_consultations').delete().eq('user_id', userId);
+                      await supabase.from('tax_filing_tasks').delete().eq('user_id', userId);
+                      await supabase.from('tax_accountant_assignments').delete().eq('user_id', userId);
+                      await supabase.from('employee_praises').delete().eq('praiser_user_id', userId);
+                      await supabase.from('employees').delete().eq('user_id', userId);
+                      await supabase.from('delivery_orders').delete().eq('user_id', userId);
+                      await supabase.from('delivery_settlements').delete().eq('user_id', userId);
+                      await supabase.from('delivery_stores').delete().eq('user_id', userId);
+                      await supabase.from('connected_accounts').delete().eq('user_id', userId);
+                      await supabase.from('hometax_sync_status').delete().eq('user_id', userId);
+                      await supabase.from('user_feedback').delete().eq('user_id', userId);
+                      await supabase.from('user_roles').delete().eq('user_id', userId);
+                      await supabase.from('profiles').delete().eq('user_id', userId);
+
+                      // 로그아웃
+                      await supabase.auth.signOut();
+                      toast.success("탈퇴가 완료되었습니다. 이용해 주셔서 감사합니다.");
+                      navigate("/");
+                    } catch (err: any) {
+                      toast.error(err.message || "탈퇴 처리 중 오류가 발생했습니다.");
+                    }
+                  }}
+                >
+                  탈퇴하기
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     </MainLayout>
   );
