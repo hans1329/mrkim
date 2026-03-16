@@ -321,7 +321,7 @@ const PreLoginLandingContent = () => {
                 <AccordionTrigger className="text-left font-semibold hover:no-underline py-4">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-4">
+                <AccordionContent className="text-muted-foreground pb-4 whitespace-pre-line">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>
