@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import {
   Select,
   SelectContent,
@@ -76,6 +77,7 @@ export default function Settings() {
   const [feedbackSubject, setFeedbackSubject] = useState("");
   const [feedbackContent, setFeedbackContent] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
+  const [feedbackDrawerOpen, setFeedbackDrawerOpen] = useState(false);
 
   // 프로필 로드 시 초기값 설정
   useEffect(() => {
@@ -179,6 +181,9 @@ export default function Settings() {
 
       toast.success("문의가 접수되었습니다. 빠르게 확인하겠습니다!");
       setFeedbackSubject("");
+      setFeedbackContent("");
+      setFeedbackCategory("general");
+      setFeedbackDrawerOpen(false);
       setFeedbackContent("");
       setFeedbackCategory("general");
     } catch (err: any) {
@@ -604,68 +609,8 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* 문의/피드백 */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-base">문의 / 피드백</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-xs">카테고리</Label>
-              <Select value={feedbackCategory} onValueChange={setFeedbackCategory}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general">일반 문의</SelectItem>
-                  <SelectItem value="bug">오류 신고</SelectItem>
-                  <SelectItem value="feature">기능 제안</SelectItem>
-                  <SelectItem value="billing">결제/요금</SelectItem>
-                  <SelectItem value="other">기타</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">제목</Label>
-              <Input
-                placeholder="문의 제목을 입력하세요"
-                value={feedbackSubject}
-                onChange={(e) => setFeedbackSubject(e.target.value)}
-                maxLength={100}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">내용</Label>
-              <Textarea
-                placeholder="문의 내용을 상세하게 작성해주세요"
-                value={feedbackContent}
-                onChange={(e) => setFeedbackContent(e.target.value)}
-                rows={4}
-                maxLength={2000}
-              />
-              <p className="text-[10px] text-muted-foreground text-right">
-                {feedbackContent.length}/2000
-              </p>
-            </div>
-            <Button
-              onClick={handleFeedbackSubmit}
-              disabled={feedbackSending || !feedbackSubject.trim() || !feedbackContent.trim()}
-              className="w-full gap-2"
-            >
-              {feedbackSending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              문의 보내기
-            </Button>
-          </CardContent>
-        </Card>
+        
 
-        {/* 화면 설정 */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
@@ -710,6 +655,75 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 문의/피드백 드로어 */}
+        <Drawer open={feedbackDrawerOpen} onOpenChange={setFeedbackDrawerOpen}>
+          <DrawerTrigger asChild>
+            <Button variant="outline" className="w-full gap-2">
+              <MessageSquare className="h-4 w-4" />
+              문의 / 피드백
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent className="mx-auto max-w-md">
+            <DrawerHeader className="pb-2">
+              <DrawerTitle className="flex items-center gap-2 text-base">
+                <MessageSquare className="h-4 w-4" />
+                문의 / 피드백
+              </DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-6 space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs">카테고리</Label>
+                <Select value={feedbackCategory} onValueChange={setFeedbackCategory}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">일반 문의</SelectItem>
+                    <SelectItem value="bug">오류 신고</SelectItem>
+                    <SelectItem value="feature">기능 제안</SelectItem>
+                    <SelectItem value="billing">결제/요금</SelectItem>
+                    <SelectItem value="other">기타</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">제목</Label>
+                <Input
+                  placeholder="문의 제목을 입력하세요"
+                  value={feedbackSubject}
+                  onChange={(e) => setFeedbackSubject(e.target.value)}
+                  maxLength={100}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">내용</Label>
+                <Textarea
+                  placeholder="문의 내용을 상세하게 작성해주세요"
+                  value={feedbackContent}
+                  onChange={(e) => setFeedbackContent(e.target.value)}
+                  rows={4}
+                  maxLength={2000}
+                />
+                <p className="text-[10px] text-muted-foreground text-right">
+                  {feedbackContent.length}/2000
+                </p>
+              </div>
+              <Button
+                onClick={handleFeedbackSubmit}
+                disabled={feedbackSending || !feedbackSubject.trim() || !feedbackContent.trim()}
+                className="w-full gap-2"
+              >
+                {feedbackSending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                문의 보내기
+              </Button>
+            </div>
+          </DrawerContent>
+        </Drawer>
 
         {/* 홈으로 가기 */}
         <Button 
