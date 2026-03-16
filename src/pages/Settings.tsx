@@ -157,6 +157,37 @@ export default function Settings() {
     setIsEditing(false);
   };
 
+  // 피드백 제출
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackSubject.trim() || !feedbackContent.trim()) {
+      toast.error("제목과 내용을 모두 입력해주세요");
+      return;
+    }
+    setFeedbackSending(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("로그인이 필요합니다");
+
+      const { error } = await supabase.from("user_feedback").insert({
+        user_id: userData.user.id,
+        user_email: userData.user.email || null,
+        category: feedbackCategory,
+        subject: feedbackSubject.trim(),
+        content: feedbackContent.trim(),
+      });
+      if (error) throw error;
+
+      toast.success("문의가 접수되었습니다. 빠르게 확인하겠습니다!");
+      setFeedbackSubject("");
+      setFeedbackContent("");
+      setFeedbackCategory("general");
+    } catch (err: any) {
+      toast.error(err.message || "문의 접수에 실패했습니다");
+    } finally {
+      setFeedbackSending(false);
+    }
+  };
+
   return (
     <MainLayout title="설정" subtitle="앱 설정을 관리하세요" showBackButton>
       <div className="space-y-4">
