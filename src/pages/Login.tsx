@@ -107,6 +107,25 @@ function LoginContent() {
     toast.success("로그인 성공!");
     navigate("/");
   };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      toast.error("이메일을 입력해주세요.");
+      return;
+    }
+    setIsLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setIsLoading(false);
+    if (error) {
+      toast.error("비밀번호 재설정 메일 발송에 실패했습니다.");
+      return;
+    }
+    setResetSent(true);
+    toast.success("비밀번호 재설정 링크가 이메일로 전송되었습니다.");
+  };
   return <div className="bg-primary flex flex-col fixed inset-0 overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {/* 상단 여백 */}
       <div className="p-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }} />
