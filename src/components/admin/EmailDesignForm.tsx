@@ -61,8 +61,10 @@ export function buildDesignedEmailHtml(design: EmailDesign): string {
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;max-width:600px;margin:0 auto;padding:0;background:#f3f4f6;">
   <div style="background:${design.headerBg};padding:32px 24px;text-align:center;">
-    <img src="https://mrkim.lovable.app/images/icc-5.webp" alt="김비서" style="height:40px;width:auto;margin:0 auto 12px;" />
-    <h1 style="margin:0;font-size:22px;color:${design.headerTextColor};font-weight:700;">${design.headerTitle}</h1>
+    <div style="display:inline-flex;align-items:center;gap:8px;">
+      <img src="https://mrkim.lovable.app/images/icc-5.webp" alt="김비서" style="height:40px;width:auto;" />
+      <h1 style="margin:0;font-size:22px;color:${design.headerTextColor};font-weight:700;">${design.headerTitle}</h1>
+    </div>
     ${subtitleBlock}
   </div>
   <div style="padding:32px 24px;background:${design.bodyBg};">
@@ -134,21 +136,23 @@ export default function EmailDesignForm({ design, onChange }: EmailDesignFormPro
           <div className="mx-4 mb-4 border rounded-lg overflow-hidden shadow-sm" style={{ maxWidth: 480 }}>
             {/* Header section */}
             <div
-              className="px-5 py-5 text-center space-y-2"
+              className="px-5 py-5 space-y-2"
               style={{ background: design.headerBg }}
             >
-              <img 
-                src="/images/icc-5.webp" 
-                alt="김비서" 
-                className="h-10 w-auto mx-auto mb-2"
-              />
-              <input
-                value={design.headerTitle}
-                onChange={(e) => update({ headerTitle: e.target.value })}
-                className="w-full text-center text-lg font-bold bg-transparent border-none outline-none focus:ring-1 focus:ring-white/30 rounded px-2 py-1"
-                style={{ color: design.headerTextColor }}
-                placeholder="헤더 타이틀"
-              />
+              <div className="flex items-center justify-center gap-2">
+                <img 
+                  src="/images/icc-5.webp" 
+                  alt="김비서" 
+                  className="h-10 w-auto"
+                />
+                <input
+                  value={design.headerTitle}
+                  onChange={(e) => update({ headerTitle: e.target.value })}
+                  className="text-lg font-bold bg-transparent border-none outline-none focus:ring-1 focus:ring-white/30 rounded px-2 py-1"
+                  style={{ color: design.headerTextColor, width: `${Math.max(design.headerTitle.length, 4)}ch` }}
+                  placeholder="타이틀"
+                />
+              </div>
               <input
                 value={design.headerSubtitle}
                 onChange={(e) => update({ headerSubtitle: e.target.value })}
