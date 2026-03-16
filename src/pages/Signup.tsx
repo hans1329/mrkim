@@ -63,7 +63,7 @@ export default function Signup() {
       },
     });
     if (error) {
-      toast.error("Google 가입 실패: " + error.message);
+      toast.error("Google 가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
       setIsLoading(false);
     }
   };
