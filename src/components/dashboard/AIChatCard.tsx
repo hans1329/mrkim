@@ -145,6 +145,7 @@ export function AIChatCard() {
           }
         } = await supabase.auth.getUser();
         if (!user) {
+          setIsLoggedIn(false);
           setRealStats(prev => ({
             ...prev,
             isLoading: false
