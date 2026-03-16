@@ -538,61 +538,57 @@ export default function AdminEmail() {
                     placeholder="reply@example.com"
                   />
                 </div>
-                <Button
-                  onClick={handleSend}
-                  disabled={sending || (recipientMode === "manual" && recipients.length === 0) || !formData.subject.trim() || !emailDesign.body.trim()}
-                  className="w-full"
-                >
-                  {sending ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 발송 중...</>
-                  ) : (
-                    <><Send className="w-4 h-4 mr-2" /> {recipientMode === "all" ? `전체 유저에게 발송${sendableCount !== null ? ` (${sendableCount.toLocaleString()}명)` : ""}` : `${recipients.length}명에게 발송`}</>
-                  )}
-                </Button>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="design" className="space-y-4">
-            {/* 유형 선택 */}
-            <div className="flex flex-wrap items-center gap-2">
-              {(Object.entries(EMAIL_TEMPLATES) as [TemplateType, typeof EMAIL_TEMPLATES[TemplateType]][]).map(
-                ([key, tmpl]) => (
-                  <Button
-                    key={key}
-                    variant={selectedTemplate === key ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedTemplate(key)}
-                    className="gap-1.5"
-                  >
-                    <tmpl.icon className="w-3.5 h-3.5" />
-                    {tmpl.label}
-                  </Button>
-                )
+            {/* 디자인 편집 */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Palette className="w-4 h-4" />
+                  {template.label} 디자인
+                </CardTitle>
+                <CardDescription>본문 내용과 시각적 디자인을 편집합니다</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {designLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                  </div>
+                ) : (
+                  <>
+                    <EmailDesignForm design={emailDesign} onChange={setEmailDesign} />
+                    <Button
+                      variant="outline"
+                      onClick={() => saveDesign(selectedTemplate)}
+                      disabled={designSaving}
+                      className="w-full"
+                    >
+                      {designSaving ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 저장 중...</>
+                      ) : (
+                        <>{template.label} 디자인 저장</>
+                      )}
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 발송 버튼 */}
+            <Button
+              onClick={handleSend}
+              disabled={sending || (recipientMode === "manual" && recipients.length === 0) || !formData.subject.trim() || !emailDesign.body.trim()}
+              className="w-full"
+              size="lg"
+            >
+              {sending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 발송 중...</>
+              ) : (
+                <><Send className="w-4 h-4 mr-2" /> {recipientMode === "all" ? `전체 유저에게 발송${sendableCount !== null ? ` (${sendableCount.toLocaleString()}명)` : ""}` : `${recipients.length}명에게 발송`}</>
               )}
-            </div>
-
-            {designLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-64 w-full" />
-                <Skeleton className="h-20 w-full" />
-              </div>
-            ) : (
-              <>
-                <EmailDesignForm design={emailDesign} onChange={setEmailDesign} />
-                <Button
-                  onClick={() => saveDesign(selectedTemplate)}
-                  disabled={designSaving}
-                  className="w-full"
-                >
-                  {designSaving ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 저장 중...</>
-                  ) : (
-                    <>{EMAIL_TEMPLATES[selectedTemplate].label} 디자인 저장</>
-                  )}
-                </Button>
-              </>
-            )}
+            </Button>
           </TabsContent>
 
           <TabsContent value="history">
