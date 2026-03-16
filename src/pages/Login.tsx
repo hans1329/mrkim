@@ -44,9 +44,11 @@ function LoginContent() {
   const navigate = useNavigate();
   const { openVoice } = useServiceChat();
   const [isEmailMode, setIsEmailMode] = useState(false);
+  const [isForgotMode, setIsForgotMode] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
