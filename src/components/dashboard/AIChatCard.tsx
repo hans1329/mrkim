@@ -153,6 +153,8 @@ export function AIChatCard() {
           setHasConversationHistory(false);
           return;
         }
+        setIsLoggedIn(true);
+        }
         const today = new Date();
         const todayStr = today.toISOString().split("T")[0];
         const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
