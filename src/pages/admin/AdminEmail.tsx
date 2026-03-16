@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Send, Users, FileText, Megaphone, Bell, Plus, X, Palette, ShieldCheck } from "lucide-react";
+import { Mail, Send, Users, FileText, Megaphone, Bell, Plus, X, Palette, ShieldCheck, Loader2, Ban, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 import EmailDesignForm, { DEFAULT_DESIGN, buildDesignedEmailHtml, type EmailDesign } from "@/components/admin/EmailDesignForm";
 import AuthEmailTemplates from "@/components/admin/AuthEmailTemplates";
 
@@ -42,6 +43,23 @@ const EMAIL_TEMPLATES = {
 
 type TemplateType = keyof typeof EMAIL_TEMPLATES;
 
+interface EmailHistory {
+  id: string;
+  subject: string;
+  recipients: string[];
+  recipient_count: number;
+  template_type: string;
+  status: string;
+  created_at: string;
+}
+
+interface Unsubscribe {
+  id: string;
+  email: string;
+  reason: string | null;
+  unsubscribed_at: string;
+}
+
 export default function AdminEmail() {
   const { isAdmin, loading: authLoading } = useAdminAuth();
   const [sending, setSending] = useState(false);
@@ -54,13 +72,59 @@ export default function AdminEmail() {
     subject: EMAIL_TEMPLATES.notice.defaultSubject,
     replyTo: "",
   });
-  const [sentHistory, setSentHistory] = useState<Array<{
-    id: string;
-    subject: string;
-    recipients: string[];
-    template: string;
-    sentAt: Date;
-  }>>([]);
+
+  // DB-backed history
+  const [sentHistory, setSentHistory] = useState<EmailHistory[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+
+  // Unsubscribes
+  const [unsubscribes, setUnsubscribes] = useState<Unsubscribe[]>([]);
+  const [unsubLoading, setUnsubLoading] = useState(true);
+
+  // All users count
+  const [allUserCount, setAllUserCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    loadHistory();
+    loadUnsubscribes();
+  }, [isAdmin]);
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("email_send_history" as any)
+        .select("id, subject, recipients, recipient_count, template_type, status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (!error && data) setSentHistory(data as any);
+    } catch {}
+    setHistoryLoading(false);
+  };
+
+  const loadUnsubscribes = async () => {
+    setUnsubLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("email_unsubscribes" as any)
+        .select("*")
+        .order("unsubscribed_at", { ascending: false });
+      if (!error && data) setUnsubscribes(data as any);
+    } catch {}
+    setUnsubLoading(false);
+  };
+
+  const removeUnsubscribe = async (id: string) => {
+    try {
+      const { error } = await supabase.from("email_unsubscribes" as any).delete().eq("id", id);
+      if (error) throw error;
+      setUnsubscribes((prev) => prev.filter((u) => u.id !== id));
+      toast.success("수신 거부가 해제되었습니다");
+    } catch {
+      toast.error("삭제에 실패했습니다");
+    }
+  };
 
   const handleTemplateChange = (type: TemplateType) => {
     setSelectedTemplate(type);
@@ -96,9 +160,8 @@ export default function AdminEmail() {
     }
   };
 
-
   const handleSend = async () => {
-    if (recipients.length === 0) {
+    if (recipientMode === "manual" && recipients.length === 0) {
       toast.error("수신자를 최소 1명 이상 추가해주세요");
       return;
     }
@@ -111,12 +174,26 @@ export default function AdminEmail() {
       return;
     }
 
-    if (!confirm(`${recipients.length}명에게 이메일을 발송하시겠습니까?`)) return;
+    const targetLabel = recipientMode === "all" ? "전체 유저" : `${recipients.length}명`;
+    if (!confirm(`${targetLabel}에게 이메일을 발송하시겠습니까?`)) return;
 
     try {
       setSending(true);
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
+
+      const body: any = {
+        subject: formData.subject,
+        html: buildDesignedEmailHtml(emailDesign),
+        replyTo: formData.replyTo || undefined,
+        templateType: selectedTemplate,
+      };
+
+      if (recipientMode === "all") {
+        body.fetchAllUsers = true;
+      } else {
+        body.to = recipients;
+      }
 
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL || "https://app.mrkim.today"}/functions/v1/send-custom-email`,
@@ -127,33 +204,18 @@ export default function AdminEmail() {
             Authorization: `Bearer ${token}`,
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
           },
-          body: JSON.stringify({
-            to: recipients,
-            subject: formData.subject,
-            html: buildDesignedEmailHtml(emailDesign),
-            replyTo: formData.replyTo || undefined,
-          }),
+          body: JSON.stringify(body),
         }
       );
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "발송 실패");
 
-      setSentHistory((prev) => [
-        {
-          id: result.id || crypto.randomUUID(),
-          subject: formData.subject,
-          recipients: [...recipients],
-          template: EMAIL_TEMPLATES[selectedTemplate].label,
-          sentAt: new Date(),
-        },
-        ...prev,
-      ]);
-
-      toast.success(`${recipients.length}명에게 이메일이 발송되었습니다`);
+      toast.success(`${result.recipientCount || result.successCount}명에게 이메일이 발송되었습니다${result.failCount ? ` (${result.failCount}건 실패)` : ""}`);
       setFormData({ subject: EMAIL_TEMPLATES[selectedTemplate].defaultSubject, replyTo: "" });
       setEmailDesign({ ...DEFAULT_DESIGN });
       setRecipients([]);
+      loadHistory();
     } catch (error: any) {
       console.error("Email send error:", error);
       toast.error(error.message || "이메일 발송에 실패했습니다");
@@ -217,7 +279,7 @@ export default function AdminEmail() {
         </div>
 
         <Tabs defaultValue="compose" className="space-y-4">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="compose">
               <Mail className="w-4 h-4 mr-2" />
               작성
@@ -229,6 +291,10 @@ export default function AdminEmail() {
             <TabsTrigger value="history">
               <FileText className="w-4 h-4 mr-2" />
               발송 내역
+            </TabsTrigger>
+            <TabsTrigger value="unsubscribe">
+              <Ban className="w-4 h-4 mr-2" />
+              수신 거부
             </TabsTrigger>
             <TabsTrigger value="auth">
               <ShieldCheck className="w-4 h-4 mr-2" />
@@ -244,47 +310,78 @@ export default function AdminEmail() {
                   <Users className="w-4 h-4" />
                   수신자
                 </CardTitle>
-                <CardDescription>이메일 주소를 입력하거나, 여러 개를 쉼표/줄바꿈으로 붙여넣기할 수 있습니다</CardDescription>
+                <CardDescription>수동 입력 또는 전체 유저 대상으로 발송할 수 있습니다</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Mode toggle */}
                 <div className="flex gap-2">
-                  <Input
-                    placeholder="이메일 주소 입력..."
-                    value={recipientInput}
-                    onChange={(e) => setRecipientInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onPaste={(e) => {
-                      const text = e.clipboardData.getData("text");
-                      if (text.includes(",") || text.includes("\n") || text.includes(";")) {
-                        e.preventDefault();
-                        handlePasteEmails(text);
-                      }
-                    }}
-                    className="flex-1"
-                  />
-                  <Button variant="secondary" onClick={addRecipient} size="sm">
-                    <Plus className="w-4 h-4 mr-1" />
-                    추가
+                  <Button
+                    variant={recipientMode === "manual" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setRecipientMode("manual")}
+                  >
+                    수동 입력
+                  </Button>
+                  <Button
+                    variant={recipientMode === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setRecipientMode("all")}
+                  >
+                    <Users className="w-3.5 h-3.5 mr-1" />
+                    전체 유저
                   </Button>
                 </div>
 
-                {recipients.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {recipients.map((email) => (
-                      <Badge key={email} variant="secondary" className="gap-1 py-1">
-                        {email}
-                        <button onClick={() => removeRecipient(email)}>
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+                {recipientMode === "manual" ? (
+                  <>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="이메일 주소 입력..."
+                        value={recipientInput}
+                        onChange={(e) => setRecipientInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        onPaste={(e) => {
+                          const text = e.clipboardData.getData("text");
+                          if (text.includes(",") || text.includes("\n") || text.includes(";")) {
+                            e.preventDefault();
+                            handlePasteEmails(text);
+                          }
+                        }}
+                        className="flex-1"
+                      />
+                      <Button variant="secondary" onClick={addRecipient} size="sm">
+                        <Plus className="w-4 h-4 mr-1" />
+                        추가
+                      </Button>
+                    </div>
 
-                {recipients.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    총 <span className="font-semibold text-foreground">{recipients.length}</span>명
-                  </p>
+                    {recipients.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {recipients.map((email) => (
+                          <Badge key={email} variant="secondary" className="gap-1 py-1">
+                            {email}
+                            <button onClick={() => removeRecipient(email)}>
+                              <X className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    {recipients.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        총 <span className="font-semibold text-foreground">{recipients.length}</span>명
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <div className="p-4 rounded-lg border bg-muted/30 text-center space-y-1">
+                    <Users className="w-8 h-8 mx-auto text-primary opacity-60" />
+                    <p className="text-sm font-medium">전체 가입 유저에게 발송</p>
+                    <p className="text-xs text-muted-foreground">
+                      수신 거부한 유저는 자동으로 제외됩니다
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -317,11 +414,14 @@ export default function AdminEmail() {
                 </div>
                 <Button
                   onClick={handleSend}
-                  disabled={sending || recipients.length === 0 || !formData.subject.trim() || !emailDesign.body.trim()}
+                  disabled={sending || (recipientMode === "manual" && recipients.length === 0) || !formData.subject.trim() || !emailDesign.body.trim()}
                   className="w-full"
                 >
-                  <Send className="w-4 h-4 mr-2" />
-                  {sending ? "발송 중..." : `${recipients.length}명에게 발송`}
+                  {sending ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 발송 중...</>
+                  ) : (
+                    <><Send className="w-4 h-4 mr-2" /> {recipientMode === "all" ? "전체 유저에게 발송" : `${recipients.length}명에게 발송`}</>
+                  )}
                 </Button>
               </CardContent>
             </Card>
@@ -334,11 +434,17 @@ export default function AdminEmail() {
           <TabsContent value="history">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">최근 발송 내역</CardTitle>
-                <CardDescription>이번 세션에서 발송한 이메일 내역입니다</CardDescription>
+                <CardTitle className="text-base">발송 내역</CardTitle>
+                <CardDescription>최근 50건의 이메일 발송 기록</CardDescription>
               </CardHeader>
               <CardContent>
-                {sentHistory.length === 0 ? (
+                {historyLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-20 w-full" />
+                    ))}
+                  </div>
+                ) : sentHistory.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Mail className="w-8 h-8 mx-auto mb-2 opacity-40" />
                     <p>발송 내역이 없습니다</p>
@@ -350,27 +456,86 @@ export default function AdminEmail() {
                         key={item.id}
                         className="flex items-center justify-between p-3 rounded-lg border bg-card"
                       >
-                        <div className="space-y-1">
-                          <p className="font-medium text-sm">{item.subject}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Badge variant="outline" className="text-xs">{item.template}</Badge>
-                            <span>{item.recipients.length}명</span>
-                            <span>{item.sentAt.toLocaleString("ko-KR")}</span>
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate">{item.subject}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                            <Badge variant="outline" className="text-xs">{item.template_type}</Badge>
+                            <span>{item.recipient_count}명</span>
+                            <span>{new Date(item.created_at).toLocaleString("ko-KR")}</span>
                           </div>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {item.recipients.slice(0, 5).map((email) => (
+                            {(item.recipients || []).slice(0, 3).map((email: string) => (
                               <Badge key={email} variant="secondary" className="text-[10px] py-0">
                                 {email}
                               </Badge>
                             ))}
-                            {item.recipients.length > 5 && (
+                            {(item.recipients || []).length > 3 && (
                               <Badge variant="secondary" className="text-[10px] py-0">
-                                +{item.recipients.length - 5}명
+                                +{item.recipients.length - 3}명
                               </Badge>
                             )}
                           </div>
                         </div>
-                        <Badge variant="default">발송완료</Badge>
+                        <Badge variant={item.status === "sent" ? "default" : item.status === "failed" ? "destructive" : "secondary"}>
+                          {item.status === "sent" ? "발송완료" : item.status === "failed" ? "실패" : "부분실패"}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="unsubscribe">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Ban className="w-4 h-4" />
+                  수신 거부 목록
+                </CardTitle>
+                <CardDescription>수신 거부한 사용자는 이메일 발송 시 자동으로 제외됩니다</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {unsubLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                  </div>
+                ) : unsubscribes.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Ban className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    <p>수신 거부한 사용자가 없습니다</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground mb-3">
+                      총 <span className="font-semibold text-foreground">{unsubscribes.length}</span>명
+                    </p>
+                    {unsubscribes.map((unsub) => (
+                      <div
+                        key={unsub.id}
+                        className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{unsub.email}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(unsub.unsubscribed_at).toLocaleString("ko-KR")}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            if (confirm(`${unsub.email}의 수신 거부를 해제하시겠습니까?`)) {
+                              removeUnsubscribe(unsub.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -383,7 +548,6 @@ export default function AdminEmail() {
             <AuthEmailTemplates design={emailDesign} />
           </TabsContent>
         </Tabs>
-
       </div>
     </AdminLayout>
   );
