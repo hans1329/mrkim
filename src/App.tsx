@@ -73,6 +73,7 @@ const App = () => (
                       <Route path="/landing" element={<Landing />} />
                       <Route path="/privacy" element={<PrivacyPolicy />} />
                       <Route path="/terms" element={<TermsOfService />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
                       {/* Admin Routes */}
                       <Route path="/admin/login" element={<AdminLogin />} />
                       <Route path="/admin" element={<AdminDashboard />} />
