@@ -475,12 +475,42 @@ export default function AdminEmail() {
                     )}
                   </>
                 ) : (
-                  <div className="p-4 rounded-lg border bg-muted/30 text-center space-y-1">
-                    <Users className="w-8 h-8 mx-auto text-primary opacity-60" />
-                    <p className="text-sm font-medium">전체 가입 유저에게 발송</p>
-                    <p className="text-xs text-muted-foreground">
-                      수신 거부한 유저는 자동으로 제외됩니다
-                    </p>
+                  <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Users className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">전체 가입 유저에게 발송</p>
+                        <p className="text-xs text-muted-foreground">
+                          수신 거부한 유저는 자동으로 제외됩니다
+                        </p>
+                      </div>
+                    </div>
+                    {countLoading ? (
+                      <div className="grid grid-cols-3 gap-3">
+                        {[1,2,3].map(i => <Skeleton key={i} className="h-14 w-full" />)}
+                      </div>
+                    ) : sendableCount !== null ? (
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="p-2.5 rounded-md bg-background border text-center">
+                          <p className="text-lg font-bold text-foreground">{allUserCount?.toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground">전체 유저</p>
+                        </div>
+                        <div className="p-2.5 rounded-md bg-background border text-center">
+                          <p className="text-lg font-bold text-destructive">{unsubscribeCount.toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground">수신 거부</p>
+                        </div>
+                        <div className="p-2.5 rounded-md bg-background border text-center">
+                          <p className="text-lg font-bold text-primary">{sendableCount.toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground">발송 대상</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={fetchUserCount} className="w-full text-xs">
+                        유저 수 조회
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>
