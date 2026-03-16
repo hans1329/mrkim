@@ -67,11 +67,25 @@ export default function AdminEmail() {
   const [recipients, setRecipients] = useState<string[]>([]);
   const [recipientInput, setRecipientInput] = useState("");
   const [recipientMode, setRecipientMode] = useState<"manual" | "all">("manual");
-  const [emailDesign, setEmailDesign] = useState<EmailDesign>({ ...DEFAULT_DESIGN });
   const [formData, setFormData] = useState({
     subject: EMAIL_TEMPLATES.notice.defaultSubject,
     replyTo: "",
   });
+
+  // 유형별 디자인 저장
+  const [designsByType, setDesignsByType] = useState<Record<TemplateType, EmailDesign>>({
+    notice: { ...DEFAULT_DESIGN },
+    marketing: { ...DEFAULT_DESIGN },
+    notification: { ...DEFAULT_DESIGN },
+    custom: { ...DEFAULT_DESIGN },
+  });
+  const [designLoading, setDesignLoading] = useState(true);
+  const [designSaving, setDesignSaving] = useState(false);
+
+  const emailDesign = designsByType[selectedTemplate];
+  const setEmailDesign = (design: EmailDesign) => {
+    setDesignsByType((prev) => ({ ...prev, [selectedTemplate]: design }));
+  };
 
   // DB-backed history
   const [sentHistory, setSentHistory] = useState<EmailHistory[]>([]);
@@ -91,6 +105,48 @@ export default function AdminEmail() {
     if (historyFilterStatus !== "all" && item.status !== historyFilterStatus) return false;
     return true;
   });
+
+  // 유형별 디자인 DB에서 로드
+  useEffect(() => {
+    if (!isAdmin) return;
+    const loadDesigns = async () => {
+      setDesignLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .like("key", "email_design_%");
+        if (!error && data) {
+          const updated = { ...designsByType };
+          for (const row of data) {
+            const type = row.key.replace("email_design_", "") as TemplateType;
+            if (type in updated) {
+              updated[type] = { ...DEFAULT_DESIGN, ...(row.value as any) };
+            }
+          }
+          setDesignsByType(updated);
+        }
+      } catch {}
+      setDesignLoading(false);
+    };
+    loadDesigns();
+  }, [isAdmin]);
+
+  // 디자인 저장
+  const saveDesign = async (type: TemplateType) => {
+    setDesignSaving(true);
+    try {
+      const key = `email_design_${type}`;
+      const { error } = await supabase
+        .from("site_settings")
+        .upsert({ key, value: designsByType[type] as any, description: `${EMAIL_TEMPLATES[type].label} 이메일 디자인` }, { onConflict: "key" });
+      if (error) throw error;
+      toast.success(`${EMAIL_TEMPLATES[type].label} 디자인이 저장되었습니다`);
+    } catch {
+      toast.error("디자인 저장에 실패했습니다");
+    }
+    setDesignSaving(false);
+  };
 
   useEffect(() => {
     if (!isAdmin) return;
