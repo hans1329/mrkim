@@ -74,6 +74,7 @@ export function buildDesignedEmailHtml(design: EmailDesign): string {
   <div style="padding:24px;background:${design.footerBg};border-top:1px solid #e5e7eb;text-align:center;">
     <p style="margin:0;font-size:12px;color:#9ca3af;">${design.footerText}</p>
     <p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">© ${new Date().getFullYear()} 김비서. All rights reserved.</p>
+    <p style="margin:8px 0 0;font-size:11px;"><a href="#" style="color:#9ca3af;text-decoration:underline;">수신 거부</a></p>
   </div>
 </body>
 </html>`;
