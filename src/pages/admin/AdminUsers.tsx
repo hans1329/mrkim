@@ -525,7 +525,7 @@ export default function AdminUsers() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Trash2 className="w-5 h-5 text-destructive" />
-                  {isOrphanedProfile(selectedUser as any) ? "잔여 데이터 삭제" : "강제 탈퇴"} - {selectedUser?.nickname || selectedUser?.name || "사용자"}
+                  {isOrphanedProfile(selectedUser) ? "잔여 데이터 삭제" : "강제 탈퇴"} - {selectedUser?.nickname || selectedUser?.name || "사용자"}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-3 py-2">
