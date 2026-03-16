@@ -193,6 +193,26 @@ export default function Settings() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setIsDeletingSyncData(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-account", {
+        body: {},
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      await supabase.auth.signOut();
+      toast.success("회원 탈퇴가 완료되었습니다.");
+      navigate("/");
+    } catch (err: any) {
+      toast.error(err.message || "회원 탈퇴 처리 중 오류가 발생했습니다.");
+    } finally {
+      setIsDeletingSyncData(false);
+    }
+  };
+
   return (
     <MainLayout title="설정" subtitle="앱 설정을 관리하세요" showBackButton>
       <div className="space-y-4">
