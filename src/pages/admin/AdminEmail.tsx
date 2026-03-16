@@ -140,13 +140,22 @@ export default function AdminEmail() {
     setDesignSaving(true);
     try {
       const key = `email_design_${type}`;
-      const { error } = await supabase
+      const designValue = designsByType[type];
+      console.log("Saving design:", key, designValue);
+      const { data, error } = await supabase
         .from("site_settings")
-        .upsert({ key, value: designsByType[type] as any, description: `${EMAIL_TEMPLATES[type].label} 이메일 디자인` }, { onConflict: "key" });
+        .upsert(
+          { key, value: designValue as any, description: `${EMAIL_TEMPLATES[type].label} 이메일 디자인` },
+          { onConflict: "key" }
+        )
+        .select();
+      console.log("Upsert result:", { data, error });
       if (error) throw error;
       toast.success(`${EMAIL_TEMPLATES[type].label} 디자인이 저장되었습니다`);
-    } catch {
-      toast.error("디자인 저장에 실패했습니다");
+    } catch (err: any) {
+      console.error("Design save error:", err);
+      toast.error(`디자인 저장 실패: ${err.message || "알 수 없는 오류"}`);
+    }
     }
     setDesignSaving(false);
   };
