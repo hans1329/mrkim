@@ -95,49 +95,81 @@ Deno.serve(async (req: Request) => {
         )
       : undefined;
 
-    // Resend는 to에 최대 50개까지만 지원 → 배치 처리
-    const batchSize = 50;
+    // 개별 발송 + 레이트 리밋 방어 (Resend 기본 10req/s)
     const results: any[] = [];
+    const concurrency = 5; // 동시 최대 5개
     
-    for (let i = 0; i < recipients.length; i += batchSize) {
-      const batch = recipients.slice(i, i + batchSize);
+    for (let i = 0; i < recipients.length; i += concurrency) {
+      const batch = recipients.slice(i, i + concurrency);
       
-      // 각 수신자에게 개별 발송 (수신 거부 링크에 이메일 포함 위해)
       const batchPromises = batch.map(async (email: string) => {
         const personalizedHtml = htmlWithUnsub?.replace(/\{\{EMAIL\}\}/g, encodeURIComponent(email));
         
-        const resendResponse = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${RESEND_API_KEY}`,
-          },
-          body: JSON.stringify({
-            from: "김비서 <noreply@mrkim.today>",
-            to: [email],
-            subject,
-            html: personalizedHtml || undefined,
-            text: text || undefined,
-            reply_to: replyTo || undefined,
-          }),
-        });
+        try {
+          const resendResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${RESEND_API_KEY}`,
+            },
+            body: JSON.stringify({
+              from: "김비서 <noreply@mrkim.today>",
+              to: [email],
+              subject,
+              html: personalizedHtml || undefined,
+              text: text || undefined,
+              reply_to: replyTo || undefined,
+            }),
+          });
 
-        if (!resendResponse.ok) {
-          const errBody = await resendResponse.text();
-          console.error(`Resend error for ${email}:`, errBody);
-          return { email, success: false, error: errBody };
+          if (resendResponse.status === 429) {
+            // 레이트 리밋 → 대기 후 재시도
+            const retryAfter = parseInt(resendResponse.headers.get("retry-after") || "2", 10);
+            await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+            
+            const retry = await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${RESEND_API_KEY}`,
+              },
+              body: JSON.stringify({
+                from: "김비서 <noreply@mrkim.today>",
+                to: [email],
+                subject,
+                html: personalizedHtml || undefined,
+                text: text || undefined,
+                reply_to: replyTo || undefined,
+              }),
+            });
+            
+            if (!retry.ok) {
+              return { email, success: false, error: `Retry failed: ${retry.status}` };
+            }
+            const retryResult = await retry.json();
+            return { email, success: true, id: retryResult.id };
+          }
+
+          if (!resendResponse.ok) {
+            const errBody = await resendResponse.text();
+            console.error(`Resend error for ${email}:`, errBody);
+            return { email, success: false, error: errBody };
+          }
+
+          const result = await resendResponse.json();
+          return { email, success: true, id: result.id };
+        } catch (err: any) {
+          console.error(`Send error for ${email}:`, err);
+          return { email, success: false, error: err.message };
         }
-
-        const result = await resendResponse.json();
-        return { email, success: true, id: result.id };
       });
 
       const batchResults = await Promise.all(batchPromises);
       results.push(...batchResults);
       
-      // 배치 간 딜레이
-      if (i + batchSize < recipients.length) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+      // 배치 간 딜레이 (레이트 리밋 방어)
+      if (i + concurrency < recipients.length) {
+        await new Promise(resolve => setTimeout(resolve, 600));
       }
     }
 
