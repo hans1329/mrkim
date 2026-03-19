@@ -1435,6 +1435,7 @@ export type Database = {
           region: string | null
           specialties: string[] | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           bio?: string | null
@@ -1451,6 +1452,7 @@ export type Database = {
           region?: string | null
           specialties?: string[] | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           bio?: string | null
@@ -1467,6 +1469,7 @@ export type Database = {
           region?: string | null
           specialties?: string[] | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
