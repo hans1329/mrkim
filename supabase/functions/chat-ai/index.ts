@@ -944,6 +944,38 @@ const TOOL_DECLARATIONS = {
       description: "등록된 자동이체 규칙 목록을 조회합니다.",
       parameters: { type: "object", properties: {}, required: [] },
     },
+    {
+      name: "get_tax_accountant",
+      description: "담당 세무사 정보(이름, 연락처, 전문분야, 소속 사무소)를 조회합니다.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+    {
+      name: "get_filing_tasks",
+      description: "다가오는 세금 신고 일정(부가세, 종소세 등)과 마감일, 준비 상태를 조회합니다.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+    {
+      name: "get_consultations",
+      description: "세무 상담 요청 내역(질문, 상태, 세무사 응답)을 조회합니다.",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: { type: "number", description: "조회할 최대 건수 (기본 5)" },
+        },
+        required: [],
+      },
+    },
+    {
+      name: "send_consultation_to_accountant",
+      description: "특정 세무 상담을 담당 세무사에게 이메일로 전달합니다. 사용자가 명시적으로 요청한 경우에만 사용하세요.",
+      parameters: {
+        type: "object",
+        properties: {
+          consultation_id: { type: "string", description: "전달할 상담의 ID" },
+        },
+        required: ["consultation_id"],
+      },
+    },
   ],
 };
 
