@@ -579,6 +579,12 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
           </Card>
         );
       })}
+
+      {/* 구분선 */}
+      <div className="border-t border-border/50 pt-3 sm:pt-4" />
+
+      {/* 비정기 신고 섹션 */}
+      <IrregularFilingSection assignment={assignment} />
     </div>
   );
 }
