@@ -177,7 +177,160 @@ function ChecklistItemRow({ item, done }: { item: ChecklistItem; done: boolean }
   );
 }
 
-function getChecklistProgress(task: TaxFilingTask, items: ChecklistItem[]): { completed: number; total: number; itemStates: { item: ChecklistItem; done: boolean }[] } {
+function FilingSendSection({ taskId, assignment, basicItems, task }: {
+  taskId: string;
+  assignment: TaxAccountantAssignment;
+  basicItems: ChecklistItem[];
+  task: TaxFilingTask;
+}) {
+  const [sending, setSending] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [accountantInfo, setAccountantInfo] = useState({ name: "", email: "" });
+
+  const buildChecklist = () => {
+    const pd = (task.prepared_data || {}) as Record<string, unknown>;
+    return basicItems.map((item) => ({
+      label: item.label,
+      ready: !!pd[item.dataKey],
+      autoSource: item.autoSource,
+      coverage: item.autoCoverage || null,
+    }));
+  };
+
+  const callEdgeFunction = async (preview: boolean) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-tax-consultation`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({
+          filingTaskId: taskId,
+          preview,
+          checklist: buildChecklist(),
+        }),
+      }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    return data;
+  };
+
+  const handlePreview = async () => {
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+    setPreviewHtml("");
+    try {
+      const data = await callEdgeFunction(true);
+      setPreviewHtml(data.html);
+      setAccountantInfo({ name: data.accountantName || "", email: data.accountantEmail || "" });
+    } catch (e) {
+      toast.error((e as Error).message || "미리보기 로드에 실패했습니다");
+      setPreviewOpen(false);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleSend = async () => {
+    setSending(true);
+    try {
+      const data = await callEdgeFunction(false);
+      toast.success(`${data.accountantName} 세무사에게 신고 자료가 전달되었습니다`);
+      setPreviewOpen(false);
+    } catch (e) {
+      toast.error((e as Error).message || "전달에 실패했습니다");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="mt-3 p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
+        <p className="text-xs font-semibold flex items-center gap-1.5">
+          <Send className="h-3.5 w-3.5 text-primary" />
+          세무사에게 자료 전달
+        </p>
+        {assignment.accountant?.email && (
+          <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Mail className="h-3 w-3" />
+            발송 대상: {assignment.accountant.name} ({assignment.accountant.email})
+          </p>
+        )}
+        <p className="text-[10px] text-muted-foreground">
+          김비서가 자동 수집한 데이터와 준비 현황을 세무사에게 이메일로 전달합니다
+        </p>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-xs text-muted-foreground"
+            onClick={handlePreview}
+          >
+            <Eye className="h-3.5 w-3.5 mr-1" />
+            미리보기
+          </Button>
+          <Button
+            size="sm"
+            className="flex-1 text-xs"
+            onClick={handleSend}
+            disabled={sending}
+          >
+            <Send className="h-3.5 w-3.5 mr-1.5" />
+            {sending ? "전달 중..." : "세무사에게 신고 자료 전달"}
+          </Button>
+        </div>
+      </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="p-4 pb-2 shrink-0">
+            <DialogTitle className="text-base">신고 자료 이메일 미리보기</DialogTitle>
+            {accountantInfo.email && (
+              <p className="text-xs text-muted-foreground">
+                수신: {accountantInfo.name} ({accountantInfo.email})
+              </p>
+            )}
+          </DialogHeader>
+          <div className="flex-1 overflow-auto border-y border-border bg-white">
+            {previewLoading ? (
+              <div className="p-6 space-y-4">
+                <Skeleton className="h-16 rounded-lg" />
+                <Skeleton className="h-40 rounded-lg" />
+                <Skeleton className="h-32 rounded-lg" />
+              </div>
+            ) : (
+              <iframe
+                srcDoc={previewHtml}
+                className="w-full h-full min-h-[500px] border-0"
+                title="신고 자료 이메일 미리보기"
+                sandbox="allow-same-origin"
+              />
+            )}
+          </div>
+          <div className="p-4 pt-3 shrink-0 flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(false)}>
+              닫기
+            </Button>
+            <Button size="sm" onClick={handleSend} disabled={sending || previewLoading}>
+              <Send className="h-3.5 w-3.5 mr-1.5" />
+              {sending ? "전달 중..." : "이메일 발송"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+
   const pd = (task.prepared_data || {}) as Record<string, unknown>;
   const itemStates = items.map((item) => ({
     item,
