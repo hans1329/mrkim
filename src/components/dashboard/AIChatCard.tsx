@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Sparkles, Mic, Clock, Settings, Volume2, VolumeX, X, Loader2 } from "lucide-react";
+import { Send, Sparkles, Mic, Clock, Settings, Volume2, VolumeX, X, Loader2, UserCheck, FileText, MessageSquare } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
 import { josa } from "@/lib/utils";
 import { useChat } from "@/contexts/ChatContext";
@@ -20,6 +20,12 @@ interface RealTimeStats {
   isLoading: boolean;
 }
 const quickPrompts = ["오늘 매출 얼마야?", "급여 현황", "부가세 확인", "이번 달 요약"];
+
+const taxQuickActions = [
+  { label: "담당 세무사", icon: UserCheck, prompt: "내 담당 세무사가 누구야?" },
+  { label: "신고 일정", icon: FileText, prompt: "신고 일정 확인해줘" },
+  { label: "세무 상담", icon: MessageSquare, prompt: "세무 상담 기록 보여줘" },
+];
 
 // 일반 플레이스홀더 메시지
 const defaultPlaceholders = ["오늘 매출이 궁금해요", "이번 달 경영 현황은?", "급여일 언제야?", "할 일이 뭐가 있어?", "부가세 얼마나 모였어?"];
@@ -525,6 +531,22 @@ export function AIChatCard() {
             )}
           </div>
         )}
+
+        {/* 세무사 퀵액션 */}
+        <div className="flex gap-1.5 mb-2 overflow-x-auto no-scrollbar">
+          {taxQuickActions.map((action) => (
+            <button
+              key={action.label}
+              type="button"
+              disabled={isTyping}
+              onClick={() => handleQuickAsk(action.prompt)}
+              className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full border border-accent/60 bg-accent/30 text-accent-foreground hover:bg-accent/50 transition-colors whitespace-nowrap disabled:opacity-50"
+            >
+              <action.icon className="h-3 w-3 shrink-0" />
+              {action.label}
+            </button>
+          ))}
+        </div>
 
         {/* Input */}
         <form onSubmit={handleSubmit} className="flex gap-2 mb-3">
