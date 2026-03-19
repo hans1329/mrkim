@@ -350,6 +350,14 @@ export function useAIChat() {
       const sources = data.sources || null;
       if (data.quota) setQuota(data.quota);
       
+      // 세무 상담 자동 생성 알림
+      if (data.taxConsultationCreated) {
+        toast.info("세무사 상담 요청이 자동으로 등록되었습니다", {
+          description: "세무사 탭에서 확인하고 전달할 수 있습니다",
+          action: { label: "확인", onClick: () => window.location.href = "/tax-accountant?tab=consultations" },
+        });
+      }
+      
       // AI 응답 저장
       const assistantMessageId = await saveMessage("assistant", assistantContent);
       
