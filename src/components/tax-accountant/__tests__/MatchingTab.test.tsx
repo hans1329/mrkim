@@ -117,7 +117,6 @@ describe("MatchingTab", () => {
     const skeletons = container.querySelectorAll('div[class*="rounded-lg"]');
     expect(skeletons.length).toBeGreaterThan(0);
   });
-  });
 
   it("세무사가 없으면 빈 상태를 표시한다", () => {
     render(
