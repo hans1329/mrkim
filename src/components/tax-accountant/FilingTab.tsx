@@ -390,13 +390,13 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* 마감일 안내 배너 */}
       <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="p-3">
+        <CardContent className="p-2.5 sm:p-3">
           <div className="flex items-center gap-2 mb-1">
-            {isCorporate ? <Building2 className="h-4 w-4 text-primary" /> : <User className="h-4 w-4 text-primary" />}
-            <span className="text-xs font-semibold text-primary">
+            {isCorporate ? <Building2 className="h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary" /> : <User className="h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary" />}
+            <span className="text-[11px] sm:text-xs font-semibold text-primary">
               {isCorporate ? "법인사업자" : "개인사업자"}
             </span>
           </div>
