@@ -1611,9 +1611,11 @@ serve(async (req) => {
       ], voiceMode);
       const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "무엇을 도와드릴까요?";
       console.log("Direct response (no data)", taxConsultationCreated ? "+ tax consultation created" : "");
+      const followUpSuggestions = voiceMode ? [] : generateFollowUpSuggestions(lastMsg, null, !!classified.needsTaxConsultation, false);
       return new Response(JSON.stringify({
         response,
         taxConsultationCreated,
+        followUpSuggestions: followUpSuggestions.length > 0 ? followUpSuggestions : null,
         quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
