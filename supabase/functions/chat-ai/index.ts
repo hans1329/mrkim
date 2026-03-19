@@ -1024,6 +1024,25 @@ async function executeToolCall(
         if (!data) return JSON.stringify({ error: "자동이체 데이터를 조회할 수 없습니다." });
         return JSON.stringify(data);
       }
+      case "get_tax_accountant": {
+        const data = await fetchTaxAccountantData(userId, authHeader);
+        if (!data) return JSON.stringify({ error: "세무사 정보를 조회할 수 없습니다." });
+        return JSON.stringify(data);
+      }
+      case "get_filing_tasks": {
+        const data = await fetchFilingTasksData(userId, authHeader);
+        if (!data) return JSON.stringify({ error: "신고 일정을 조회할 수 없습니다." });
+        return JSON.stringify(data);
+      }
+      case "get_consultations": {
+        const data = await fetchConsultationsData(userId, authHeader, args?.limit || 5);
+        if (!data) return JSON.stringify({ error: "상담 내역을 조회할 수 없습니다." });
+        return JSON.stringify(data);
+      }
+      case "send_consultation_to_accountant": {
+        const result = await sendConsultationToAccountant(userId, authHeader, args?.consultation_id);
+        return JSON.stringify(result);
+      }
       default:
         return JSON.stringify({ error: `알 수 없는 함수: ${fnName}` });
     }
