@@ -32,6 +32,14 @@ const quickCommandGroups = [
   { label: "📋 종합", commands: ["이번 달 경영 현황 알려줘", "할 일 뭐 있어?", "오늘 브리핑해줘"] },
 ];
 
+// 세무사 관련 퀵액션
+const taxQuickCommands = [
+  "내 담당 세무사 누구야?",
+  "신고 일정 확인해줘",
+  "세무 상담 기록 보여줘",
+  "부가세 절세 방법 알려줘",
+];
+
 // 플랫 목록 (기본 표시용)
 const defaultQuickCommands = [
   "오늘 매출 얼마야?",
