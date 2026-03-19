@@ -1453,6 +1453,7 @@ serve(async (req) => {
 
     // ━━━ 세무 전문 상담 감지 → tax_consultations 자동 생성 ━━━
     let taxConsultationCreated = false;
+    let createdConsultationId: string | null = null;
     if (classified.needsTaxConsultation && userId) {
       try {
         const sb = createSupabaseClient(authHeader);
@@ -1477,16 +1478,17 @@ serve(async (req) => {
 
           if (!recent || recent.length === 0) {
             const subject = lastMsg.length > 50 ? lastMsg.substring(0, 50) + "..." : lastMsg;
-            await sb.from("tax_consultations").insert({
+            const { data: inserted } = await sb.from("tax_consultations").insert({
               user_id: userId,
               accountant_id: assignment?.accountant_id || null,
               subject: `AI 상담 요청: ${subject}`,
               user_question: lastMsg,
               consultation_type: "ad_hoc",
               status: "pending",
-            });
+            }).select("id").single();
             taxConsultationCreated = true;
-            console.log("Tax consultation auto-created for user:", userId);
+            createdConsultationId = inserted?.id || null;
+            console.log("Tax consultation auto-created:", createdConsultationId);
           }
         }
       } catch (e) {
