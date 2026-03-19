@@ -330,7 +330,7 @@ function FilingSendSection({ taskId, assignment, basicItems, task }: {
   );
 }
 
-
+function getChecklistProgress(task: TaxFilingTask, items: ChecklistItem[]): { completed: number; total: number; itemStates: { item: ChecklistItem; done: boolean }[] } {
   const pd = (task.prepared_data || {}) as Record<string, unknown>;
   const itemStates = items.map((item) => ({
     item,
