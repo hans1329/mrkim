@@ -876,6 +876,7 @@ function isComplexQuery(text: string): boolean {
     { src: "deposit", re: /예치금|적립금|비상금/ },
     { src: "savings", re: /저축|예금|적금|투자/ },
     { src: "auto_transfer", re: /자동이체/ },
+    { src: "tax_accountant", re: /세무사|신고\s*일정|세무\s*상담/ },
   ];
   const matched = sourceKeywords.filter(s => s.re.test(t));
   if (matched.length >= 2) return true;
