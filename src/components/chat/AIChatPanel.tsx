@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { QuotaExhaustedModal } from "./QuotaExhaustedModal";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,14 +15,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Bot, Send, X, MessageCircle, Sparkles, RotateCcw, History, Plus, Database, RefreshCw } from "lucide-react";
+import { Bot, Send, X, MessageCircle, Sparkles, RotateCcw, History, Plus, Database, RefreshCw, FileText, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { DataVisualization } from "./DataVisualization";
 import { useChat } from "@/contexts/ChatContext";
-import { useAIChat } from "@/hooks/useAIChat";
+import { useAIChat, type SuggestedAction } from "@/hooks/useAIChat";
 import { ChatSessionList } from "./ChatSessionList";
 import { isToday } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const quickCommandGroups = [
   { label: "📊 매출/지출", commands: ["오늘 매출 얼마야?", "이번 달 지출 현황", "지난달 매출 비교"] },
@@ -77,7 +79,41 @@ export function AIChatPanel() {
   const [input, setInput] = useState("");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showQuotaModal, setShowQuotaModal] = useState(false);
+  const [sendingActions, setSendingActions] = useState<Set<string>>(new Set());
+  const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  const handleSendToAccountant = useCallback(async (consultationId: string) => {
+    setSendingActions(prev => new Set(prev).add(consultationId));
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await supabase.functions.invoke("send-tax-consultation", {
+        body: { consultationId },
+      });
+
+      if (response.error) {
+        toast.error("자료 전달에 실패했습니다");
+        return;
+      }
+
+      const result = response.data;
+      if (result?.success) {
+        setCompletedActions(prev => new Set(prev).add(consultationId));
+        toast.success(`${result.accountantName || "세무사"}님에게 자료가 전달되었습니다`);
+      } else {
+        toast.error(result?.error || "자료 전달에 실패했습니다");
+      }
+    } catch (e) {
+      console.error("Send to accountant error:", e);
+      toast.error("자료 전달 중 오류가 발생했습니다");
+    } finally {
+      setSendingActions(prev => {
+        const next = new Set(prev);
+        next.delete(consultationId);
+        return next;
+      });
+    }
+  }, []);
 
   const scrollToBottom = () => {
     // ScrollArea 내부의 viewport를 찾아서 스크롤
@@ -342,6 +378,45 @@ export function AIChatPanel() {
                               <span className="text-muted-foreground/40">·</span>
                               <RefreshCw className="h-2.5 w-2.5 flex-shrink-0" />
                               <span>{message.sources.syncedAtLabel}</span>
+                            </div>
+                          )}
+                          {/* 액션 카드 (세무사 자료 전달 등) */}
+                          {message.suggestedActions && message.suggestedActions.length > 0 && (
+                            <div className="mt-3 pt-2 border-t border-border/30 space-y-2">
+                              {message.suggestedActions.map((action) => {
+                                const isSending = sendingActions.has(action.consultationId);
+                                const isCompleted = completedActions.has(action.consultationId);
+                                return (
+                                  <button
+                                    key={action.consultationId}
+                                    onClick={() => !isSending && !isCompleted && handleSendToAccountant(action.consultationId)}
+                                    disabled={isSending || isCompleted}
+                                    className={cn(
+                                      "w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                                      isCompleted
+                                        ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800"
+                                        : isSending
+                                          ? "bg-muted/50 text-muted-foreground border border-border cursor-wait"
+                                          : "bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/40 cursor-pointer"
+                                    )}
+                                  >
+                                    {isCompleted ? (
+                                      <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                                    ) : isSending ? (
+                                      <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin" />
+                                    ) : (
+                                      <FileText className="h-4 w-4 flex-shrink-0" />
+                                    )}
+                                    <span>
+                                      {isCompleted
+                                        ? "자료가 전달되었습니다 ✓"
+                                        : isSending
+                                          ? "전달 중..."
+                                          : action.label}
+                                    </span>
+                                  </button>
+                                );
+                              })}
                             </div>
                           )}
                         </div>

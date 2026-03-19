@@ -1223,6 +1223,14 @@ ${toneInst}
 - 데이터에 없는 숫자는 절대 만들지 마세요
 - 비교/비율 질문 시 양쪽 데이터를 모두 조회하세요
 - 금액은 만원 단위로 반올림하여 표현 (1만원 미만은 천원 단위)
+
+## 세무사 자료 전달 제안 규칙 (매우 중요!)
+- 세무/절세/부가세/신고 관련 질문에 답변할 때, 담당 세무사가 배정되어 있다면:
+  1. 먼저 질문에 대한 일반적인 답변을 제공하세요
+  2. 조회된 재무 데이터(매출/매입, 세금계산서, 직원 현황 등)를 요약하여 보여주세요
+  3. 답변 마지막에 반드시 "이 자료를 담당 세무사(OOO 세무사님)에게 자동으로 전달해 드릴까요?"라고 제안하세요
+  4. 단순히 연락처를 알려주는 것이 아니라, **자동 전달 서비스**를 적극적으로 제안하세요
+- 담당 세무사가 없다면: "세무사 탭에서 담당 세무사를 먼저 배정하시면, 자료를 자동으로 전달해 드릴 수 있어요"라고 안내하세요
 ${voiceDataInst}`;
 
   // 1단계: Gemini에게 도구와 함께 질문 전달
@@ -1445,6 +1453,7 @@ serve(async (req) => {
 
     // ━━━ 세무 전문 상담 감지 → tax_consultations 자동 생성 ━━━
     let taxConsultationCreated = false;
+    let createdConsultationId: string | null = null;
     if (classified.needsTaxConsultation && userId) {
       try {
         const sb = createSupabaseClient(authHeader);
@@ -1469,16 +1478,17 @@ serve(async (req) => {
 
           if (!recent || recent.length === 0) {
             const subject = lastMsg.length > 50 ? lastMsg.substring(0, 50) + "..." : lastMsg;
-            await sb.from("tax_consultations").insert({
+            const { data: inserted } = await sb.from("tax_consultations").insert({
               user_id: userId,
               accountant_id: assignment?.accountant_id || null,
               subject: `AI 상담 요청: ${subject}`,
               user_question: lastMsg,
               consultation_type: "ad_hoc",
               status: "pending",
-            });
+            }).select("id").single();
             taxConsultationCreated = true;
-            console.log("Tax consultation auto-created for user:", userId);
+            createdConsultationId = inserted?.id || null;
+            console.log("Tax consultation auto-created:", createdConsultationId);
           }
         }
       } catch (e) {
@@ -1499,11 +1509,23 @@ serve(async (req) => {
           GEMINI_API_KEY, geminiMessages, lastMsg, userId, authHeader,
           secretaryName, genderDesc, toneInst, voiceMode, voiceDataInst,
         );
+        // 세무 상담이 생성되었고 담당 세무사가 있으면 자료 전달 액션 제안
+        const suggestedActions: any[] = [];
+        if (taxConsultationCreated && createdConsultationId) {
+          suggestedActions.push({
+            type: "send_to_accountant",
+            label: "세무사에게 자료 전달하기",
+            consultationId: createdConsultationId,
+          });
+        }
+
         return new Response(JSON.stringify({
           response: complexResult.response,
           visualization: complexResult.visualization || null,
           sources: complexResult.sources || null,
           taxConsultationCreated,
+          consultationId: createdConsultationId,
+          suggestedActions: suggestedActions.length > 0 ? suggestedActions : null,
           toolCallingUsed: true,
           quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
         }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
