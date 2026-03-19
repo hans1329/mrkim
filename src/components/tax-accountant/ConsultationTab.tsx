@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import EmailPreviewDialog from "./EmailPreviewDialog";
 import { toast } from "sonner";
 import {
   MessageSquare,
