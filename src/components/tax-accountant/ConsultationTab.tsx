@@ -238,16 +238,24 @@ export default function ConsultationTab({
 
                 {/* 세무사에게 이메일 전달 버튼 */}
                 {c.status === "pending" && assignment && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full mt-3 text-xs"
-                    disabled={sendingId === c.id}
-                    onClick={() => handleSendEmail(c.id)}
-                  >
-                    <Send className="h-3.5 w-3.5 mr-1.5" />
-                    {sendingId === c.id ? "전달 중..." : "세무사에게 이메일 전달"}
-                  </Button>
+                  <div className="mt-3 space-y-1.5">
+                    {assignment.accountant?.email && (
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        발송 대상: {assignment.accountant.email}
+                      </p>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-xs"
+                      disabled={sendingId === c.id}
+                      onClick={() => handleSendEmail(c.id)}
+                    >
+                      <Send className="h-3.5 w-3.5 mr-1.5" />
+                      {sendingId === c.id ? "전달 중..." : "세무사에게 이메일 전달"}
+                    </Button>
+                  </div>
                 )}
 
                 {/* 세무사 답변 */}
