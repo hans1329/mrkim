@@ -623,15 +623,18 @@ function classifyByKeyword(text: string, dbKeywords: { intent: string; keywords:
   }
 
   // 1차: DB 키워드 매칭 (관리자가 추가한 키워드 우선)
+  let dbKeywordMatch: { needsData: boolean; dataSource: DataSource; requiresConnection: string | null } | null = null;
   for (const entry of dbKeywords) {
     for (const kw of entry.keywords) {
       if (t.includes(kw.toLowerCase())) {
         const mapping = INTENT_DATA_MAP[entry.intent];
         if (mapping) {
-          return { needsData: true, dataSource: mapping.dataSource, requiresConnection: mapping.requiresConnection, timePeriod };
+          dbKeywordMatch = { needsData: true, dataSource: mapping.dataSource, requiresConnection: mapping.requiresConnection };
+          break;
         }
       }
     }
+    if (dbKeywordMatch) break;
   }
 
   // 2차: 세무 전문 상담 감지 (세무사 연결 필요 판단)
