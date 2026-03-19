@@ -1240,7 +1240,50 @@ serve(async (req) => {
     // ━━━ DB에서 의도 키워드 로드 + 키워드 분류 ━━━
     const dbKeywords = await loadIntentKeywords(authHeader);
     const classified = classifyByKeyword(lastMsg, dbKeywords);
-    console.log("Classification:", { needsData: classified.needsData, source: classified.dataSource, period: classified.timePeriod?.type });
+    console.log("Classification:", { needsData: classified.needsData, source: classified.dataSource, period: classified.timePeriod?.type, needsTaxConsultation: classified.needsTaxConsultation });
+
+    // ━━━ 세무 전문 상담 감지 → tax_consultations 자동 생성 ━━━
+    let taxConsultationCreated = false;
+    if (classified.needsTaxConsultation && userId) {
+      try {
+        const sb = createSupabaseClient(authHeader);
+        if (sb) {
+          // 담당 세무사 확인
+          const { data: assignment } = await sb
+            .from("tax_accountant_assignments")
+            .select("accountant_id")
+            .eq("user_id", userId)
+            .eq("status", "confirmed")
+            .limit(1)
+            .maybeSingle();
+
+          // 중복 방지: 최근 1시간 내 동일 주제 상담이 없는 경우만 생성
+          const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+          const { data: recent } = await sb
+            .from("tax_consultations")
+            .select("id")
+            .eq("user_id", userId)
+            .gte("created_at", oneHourAgo)
+            .limit(1);
+
+          if (!recent || recent.length === 0) {
+            const subject = lastMsg.length > 50 ? lastMsg.substring(0, 50) + "..." : lastMsg;
+            await sb.from("tax_consultations").insert({
+              user_id: userId,
+              accountant_id: assignment?.accountant_id || null,
+              subject: `AI 상담 요청: ${subject}`,
+              user_question: lastMsg,
+              consultation_type: "ad_hoc",
+              status: "pending",
+            });
+            taxConsultationCreated = true;
+            console.log("Tax consultation auto-created for user:", userId);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to create tax consultation:", e);
+      }
+    }
 
     // ━━━ Case 0: 복합 질문 → Tool Calling 파이프라인 (현재 비활성화 - 안정화 후 활성화 예정) ━━━
     // const complexQuery = isComplexQuery(lastMsg);
