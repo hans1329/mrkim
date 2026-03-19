@@ -25,6 +25,7 @@ export default function AccountantSignup() {
   // Auth fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
 
   // Profile fields
   const [name, setName] = useState("");
@@ -36,11 +37,12 @@ export default function AccountantSignup() {
   const [bio, setBio] = useState("");
 
   const allRulesPass = PASSWORD_RULES.every(r => r.test(password));
+  const passwordsMatch = password === passwordConfirm;
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!allRulesPass) {
-      toast.error("비밀번호 조건을 모두 충족해주세요.");
+    if (!allRulesPass || !passwordsMatch) {
+      toast.error(!allRulesPass ? "비밀번호 조건을 모두 충족해주세요." : "비밀번호가 일치하지 않습니다.");
       return;
     }
     setLoading(true);
@@ -191,6 +193,28 @@ export default function AccountantSignup() {
               )}
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="signup-password-confirm">비밀번호 확인 *</Label>
+              <Input
+                id="signup-password-confirm"
+                type="password"
+                value={passwordConfirm}
+                onChange={e => setPasswordConfirm(e.target.value)}
+                placeholder="비밀번호 재입력"
+                required
+              />
+              {passwordConfirm && !passwordsMatch && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <X className="h-3 w-3" /> 비밀번호가 일치하지 않습니다
+                </p>
+              )}
+              {passwordConfirm && passwordsMatch && (
+                <p className="text-xs text-green-600 flex items-center gap-1">
+                  <Check className="h-3 w-3" /> 비밀번호 일치
+                </p>
+              )}
+            </div>
+
             {/* Optional profile fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -257,7 +281,7 @@ export default function AccountantSignup() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading || !allRulesPass}>
+            <Button type="submit" className="w-full" disabled={loading || !allRulesPass || !passwordsMatch}>
               {loading ? "가입 처리 중..." : "회원가입"}
             </Button>
           </form>
