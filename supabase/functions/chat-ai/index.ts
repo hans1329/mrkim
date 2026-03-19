@@ -1211,11 +1211,15 @@ ${toneInst}
 - 상대방을 항상 "대표님"이라고 부르세요. "사장님", "고객님" 등은 사용 금지.
 
 ## 핵심 역할
-대표님의 복합적인 경영 질문에 정확하게 답변합니다.
-필요한 데이터를 도구(function)를 사용하여 직접 조회한 후, 분석 결과를 전달합니다.
+대표님의 경영 질문에 정확하게 답변합니다.
+**반드시 도구(function)를 1개 이상 호출하여 실제 데이터를 확인한 후 답변하세요.**
 
-## 중요 규칙
-- 반드시 도구를 호출하여 실제 데이터를 확인한 후 답변하세요
+## 도구 사용 규칙 (최우선)
+- 어떤 질문이든 관련된 도구를 먼저 호출하세요. 도구 호출 없이 바로 텍스트로 답변하지 마세요.
+- 세무/절세/부가세/신고 관련 질문 → get_tax_accountant, get_tax_invoices, get_filing_tasks 등 관련 도구 호출
+- 매출/지출 관련 질문 → get_transactions 호출
+- 직원/급여 관련 질문 → get_employees 호출
+- 일반 경영 상담이라도 현황 데이터를 참고하여 답변할 수 있도록 관련 도구를 호출하세요
 - 데이터에 없는 숫자는 절대 만들지 마세요
 - 비교/비율 질문 시 양쪽 데이터를 모두 조회하세요
 - 금액은 만원 단위로 반올림하여 표현 (1만원 미만은 천원 단위)
@@ -1224,12 +1228,12 @@ ${voiceDataInst}`;
   // 1단계: Gemini에게 도구와 함께 질문 전달
   const contents = [
     { role: "user", parts: [{ text: systemPrompt }] },
-    { role: "model", parts: [{ text: "네, 필요한 데이터를 도구로 조회하여 정확하게 답변하겠습니다." }] },
+    { role: "model", parts: [{ text: "네, 반드시 도구를 호출하여 실제 데이터를 확인한 후 답변하겠습니다." }] },
     ...geminiMessages,
   ];
 
   await waitForSlot();
-  console.log("Complex query: calling Gemini with tools");
+  console.log("Complex query: calling Gemini with tools (mode=ANY)");
   const apiUrl = GEMINI_API_URL_THINKING;
   const firstResponse = await fetch(`${apiUrl}?key=${apiKey}`, {
     method: "POST",
@@ -1237,6 +1241,7 @@ ${voiceDataInst}`;
     body: JSON.stringify({
       contents,
       tools: [TOOL_DECLARATIONS],
+      tool_config: { function_calling_config: { mode: "ANY" } },
       generationConfig: { ...GENERATION_CONFIG, maxOutputTokens: 8192 },
       safetySettings: SAFETY_SETTINGS,
     }),
@@ -1252,30 +1257,12 @@ ${voiceDataInst}`;
   const firstCandidate = firstResult.candidates?.[0];
   const firstParts = firstCandidate?.content?.parts || [];
 
-  // 도구 호출이 없으면 세무 질문에 한해 서버 강제 fallback 실행
-  let effectiveFunctionCalls = functionCalls;
-  if (effectiveFunctionCalls.length === 0) {
-    const lowerLastMsg = lastMsg.toLowerCase();
-    const forcedToolNames: Array<{ name: string; args: Record<string, unknown> }> = [];
-
-    if (/부가세|부가가치세|세금계산서|매출세액|매입세액|절세/.test(lowerLastMsg)) {
-      forcedToolNames.push({ name: "get_tax_accountant", args: {} });
-      forcedToolNames.push({ name: "get_tax_invoices", args: { period_type: "month" } });
-    } else if (/신고\s*(일정|마감|준비)|종소세|원천징수/.test(lowerLastMsg)) {
-      forcedToolNames.push({ name: "get_tax_accountant", args: {} });
-      forcedToolNames.push({ name: "get_filing_tasks", args: {} });
-    } else if (/상담\s*(내역|기록|요청)|세무\s*상담/.test(lowerLastMsg)) {
-      forcedToolNames.push({ name: "get_tax_accountant", args: {} });
-      forcedToolNames.push({ name: "get_consultations", args: { limit: 5 } });
-    }
-
-    if (forcedToolNames.length === 0) {
-      const textResponse = firstParts.find((p: any) => p.text)?.text || "데이터를 분석할 수 없습니다.";
-      return { response: textResponse };
-    }
-
-    console.log(`Complex query: forcing ${forcedToolNames.length} tax tool calls`);
-    effectiveFunctionCalls = forcedToolNames.map(({ name, args }) => ({ functionCall: { name, args } }));
+  // 도구 호출이 없으면 일반 텍스트 응답 반환 (mode=ANY이므로 거의 발생하지 않음)
+  const functionCalls = firstParts.filter((p: any) => p.functionCall);
+  if (functionCalls.length === 0) {
+    console.warn("Complex query: no function calls despite mode=ANY");
+    const textResponse = firstParts.find((p: any) => p.text)?.text || "데이터를 분석할 수 없습니다.";
+    return { response: textResponse };
   }
 
   // 2단계: 도구 실행 (병렬)
