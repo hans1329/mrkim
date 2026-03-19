@@ -123,6 +123,32 @@ export default function AccountantSignup() {
     }
   };
 
+  if (step === "existing") {
+    return (
+      <div className="h-full overflow-y-auto bg-muted/30">
+        <div className="min-h-full flex items-center justify-center p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-2">
+                <Check className="w-6 h-6 text-success" />
+              </div>
+              <CardTitle className="text-xl">파트너 등록 완료!</CardTitle>
+              <CardDescription>
+                기존 계정으로 파트너 등록이 완료되었습니다.<br />
+                기존 비밀번호로 로그인해주세요.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={() => navigate("/accountant/login")}>
+                로그인 페이지로 이동
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   if (step === "done") {
     return (
       <div className="h-full overflow-y-auto bg-muted/30">
