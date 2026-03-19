@@ -528,6 +528,7 @@ interface ClassifiedIntent {
   dataSource: DataSource | null;
   requiresConnection: string | null;
   timePeriod?: { type: string };
+  needsTaxConsultation?: boolean;
 }
 
 // DB 키워드 캐시 (5분 TTL)
@@ -633,25 +634,45 @@ function classifyByKeyword(text: string, dbKeywords: { intent: string; keywords:
     }
   }
 
-  // 2차: 금융 키워드 직접 매칭 (기간 불필요)
-  // 손익/매출/지출 등 명확한 금융 키워드는 기간 없이도 데이터 조회
+  // 2차: 세무 전문 상담 감지 (세무사 연결 필요 판단)
+  const TAX_CONSULTATION_PATTERNS = [
+    /세무사.*(상담|문의|질문|물어|연결|소개|추천)/,
+    /절세.*(방법|전략|상담|도움)/,
+    /종소세.*(신고|준비|도움|상담)/,
+    /부가세.*(신고|납부|기한|마감|환급).*(도움|상담|어떻게|방법)/,
+    /세무.*(상담|전문|도움|질문)/,
+    /세금.*(줄이|절약|아끼|절세|상담|전문)/,
+    /법인세.*(신고|준비|도움)/,
+    /원천징수.*(신고|방법|도움)/,
+    /가산세|추징|세무조사/,
+    /경정청구|수정신고/,
+    /기장.*(대행|맡기|위탁|의뢰)/,
+  ];
+  const needsTaxConsultation = TAX_CONSULTATION_PATTERNS.some(p => p.test(t));
+
+  // 3차: 금융 키워드 직접 매칭 (기간 불필요)
   if (/손익|순이익|이익|적자|흑자|수익|마진|영업이익|순수익|현금흐름|현금\s*흐름|캐시플로|자금흐름|자금\s*사정|자금\s*현황|돈\s*흐름|자금\s*상황|현금\s*상황/.test(t)) {
-    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" } };
+    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" }, needsTaxConsultation };
   }
   if (/매출|매입|매상|장사|벌이|벌었|팔았|팔린|판매/.test(t)) {
-    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" } };
+    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" }, needsTaxConsultation };
   }
   if (/지출|경비|비용|소비|결제|카드값|출금/.test(t)) {
-    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" } };
+    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" }, needsTaxConsultation };
   }
   if (/급여|월급|인건비|급료|페이/.test(t)) {
-    return { needsData: true, dataSource: "employee", requiresConnection: null };
+    return { needsData: true, dataSource: "employee", requiresConnection: null, needsTaxConsultation };
   }
   if (/세금계산서|세계서|부가세|부가가치세|매출세액|매입세액/.test(t)) {
-    return { needsData: true, dataSource: "tax_invoice", requiresConnection: "hometax", timePeriod: timePeriod || { type: "month" } };
+    return { needsData: true, dataSource: "tax_invoice", requiresConnection: "hometax", timePeriod: timePeriod || { type: "month" }, needsTaxConsultation };
   }
 
-  // 3차: 기간 키워드 + 조회 동사 (구어체 포함) - 폴백
+  // 4차: 세무 전문 상담만 매칭 (데이터 조회 불필요하지만 상담 필요)
+  if (needsTaxConsultation) {
+    return { needsData: false, dataSource: null, requiresConnection: null, needsTaxConsultation: true };
+  }
+
+  // 5차: 기간 키워드 + 조회 동사 (구어체 포함) - 폴백
   if (timePeriod && /얼마|얼만큼|어때|어떻게|알려|보여|확인|맞아|맞냐|괜찮|잘\s*[됐된돼]|좋았/.test(t)) {
     return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod };
   }
@@ -1219,7 +1240,50 @@ serve(async (req) => {
     // ━━━ DB에서 의도 키워드 로드 + 키워드 분류 ━━━
     const dbKeywords = await loadIntentKeywords(authHeader);
     const classified = classifyByKeyword(lastMsg, dbKeywords);
-    console.log("Classification:", { needsData: classified.needsData, source: classified.dataSource, period: classified.timePeriod?.type });
+    console.log("Classification:", { needsData: classified.needsData, source: classified.dataSource, period: classified.timePeriod?.type, needsTaxConsultation: classified.needsTaxConsultation });
+
+    // ━━━ 세무 전문 상담 감지 → tax_consultations 자동 생성 ━━━
+    let taxConsultationCreated = false;
+    if (classified.needsTaxConsultation && userId) {
+      try {
+        const sb = createSupabaseClient(authHeader);
+        if (sb) {
+          // 담당 세무사 확인
+          const { data: assignment } = await sb
+            .from("tax_accountant_assignments")
+            .select("accountant_id")
+            .eq("user_id", userId)
+            .eq("status", "confirmed")
+            .limit(1)
+            .maybeSingle();
+
+          // 중복 방지: 최근 1시간 내 동일 주제 상담이 없는 경우만 생성
+          const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+          const { data: recent } = await sb
+            .from("tax_consultations")
+            .select("id")
+            .eq("user_id", userId)
+            .gte("created_at", oneHourAgo)
+            .limit(1);
+
+          if (!recent || recent.length === 0) {
+            const subject = lastMsg.length > 50 ? lastMsg.substring(0, 50) + "..." : lastMsg;
+            await sb.from("tax_consultations").insert({
+              user_id: userId,
+              accountant_id: assignment?.accountant_id || null,
+              subject: `AI 상담 요청: ${subject}`,
+              user_question: lastMsg,
+              consultation_type: "ad_hoc",
+              status: "pending",
+            });
+            taxConsultationCreated = true;
+            console.log("Tax consultation auto-created for user:", userId);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to create tax consultation:", e);
+      }
+    }
 
     // ━━━ Case 0: 복합 질문 → Tool Calling 파이프라인 (현재 비활성화 - 안정화 후 활성화 예정) ━━━
     // const complexQuery = isComplexQuery(lastMsg);
@@ -1243,15 +1307,22 @@ serve(async (req) => {
 
     // ━━━ Case 1: 데이터 불필요 → 자유 대화 ━━━
     if (!classified.needsData || !classified.dataSource) {
-      const systemPrompt = `당신은 "${secretaryName}"입니다. 소상공인 대표님의 AI 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${voiceInst}\n\n## 호칭 규칙 (필수)\n- 상대방을 항상 "대표님"이라고 부르세요. "사장님", "고객님" 등은 사용 금지.\n\n## 자기소개 규칙\n- "이름이 뭐야?", "넌 누구야?", "너 이름은?" 같은 질문에는 반드시 "${secretaryName}"이라고 대답하세요.\n- 자기소개: "${secretaryName}이에요! 대표님의 AI 비서예요."\n\n## 성격\n- 따뜻하고 친근한 비서, 대표님을 진심으로 응원${voiceMode ? "\n- 이모지 대신 말투로 감정 표현" : "\n- 가끔 이모지를 적절히 사용"}\n\n## 대화 범위\n- 대표님이 물어보는 모든 질문에 성실하게 답변하세요\n- 경영, 세금, 일상 잡담, 맛집 추천, 건강, 고민 상담, 일반 상식 등 자유롭게 답변\n- 단, 가짜 매출/지출 숫자는 절대 만들지 마세요 (실제 데이터 조회가 필요)\n- 불법 행위 조장, 혐오 표현만 정중히 거절`;
+      const taxConsultationNote = taxConsultationCreated
+        ? `\n\n## 세무 상담 안내\n이 질문은 전문 세무 상담이 필요한 내용입니다. 세무사 상담 요청이 자동으로 등록되었습니다.\n답변 마지막에 "세무사 탭에서 상담 내역을 확인하고 담당 세무사에게 전달할 수 있다"는 안내를 자연스럽게 포함하세요.\n일반적인 세무 지식은 답변하되, 구체적인 신고/절세 전략은 세무사 상담을 권유하세요.`
+        : "";
+      const systemPrompt = `당신은 "${secretaryName}"입니다. 소상공인 대표님의 AI 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${voiceInst}\n\n## 호칭 규칙 (필수)\n- 상대방을 항상 "대표님"이라고 부르세요. "사장님", "고객님" 등은 사용 금지.\n\n## 자기소개 규칙\n- "이름이 뭐야?", "넌 누구야?", "너 이름은?" 같은 질문에는 반드시 "${secretaryName}"이라고 대답하세요.\n- 자기소개: "${secretaryName}이에요! 대표님의 AI 비서예요."\n\n## 성격\n- 따뜻하고 친근한 비서, 대표님을 진심으로 응원${voiceMode ? "\n- 이모지 대신 말투로 감정 표현" : "\n- 가끔 이모지를 적절히 사용"}\n\n## 대화 범위\n- 대표님이 물어보는 모든 질문에 성실하게 답변하세요\n- 경영, 세금, 일상 잡담, 맛집 추천, 건강, 고민 상담, 일반 상식 등 자유롭게 답변\n- 단, 가짜 매출/지출 숫자는 절대 만들지 마세요 (실제 데이터 조회가 필요)\n- 불법 행위 조장, 혐오 표현만 정중히 거절${taxConsultationNote}`;
       const result = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: systemPrompt }] },
         { role: "model", parts: [{ text: "네, 알겠습니다." }] },
         ...geminiMessages,
       ], voiceMode);
       const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "무엇을 도와드릴까요?";
-      console.log("Direct response (no data)");
-      return new Response(JSON.stringify({ response, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      console.log("Direct response (no data)", taxConsultationCreated ? "+ tax consultation created" : "");
+      return new Response(JSON.stringify({
+        response,
+        taxConsultationCreated,
+        quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ━━━ Case 2: 데이터 필요 → 데이터 조회 먼저, 없으면 연동 안내 ━━━
