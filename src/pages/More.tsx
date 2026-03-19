@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 
 const menuItems = [
   { title: "리포트", description: "경영 현황 분석", url: "/reports", icon: TrendingUp },
-  
+  { title: "세무사", description: "세무사 매칭·상담·신고", url: "/tax-accountant", icon: UserCheck },
   { title: "알림", description: "알림 관리", url: "/notifications", icon: Bell },
   { title: "설정", description: "앱 설정", url: "/settings", icon: Settings },
   { title: "도움말", description: "사용 가이드", url: "/help", icon: HelpCircle },
