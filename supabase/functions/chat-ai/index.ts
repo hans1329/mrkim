@@ -1268,8 +1268,9 @@ ${voiceDataInst}`;
   // 도구 호출이 없으면 일반 텍스트 응답 반환 (mode=ANY이므로 거의 발생하지 않음)
   const functionCalls = firstParts.filter((p: any) => p.functionCall);
   if (functionCalls.length === 0) {
-    console.warn("Complex query: no function calls despite mode=ANY");
-    const textResponse = firstParts.find((p: any) => p.text)?.text || "데이터를 분석할 수 없습니다.";
+    console.warn("Complex query: no function calls despite mode=ANY, parts:", JSON.stringify(firstParts.map((p: any) => Object.keys(p))));
+    const textPart = firstParts.find((p: any) => p.text && !p.thought) || firstParts.find((p: any) => p.text);
+    const textResponse = textPart?.text || "데이터를 분석할 수 없습니다.";
     return { response: textResponse };
   }
 
@@ -1310,7 +1311,10 @@ ${voiceDataInst}`;
   }
 
   const secondResult = await secondResponse.json();
-  const response = secondResult.candidates?.[0]?.content?.parts?.[0]?.text || "분석 결과를 생성하지 못했습니다.";
+  // Gemini 2.5-flash thinking 모드: parts[0]이 thought일 수 있으므로 text가 있는 파트를 찾음
+  const secondParts = secondResult.candidates?.[0]?.content?.parts || [];
+  const textPart = secondParts.find((p: any) => p.text && !p.thought);
+  const response = textPart?.text || secondParts.find((p: any) => p.text)?.text || "분석 결과를 생성하지 못했습니다.";
 
   // 시각화: 첫 번째 tool call 결과 기반으로 생성
   let visualization: Visualization | null = null;
