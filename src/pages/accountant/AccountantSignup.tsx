@@ -127,7 +127,7 @@ export default function AccountantSignup() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+    <div className="min-h-screen overflow-auto flex items-start justify-center bg-muted/30 p-4 py-8">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
