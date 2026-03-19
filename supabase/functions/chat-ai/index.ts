@@ -1306,8 +1306,8 @@ ${voiceDataInst}`;
 
   // 시각화: 첫 번째 tool call 결과 기반으로 생성
   let visualization: Visualization | null = null;
-  if (effectiveFunctionCalls.length > 0) {
-    const firstToolName = effectiveFunctionCalls[0].functionCall.name;
+  if (functionCalls.length > 0) {
+    const firstToolName = functionCalls[0].functionCall.name;
     const toolToSource: Record<string, DataSource> = {
       get_transactions: "transaction",
       get_employees: "employee",
