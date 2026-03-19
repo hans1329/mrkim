@@ -105,196 +105,200 @@ export default function AccountantSignup() {
 
   if (step === "done") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-2">
-              <Check className="w-6 h-6 text-green-600" />
-            </div>
-            <CardTitle className="text-xl">가입 완료!</CardTitle>
-            <CardDescription>
-              이메일 인증 후 로그인해주세요. 인증 메일이 발송되었습니다.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button className="w-full" onClick={() => navigate("/accountant/login")}>
-              로그인 페이지로 이동
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="h-full overflow-y-auto bg-muted/30">
+        <div className="min-h-full flex items-center justify-center p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-2">
+                <Check className="w-6 h-6 text-success" />
+              </div>
+              <CardTitle className="text-xl">가입 완료!</CardTitle>
+              <CardDescription>
+                이메일 인증 후 로그인해주세요. 인증 메일이 발송되었습니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={() => navigate("/accountant/login")}>
+                로그인 페이지로 이동
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen overflow-auto flex items-start justify-center bg-muted/30 p-4 py-8">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="text-center">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
-            <Briefcase className="w-6 h-6 text-primary" />
-          </div>
-          <CardTitle className="text-xl">파트너 회원가입</CardTitle>
-          <CardDescription>
-            김비서 파트너에 가입하세요
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignup} className="space-y-4">
-            {/* Required fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">이름 *</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="홍길동"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signup-email">이메일 *</Label>
-                <Input
-                  id="signup-email"
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="accountant@example.com"
-                  required
-                />
-              </div>
+    <div className="h-full overflow-y-auto bg-muted/30">
+      <div className="min-h-full flex items-start justify-center p-4 py-8">
+        <Card className="w-full max-w-lg">
+          <CardHeader className="text-center">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+              <Briefcase className="w-6 h-6 text-primary" />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="signup-password">비밀번호 *</Label>
-              <Input
-                id="signup-password"
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="비밀번호 입력"
-                required
-              />
-              {password && (
-                <div className="grid grid-cols-2 gap-1 mt-2">
-                  {PASSWORD_RULES.map(rule => (
-                    <div key={rule.key} className="flex items-center gap-1.5 text-xs">
-                      {rule.test(password) ? (
-                        <Check className="h-3 w-3 text-green-500" />
-                      ) : (
-                        <X className="h-3 w-3 text-destructive" />
-                      )}
-                      <span className={rule.test(password) ? "text-green-600" : "text-muted-foreground"}>
-                        {rule.label}
-                      </span>
-                    </div>
-                  ))}
+            <CardTitle className="text-xl">파트너 회원가입</CardTitle>
+            <CardDescription>
+              김비서 파트너에 가입하세요
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSignup} className="space-y-4">
+              {/* Required fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">이름 *</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="홍길동"
+                    required
+                  />
                 </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="signup-password-confirm">비밀번호 확인 *</Label>
-              <Input
-                id="signup-password-confirm"
-                type="password"
-                value={passwordConfirm}
-                onChange={e => setPasswordConfirm(e.target.value)}
-                placeholder="비밀번호 재입력"
-                required
-              />
-              {passwordConfirm && !passwordsMatch && (
-                <p className="text-xs text-destructive flex items-center gap-1">
-                  <X className="h-3 w-3" /> 비밀번호가 일치하지 않습니다
-                </p>
-              )}
-              {passwordConfirm && passwordsMatch && (
-                <p className="text-xs text-green-600 flex items-center gap-1">
-                  <Check className="h-3 w-3" /> 비밀번호 일치
-                </p>
-              )}
-            </div>
-
-            {/* Optional profile fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">연락처</Label>
-                <Input
-                  id="phone"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  placeholder="010-1234-5678"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">이메일 *</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="accountant@example.com"
+                    required
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="firmName">사무소명</Label>
-                <Input
-                  id="firmName"
-                  value={firmName}
-                  onChange={e => setFirmName(e.target.value)}
-                  placeholder="홍길동 세무회계사무소"
-                />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="region">지역</Label>
+                <Label htmlFor="signup-password">비밀번호 *</Label>
                 <Input
-                  id="region"
-                  value={region}
-                  onChange={e => setRegion(e.target.value)}
-                  placeholder="서울 강남구"
+                  id="signup-password"
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="비밀번호 입력"
+                  required
                 />
+                {password && (
+                  <div className="grid grid-cols-2 gap-1 mt-2">
+                    {PASSWORD_RULES.map(rule => (
+                      <div key={rule.key} className="flex items-center gap-1.5 text-xs">
+                        {rule.test(password) ? (
+                          <Check className="h-3 w-3 text-success" />
+                        ) : (
+                          <X className="h-3 w-3 text-destructive" />
+                        )}
+                        <span className={rule.test(password) ? "text-success" : "text-muted-foreground"}>
+                          {rule.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="specialties">전문 분야</Label>
+                <Label htmlFor="signup-password-confirm">비밀번호 확인 *</Label>
                 <Input
-                  id="specialties"
-                  value={specialties}
-                  onChange={e => setSpecialties(e.target.value)}
-                  placeholder="부가세, 종합소득세, 법인세"
+                  id="signup-password-confirm"
+                  type="password"
+                  value={passwordConfirm}
+                  onChange={e => setPasswordConfirm(e.target.value)}
+                  placeholder="비밀번호 재입력"
+                  required
+                />
+                {passwordConfirm && !passwordsMatch && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <X className="h-3 w-3" /> 비밀번호가 일치하지 않습니다
+                  </p>
+                )}
+                {passwordConfirm && passwordsMatch && (
+                  <p className="text-xs text-success flex items-center gap-1">
+                    <Check className="h-3 w-3" /> 비밀번호 일치
+                  </p>
+                )}
+              </div>
+
+              {/* Optional profile fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">연락처</Label>
+                  <Input
+                    id="phone"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    placeholder="010-1234-5678"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="firmName">사무소명</Label>
+                  <Input
+                    id="firmName"
+                    value={firmName}
+                    onChange={e => setFirmName(e.target.value)}
+                    placeholder="홍길동 세무회계사무소"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="region">지역</Label>
+                  <Input
+                    id="region"
+                    value={region}
+                    onChange={e => setRegion(e.target.value)}
+                    placeholder="서울 강남구"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="specialties">전문 분야</Label>
+                  <Input
+                    id="specialties"
+                    value={specialties}
+                    onChange={e => setSpecialties(e.target.value)}
+                    placeholder="부가세, 종합소득세, 법인세"
+                  />
+                  <p className="text-[10px] text-muted-foreground">쉼표로 구분</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="industryTypes">전문 업종</Label>
+                <Input
+                  id="industryTypes"
+                  value={industryTypes}
+                  onChange={e => setIndustryTypes(e.target.value)}
+                  placeholder="음식점, 소매업, IT"
                 />
                 <p className="text-[10px] text-muted-foreground">쉼표로 구분</p>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="industryTypes">전문 업종</Label>
-              <Input
-                id="industryTypes"
-                value={industryTypes}
-                onChange={e => setIndustryTypes(e.target.value)}
-                placeholder="음식점, 소매업, IT"
-              />
-              <p className="text-[10px] text-muted-foreground">쉼표로 구분</p>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="bio">자기소개</Label>
+                <Textarea
+                  id="bio"
+                  value={bio}
+                  onChange={e => setBio(e.target.value)}
+                  placeholder="간단한 자기소개를 입력해주세요"
+                  rows={3}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bio">자기소개</Label>
-              <Textarea
-                id="bio"
-                value={bio}
-                onChange={e => setBio(e.target.value)}
-                placeholder="간단한 자기소개를 입력해주세요"
-                rows={3}
-              />
+              <Button type="submit" className="w-full" disabled={loading || !allRulesPass || !passwordsMatch}>
+                {loading ? "가입 처리 중..." : "회원가입"}
+              </Button>
+            </form>
+            <div className="mt-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                이미 계정이 있으신가요?{" "}
+                <Link to="/accountant/login" className="text-primary font-medium hover:underline">
+                  로그인
+                </Link>
+              </p>
             </div>
-
-            <Button type="submit" className="w-full" disabled={loading || !allRulesPass || !passwordsMatch}>
-              {loading ? "가입 처리 중..." : "회원가입"}
-            </Button>
-          </form>
-          <div className="mt-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              이미 계정이 있으신가요?{" "}
-              <Link to="/accountant/login" className="text-primary font-medium hover:underline">
-                로그인
-              </Link>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
