@@ -1479,25 +1479,27 @@ serve(async (req) => {
       }
     }
 
-    // ━━━ Case 0: 복합 질문 → Tool Calling 파이프라인 (현재 비활성화 - 안정화 후 활성화 예정) ━━━
-    // const complexQuery = isComplexQuery(lastMsg);
-    // if (complexQuery && !voiceMode) {
-    //   console.log("Complex query detected → Tool Calling pipeline");
-    //   try {
-    //     const complexResult = await handleComplexQuery(
-    //       GEMINI_API_KEY, geminiMessages, lastMsg, userId, authHeader,
-    //       secretaryName, genderDesc, toneInst, voiceMode, voiceDataInst,
-    //     );
-    //     return new Response(JSON.stringify({
-    //       response: complexResult.response,
-    //       visualization: complexResult.visualization || null,
-    //       sources: complexResult.sources || null,
-    //       quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
-    //     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    //   } catch (toolErr: any) {
-    //     console.warn("Complex query fallback to simple pipeline:", toolErr?.status || toolErr);
-    //   }
-    // }
+    // ━━━ Case 0: 복합 질문 또는 세무사 관련 → Tool Calling 파이프라인 ━━━
+    const complexQuery = isComplexQuery(lastMsg);
+    const isTaxAccountantQuery = /세무사|담당\s*세무|신고\s*(일정|마감|준비)|상담\s*(내역|기록|요청)|세무\s*상담/.test(lastMsg.toLowerCase());
+    if ((complexQuery || isTaxAccountantQuery) && !voiceMode) {
+      console.log(`${complexQuery ? "Complex" : "Tax accountant"} query detected → Tool Calling pipeline`);
+      try {
+        const complexResult = await handleComplexQuery(
+          GEMINI_API_KEY, geminiMessages, lastMsg, userId, authHeader,
+          secretaryName, genderDesc, toneInst, voiceMode, voiceDataInst,
+        );
+        return new Response(JSON.stringify({
+          response: complexResult.response,
+          visualization: complexResult.visualization || null,
+          sources: complexResult.sources || null,
+          taxConsultationCreated,
+          quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      } catch (toolErr: any) {
+        console.warn("Tool Calling fallback to simple pipeline:", toolErr?.status || toolErr);
+      }
+    }
 
     // ━━━ Case 1: 데이터 불필요 → 자유 대화 ━━━
     if (!classified.needsData || !classified.dataSource) {
