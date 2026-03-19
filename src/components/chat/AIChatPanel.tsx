@@ -419,6 +419,24 @@ export function AIChatPanel() {
                               })}
                             </div>
                           )}
+                          {/* 후속 액션 제안 칩 */}
+                          {message.followUpSuggestions && message.followUpSuggestions.length > 0 && index === messages.length - 1 && (
+                            <div className="mt-3 pt-2 border-t border-border/20 flex flex-wrap gap-1.5">
+                              {message.followUpSuggestions.map((suggestion, sIdx) => (
+                                <button
+                                  key={sIdx}
+                                  onClick={() => {
+                                    setInput("");
+                                    sendMessage(suggestion);
+                                  }}
+                                  disabled={isLoading}
+                                  className="px-3 py-1.5 rounded-full text-xs font-medium bg-secondary/60 hover:bg-secondary text-secondary-foreground border border-border/30 hover:border-border/60 transition-all disabled:opacity-50"
+                                >
+                                  {suggestion}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <p className="whitespace-pre-wrap text-sm">{message.content}</p>

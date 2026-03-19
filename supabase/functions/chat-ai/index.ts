@@ -1342,7 +1342,65 @@ ${voiceDataInst}`;
   return { response, visualization };
 }
 
-// ============ 일일 할당량 ============
+// ============ 후속 액션 제안 생성 ============
+
+function generateFollowUpSuggestions(
+  lastMsg: string,
+  classifiedSource: DataSource | null,
+  needsTaxConsultation: boolean,
+  hasData: boolean,
+): string[] {
+  const t = lastMsg.toLowerCase();
+  const suggestions: string[] = [];
+
+  // 데이터 소스 기반 후속 질문
+  switch (classifiedSource) {
+    case "transaction":
+      if (/매출|수입|수익|벌/.test(t)) {
+        suggestions.push("지출 현황도 알려줘", "지난달이랑 비교해줘", "카테고리별로 분석해줘");
+      } else if (/지출|비용|경비/.test(t)) {
+        suggestions.push("매출 현황도 알려줘", "가장 많이 쓴 항목은?", "지난달 대비 변화는?");
+      } else if (/손익|이익|현황|브리핑/.test(t)) {
+        suggestions.push("카테고리별 지출 분석", "세금계산서 현황 확인", "직원 급여 현황");
+      } else {
+        suggestions.push("이번 달 매출 현황", "카테고리별 분석해줘", "지난달이랑 비교");
+      }
+      break;
+    case "employee":
+      suggestions.push("이번 달 급여 총액은?", "4대보험 현황 알려줘", "매출 대비 인건비 비율");
+      break;
+    case "tax_invoice":
+      suggestions.push("예상 부가세 납부액은?", "매입 세금계산서 현황", "절세 방법 알려줘");
+      break;
+    case "deposit":
+      suggestions.push("자동이체 현황 확인", "저축 계좌 현황", "이번 달 매출 확인");
+      break;
+    case "savings":
+      suggestions.push("예치금 현황 확인", "이번 달 수익 현황", "자동이체 목록");
+      break;
+    case "auto_transfer":
+      suggestions.push("예치금 현황 확인", "이번 달 지출 현황", "저축 계좌 확인");
+      break;
+    default:
+      break;
+  }
+
+  // 세무 관련 후속
+  if (needsTaxConsultation && suggestions.length < 3) {
+    if (!/세무사/.test(t)) suggestions.push("담당 세무사 정보 확인");
+    if (!/신고/.test(t)) suggestions.push("다가오는 신고 일정 확인");
+    if (!/상담/.test(t)) suggestions.push("세무 상담 기록 보기");
+  }
+
+  // 일반 대화 (데이터 소스 없음) 후속
+  if (!classifiedSource && !needsTaxConsultation) {
+    suggestions.push("오늘 매출 얼마야?", "이번 달 경영 현황", "할 일 뭐 있어?");
+  }
+
+  return suggestions.slice(0, 3);
+}
+
+
 
 const DEFAULT_DAILY_LIMIT = 100;
 
@@ -1523,6 +1581,7 @@ serve(async (req) => {
           });
         }
 
+        const followUpSuggestions = voiceMode ? [] : generateFollowUpSuggestions(lastMsg, classified.dataSource, !!classified.needsTaxConsultation, true);
         return new Response(JSON.stringify({
           response: complexResult.response,
           visualization: complexResult.visualization || null,
@@ -1530,6 +1589,7 @@ serve(async (req) => {
           taxConsultationCreated,
           consultationId: createdConsultationId,
           suggestedActions: suggestedActions.length > 0 ? suggestedActions : null,
+          followUpSuggestions: followUpSuggestions.length > 0 ? followUpSuggestions : null,
           toolCallingUsed: true,
           quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
         }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -1551,9 +1611,11 @@ serve(async (req) => {
       ], voiceMode);
       const response = result.candidates?.[0]?.content?.parts?.[0]?.text || "무엇을 도와드릴까요?";
       console.log("Direct response (no data)", taxConsultationCreated ? "+ tax consultation created" : "");
+      const followUpSuggestions = voiceMode ? [] : generateFollowUpSuggestions(lastMsg, null, !!classified.needsTaxConsultation, false);
       return new Response(JSON.stringify({
         response,
         taxConsultationCreated,
+        followUpSuggestions: followUpSuggestions.length > 0 ? followUpSuggestions : null,
         quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -1575,7 +1637,7 @@ serve(async (req) => {
       if (missingSource) {
         console.log("Connection required:", missingSource);
         return new Response(
-          JSON.stringify({ response: buildConnectionRequiredResponse(missingSource, voiceMode), requiresConnection: true, taxConsultationCreated, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }),
+          JSON.stringify({ response: buildConnectionRequiredResponse(missingSource, voiceMode), requiresConnection: true, taxConsultationCreated, followUpSuggestions: ["데이터 연동 방법 알려줘", "어떤 데이터를 연동할 수 있어?"], quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
@@ -1600,7 +1662,8 @@ serve(async (req) => {
       ], voiceMode);
       const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
       console.log(`${classified.dataSource} data response (1 API call)`);
-      return new Response(JSON.stringify({ response, visualization, sources, taxConsultationCreated, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const followUp1 = voiceMode ? [] : generateFollowUpSuggestions(lastMsg, classified.dataSource, !!classified.needsTaxConsultation, true);
+      return new Response(JSON.stringify({ response, visualization, sources, taxConsultationCreated, followUpSuggestions: followUp1.length > 0 ? followUp1 : null, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 데이터 없음
@@ -1612,7 +1675,8 @@ serve(async (req) => {
       ...geminiMessages,
     ], voiceMode);
     const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
-    return new Response(JSON.stringify({ response, sources, taxConsultationCreated, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const followUp2 = voiceMode ? [] : generateFollowUpSuggestions(lastMsg, classified.dataSource, !!classified.needsTaxConsultation, false);
+    return new Response(JSON.stringify({ response, sources, taxConsultationCreated, followUpSuggestions: followUp2.length > 0 ? followUp2 : null, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (error: any) {
     console.error("=== Gemini Error ===", error?.status, error?.body);

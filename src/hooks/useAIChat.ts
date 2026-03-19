@@ -28,6 +28,7 @@ export interface ChatMessage {
   visualization?: VisualizationData | null;
   sources?: DataSourceInfo | null;
   suggestedActions?: SuggestedAction[] | null;
+  followUpSuggestions?: string[] | null;
 }
 
 export interface QuotaInfo {
@@ -356,6 +357,7 @@ export function useAIChat() {
       const visualization = data.visualization || null;
       const sources = data.sources || null;
       const suggestedActions = data.suggestedActions || null;
+      const followUpSuggestions = data.followUpSuggestions || null;
       if (data.quota) setQuota(data.quota);
       
       // 세무 상담 자동 생성 알림 (액션 카드가 없을 때만 toast)
@@ -377,6 +379,7 @@ export function useAIChat() {
         visualization,
         sources,
         suggestedActions,
+        followUpSuggestions,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
