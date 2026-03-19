@@ -380,6 +380,45 @@ export function AIChatPanel() {
                               <span>{message.sources.syncedAtLabel}</span>
                             </div>
                           )}
+                          {/* 액션 카드 (세무사 자료 전달 등) */}
+                          {message.suggestedActions && message.suggestedActions.length > 0 && (
+                            <div className="mt-3 pt-2 border-t border-border/30 space-y-2">
+                              {message.suggestedActions.map((action) => {
+                                const isSending = sendingActions.has(action.consultationId);
+                                const isCompleted = completedActions.has(action.consultationId);
+                                return (
+                                  <button
+                                    key={action.consultationId}
+                                    onClick={() => !isSending && !isCompleted && handleSendToAccountant(action.consultationId)}
+                                    disabled={isSending || isCompleted}
+                                    className={cn(
+                                      "w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                                      isCompleted
+                                        ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800"
+                                        : isSending
+                                          ? "bg-muted/50 text-muted-foreground border border-border cursor-wait"
+                                          : "bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/40 cursor-pointer"
+                                    )}
+                                  >
+                                    {isCompleted ? (
+                                      <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                                    ) : isSending ? (
+                                      <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin" />
+                                    ) : (
+                                      <FileText className="h-4 w-4 flex-shrink-0" />
+                                    )}
+                                    <span>
+                                      {isCompleted
+                                        ? "자료가 전달되었습니다 ✓"
+                                        : isSending
+                                          ? "전달 중..."
+                                          : action.label}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <p className="whitespace-pre-wrap text-sm">{message.content}</p>
