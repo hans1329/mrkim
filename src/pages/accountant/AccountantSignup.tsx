@@ -48,7 +48,19 @@ export default function AccountantSignup() {
     setLoading(true);
 
     try {
-      // 1. Create auth user
+      // 1. 이미 tax_accountants에 같은 이메일이 있는지 확인
+      const { data: existingAccountant } = await supabase
+        .from("tax_accountants")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (existingAccountant) {
+        toast.error("이미 파트너로 등록된 이메일입니다. 로그인해주세요.");
+        return;
+      }
+
+      // 2. Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -72,7 +84,10 @@ export default function AccountantSignup() {
         return;
       }
 
-      // 2. Create tax_accountants record (user_id linked after email confirmation & login)
+      // 3. 기존 계정인지 확인 (identities가 비어있으면 이미 가입된 사용자)
+      const isExistingUser = !authData.user.identities || authData.user.identities.length === 0;
+
+      // 4. Create tax_accountants record
       const { error: insertError } = await supabase
         .from("tax_accountants")
         .insert({
@@ -94,8 +109,13 @@ export default function AccountantSignup() {
         return;
       }
 
-      setStep("done");
-      toast.success("회원가입이 완료되었습니다!");
+      if (isExistingUser) {
+        setStep("existing");
+        toast.success("파트너 등록이 완료되었습니다!");
+      } else {
+        setStep("done");
+        toast.success("회원가입이 완료되었습니다!");
+      }
     } catch (error: any) {
       toast.error("회원가입에 실패했습니다.");
     } finally {
