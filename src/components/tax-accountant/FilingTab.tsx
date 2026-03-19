@@ -268,11 +268,11 @@ function FilingSendSection({ taskId, assignment, basicItems, task }: {
         <p className="text-[10px] text-muted-foreground">
           김비서가 자동 수집한 데이터와 준비 현황을 세무사에게 이메일로 전달합니다
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             size="sm"
             variant="ghost"
-            className="text-xs text-muted-foreground"
+            className="text-xs text-muted-foreground w-full sm:w-auto"
             onClick={handlePreview}
           >
             <Eye className="h-3.5 w-3.5 mr-1" />
@@ -280,12 +280,12 @@ function FilingSendSection({ taskId, assignment, basicItems, task }: {
           </Button>
           <Button
             size="sm"
-            className="flex-1 text-xs"
+            className="w-full sm:flex-1 text-xs"
             onClick={handleSend}
             disabled={sending}
           >
             <Send className="h-3.5 w-3.5 mr-1.5" />
-            {sending ? "전달 중..." : "세무사에게 신고 자료 전달"}
+            {sending ? "전달 중..." : "세무사에게 자료 전달"}
           </Button>
         </div>
       </div>
