@@ -14,6 +14,12 @@ export interface DataSourceInfo {
   source: string;
 }
 
+export interface SuggestedAction {
+  type: "send_to_accountant";
+  label: string;
+  consultationId: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
@@ -21,6 +27,7 @@ export interface ChatMessage {
   timestamp: Date;
   visualization?: VisualizationData | null;
   sources?: DataSourceInfo | null;
+  suggestedActions?: SuggestedAction[] | null;
 }
 
 export interface QuotaInfo {
