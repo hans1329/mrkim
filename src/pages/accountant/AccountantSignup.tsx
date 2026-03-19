@@ -105,29 +105,32 @@ export default function AccountantSignup() {
 
   if (step === "done") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-2">
-              <Check className="w-6 h-6 text-green-600" />
-            </div>
-            <CardTitle className="text-xl">가입 완료!</CardTitle>
-            <CardDescription>
-              이메일 인증 후 로그인해주세요. 인증 메일이 발송되었습니다.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button className="w-full" onClick={() => navigate("/accountant/login")}>
-              로그인 페이지로 이동
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="h-full overflow-y-auto bg-muted/30">
+        <div className="min-h-full flex items-center justify-center p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-2">
+                <Check className="w-6 h-6 text-success" />
+              </div>
+              <CardTitle className="text-xl">가입 완료!</CardTitle>
+              <CardDescription>
+                이메일 인증 후 로그인해주세요. 인증 메일이 발송되었습니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={() => navigate("/accountant/login")}>
+                로그인 페이지로 이동
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen overflow-auto flex items-start justify-center bg-muted/30 p-4 py-8">
+    <div className="h-full overflow-y-auto bg-muted/30">
+      <div className="min-h-full flex items-start justify-center p-4 py-8">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
