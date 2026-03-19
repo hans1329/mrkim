@@ -1509,11 +1509,23 @@ serve(async (req) => {
           GEMINI_API_KEY, geminiMessages, lastMsg, userId, authHeader,
           secretaryName, genderDesc, toneInst, voiceMode, voiceDataInst,
         );
+        // 세무 상담이 생성되었고 담당 세무사가 있으면 자료 전달 액션 제안
+        const suggestedActions: any[] = [];
+        if (taxConsultationCreated && createdConsultationId) {
+          suggestedActions.push({
+            type: "send_to_accountant",
+            label: "세무사에게 자료 전달하기",
+            consultationId: createdConsultationId,
+          });
+        }
+
         return new Response(JSON.stringify({
           response: complexResult.response,
           visualization: complexResult.visualization || null,
           sources: complexResult.sources || null,
           taxConsultationCreated,
+          consultationId: createdConsultationId,
+          suggestedActions: suggestedActions.length > 0 ? suggestedActions : null,
           toolCallingUsed: true,
           quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
         }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
