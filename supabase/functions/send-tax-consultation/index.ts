@@ -164,7 +164,7 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
     if (authError || !user) throw new Error("인증에 실패했습니다");
 
-    const { consultationId } = await req.json();
+    const { consultationId, preview } = await req.json();
     if (!consultationId) throw new Error("consultationId가 필요합니다");
 
     // 상담 정보 조회
