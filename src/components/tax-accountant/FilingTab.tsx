@@ -15,6 +15,9 @@ import {
   Info,
   Building2,
   User,
+  Zap,
+  Upload,
+  ShieldCheck,
 } from "lucide-react";
 import { type TaxFilingTask, type TaxAccountantAssignment } from "@/hooks/useTaxAccountant";
 import { format, differenceInDays } from "date-fns";
@@ -23,6 +26,7 @@ import {
   CORPORATE_BASIC_ITEMS,
   getMatchingIndustryRequirements,
   getDeadlineInfo,
+  AUTO_SOURCE_LABELS,
   type ChecklistItem,
 } from "@/data/filingRequirements";
 
@@ -74,32 +78,88 @@ function DeadlineBadge({ deadline }: { deadline: string }) {
   );
 }
 
-function ChecklistItemRow({ item, done, onToggleDetail }: { item: ChecklistItem; done: boolean; onToggleDetail: () => void }) {
+function ChecklistItemRow({ item, done }: { item: ChecklistItem; done: boolean }) {
   const [showDetail, setShowDetail] = useState(false);
+  const isAuto = !!item.autoSource;
+  const sourceLabel = item.autoSource ? AUTO_SOURCE_LABELS[item.autoSource] : null;
+
   return (
-    <div className="border border-border/50 rounded-lg p-2.5">
+    <div className={`border rounded-lg p-3 ${isAuto ? "border-primary/20 bg-primary/[0.02]" : "border-border/50"}`}>
       <div
         className="flex items-start gap-2 cursor-pointer"
-        onClick={() => { setShowDetail(!showDetail); onToggleDetail(); }}
+        onClick={() => setShowDetail(!showDetail)}
       >
         {done ? (
           <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+        ) : isAuto ? (
+          <Zap className="h-4 w-4 text-primary shrink-0 mt-0.5" />
         ) : (
-          <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 shrink-0 mt-0.5" />
+          <Upload className="h-4 w-4 text-muted-foreground/50 shrink-0 mt-0.5" />
         )}
-        <span className={`text-xs flex-1 ${done ? "text-foreground" : "text-muted-foreground"}`}>
-          {item.label}
-        </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className={`text-xs ${done ? "text-foreground" : isAuto ? "text-foreground" : "text-muted-foreground"}`}>
+              {item.label}
+            </span>
+            {isAuto && (
+              <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-0">
+                <Zap className="h-2.5 w-2.5 mr-0.5" />
+                자동 {item.autoCoverage}%
+              </Badge>
+            )}
+            {!isAuto && (
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 text-muted-foreground">
+                직접 준비
+              </Badge>
+            )}
+          </div>
+          {/* 자동 수집 요약 (접히지 않고 항상 표시) */}
+          {isAuto && item.autoDescription && (
+            <p className="text-[10px] text-primary/70 mt-1 flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3 shrink-0" />
+              {item.autoDescription}
+            </p>
+          )}
+        </div>
         {showDetail ? (
           <ChevronUp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         ) : (
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         )}
       </div>
+
       {showDetail && (
-        <p className="text-[10px] text-muted-foreground mt-2 ml-6 leading-relaxed">
-          {item.detail}
-        </p>
+        <div className="mt-2 ml-6 space-y-1.5">
+          {isAuto && sourceLabel && (
+            <div className="flex items-center gap-1.5">
+              <span className={`text-[10px] font-medium ${sourceLabel.color}`}>
+                📡 {sourceLabel.label}
+              </span>
+              {item.autoCoverage && (
+                <div className="flex items-center gap-1 flex-1">
+                  <Progress value={item.autoCoverage} className="h-1 flex-1 max-w-[80px]" />
+                  <span className="text-[10px] text-muted-foreground">{item.autoCoverage}%</span>
+                </div>
+              )}
+            </div>
+          )}
+          {item.manualSupplement && (
+            <div className="p-2 rounded bg-muted/50 border border-border/30">
+              <p className="text-[10px] text-muted-foreground leading-relaxed flex items-start gap-1">
+                <Upload className="h-3 w-3 shrink-0 mt-0.5" />
+                <span>
+                  <span className="font-medium text-foreground">사장님이 보강할 사항: </span>
+                  {item.manualSupplement}
+                </span>
+              </p>
+            </div>
+          )}
+          {!isAuto && (
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              {item.detail}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
@@ -129,11 +189,11 @@ const DEMO_FILING_TASK: TaxFilingTask = {
   status: "preparing",
   prepared_data: {
     invoice_ready: true,
-    card_ready: false,
+    card_ready: true,
     purchase_ready: true,
     fixed_asset_ready: false,
-    expense_ready: false,
-    bank_ready: false,
+    expense_ready: true,
+    bank_ready: true,
   },
   review_notes: [],
   filing_method: "accountant",
@@ -147,9 +207,11 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
   const basicItems = isCorporate ? CORPORATE_BASIC_ITEMS : INDIVIDUAL_BASIC_ITEMS;
   const industryReqs = getMatchingIndustryRequirements(businessType || null);
   const deadlineInfo = getDeadlineInfo(isCorporate);
-
-  // DB에 태스크가 없으면 데모 태스크 표시
   const effectiveTasks = filingTasks.length > 0 ? filingTasks : [DEMO_FILING_TASK];
+
+  // 자동/수동 구분 통계
+  const autoItems = basicItems.filter((i) => i.autoSource);
+  const manualItems = basicItems.filter((i) => !i.autoSource);
 
   if (loading) {
     return (
@@ -181,120 +243,161 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
         </CardContent>
       </Card>
 
+      {/* 김비서 자동 처리 요약 배너 */}
+      <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
+        <CardContent className="p-3">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Zap className="h-4 w-4 text-primary" />
+            <span className="text-xs font-semibold">김비서가 대신 처리해드려요</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-2">
+            기본 {basicItems.length}개 항목 중 <span className="font-semibold text-primary">{autoItems.length}개</span>는 연동 데이터에서 자동 수집됩니다.
+            {manualItems.length > 0 && (
+              <> 사장님은 <span className="font-semibold text-foreground">{manualItems.length}개</span>만 직접 준비하시면 됩니다.</>
+            )}
+          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Zap className="h-3 w-3 text-primary" />
+              <span className="text-[10px] text-primary font-medium">자동 {autoItems.length}개</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Upload className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground">직접 준비 {manualItems.length}개</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* 신고 태스크별 카드 */}
       {effectiveTasks.map((task) => {
-          const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.upcoming;
-          const allItems = [...basicItems];
-          // Add industry-specific items
-          industryReqs.forEach((req) => {
-            allItems.push(...req.items);
-          });
-          const checklist = getChecklistProgress(task, allItems);
-          const basicChecklist = getChecklistProgress(task, basicItems);
-          const progressPercent = checklist.total > 0 ? (checklist.completed / checklist.total) * 100 : 0;
+        const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.upcoming;
+        const allItems = [...basicItems];
+        industryReqs.forEach((req) => allItems.push(...req.items));
+        const checklist = getChecklistProgress(task, allItems);
+        const progressPercent = checklist.total > 0 ? (checklist.completed / checklist.total) * 100 : 0;
 
-          return (
-            <Card key={task.id}>
-              <CardContent className="p-4 space-y-3">
-                {/* 헤더 */}
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="text-sm font-semibold">{task.filing_type}</h4>
-                    <p className="text-xs text-muted-foreground">{task.tax_period}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DeadlineBadge deadline={task.deadline} />
-                    <Badge variant={statusConfig.variant} className="text-[10px]">
-                      {statusConfig.label}
-                    </Badge>
-                  </div>
+        // 자동/수동 분리
+        const autoChecklist = basicItems.filter((i) => i.autoSource);
+        const manualChecklist = basicItems.filter((i) => !i.autoSource);
+
+        return (
+          <Card key={task.id}>
+            <CardContent className="p-4 space-y-3">
+              {/* 헤더 */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold">{task.filing_type}</h4>
+                  <p className="text-xs text-muted-foreground">{task.tax_period}</p>
                 </div>
-
-                {/* 마감일 */}
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <CalendarClock className="h-3.5 w-3.5" />
-                  마감: {format(new Date(task.deadline), "yyyy.MM.dd")}
+                <div className="flex items-center gap-2">
+                  <DeadlineBadge deadline={task.deadline} />
+                  <Badge variant={statusConfig.variant} className="text-[10px]">
+                    {statusConfig.label}
+                  </Badge>
                 </div>
+              </div>
 
-                {/* 전체 진행률 */}
-                {task.status !== "submitted" && (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium flex items-center gap-1">
-                        <ListChecks className="h-3.5 w-3.5" />
-                        준비 서류 현황
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {checklist.completed}/{checklist.total}
-                      </span>
-                    </div>
-                    <Progress value={progressPercent} className="h-1.5" />
+              {/* 마감일 */}
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <CalendarClock className="h-3.5 w-3.5" />
+                마감: {format(new Date(task.deadline), "yyyy.MM.dd")}
+              </div>
 
-                    {/* 기본 요청자료 */}
+              {/* 전체 진행률 */}
+              {task.status !== "submitted" && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium flex items-center gap-1">
+                      <ListChecks className="h-3.5 w-3.5" />
+                      준비 서류 현황
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {checklist.completed}/{checklist.total}
+                    </span>
+                  </div>
+                  <Progress value={progressPercent} className="h-1.5" />
+
+                  {/* ⚡ 자동 수집 항목 */}
+                  <div className="space-y-1.5">
+                    <h5 className="text-[11px] font-semibold text-primary flex items-center gap-1 mt-1">
+                      <Zap className="h-3.5 w-3.5" />
+                      김비서 자동 수집 ({autoChecklist.length}개)
+                    </h5>
+                    {autoChecklist.map((item) => {
+                      const pd = (task.prepared_data || {}) as Record<string, unknown>;
+                      return <ChecklistItemRow key={item.id} item={item} done={!!pd[item.dataKey]} />;
+                    })}
+                  </div>
+
+                  {/* 📎 직접 준비 항목 */}
+                  {manualChecklist.length > 0 && (
                     <div className="space-y-1.5">
-                      <h5 className="text-[11px] font-semibold text-foreground mt-1">
-                        Ⅰ. 기본 요청자료
+                      <h5 className="text-[11px] font-semibold text-foreground flex items-center gap-1 mt-2">
+                        <Upload className="h-3.5 w-3.5" />
+                        사장님이 준비할 서류 ({manualChecklist.length}개)
                       </h5>
-                      {basicChecklist.itemStates.map(({ item, done }) => (
-                        <ChecklistItemRow key={item.id} item={item} done={done} onToggleDetail={() => {}} />
-                      ))}
+                      {manualChecklist.map((item) => {
+                        const pd = (task.prepared_data || {}) as Record<string, unknown>;
+                        return <ChecklistItemRow key={item.id} item={item} done={!!pd[item.dataKey]} />;
+                      })}
                     </div>
+                  )}
 
-                    {/* 업종별 추가 요청자료 */}
-                    {industryReqs.length > 0 && (
-                      <div className="space-y-2 mt-2">
-                        <h5 className="text-[11px] font-semibold text-foreground">
-                          Ⅱ. 업종별 추가 요청자료
-                        </h5>
-                        {industryReqs.map((req) => {
-                          const reqChecklist = getChecklistProgress(task, req.items);
-                          return (
-                            <div key={req.title} className="space-y-1.5">
-                              <div className="flex items-center gap-1.5">
-                                <Info className="h-3 w-3 text-primary" />
-                                <span className="text-[10px] font-medium">{req.title}</span>
-                                <span className="text-[10px] text-muted-foreground ml-auto">
-                                  {reqChecklist.completed}/{reqChecklist.total}
-                                </span>
-                              </div>
-                              <p className="text-[10px] text-muted-foreground ml-4.5">
-                                {req.description}
-                              </p>
-                              {reqChecklist.itemStates.map(({ item, done }) => (
-                                <ChecklistItemRow key={item.id} item={item} done={done} onToggleDetail={() => {}} />
-                              ))}
+                  {/* 업종별 추가 요청자료 */}
+                  {industryReqs.length > 0 && (
+                    <div className="space-y-2 mt-2">
+                      <h5 className="text-[11px] font-semibold text-foreground flex items-center gap-1">
+                        <Info className="h-3.5 w-3.5 text-primary" />
+                        업종별 추가 요청자료
+                      </h5>
+                      {industryReqs.map((req) => {
+                        const reqChecklist = getChecklistProgress(task, req.items);
+                        return (
+                          <div key={req.title} className="space-y-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-medium">{req.title}</span>
+                              <span className="text-[10px] text-muted-foreground ml-auto">
+                                {reqChecklist.completed}/{reqChecklist.total}
+                              </span>
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </>
-                )}
+                            <p className="text-[10px] text-muted-foreground">
+                              {req.description}
+                            </p>
+                            {reqChecklist.itemStates.map(({ item, done }) => (
+                              <ChecklistItemRow key={item.id} item={item} done={done} />
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
 
-                {/* 세무사 검토 노트 */}
-                {task.review_notes && (task.review_notes as unknown[]).length > 0 && (
-                  <div className="p-2.5 rounded-lg bg-muted/50 border border-border/50">
-                    <p className="text-[10px] font-medium mb-1">세무사 검토 메모</p>
-                    {(task.review_notes as { note: string; date: string }[]).map((note, i) => (
-                      <p key={i} className="text-[10px] text-muted-foreground">
-                        • {note.note || String(note)}
-                      </p>
-                    ))}
-                  </div>
-                )}
+              {/* 세무사 검토 노트 */}
+              {task.review_notes && (task.review_notes as unknown[]).length > 0 && (
+                <div className="p-2.5 rounded-lg bg-muted/50 border border-border/50">
+                  <p className="text-[10px] font-medium mb-1">세무사 검토 메모</p>
+                  {(task.review_notes as { note: string; date: string }[]).map((note, i) => (
+                    <p key={i} className="text-[10px] text-muted-foreground">
+                      • {note.note || String(note)}
+                    </p>
+                  ))}
+                </div>
+              )}
 
-                {/* 신고 완료 표시 */}
-                {task.status === "submitted" && task.submitted_at && (
-                  <div className="flex items-center gap-1.5 text-xs text-primary">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {format(new Date(task.submitted_at), "yyyy.MM.dd")} 신고 완료
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              {/* 신고 완료 표시 */}
+              {task.status === "submitted" && task.submitted_at && (
+                <div className="flex items-center gap-1.5 text-xs text-primary">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {format(new Date(task.submitted_at), "yyyy.MM.dd")} 신고 완료
+                </div>
+              )}
+            </CardContent>
+          </Card>
         );
       })}
-
     </div>
   );
 }
