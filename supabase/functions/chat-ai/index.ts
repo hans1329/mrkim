@@ -640,9 +640,9 @@ function classifyByKeyword(text: string, dbKeywords: { intent: string; keywords:
   // 2차: 세무 전문 상담 감지 (세무사 연결 필요 판단)
   const TAX_CONSULTATION_PATTERNS = [
     /세무사.*(상담|문의|질문|물어|연결|소개|추천)/,
-    /절세.*(방법|전략|상담|도움)/,
+    /절세.*(방법|전략|상담|도움|알려)/,
     /종소세.*(신고|준비|도움|상담)/,
-    /부가세.*(신고|납부|기한|마감|환급).*(도움|상담|어떻게|방법)/,
+    /부가세.*(절세|신고|납부|기한|마감|환급).*(도움|상담|어떻게|방법|알려)/,
     /세무.*(상담|전문|도움|질문)/,
     /세금.*(줄이|절약|아끼|절세|상담|전문)/,
     /법인세.*(신고|준비|도움)/,
@@ -652,6 +652,11 @@ function classifyByKeyword(text: string, dbKeywords: { intent: string; keywords:
     /기장.*(대행|맡기|위탁|의뢰)/,
   ];
   const needsTaxConsultation = TAX_CONSULTATION_PATTERNS.some(p => p.test(t));
+
+  // DB 키워드 매칭 결과가 있으면 세무 상담 플래그와 합쳐서 반환
+  if (dbKeywordMatch) {
+    return { ...dbKeywordMatch, timePeriod, needsTaxConsultation };
+  }
 
   // 3차: 금융 키워드 직접 매칭 (기간 불필요)
   if (/손익|순이익|이익|적자|흑자|수익|마진|영업이익|순수익|현금흐름|현금\s*흐름|캐시플로|자금흐름|자금\s*사정|자금\s*현황|돈\s*흐름|자금\s*상황|현금\s*상황/.test(t)) {
