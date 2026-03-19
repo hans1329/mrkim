@@ -1252,17 +1252,36 @@ ${voiceDataInst}`;
   const firstCandidate = firstResult.candidates?.[0];
   const firstParts = firstCandidate?.content?.parts || [];
 
-  // 도구 호출이 없으면 일반 텍스트 응답 반환
-  const functionCalls = firstParts.filter((p: any) => p.functionCall);
-  if (functionCalls.length === 0) {
-    const textResponse = firstParts.find((p: any) => p.text)?.text || "데이터를 분석할 수 없습니다.";
-    return { response: textResponse };
+  // 도구 호출이 없으면 세무 질문에 한해 서버 강제 fallback 실행
+  let effectiveFunctionCalls = functionCalls;
+  if (effectiveFunctionCalls.length === 0) {
+    const lowerLastMsg = lastMsg.toLowerCase();
+    const forcedToolNames: Array<{ name: string; args: Record<string, unknown> }> = [];
+
+    if (/부가세|부가가치세|세금계산서|매출세액|매입세액|절세/.test(lowerLastMsg)) {
+      forcedToolNames.push({ name: "get_tax_accountant", args: {} });
+      forcedToolNames.push({ name: "get_tax_invoices", args: { period_type: "month" } });
+    } else if (/신고\s*(일정|마감|준비)|종소세|원천징수/.test(lowerLastMsg)) {
+      forcedToolNames.push({ name: "get_tax_accountant", args: {} });
+      forcedToolNames.push({ name: "get_filing_tasks", args: {} });
+    } else if (/상담\s*(내역|기록|요청)|세무\s*상담/.test(lowerLastMsg)) {
+      forcedToolNames.push({ name: "get_tax_accountant", args: {} });
+      forcedToolNames.push({ name: "get_consultations", args: { limit: 5 } });
+    }
+
+    if (forcedToolNames.length === 0) {
+      const textResponse = firstParts.find((p: any) => p.text)?.text || "데이터를 분석할 수 없습니다.";
+      return { response: textResponse };
+    }
+
+    console.log(`Complex query: forcing ${forcedToolNames.length} tax tool calls`);
+    effectiveFunctionCalls = forcedToolNames.map(({ name, args }) => ({ functionCall: { name, args } }));
   }
 
   // 2단계: 도구 실행 (병렬)
-  console.log(`Complex query: executing ${functionCalls.length} tool calls`);
+  console.log(`Complex query: executing ${effectiveFunctionCalls.length} tool calls`);
   const toolResults = await Promise.all(
-    functionCalls.map(async (part: any) => {
+    effectiveFunctionCalls.map(async (part: any) => {
       const { name, args } = part.functionCall;
       console.log(`  Tool: ${name}`, JSON.stringify(args));
       const result = await executeToolCall(name, args, userId, authHeader);
@@ -1273,8 +1292,8 @@ ${voiceDataInst}`;
   // 3단계: 도구 결과를 Gemini에 피드백
   const followUpContents = [
     ...contents,
-    firstCandidate.content, // Gemini의 tool call 요청
-    { role: "user", parts: toolResults }, // 도구 결과
+    firstCandidate.content,
+    { role: "user", parts: toolResults },
   ];
 
   await waitForSlot();
@@ -1300,8 +1319,8 @@ ${voiceDataInst}`;
 
   // 시각화: 첫 번째 tool call 결과 기반으로 생성
   let visualization: Visualization | null = null;
-  if (functionCalls.length > 0) {
-    const firstToolName = functionCalls[0].functionCall.name;
+  if (effectiveFunctionCalls.length > 0) {
+    const firstToolName = effectiveFunctionCalls[0].functionCall.name;
     const toolToSource: Record<string, DataSource> = {
       get_transactions: "transaction",
       get_employees: "employee",
