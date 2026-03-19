@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,6 @@ import {
   X,
   CheckCircle2,
   Star,
-  Filter,
 } from "lucide-react";
 import { type TaxAccountant, type TaxAccountantAssignment } from "@/hooks/useTaxAccountant";
 import { cn } from "@/lib/utils";
@@ -37,17 +36,67 @@ interface MatchingTabProps {
   loading?: boolean;
 }
 
+// 멀티팩터 스코어링: 업종 매칭 + 지역 + 가격 정보 유무
+function scoreAccountant(
+  accountant: TaxAccountant,
+  businessType: string | null,
+): number {
+  let score = 0;
+
+  // 업종 매칭 (최대 40점)
+  if (businessType && accountant.industry_types?.includes(businessType)) {
+    score += 40;
+  }
+
+  // 전문 분야 다양성 (최대 15점)
+  const specialtyCount = accountant.specialties?.length || 0;
+  score += Math.min(specialtyCount * 5, 15);
+
+  // 가격 정보 투명성 (10점)
+  if (accountant.pricing_info && Object.keys(accountant.pricing_info).length > 0) {
+    score += 10;
+  }
+
+  // 지역 정보 (5점)
+  if (accountant.region) {
+    score += 5;
+  }
+
+  // 소개글 (5점)
+  if (accountant.bio) {
+    score += 5;
+  }
+
+  // 프로필 이미지 (5점)
+  if (accountant.profile_image_url) {
+    score += 5;
+  }
+
+  // 소속 사무소 (5점)
+  if (accountant.firm_name) {
+    score += 5;
+  }
+
+  return score;
+}
+
 function AccountantCard({
   accountant,
   isAssigned,
+  isRecommended,
   onSelect,
 }: {
   accountant: TaxAccountant;
   isAssigned: boolean;
+  isRecommended: boolean;
   onSelect: (a: TaxAccountant) => void;
 }) {
   return (
-    <Card className={cn("transition-all", isAssigned && "ring-2 ring-primary")}>
+    <Card className={cn(
+      "transition-all",
+      isAssigned && "ring-2 ring-primary",
+      isRecommended && !isAssigned && "border-primary/30 bg-primary/[0.02]",
+    )}>
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -67,6 +116,11 @@ function AccountantCard({
               {isAssigned && (
                 <Badge variant="default" className="text-[10px] px-1.5 py-0">
                   담당
+                </Badge>
+              )}
+              {isRecommended && !isAssigned && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 text-primary">
+                  추천
                 </Badge>
               )}
             </div>
@@ -100,7 +154,6 @@ function AccountantCard({
                 ))}
               </div>
             )}
-            {/* 가격 정보 */}
             {accountant.pricing_info && Object.keys(accountant.pricing_info).length > 0 && (
               <div className="mt-2 text-xs text-muted-foreground">
                 {(accountant.pricing_info as Record<string, unknown>).monthly_fee && (
@@ -145,17 +198,24 @@ export default function MatchingTab({
   const [confirmTarget, setConfirmTarget] = useState<TaxAccountant | null>(null);
   const [selecting, setSelecting] = useState(false);
 
-  // 업종 기반 추천: 매칭되는 세무사를 상위에, 나머지를 하위에
-  const sortedAccountants = [...accountants].sort((a, b) => {
-    if (!businessType) return 0;
-    const aMatch = a.industry_types?.includes(businessType) ? 1 : 0;
-    const bMatch = b.industry_types?.includes(businessType) ? 1 : 0;
-    return bMatch - aMatch;
-  });
+  // 멀티팩터 스코어링 기반 정렬
+  const { sorted, recommendedIds } = useMemo(() => {
+    const scored = accountants.map(a => ({
+      accountant: a,
+      score: scoreAccountant(a, businessType),
+    }));
+    scored.sort((a, b) => b.score - a.score);
 
-  const recommendedCount = businessType
-    ? sortedAccountants.filter((a) => a.industry_types?.includes(businessType)).length
-    : 0;
+    // 상위 30% 또는 최소 업종 매칭된 항목을 '추천'으로 표시
+    const threshold = businessType ? 40 : 30; // 업종 매칭 시 40점 이상
+    const ids = new Set(
+      scored.filter(s => s.score >= threshold).map(s => s.accountant.id)
+    );
+
+    return { sorted: scored.map(s => s.accountant), recommendedIds: ids };
+  }, [accountants, businessType]);
+
+  const recommendedCount = recommendedIds.size;
 
   const handleConfirm = async () => {
     if (!confirmTarget) return;
@@ -246,32 +306,34 @@ export default function MatchingTab({
       )}
 
       {/* 세무사 목록 */}
-      {sortedAccountants.length > 0 ? (
+      {sorted.length > 0 ? (
         <div className="space-y-3">
           {recommendedCount > 0 && (
             <>
               <h3 className="text-sm font-semibold text-primary px-1 flex items-center gap-1.5">
                 <Star className="h-3.5 w-3.5" />
-                {businessType} 전문 추천 ({recommendedCount}명)
+                {businessType ? `${businessType} 전문 추천` : "추천 세무사"} ({recommendedCount}명)
               </h3>
-              {sortedAccountants.slice(0, recommendedCount).map((accountant) => (
+              {sorted.filter(a => recommendedIds.has(a.id)).map((accountant) => (
                 <AccountantCard
                   key={accountant.id}
                   accountant={accountant}
                   isAssigned={assignment?.accountant_id === accountant.id}
+                  isRecommended={true}
                   onSelect={setConfirmTarget}
                 />
               ))}
-              {sortedAccountants.length > recommendedCount && (
+              {sorted.length > recommendedCount && (
                 <h3 className="text-sm font-semibold text-muted-foreground px-1 pt-2">
                   기타 세무사
                 </h3>
               )}
-              {sortedAccountants.slice(recommendedCount).map((accountant) => (
+              {sorted.filter(a => !recommendedIds.has(a.id)).map((accountant) => (
                 <AccountantCard
                   key={accountant.id}
                   accountant={accountant}
                   isAssigned={assignment?.accountant_id === accountant.id}
+                  isRecommended={false}
                   onSelect={setConfirmTarget}
                 />
               ))}
@@ -282,11 +344,12 @@ export default function MatchingTab({
               <h3 className="text-sm font-semibold text-muted-foreground px-1">
                 추천 세무사
               </h3>
-              {sortedAccountants.map((accountant) => (
+              {sorted.map((accountant) => (
                 <AccountantCard
                   key={accountant.id}
                   accountant={accountant}
                   isAssigned={assignment?.accountant_id === accountant.id}
+                  isRecommended={false}
                   onSelect={setConfirmTarget}
                 />
               ))}
