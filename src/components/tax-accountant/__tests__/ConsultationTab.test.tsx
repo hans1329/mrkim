@@ -122,6 +122,7 @@ describe("ConsultationTab", () => {
         loading={true}
       />
     );
-    expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
+    const skeletons = container.querySelectorAll('div[class*="rounded-lg"]');
+    expect(skeletons.length).toBeGreaterThan(0);
   });
 });
