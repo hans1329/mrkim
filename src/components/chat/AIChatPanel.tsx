@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { QuotaExhaustedModal } from "./QuotaExhaustedModal";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,14 +15,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Bot, Send, X, MessageCircle, Sparkles, RotateCcw, History, Plus, Database, RefreshCw } from "lucide-react";
+import { Bot, Send, X, MessageCircle, Sparkles, RotateCcw, History, Plus, Database, RefreshCw, FileText, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { DataVisualization } from "./DataVisualization";
 import { useChat } from "@/contexts/ChatContext";
-import { useAIChat } from "@/hooks/useAIChat";
+import { useAIChat, type SuggestedAction } from "@/hooks/useAIChat";
 import { ChatSessionList } from "./ChatSessionList";
 import { isToday } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const quickCommandGroups = [
   { label: "📊 매출/지출", commands: ["오늘 매출 얼마야?", "이번 달 지출 현황", "지난달 매출 비교"] },
