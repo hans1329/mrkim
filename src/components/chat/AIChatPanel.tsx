@@ -32,6 +32,14 @@ const quickCommandGroups = [
   { label: "📋 종합", commands: ["이번 달 경영 현황 알려줘", "할 일 뭐 있어?", "오늘 브리핑해줘"] },
 ];
 
+// 세무사 관련 퀵액션
+const taxQuickCommands = [
+  "내 담당 세무사 누구야?",
+  "신고 일정 확인해줘",
+  "세무 상담 기록 보여줘",
+  "부가세 절세 방법 알려줘",
+];
+
 // 플랫 목록 (기본 표시용)
 const defaultQuickCommands = [
   "오늘 매출 얼마야?",
@@ -367,8 +375,23 @@ export function AIChatPanel() {
           </ScrollArea>
 
           {!isViewingPastSession && (
-            <div className="border-t px-4 py-2">
-              <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="border-t px-4 py-2 space-y-1.5">
+              {/* 세무사 퀵액션 */}
+              <div className="flex gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {taxQuickCommands.map((cmd) => (
+                  <Button
+                    key={cmd}
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 text-xs border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                    onClick={() => handleQuickCommand(cmd)}
+                  >
+                    🧾 {cmd}
+                  </Button>
+                ))}
+              </div>
+              {/* 일반 퀵커맨드 */}
+              <div className="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {defaultQuickCommands.map((cmd) => (
                   <Button
                     key={cmd}

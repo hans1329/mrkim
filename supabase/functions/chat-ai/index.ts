@@ -1482,7 +1482,7 @@ serve(async (req) => {
 
     // ━━━ Case 0: 복합 질문 또는 세무사 관련 → Tool Calling 파이프라인 ━━━
     const complexQuery = isComplexQuery(lastMsg);
-    const isTaxAccountantQuery = /세무사|담당\s*세무|신고\s*(일정|마감|준비)|상담\s*(내역|기록|요청)|세무\s*상담/.test(lastMsg.toLowerCase());
+    const isTaxAccountantQuery = /세무사|담당\s*세무|신고\s*(일정|마감|준비)|상담\s*(내역|기록|요청)|세무\s*상담|절세|종소세|원천징수|기장\s*(대행|맡기)/.test(lastMsg.toLowerCase()) || !!classified.needsTaxConsultation;
     const useToolCalling = complexQuery || isTaxAccountantQuery;
     // 음성 모드: 세무사 질문만 Tool Calling 허용 (복합 질문은 레이턴시 이슈로 제외)
     if (useToolCalling && (!voiceMode || isTaxAccountantQuery)) {
