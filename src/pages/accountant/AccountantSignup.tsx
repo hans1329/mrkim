@@ -37,6 +37,7 @@ export default function AccountantSignup() {
   const [bio, setBio] = useState("");
 
   const allRulesPass = PASSWORD_RULES.every(r => r.test(password));
+  const passwordsMatch = password === passwordConfirm;
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
