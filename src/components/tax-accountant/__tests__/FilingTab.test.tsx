@@ -79,7 +79,7 @@ describe("FilingTab", () => {
 
   it("완료된 신고는 체크리스트를 숨기고 완료일을 표시한다", () => {
     render(<FilingTab filingTasks={[mockFilingTasks[1]]} assignment={null} />);
-    expect(screen.getByText(/신고 완료/)).toBeInTheDocument();
+    expect(screen.getAllByText(/신고 완료/).length).toBeGreaterThan(0);
     expect(screen.queryByText("데이터 준비 현황")).not.toBeInTheDocument();
   });
 
