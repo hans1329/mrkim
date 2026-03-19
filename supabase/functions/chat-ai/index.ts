@@ -1342,7 +1342,8 @@ serve(async (req) => {
       if (missingSource) {
         console.log("Connection required:", missingSource);
         return new Response(
-          JSON.stringify({ response: buildConnectionRequiredResponse(missingSource, voiceMode), requiresConnection: true, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }),
+          JSON.stringify({ response: buildConnectionRequiredResponse(missingSource, voiceMode), requiresConnection: true, taxConsultationCreated, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
     }
