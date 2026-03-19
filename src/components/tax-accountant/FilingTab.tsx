@@ -449,14 +449,14 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
 
         return (
           <Card key={task.id}>
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="p-3 sm:p-4 space-y-2.5 sm:space-y-3">
               {/* 헤더 */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="text-sm font-semibold">{task.filing_type}</h4>
-                  <p className="text-xs text-muted-foreground">{task.tax_period}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h4 className="text-[13px] sm:text-sm font-semibold truncate">{task.filing_type}</h4>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground">{task.tax_period}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   <DeadlineBadge deadline={task.deadline} />
                   <Badge variant={statusConfig.variant} className="text-[10px]">
                     {statusConfig.label}
