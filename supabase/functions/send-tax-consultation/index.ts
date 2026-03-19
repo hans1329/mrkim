@@ -45,10 +45,168 @@ interface TaxDataPackage {
     autoSource: string | null;
     coverage: number | null;
   }[];
+  downloadLinks?: { label: string; url: string; description: string }[];
 }
 
 function formatAmount(amount: number): string {
   return amount.toLocaleString("ko-KR");
+}
+
+// ====== CSV Generators ======
+
+function generateTransactionsCsv(transactions: { transaction_date: string; type: string; description: string; amount: number; category: string | null; merchant_name: string | null; source_type: string }[]): string {
+  const header = "거래일자,유형,설명,금액,카테고리,거래처,출처";
+  const rows = transactions.map(tx =>
+    [tx.transaction_date, tx.type === "income" ? "수입" : "지출", `"${(tx.description || "").replace(/"/g, '""')}"`, tx.amount, tx.category || "미분류", `"${(tx.merchant_name || "").replace(/"/g, '""')}"`, tx.source_type].join(",")
+  );
+  return "\uFEFF" + [header, ...rows].join("\n");
+}
+
+function generateInvoicesCsv(invoices: { invoice_date: string; invoice_type: string; supplier_name: string | null; buyer_name: string | null; supply_amount: number; tax_amount: number; total_amount: number; item_name: string | null }[]): string {
+  const header = "발행일,유형,공급자,공급받는자,공급가액,세액,합계,품목";
+  const rows = invoices.map(inv =>
+    [inv.invoice_date, inv.invoice_type === "sales" ? "매출" : "매입", `"${(inv.supplier_name || "").replace(/"/g, '""')}"`, `"${(inv.buyer_name || "").replace(/"/g, '""')}"`, inv.supply_amount, inv.tax_amount, inv.total_amount, `"${(inv.item_name || "").replace(/"/g, '""')}"`].join(",")
+  );
+  return "\uFEFF" + [header, ...rows].join("\n");
+}
+
+function generateDeliveryOrdersCsv(orders: { order_dt: string | null; order_tm: string | null; platform: string; order_name: string | null; total_amt: number | null; settle_amt: number | null; order_fee: number | null; delivery_amt: number | null }[]): string {
+  const header = "주문일자,주문시간,플랫폼,주문명,총액,정산액,수수료,배달비";
+  const rows = orders.map(o =>
+    [o.order_dt || "", o.order_tm || "", o.platform, `"${(o.order_name || "").replace(/"/g, '""')}"`, o.total_amt || 0, o.settle_amt || 0, o.order_fee || 0, o.delivery_amt || 0].join(",")
+  );
+  return "\uFEFF" + [header, ...rows].join("\n");
+}
+
+function generateEmployeesCsv(employees: { name: string; employee_type: string; status: string; monthly_salary: number | null; start_date: string | null; insurance_health: boolean | null; insurance_national_pension: boolean | null; insurance_employment: boolean | null; insurance_industrial: boolean | null }[]): string {
+  const header = "이름,고용형태,재직상태,월급여,입사일,건강보험,국민연금,고용보험,산재보험";
+  const rows = employees.map(e =>
+    [e.name, e.employee_type, e.status, e.monthly_salary || 0, e.start_date || "", e.insurance_health ? "O" : "X", e.insurance_national_pension ? "O" : "X", e.insurance_employment ? "O" : "X", e.insurance_industrial ? "O" : "X"].join(",")
+  );
+  return "\uFEFF" + [header, ...rows].join("\n");
+}
+
+// ====== Upload CSVs and get signed URLs ======
+
+async function uploadDataPackageFiles(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  startDate: string,
+  endDate: string,
+  periodLabel: string
+): Promise<{ label: string; url: string; description: string }[]> {
+  const timestamp = Date.now();
+  const folder = `${userId}/${timestamp}`;
+  const links: { label: string; url: string; description: string }[] = [];
+  const SIGNED_URL_EXPIRY = 7 * 24 * 60 * 60; // 7 days
+
+  // 1. Transactions CSV
+  const { data: txData } = await supabase
+    .from("transactions")
+    .select("transaction_date, type, description, amount, category, merchant_name, source_type")
+    .eq("user_id", userId)
+    .gte("transaction_date", startDate)
+    .lte("transaction_date", endDate)
+    .order("transaction_date", { ascending: true });
+
+  if (txData && txData.length > 0) {
+    const csv = generateTransactionsCsv(txData);
+    const path = `${folder}/거래내역_${periodLabel}.csv`;
+    const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
+    if (!error) {
+      const { data: signedData } = await supabase.storage.from("tax-filing-packages").createSignedUrl(path, SIGNED_URL_EXPIRY);
+      if (signedData?.signedUrl) {
+        links.push({ label: "거래내역", url: signedData.signedUrl, description: `${txData.length}건 (${periodLabel})` });
+      }
+    }
+  }
+
+  // 2. Tax Invoices CSV
+  const { data: invData } = await supabase
+    .from("tax_invoices")
+    .select("invoice_date, invoice_type, supplier_name, buyer_name, supply_amount, tax_amount, total_amount, item_name")
+    .eq("user_id", userId)
+    .gte("invoice_date", startDate)
+    .lte("invoice_date", endDate)
+    .order("invoice_date", { ascending: true });
+
+  if (invData && invData.length > 0) {
+    const csv = generateInvoicesCsv(invData);
+    const path = `${folder}/세금계산서_${periodLabel}.csv`;
+    const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
+    if (!error) {
+      const { data: signedData } = await supabase.storage.from("tax-filing-packages").createSignedUrl(path, SIGNED_URL_EXPIRY);
+      if (signedData?.signedUrl) {
+        links.push({ label: "세금계산서", url: signedData.signedUrl, description: `${invData.length}건 (${periodLabel})` });
+      }
+    }
+  }
+
+  // 3. Delivery Orders CSV
+  const { data: delData } = await supabase
+    .from("delivery_orders")
+    .select("order_dt, order_tm, platform, order_name, total_amt, settle_amt, order_fee, delivery_amt")
+    .eq("user_id", userId)
+    .gte("order_dt", startDate.replace(/-/g, ""))
+    .lte("order_dt", endDate.replace(/-/g, ""))
+    .order("order_dt", { ascending: true });
+
+  if (delData && delData.length > 0) {
+    const csv = generateDeliveryOrdersCsv(delData);
+    const path = `${folder}/배달주문내역_${periodLabel}.csv`;
+    const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
+    if (!error) {
+      const { data: signedData } = await supabase.storage.from("tax-filing-packages").createSignedUrl(path, SIGNED_URL_EXPIRY);
+      if (signedData?.signedUrl) {
+        links.push({ label: "배달앱 주문내역", url: signedData.signedUrl, description: `${delData.length}건 (${periodLabel})` });
+      }
+    }
+  }
+
+  // 4. Employees CSV
+  const { data: empData } = await supabase
+    .from("employees")
+    .select("name, employee_type, status, monthly_salary, start_date, insurance_health, insurance_national_pension, insurance_employment, insurance_industrial")
+    .eq("user_id", userId)
+    .eq("status", "재직");
+
+  if (empData && empData.length > 0) {
+    const csv = generateEmployeesCsv(empData);
+    const path = `${folder}/직원현황.csv`;
+    const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
+    if (!error) {
+      const { data: signedData } = await supabase.storage.from("tax-filing-packages").createSignedUrl(path, SIGNED_URL_EXPIRY);
+      if (signedData?.signedUrl) {
+        links.push({ label: "직원 현황", url: signedData.signedUrl, description: `${empData.length}명` });
+      }
+    }
+  }
+
+  return links;
+}
+
+// ====== Email HTML builders ======
+
+function buildDownloadLinksHtml(links: { label: string; url: string; description: string }[]): string {
+  if (!links || links.length === 0) return "";
+  const rows = links.map(link => `
+    <tr>
+      <td style="padding:10px 12px;border-bottom:1px solid #eee;">
+        <a href="${link.url}" style="color:#2563eb;text-decoration:none;font-weight:600;font-size:14px;">📥 ${link.label}</a>
+        <div style="color:#94a3b8;font-size:12px;margin-top:2px;">${link.description}</div>
+      </td>
+    </tr>
+  `).join("");
+
+  return `
+    <h2 style="font-size:16px;margin:24px 0 12px;">📎 상세 데이터 다운로드</h2>
+    <div style="background:#f0f9ff;padding:12px;border-radius:8px;margin-bottom:8px;">
+      <p style="margin:0;font-size:12px;color:#1e40af;">⏰ 다운로드 링크는 7일간 유효합니다. 기한 내에 다운로드해 주세요.</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;border:1px solid #e5e7eb;border-radius:8px;">
+      ${rows}
+    </table>
+  `;
 }
 
 function buildFilingEmailHtml(
@@ -76,6 +234,8 @@ function buildFilingEmailHtml(
     })
     .join("");
 
+  const downloadSection = buildDownloadLinksHtml(dataPackage.downloadLinks || []);
+
   return `
 <!DOCTYPE html>
 <html>
@@ -102,6 +262,8 @@ function buildFilingEmailHtml(
       ${checklistRows}
     </table>
     ` : ""}
+
+    ${downloadSection}
 
     <h2 style="font-size:16px;margin:0 0 12px;">💰 매출/매입 요약 (${dataPackage.summary?.period || "해당 기간"})</h2>
     <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
@@ -245,6 +407,8 @@ function buildConsultationEmailHtml(
 </html>`;
 }
 
+// ====== Main handler ======
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -252,9 +416,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY is not configured");
-    }
+    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY is not configured");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -276,7 +438,6 @@ Deno.serve(async (req: Request) => {
       throw new Error("consultationId 또는 filingTaskId가 필요합니다");
     }
 
-    // 사장님 프로필 조회
     const { data: profile } = await supabaseClient
       .from("profiles")
       .select("business_name, business_registration_number, business_type, name")
@@ -287,7 +448,6 @@ Deno.serve(async (req: Request) => {
 
     // ========== 신고 자료 전달 모드 ==========
     if (filingTaskId) {
-      // 배정된 세무사 조회
       const { data: assignment } = await supabaseClient
         .from("tax_accountant_assignments")
         .select("accountant_id")
@@ -296,9 +456,7 @@ Deno.serve(async (req: Request) => {
         .limit(1)
         .maybeSingle();
 
-      if (!assignment?.accountant_id) {
-        throw new Error("담당 세무사를 먼저 배정해주세요");
-      }
+      if (!assignment?.accountant_id) throw new Error("담당 세무사를 먼저 배정해주세요");
 
       const { data: accountant } = await supabaseClient
         .from("tax_accountants")
@@ -306,11 +464,8 @@ Deno.serve(async (req: Request) => {
         .eq("id", assignment.accountant_id)
         .single();
 
-      if (!accountant?.email) {
-        throw new Error("세무사 이메일을 찾을 수 없습니다");
-      }
+      if (!accountant?.email) throw new Error("세무사 이메일을 찾을 수 없습니다");
 
-      // 신고 태스크 정보 (데모 태스크 처리)
       let filingType = "부가가치세 확정신고";
       let taxPeriod = "2025년 2기 (7월~12월)";
       let deadline = "2026-01-16";
@@ -322,7 +477,6 @@ Deno.serve(async (req: Request) => {
           .eq("id", filingTaskId)
           .eq("user_id", user.id)
           .single();
-        
         if (filingTask) {
           filingType = filingTask.filing_type;
           taxPeriod = filingTask.tax_period;
@@ -330,36 +484,32 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // 데이터 수집 (신고 기간 전체)
+      // Parse period for date range
+      const { startDate, endDate, periodLabel } = parseTaxPeriod(taxPeriod);
+
+      // Collect summary data
       const dataPackage = await collectDataPackage(supabaseClient, user.id, profile, taxPeriod);
 
-      // 체크리스트 정보 추가
       if (checklist && Array.isArray(checklist)) {
         dataPackage.checklist = checklist;
       }
 
-      const emailHtml = buildFilingEmailHtml(
-        businessName as string,
-        filingType,
-        taxPeriod,
-        deadline,
-        dataPackage
-      );
+      // Upload CSV files and get signed download links
+      const downloadLinks = await uploadDataPackageFiles(supabaseClient, user.id, startDate, endDate, periodLabel);
+      dataPackage.downloadLinks = downloadLinks;
+
+      const emailHtml = buildFilingEmailHtml(businessName as string, filingType, taxPeriod, deadline, dataPackage);
 
       if (preview) {
         return new Response(
-          JSON.stringify({ success: true, html: emailHtml, accountantName: accountant.name, accountantEmail: accountant.email }),
+          JSON.stringify({ success: true, html: emailHtml, accountantName: accountant.name, accountantEmail: accountant.email, downloadLinks }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      // Resend로 발송
       const resendResponse = await fetch("https://api.resend.com/emails", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
         body: JSON.stringify({
           from: "김비서 <noreply@mrkim.today>",
           to: [accountant.email],
@@ -374,7 +524,6 @@ Deno.serve(async (req: Request) => {
         throw new Error(`이메일 발송 실패: ${resendResponse.status}`);
       }
 
-      // 신고 태스크 상태 업데이트
       if (!filingTaskId.startsWith("demo-")) {
         await supabaseClient
           .from("tax_filing_tasks")
@@ -396,9 +545,7 @@ Deno.serve(async (req: Request) => {
       .eq("user_id", user.id)
       .single();
 
-    if (consultationError || !consultation) {
-      throw new Error("상담 정보를 찾을 수 없습니다");
-    }
+    if (consultationError || !consultation) throw new Error("상담 정보를 찾을 수 없습니다");
 
     let accountantEmail = "";
     let accountantName = "";
@@ -414,26 +561,15 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    if (!accountantEmail) {
-      throw new Error("세무사 이메일을 찾을 수 없습니다. 담당 세무사를 먼저 배정해주세요.");
-    }
+    if (!accountantEmail) throw new Error("세무사 이메일을 찾을 수 없습니다. 담당 세무사를 먼저 배정해주세요.");
 
     let dataPackage = consultation.data_package as TaxDataPackage;
     if (!dataPackage || Object.keys(dataPackage).length === 0) {
       dataPackage = await collectDataPackage(supabaseClient, user.id, profile);
-      await supabaseClient
-        .from("tax_consultations")
-        .update({ data_package: dataPackage })
-        .eq("id", consultationId);
+      await supabaseClient.from("tax_consultations").update({ data_package: dataPackage }).eq("id", consultationId);
     }
 
-    const emailHtml = buildConsultationEmailHtml(
-      businessName as string,
-      consultation.subject,
-      consultation.user_question,
-      consultation.ai_preliminary_answer,
-      dataPackage
-    );
+    const emailHtml = buildConsultationEmailHtml(businessName as string, consultation.subject, consultation.user_question, consultation.ai_preliminary_answer, dataPackage);
 
     if (preview) {
       return new Response(
@@ -444,10 +580,7 @@ Deno.serve(async (req: Request) => {
 
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
       body: JSON.stringify({
         from: "김비서 <noreply@mrkim.today>",
         to: [accountantEmail],
@@ -464,10 +597,7 @@ Deno.serve(async (req: Request) => {
 
     await supabaseClient
       .from("tax_consultations")
-      .update({
-        status: "sent",
-        email_sent_at: new Date().toISOString(),
-      })
+      .update({ status: "sent", email_sent_at: new Date().toISOString() })
       .eq("id", consultationId);
 
     return new Response(
@@ -483,67 +613,41 @@ Deno.serve(async (req: Request) => {
   }
 });
 
+// ====== Helpers ======
+
+function parseTaxPeriod(taxPeriod: string): { startDate: string; endDate: string; periodLabel: string } {
+  const yearMatch = taxPeriod.match(/(\d{4})년/);
+  const monthMatch = taxPeriod.match(/(\d+)월~(\d+)월/);
+  const year = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
+
+  if (monthMatch) {
+    const startMonth = parseInt(monthMatch[1]);
+    const endMonth = parseInt(monthMatch[2]);
+    const startDate = `${year}-${String(startMonth).padStart(2, "0")}-01`;
+    const lastDay = new Date(year, endMonth, 0).getDate();
+    const endDate = `${year}-${String(endMonth).padStart(2, "0")}-${lastDay}`;
+    return { startDate, endDate, periodLabel: `${year}년 ${startMonth}월~${endMonth}월` };
+  }
+
+  const now = new Date();
+  const startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+  const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
+  return { startDate, endDate, periodLabel: `${now.getFullYear()}년 ${now.getMonth() + 1}월` };
+}
+
 async function collectDataPackage(
   supabase: ReturnType<typeof createClient>,
   userId: string,
   profile: Record<string, unknown> | null,
   taxPeriod?: string
 ): Promise<TaxDataPackage> {
-  // 기간 파싱: "2025년 2기 (7월~12월)" → 2025-07-01 ~ 2025-12-31
-  let startDate: string;
-  let endDate: string;
-  let periodLabel: string;
-
-  if (taxPeriod) {
-    const yearMatch = taxPeriod.match(/(\d{4})년/);
-    const monthMatch = taxPeriod.match(/(\d+)월~(\d+)월/);
-    const year = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
-    
-    if (monthMatch) {
-      const startMonth = parseInt(monthMatch[1]);
-      const endMonth = parseInt(monthMatch[2]);
-      startDate = `${year}-${String(startMonth).padStart(2, "0")}-01`;
-      const lastDay = new Date(year, endMonth, 0).getDate();
-      endDate = `${year}-${String(endMonth).padStart(2, "0")}-${lastDay}`;
-      periodLabel = `${year}년 ${startMonth}월~${endMonth}월`;
-    } else {
-      // fallback: 당월
-      const now = new Date();
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
-      periodLabel = `${now.getFullYear()}년 ${now.getMonth() + 1}월`;
-    }
-  } else {
-    const now = new Date();
-    startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
-    periodLabel = `${now.getFullYear()}년 ${now.getMonth() + 1}월`;
-  }
+  const { startDate, endDate, periodLabel } = parseTaxPeriod(taxPeriod || "");
 
   const [txRes, invoiceRes, employeeRes, deliveryRes] = await Promise.all([
-    supabase
-      .from("transactions")
-      .select("type, amount, category")
-      .eq("user_id", userId)
-      .gte("transaction_date", startDate)
-      .lte("transaction_date", endDate),
-    supabase
-      .from("tax_invoices")
-      .select("invoice_type, total_amount, tax_amount")
-      .eq("user_id", userId)
-      .gte("invoice_date", startDate)
-      .lte("invoice_date", endDate),
-    supabase
-      .from("employees")
-      .select("monthly_salary")
-      .eq("user_id", userId)
-      .eq("status", "재직"),
-    supabase
-      .from("delivery_orders")
-      .select("platform, total_amt")
-      .eq("user_id", userId)
-      .gte("order_dt", startDate.replace(/-/g, ""))
-      .lte("order_dt", endDate.replace(/-/g, "")),
+    supabase.from("transactions").select("type, amount, category").eq("user_id", userId).gte("transaction_date", startDate).lte("transaction_date", endDate),
+    supabase.from("tax_invoices").select("invoice_type, total_amount, tax_amount").eq("user_id", userId).gte("invoice_date", startDate).lte("invoice_date", endDate),
+    supabase.from("employees").select("monthly_salary").eq("user_id", userId).eq("status", "재직"),
+    supabase.from("delivery_orders").select("platform, total_amt").eq("user_id", userId).gte("order_dt", startDate.replace(/-/g, "")).lte("order_dt", endDate.replace(/-/g, "")),
   ]);
 
   const transactions = txRes.data || [];
@@ -551,8 +655,7 @@ async function collectDataPackage(
   const employees = employeeRes.data || [];
   const deliveryOrders = deliveryRes.data || [];
 
-  let incomeTotal = 0;
-  let expenseTotal = 0;
+  let incomeTotal = 0, expenseTotal = 0;
   const byCategory: Record<string, number> = {};
   for (const tx of transactions) {
     if (tx.type === "income" || tx.type === "transfer_in") {
@@ -564,25 +667,18 @@ async function collectDataPackage(
     }
   }
 
-  let salesInvoiceCount = 0, purchaseInvoiceCount = 0;
-  let salesInvoiceAmount = 0, purchaseInvoiceAmount = 0;
+  let salesInvoiceCount = 0, purchaseInvoiceCount = 0, salesInvoiceAmount = 0, purchaseInvoiceAmount = 0;
   for (const inv of invoices) {
-    if (inv.invoice_type === "sales") {
-      salesInvoiceCount++;
-      salesInvoiceAmount += inv.total_amount;
-    } else {
-      purchaseInvoiceCount++;
-      purchaseInvoiceAmount += inv.total_amount;
-    }
+    if (inv.invoice_type === "sales") { salesInvoiceCount++; salesInvoiceAmount += inv.total_amount; }
+    else { purchaseInvoiceCount++; purchaseInvoiceAmount += inv.total_amount; }
   }
 
   const deliveryMap = new Map<string, { count: number; total: number }>();
   for (const order of deliveryOrders) {
-    const key = order.platform;
-    const existing = deliveryMap.get(key) || { count: 0, total: 0 };
+    const existing = deliveryMap.get(order.platform) || { count: 0, total: 0 };
     existing.count++;
     existing.total += order.total_amt || 0;
-    deliveryMap.set(key, existing);
+    deliveryMap.set(order.platform, existing);
   }
 
   const totalSalary = employees.reduce((sum, e) => sum + (e.monthly_salary || 0), 0);
@@ -595,33 +691,10 @@ async function collectDataPackage(
       registrationNumber: (profile?.business_registration_number as string) || "",
       type: (profile?.business_type as string) || "",
     },
-    summary: {
-      period: periodLabel,
-      salesTotal,
-      purchaseTotal,
-      vatPayable: Math.round((salesInvoiceAmount - purchaseInvoiceAmount) * 0.1),
-      transactionCount: transactions.length,
-    },
-    taxInvoices: {
-      salesCount: salesInvoiceCount,
-      purchaseCount: purchaseInvoiceCount,
-      salesAmount: salesInvoiceAmount,
-      purchaseAmount: purchaseInvoiceAmount,
-    },
-    transactions: {
-      incomeTotal,
-      expenseTotal,
-      byCategory,
-    },
-    delivery: deliveryMap.size > 0
-      ? Array.from(deliveryMap.entries()).map(([platform, data]) => ({
-          platform,
-          orderCount: data.count,
-          totalAmount: data.total,
-        }))
-      : undefined,
-    employees: employees.length > 0
-      ? { totalCount: employees.length, monthlySalaryTotal: totalSalary }
-      : undefined,
+    summary: { period: periodLabel, salesTotal, purchaseTotal, vatPayable: Math.round((salesInvoiceAmount - purchaseInvoiceAmount) * 0.1), transactionCount: transactions.length },
+    taxInvoices: { salesCount: salesInvoiceCount, purchaseCount: purchaseInvoiceCount, salesAmount: salesInvoiceAmount, purchaseAmount: purchaseInvoiceAmount },
+    transactions: { incomeTotal, expenseTotal, byCategory },
+    delivery: deliveryMap.size > 0 ? Array.from(deliveryMap.entries()).map(([platform, data]) => ({ platform, orderCount: data.count, totalAmount: data.total })) : undefined,
+    employees: employees.length > 0 ? { totalCount: employees.length, monthlySalaryTotal: totalSalary } : undefined,
   };
 }
