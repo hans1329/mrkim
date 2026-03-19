@@ -97,6 +97,7 @@ const App = () => (
                       <Route path="/admin/email" element={<AdminEmail />} />
                       {/* Accountant Portal Routes */}
                       <Route path="/accountant/login" element={<AccountantLogin />} />
+                      <Route path="/accountant/signup" element={<AccountantSignup />} />
                       <Route path="/accountant" element={<AccountantLayout />}>
                         <Route index element={<AccountantDashboard />} />
                         <Route path="clients" element={<AccountantClients />} />
