@@ -1581,6 +1581,7 @@ serve(async (req) => {
           });
         }
 
+        const followUpSuggestions = voiceMode ? [] : generateFollowUpSuggestions(lastMsg, classified.dataSource, !!classified.needsTaxConsultation, true);
         return new Response(JSON.stringify({
           response: complexResult.response,
           visualization: complexResult.visualization || null,
@@ -1588,6 +1589,7 @@ serve(async (req) => {
           taxConsultationCreated,
           consultationId: createdConsultationId,
           suggestedActions: suggestedActions.length > 0 ? suggestedActions : null,
+          followUpSuggestions: followUpSuggestions.length > 0 ? followUpSuggestions : null,
           toolCallingUsed: true,
           quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
         }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
