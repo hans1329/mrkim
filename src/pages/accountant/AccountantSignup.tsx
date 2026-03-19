@@ -281,7 +281,7 @@ export default function AccountantSignup() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading || !allRulesPass}>
+            <Button type="submit" className="w-full" disabled={loading || !allRulesPass || !passwordsMatch}>
               {loading ? "가입 처리 중..." : "회원가입"}
             </Button>
           </form>
