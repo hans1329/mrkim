@@ -79,7 +79,41 @@ export function AIChatPanel() {
   const [input, setInput] = useState("");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showQuotaModal, setShowQuotaModal] = useState(false);
+  const [sendingActions, setSendingActions] = useState<Set<string>>(new Set());
+  const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  const handleSendToAccountant = useCallback(async (consultationId: string) => {
+    setSendingActions(prev => new Set(prev).add(consultationId));
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await supabase.functions.invoke("send-tax-consultation", {
+        body: { consultationId },
+      });
+
+      if (response.error) {
+        toast.error("자료 전달에 실패했습니다");
+        return;
+      }
+
+      const result = response.data;
+      if (result?.success) {
+        setCompletedActions(prev => new Set(prev).add(consultationId));
+        toast.success(`${result.accountantName || "세무사"}님에게 자료가 전달되었습니다`);
+      } else {
+        toast.error(result?.error || "자료 전달에 실패했습니다");
+      }
+    } catch (e) {
+      console.error("Send to accountant error:", e);
+      toast.error("자료 전달 중 오류가 발생했습니다");
+    } finally {
+      setSendingActions(prev => {
+        const next = new Set(prev);
+        next.delete(consultationId);
+        return next;
+      });
+    }
+  }, []);
 
   const scrollToBottom = () => {
     // ScrollArea 내부의 viewport를 찾아서 스크롤
