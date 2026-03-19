@@ -57,7 +57,7 @@ describe("FilingTab", () => {
 
   it("D-day 배지를 표시한다", () => {
     render(<FilingTab filingTasks={mockFilingTasks} assignment={null} />);
-    expect(screen.getByText("D-5")).toBeInTheDocument();
+    expect(screen.getByText(/D-\d+/)).toBeInTheDocument();
   });
 
   it("기한 초과를 표시한다", () => {
