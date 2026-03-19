@@ -1662,7 +1662,8 @@ serve(async (req) => {
       ], voiceMode);
       const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
       console.log(`${classified.dataSource} data response (1 API call)`);
-      return new Response(JSON.stringify({ response, visualization, sources, taxConsultationCreated, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const followUp1 = voiceMode ? [] : generateFollowUpSuggestions(lastMsg, classified.dataSource, !!classified.needsTaxConsultation, true);
+      return new Response(JSON.stringify({ response, visualization, sources, taxConsultationCreated, followUpSuggestions: followUp1.length > 0 ? followUp1 : null, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 데이터 없음
