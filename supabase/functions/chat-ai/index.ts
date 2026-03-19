@@ -1675,7 +1675,8 @@ serve(async (req) => {
       ...geminiMessages,
     ], voiceMode);
     const response = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 응답을 생성하지 못했습니다.";
-    return new Response(JSON.stringify({ response, sources, taxConsultationCreated, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const followUp2 = voiceMode ? [] : generateFollowUpSuggestions(lastMsg, classified.dataSource, !!classified.needsTaxConsultation, false);
+    return new Response(JSON.stringify({ response, sources, taxConsultationCreated, followUpSuggestions: followUp2.length > 0 ? followUp2 : null, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (error: any) {
     console.error("=== Gemini Error ===", error?.status, error?.body);
