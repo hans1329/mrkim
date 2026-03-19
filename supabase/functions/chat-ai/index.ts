@@ -1268,7 +1268,7 @@ ${voiceDataInst}`;
   // 2단계: 도구 실행 (병렬)
   console.log(`Complex query: executing ${functionCalls.length} tool calls`);
   const toolResults = await Promise.all(
-    effectiveFunctionCalls.map(async (part: any) => {
+    functionCalls.map(async (part: any) => {
       const { name, args } = part.functionCall;
       console.log(`  Tool: ${name}`, JSON.stringify(args));
       const result = await executeToolCall(name, args, userId, authHeader);
