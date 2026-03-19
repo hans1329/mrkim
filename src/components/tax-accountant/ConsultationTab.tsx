@@ -246,16 +246,19 @@ export default function ConsultationTab({
                         발송 대상: {assignment.accountant.email}
                       </p>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full text-xs"
-                      disabled={sendingId === c.id}
-                      onClick={() => handleSendEmail(c.id)}
-                    >
-                      <Send className="h-3.5 w-3.5 mr-1.5" />
-                      {sendingId === c.id ? "전달 중..." : "세무사에게 이메일 전달"}
-                    </Button>
+                    <div className="flex gap-2">
+                      <EmailPreviewDialog consultationId={c.id} onSent={onCreated} />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-xs"
+                        disabled={sendingId === c.id}
+                        onClick={() => handleSendEmail(c.id)}
+                      >
+                        <Send className="h-3.5 w-3.5 mr-1.5" />
+                        {sendingId === c.id ? "전달 중..." : "세무사에게 이메일 전달"}
+                      </Button>
+                    </div>
                   </div>
                 )}
 
