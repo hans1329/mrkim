@@ -355,10 +355,11 @@ export function useAIChat() {
       const assistantContent = data.response || "죄송합니다, 응답을 생성하지 못했습니다.";
       const visualization = data.visualization || null;
       const sources = data.sources || null;
+      const suggestedActions = data.suggestedActions || null;
       if (data.quota) setQuota(data.quota);
       
-      // 세무 상담 자동 생성 알림
-      if (data.taxConsultationCreated) {
+      // 세무 상담 자동 생성 알림 (액션 카드가 없을 때만 toast)
+      if (data.taxConsultationCreated && !suggestedActions) {
         toast.info("세무사 상담 요청이 자동으로 등록되었습니다", {
           description: "세무사 탭에서 확인하고 전달할 수 있습니다",
           action: { label: "확인", onClick: () => window.location.href = "/tax-accountant?tab=consultations" },
@@ -375,6 +376,7 @@ export function useAIChat() {
         timestamp: new Date(),
         visualization,
         sources,
+        suggestedActions,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
