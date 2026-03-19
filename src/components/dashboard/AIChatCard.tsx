@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Sparkles, Mic, Clock, Settings, Volume2, VolumeX, X, Loader2 } from "lucide-react";
+import { Send, Sparkles, Mic, Clock, Settings, Volume2, VolumeX, X, Loader2, UserCheck, FileText, MessageSquare } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
 import { josa } from "@/lib/utils";
 import { useChat } from "@/contexts/ChatContext";
