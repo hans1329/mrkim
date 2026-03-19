@@ -21,12 +21,6 @@ interface RealTimeStats {
 }
 const quickPrompts = ["오늘 매출 얼마야?", "급여 현황", "부가세 확인", "이번 달 요약"];
 
-const taxQuickActions = [
-  { label: "담당 세무사", icon: UserCheck, prompt: "내 담당 세무사가 누구야?" },
-  { label: "신고 일정", icon: FileText, prompt: "신고 일정 확인해줘" },
-  { label: "세무 상담", icon: MessageSquare, prompt: "세무 상담 기록 보여줘" },
-];
-
 // 일반 플레이스홀더 메시지
 const defaultPlaceholders = ["오늘 매출이 궁금해요", "이번 달 경영 현황은?", "급여일 언제야?", "할 일이 뭐가 있어?", "부가세 얼마나 모였어?"];
 
