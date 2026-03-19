@@ -131,9 +131,9 @@ export default function AccountantSignup() {
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
             <Briefcase className="w-6 h-6 text-primary" />
           </div>
-          <CardTitle className="text-xl">세무사 회원가입</CardTitle>
+          <CardTitle className="text-xl">파트너 회원가입</CardTitle>
           <CardDescription>
-            김비서 세무사 포털에 가입하세요
+            김비서 파트너에 가입하세요
           </CardDescription>
         </CardHeader>
         <CardContent>

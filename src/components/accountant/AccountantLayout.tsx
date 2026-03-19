@@ -29,7 +29,7 @@ export function AccountantLayout() {
           <header className="h-14 flex items-center border-b px-4 gap-3">
             <SidebarTrigger />
             <span className="text-sm font-medium text-muted-foreground">
-              {accountant.firm_name || accountant.name} 세무사 포털
+              {accountant.firm_name || accountant.name} · 김비서 파트너
             </span>
           </header>
           <main className="flex-1 p-4 md:p-6 overflow-auto">
