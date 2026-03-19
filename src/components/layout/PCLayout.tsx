@@ -12,7 +12,8 @@ import {
   HelpCircle,
   PanelLeftClose,
   PanelLeft,
-  User
+  User,
+  UserCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ const navItems = [
   { title: "직원", url: "/employees", icon: Users },
   { title: "자금", url: "/funds", icon: Wallet },
   { title: "리포트", url: "/reports", icon: TrendingUp },
+  { title: "세무사", url: "/tax-accountant", icon: UserCheck },
 ];
 
 interface PCLayoutProps {
