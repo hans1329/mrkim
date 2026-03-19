@@ -25,6 +25,7 @@ export default function AccountantSignup() {
   // Auth fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
 
   // Profile fields
   const [name, setName] = useState("");
