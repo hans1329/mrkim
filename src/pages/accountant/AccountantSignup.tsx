@@ -72,11 +72,11 @@ export default function AccountantSignup() {
         return;
       }
 
-      // 2. Create tax_accountants record linked to the auth user
+      // 2. Create tax_accountants record (user_id linked after email confirmation & login)
       const { error: insertError } = await supabase
         .from("tax_accountants")
         .insert({
-          user_id: authData.user.id,
+          user_id: null,
           name,
           email,
           phone: phone || null,

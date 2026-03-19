@@ -29,11 +29,30 @@ export function useAccountantAuth() {
           return;
         }
 
-        const { data, error } = await supabase
+        // First try by user_id
+        let { data, error } = await supabase
           .from("tax_accountants")
           .select("*")
           .eq("user_id", user.id)
           .maybeSingle();
+
+        // If not found, try by email and link user_id
+        if (!data && user.email) {
+          const { data: emailMatch } = await supabase
+            .from("tax_accountants")
+            .select("*")
+            .eq("email", user.email)
+            .is("user_id", null)
+            .maybeSingle();
+
+          if (emailMatch) {
+            await supabase
+              .from("tax_accountants")
+              .update({ user_id: user.id })
+              .eq("id", emailMatch.id);
+            data = { ...emailMatch, user_id: user.id };
+          }
+        }
 
         if (error || !data) {
           navigate("/accountant/login", { replace: true });
