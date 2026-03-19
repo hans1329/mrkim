@@ -182,19 +182,7 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
       </Card>
 
       {/* 신고 태스크별 카드 */}
-      {filingTasks.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center">
-            <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <h3 className="font-semibold mb-1">예정된 신고가 없습니다</h3>
-            <p className="text-xs text-muted-foreground">
-              부가세, 종소세 등 신고 기한이 다가오면<br />
-              김비서가 자동으로 알려드립니다
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        filingTasks.map((task) => {
+      {effectiveTasks.map((task) => {
           const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.upcoming;
           const allItems = [...basicItems];
           // Add industry-specific items
