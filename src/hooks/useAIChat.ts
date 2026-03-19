@@ -191,7 +191,7 @@ export function useAIChat() {
 
       const { data, error } = await supabase
         .from("chat_messages")
-        .select("id, role, content, created_at")
+        .select("id, role, content, created_at, metadata")
         .eq("user_id", user.id)
         .gte("created_at", startOfTargetDay.toISOString())
         .lt("created_at", endOfTargetDay.toISOString())
@@ -204,12 +204,19 @@ export function useAIChat() {
       }
 
       if (data) {
-        const loadedMessages: ChatMessage[] = data.map((msg) => ({
-          id: msg.id,
-          role: msg.role as "user" | "assistant",
-          content: msg.content,
-          timestamp: new Date(msg.created_at),
-        }));
+        const loadedMessages: ChatMessage[] = data.map((msg) => {
+          const meta = (msg as any).metadata as any;
+          return {
+            id: msg.id,
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+            timestamp: new Date(msg.created_at),
+            visualization: meta?.visualization || null,
+            sources: meta?.sources || null,
+            suggestedActions: meta?.suggestedActions || null,
+            followUpSuggestions: meta?.followUpSuggestions || null,
+          };
+        });
         setMessages(loadedMessages);
       }
     } catch (error) {
@@ -256,18 +263,27 @@ export function useAIChat() {
   }, [loadSessions, loadTodayMessages, loadQuota]);
 
   // 메시지 저장
-  const saveMessage = async (role: "user" | "assistant", content: string): Promise<string | null> => {
+  const saveMessage = async (
+    role: "user" | "assistant",
+    content: string,
+    metadata?: { visualization?: any; sources?: any; suggestedActions?: any; followUpSuggestions?: any } | null,
+  ): Promise<string | null> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
+      const insertData: any = {
+        user_id: user.id,
+        role,
+        content,
+      };
+      if (metadata) {
+        insertData.metadata = metadata;
+      }
+
       const { data, error } = await supabase
         .from("chat_messages")
-        .insert({
-          user_id: user.id,
-          role,
-          content,
-        })
+        .insert(insertData)
         .select("id")
         .single();
 
@@ -368,8 +384,11 @@ export function useAIChat() {
         });
       }
       
-      // AI 응답 저장
-      const assistantMessageId = await saveMessage("assistant", assistantContent);
+      // AI 응답 저장 (메타데이터 포함)
+      const msgMetadata = (visualization || sources || suggestedActions || followUpSuggestions)
+        ? { visualization, sources, suggestedActions, followUpSuggestions }
+        : null;
+      const assistantMessageId = await saveMessage("assistant", assistantContent, msgMetadata);
       
       const assistantMessage: ChatMessage = {
         id: assistantMessageId || (Date.now() + 1).toString(),
