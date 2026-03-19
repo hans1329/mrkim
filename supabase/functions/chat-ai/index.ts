@@ -1268,8 +1268,9 @@ ${voiceDataInst}`;
   // 도구 호출이 없으면 일반 텍스트 응답 반환 (mode=ANY이므로 거의 발생하지 않음)
   const functionCalls = firstParts.filter((p: any) => p.functionCall);
   if (functionCalls.length === 0) {
-    console.warn("Complex query: no function calls despite mode=ANY");
-    const textResponse = firstParts.find((p: any) => p.text)?.text || "데이터를 분석할 수 없습니다.";
+    console.warn("Complex query: no function calls despite mode=ANY, parts:", JSON.stringify(firstParts.map((p: any) => Object.keys(p))));
+    const textPart = firstParts.find((p: any) => p.text && !p.thought) || firstParts.find((p: any) => p.text);
+    const textResponse = textPart?.text || "데이터를 분석할 수 없습니다.";
     return { response: textResponse };
   }
 
