@@ -41,8 +41,8 @@ export default function AccountantSignup() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!allRulesPass) {
-      toast.error("비밀번호 조건을 모두 충족해주세요.");
+    if (!allRulesPass || !passwordsMatch) {
+      toast.error(!allRulesPass ? "비밀번호 조건을 모두 충족해주세요." : "비밀번호가 일치하지 않습니다.");
       return;
     }
     setLoading(true);
