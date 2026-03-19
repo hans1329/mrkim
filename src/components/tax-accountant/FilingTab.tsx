@@ -295,37 +295,6 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
         );
       })}
 
-      {/* 업종별 추가 안내 (신고 태스크가 없어도 표시) */}
-      {industryReqs.length > 0 && filingTasks.length === 0 && (
-        <Card>
-          <CardContent className="p-4 space-y-3">
-            <h4 className="text-sm font-semibold flex items-center gap-1.5">
-              <Info className="h-4 w-4 text-primary" />
-              업종별 추가 준비 서류 안내
-            </h4>
-            <p className="text-[10px] text-muted-foreground">
-              <span className="font-medium text-foreground">{businessType}</span> 업종에 해당하는 추가 서류입니다. 신고 시즌이 되면 자동으로 체크리스트에 반영됩니다.
-            </p>
-            {industryReqs.map((req) => (
-              <div key={req.title} className="space-y-1.5">
-                <span className="text-[10px] font-medium">{req.title}</span>
-                <p className="text-[10px] text-muted-foreground">{req.description}</p>
-                {req.items.map((item) => (
-                  <div key={item.id} className="border border-border/50 rounded-lg p-2.5">
-                    <div className="flex items-start gap-2">
-                      <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">{item.label}</p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-1">{item.detail}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
