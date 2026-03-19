@@ -1,97 +1,26 @@
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   UserCheck,
-  Search,
   MessageSquare,
   FileText,
-  Star,
-  Building2,
-  Mail,
-  Phone,
-  ChevronRight,
   Clock,
-  CheckCircle2,
+  Mail,
   AlertCircle,
-  X,
+  ChevronRight,
 } from "lucide-react";
-import { useTaxAccountant, type TaxAccountant as TaxAccountantType } from "@/hooks/useTaxAccountant";
+import { useTaxAccountant } from "@/hooks/useTaxAccountant";
 import { useProfile } from "@/hooks/useProfile";
-import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
-import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-
-function AccountantCard({ 
-  accountant, 
-  isAssigned, 
-  onSelect 
-}: { 
-  accountant: TaxAccountantType; 
-  isAssigned: boolean;
-  onSelect: (id: string) => void;
-}) {
-  return (
-    <Card className={cn(
-      "transition-all",
-      isAssigned && "ring-2 ring-primary"
-    )}>
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-            {accountant.profile_image_url ? (
-              <img src={accountant.profile_image_url} alt={accountant.name} className="w-full h-full rounded-full object-cover" />
-            ) : (
-              <UserCheck className="h-6 w-6 text-primary" />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-sm">{accountant.name}</h3>
-              {isAssigned && (
-                <Badge variant="default" className="text-[10px] px-1.5 py-0">담당</Badge>
-              )}
-            </div>
-            {accountant.firm_name && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                <Building2 className="h-3 w-3" />
-                {accountant.firm_name}
-              </p>
-            )}
-            {accountant.specialties.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {accountant.specialties.slice(0, 3).map((s) => (
-                  <Badge key={s} variant="secondary" className="text-[10px] px-1.5 py-0">
-                    {s}
-                  </Badge>
-                ))}
-              </div>
-            )}
-            {accountant.bio && (
-              <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{accountant.bio}</p>
-            )}
-          </div>
-        </div>
-        {!isAssigned && (
-          <Button 
-            size="sm" 
-            className="w-full mt-3"
-            onClick={() => onSelect(accountant.id)}
-          >
-            이 세무사 선택
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+import MatchingTab from "@/components/tax-accountant/MatchingTab";
 
 function ConsultationStatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -148,87 +77,14 @@ export default function TaxAccountant() {
         </TabsList>
 
         {/* 매칭 탭 */}
-        <TabsContent value="matching" className="space-y-4">
-          {/* 현재 담당 세무사 */}
-          {assignment?.accountant ? (
-            <Card className="bg-primary/5 border-primary/20">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold flex items-center gap-1.5">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    담당 세무사
-                  </h3>
-                  <button 
-                    onClick={removeAssignment}
-                    className="text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <UserCheck className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">{assignment.accountant.name}</p>
-                    {assignment.accountant.firm_name && (
-                      <p className="text-xs text-muted-foreground">{assignment.accountant.firm_name}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-3">
-                  {assignment.accountant.email && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Mail className="h-3 w-3" />
-                      {assignment.accountant.email}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-dashed">
-              <CardContent className="py-8">
-                <div className="text-center">
-                  <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <h3 className="font-semibold mb-1">담당 세무사를 선택하세요</h3>
-                  <p className="text-xs text-muted-foreground">
-                    업종·규모에 맞는 세무사를 추천해 드립니다
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* 추천 세무사 목록 */}
-          {accountants.length > 0 ? (
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-muted-foreground px-1">
-                {profile?.business_type 
-                  ? `${profile.business_type} 전문 세무사` 
-                  : "추천 세무사"}
-              </h3>
-              {accountants.map((accountant) => (
-                <AccountantCard
-                  key={accountant.id}
-                  accountant={accountant}
-                  isAssigned={assignment?.accountant_id === accountant.id}
-                  onSelect={selectAccountant}
-                />
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  등록된 세무사가 없습니다
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  곧 업종별 전문 세무사를 매칭해 드릴 예정입니다
-                </p>
-              </CardContent>
-            </Card>
-          )}
+        <TabsContent value="matching">
+          <MatchingTab
+            accountants={accountants}
+            assignment={assignment}
+            businessType={profile?.business_type || null}
+            onSelect={selectAccountant}
+            onRemove={removeAssignment}
+          />
         </TabsContent>
 
         {/* 상담 탭 */}
@@ -289,7 +145,6 @@ export default function TaxAccountant() {
                           const data = await res.json();
                           if (!res.ok) throw new Error(data.error);
                           toast.success(`${data.accountantName} 세무사에게 전달되었습니다`);
-                          // Refresh
                           window.location.reload();
                         } catch (e: unknown) {
                           toast.error((e as Error).message || "전달에 실패했습니다");
@@ -334,7 +189,7 @@ export default function TaxAccountant() {
                       <h4 className="text-sm font-medium">{task.filing_type}</h4>
                       <p className="text-xs text-muted-foreground">{task.tax_period}</p>
                     </div>
-                    <Badge 
+                    <Badge
                       variant={task.status === "submitted" ? "default" : "secondary"}
                       className="text-[10px]"
                     >
