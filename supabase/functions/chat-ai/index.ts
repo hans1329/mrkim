@@ -886,6 +886,141 @@ function isComplexQuery(text: string): boolean {
   return false;
 }
 
+// ============ 세무사 관련 데이터 조회 함수 ============
+
+async function fetchTaxAccountantData(userId: string, authHeader: string) {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
+
+    const { data: assignment } = await sb
+      .from("tax_accountant_assignments")
+      .select("accountant_id, status, confirmed_at")
+      .eq("user_id", userId)
+      .eq("status", "confirmed")
+      .limit(1)
+      .maybeSingle();
+
+    if (!assignment) return { assigned: false, message: "담당 세무사가 배정되어 있지 않습니다." };
+
+    const { data: accountant } = await sb
+      .from("tax_accountants")
+      .select("name, email, phone, firm_name, specialties, industry_types, region, bio")
+      .eq("id", assignment.accountant_id)
+      .maybeSingle();
+
+    if (!accountant) return { assigned: false, message: "세무사 정보를 찾을 수 없습니다." };
+
+    return {
+      assigned: true,
+      name: accountant.name,
+      email: accountant.email,
+      phone: accountant.phone,
+      firmName: accountant.firm_name,
+      specialties: accountant.specialties || [],
+      industryTypes: accountant.industry_types || [],
+      region: accountant.region,
+      bio: accountant.bio,
+      confirmedAt: assignment.confirmed_at,
+    };
+  } catch (e) { console.error("fetchTaxAccountantData error:", e); return null; }
+}
+
+async function fetchFilingTasksData(userId: string, authHeader: string) {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
+
+    const { data: tasks, error } = await sb
+      .from("tax_filing_tasks")
+      .select("id, filing_type, tax_period, deadline, status, prepared_data, review_notes, filing_method, submitted_at")
+      .eq("user_id", userId)
+      .order("deadline", { ascending: true })
+      .limit(10);
+
+    if (error) return null;
+
+    const now = new Date();
+    const formatted = (tasks || []).map((t: any) => {
+      const deadline = new Date(t.deadline);
+      const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const prep = t.prepared_data || {};
+      const readyCount = [prep.sales_ready, prep.purchase_ready, prep.invoice_ready, prep.card_ready].filter(Boolean).length;
+      return {
+        id: t.id,
+        filingType: t.filing_type,
+        taxPeriod: t.tax_period,
+        deadline: t.deadline,
+        daysLeft,
+        status: t.status,
+        dataReadiness: `${readyCount}/4`,
+        hasReviewNotes: Array.isArray(t.review_notes) && t.review_notes.length > 0,
+        submittedAt: t.submitted_at,
+      };
+    });
+
+    return { count: formatted.length, tasks: formatted };
+  } catch (e) { console.error("fetchFilingTasksData error:", e); return null; }
+}
+
+async function fetchConsultationsData(userId: string, authHeader: string, limit = 5) {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
+
+    const { data, error } = await sb
+      .from("tax_consultations")
+      .select("id, subject, user_question, ai_preliminary_answer, status, accountant_response, email_sent_at, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) return null;
+
+    return {
+      count: (data || []).length,
+      consultations: (data || []).map((c: any) => ({
+        id: c.id,
+        subject: c.subject,
+        question: c.user_question,
+        status: c.status,
+        hasAccountantResponse: !!c.accountant_response,
+        accountantResponse: c.accountant_response,
+        emailSent: !!c.email_sent_at,
+        createdAt: c.created_at,
+      })),
+    };
+  } catch (e) { console.error("fetchConsultationsData error:", e); return null; }
+}
+
+async function sendConsultationToAccountant(userId: string, authHeader: string, consultationId: string) {
+  if (!consultationId) return { success: false, error: "상담 ID가 필요합니다." };
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    if (!supabaseUrl) return { success: false, error: "서버 설정 오류" };
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-tax-consultation`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authHeader,
+      },
+      body: JSON.stringify({ consultationId }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("send-tax-consultation error:", err);
+      return { success: false, error: "이메일 전송에 실패했습니다." };
+    }
+
+    return { success: true, message: "세무사에게 상담 내용이 이메일로 전달되었습니다." };
+  } catch (e) {
+    console.error("sendConsultationToAccountant error:", e);
+    return { success: false, error: "이메일 전송 중 오류가 발생했습니다." };
+  }
+}
+
 // ============ Gemini Tool Calling 도구 정의 ============
 
 const TOOL_DECLARATIONS = {
