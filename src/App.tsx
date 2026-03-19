@@ -49,6 +49,13 @@ import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
 import AdminIntentKeywords from "./pages/admin/AdminIntentKeywords";
 import AdminTaxAccountants from "./pages/admin/AdminTaxAccountants";
 import AdminEmail from "./pages/admin/AdminEmail";
+// Accountant portal
+import AccountantLogin from "./pages/accountant/AccountantLogin";
+import AccountantDashboard from "./pages/accountant/AccountantDashboard";
+import AccountantClients from "./pages/accountant/AccountantClients";
+import AccountantConsultations from "./pages/accountant/AccountantConsultations";
+import AccountantFilings from "./pages/accountant/AccountantFilings";
+import { AccountantLayout } from "./components/accountant/AccountantLayout";
 
 const queryClient = new QueryClient();
 
@@ -87,6 +94,14 @@ const App = () => (
                       <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
                       <Route path="/admin/tax-accountants" element={<AdminTaxAccountants />} />
                       <Route path="/admin/email" element={<AdminEmail />} />
+                      {/* Accountant Portal Routes */}
+                      <Route path="/accountant/login" element={<AccountantLogin />} />
+                      <Route path="/accountant" element={<AccountantLayout />}>
+                        <Route index element={<AccountantDashboard />} />
+                        <Route path="clients" element={<AccountantClients />} />
+                        <Route path="consultations" element={<AccountantConsultations />} />
+                        <Route path="filings" element={<AccountantFilings />} />
+                      </Route>
 
                       {/* 공통 레이아웃 적용 페이지 */}
                       <Route element={<LayoutRoute />}>
