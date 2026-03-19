@@ -28,6 +28,7 @@ export interface ChatMessage {
   visualization?: VisualizationData | null;
   sources?: DataSourceInfo | null;
   suggestedActions?: SuggestedAction[] | null;
+  followUpSuggestions?: string[] | null;
 }
 
 export interface QuotaInfo {
