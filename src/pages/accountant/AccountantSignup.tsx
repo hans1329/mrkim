@@ -18,7 +18,7 @@ const PASSWORD_RULES = [
 ];
 
 export default function AccountantSignup() {
-  const [step, setStep] = useState<"form" | "done">("form");
+  const [step, setStep] = useState<"form" | "done" | "existing">("form");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
