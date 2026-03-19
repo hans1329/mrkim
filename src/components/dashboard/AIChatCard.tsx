@@ -532,6 +532,22 @@ export function AIChatCard() {
           </div>
         )}
 
+        {/* 세무사 퀵액션 */}
+        <div className="flex gap-1.5 mb-2 overflow-x-auto no-scrollbar">
+          {taxQuickActions.map((action) => (
+            <button
+              key={action.label}
+              type="button"
+              disabled={isTyping}
+              onClick={() => handleQuickAsk(action.prompt)}
+              className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full border border-accent/60 bg-accent/30 text-accent-foreground hover:bg-accent/50 transition-colors whitespace-nowrap disabled:opacity-50"
+            >
+              <action.icon className="h-3 w-3 shrink-0" />
+              {action.label}
+            </button>
+          ))}
+        </div>
+
         {/* Input */}
         <form onSubmit={handleSubmit} className="flex gap-2 mb-3">
           <Input value={input} onChange={e => setInput(e.target.value)} placeholder="비서에게 요청해주세요!" className="flex-1 bg-muted border-border text-sm font-medium placeholder:text-xs placeholder:font-normal placeholder:text-muted-foreground placeholder:leading-normal focus-visible:ring-primary/30 leading-normal text-foreground rounded-full" disabled={isTyping || profileLoading || realStats.isLoading} />
