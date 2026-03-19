@@ -118,11 +118,38 @@ function getChecklistProgress(task: TaxFilingTask, items: ChecklistItem[]): { co
   };
 }
 
+// 데모용 목업 태스크 (DB에 신고 태스크가 없을 때 표시)
+const DEMO_FILING_TASK: TaxFilingTask = {
+  id: "demo-vat-2025-2",
+  user_id: "",
+  accountant_id: null,
+  filing_type: "부가가치세 확정신고",
+  tax_period: "2025년 2기 (7월~12월)",
+  deadline: "2026-01-16",
+  status: "preparing",
+  prepared_data: {
+    invoice_ready: true,
+    card_ready: false,
+    purchase_ready: true,
+    fixed_asset_ready: false,
+    expense_ready: false,
+    bank_ready: false,
+  },
+  review_notes: [],
+  filing_method: "accountant",
+  notified_at: null,
+  submitted_at: null,
+  created_at: new Date().toISOString(),
+};
+
 export default function FilingTab({ filingTasks, assignment, businessType, loading }: FilingTabProps) {
   const isCorporate = businessType?.includes("법인") || false;
   const basicItems = isCorporate ? CORPORATE_BASIC_ITEMS : INDIVIDUAL_BASIC_ITEMS;
   const industryReqs = getMatchingIndustryRequirements(businessType || null);
   const deadlineInfo = getDeadlineInfo(isCorporate);
+
+  // DB에 태스크가 없으면 데모 태스크 표시
+  const effectiveTasks = filingTasks.length > 0 ? filingTasks : [DEMO_FILING_TASK];
 
   if (loading) {
     return (
@@ -155,19 +182,7 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
       </Card>
 
       {/* 신고 태스크별 카드 */}
-      {filingTasks.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center">
-            <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <h3 className="font-semibold mb-1">예정된 신고가 없습니다</h3>
-            <p className="text-xs text-muted-foreground">
-              부가세, 종소세 등 신고 기한이 다가오면<br />
-              김비서가 자동으로 알려드립니다
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        filingTasks.map((task) => {
+      {effectiveTasks.map((task) => {
           const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.upcoming;
           const allItems = [...basicItems];
           // Add industry-specific items
@@ -277,41 +292,9 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
                 )}
               </CardContent>
             </Card>
-          );
-        })
-      )}
+        );
+      })}
 
-      {/* 업종별 추가 안내 (신고 태스크가 없어도 표시) */}
-      {industryReqs.length > 0 && filingTasks.length === 0 && (
-        <Card>
-          <CardContent className="p-4 space-y-3">
-            <h4 className="text-sm font-semibold flex items-center gap-1.5">
-              <Info className="h-4 w-4 text-primary" />
-              업종별 추가 준비 서류 안내
-            </h4>
-            <p className="text-[10px] text-muted-foreground">
-              <span className="font-medium text-foreground">{businessType}</span> 업종에 해당하는 추가 서류입니다. 신고 시즌이 되면 자동으로 체크리스트에 반영됩니다.
-            </p>
-            {industryReqs.map((req) => (
-              <div key={req.title} className="space-y-1.5">
-                <span className="text-[10px] font-medium">{req.title}</span>
-                <p className="text-[10px] text-muted-foreground">{req.description}</p>
-                {req.items.map((item) => (
-                  <div key={item.id} className="border border-border/50 rounded-lg p-2.5">
-                    <div className="flex items-start gap-2">
-                      <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">{item.label}</p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-1">{item.detail}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
