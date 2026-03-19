@@ -219,7 +219,7 @@ Deno.serve(async (req: Request) => {
 
     const businessName = profile?.business_name || profile?.name || "사장님";
 
-    // Resend로 이메일 발송
+    // 이메일 HTML 생성
     const emailHtml = buildEmailHtml(
       businessName,
       consultation.subject,
@@ -228,6 +228,15 @@ Deno.serve(async (req: Request) => {
       dataPackage
     );
 
+    // 미리보기 모드: HTML만 반환
+    if (preview) {
+      return new Response(
+        JSON.stringify({ success: true, html: emailHtml, accountantName, accountantEmail }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Resend로 이메일 발송
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
