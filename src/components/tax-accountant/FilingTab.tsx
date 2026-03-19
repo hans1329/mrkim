@@ -387,7 +387,22 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
                 </>
               )}
 
-              {/* 세무사 검토 노트 */}
+                  {/* 세무사에게 자료 전달 */}
+                  {assignment && task.status !== "submitted" && (
+                    <FilingSendSection
+                      taskId={task.id}
+                      assignment={assignment}
+                      basicItems={basicItems}
+                      task={task}
+                    />
+                  )}
+                  {!assignment && task.status !== "submitted" && (
+                    <div className="p-3 rounded-lg bg-muted/30 border border-dashed border-border">
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        매칭 탭에서 담당 세무사를 배정하면<br />준비된 자료를 이메일로 전달할 수 있습니다
+                      </p>
+                    </div>
+                  )}
               {task.review_notes && (task.review_notes as unknown[]).length > 0 && (
                 <div className="p-2.5 rounded-lg bg-muted/50 border border-border/50">
                   <p className="text-[10px] font-medium mb-1">세무사 검토 메모</p>
