@@ -76,6 +76,7 @@ export default function TaxAccountant() {
           <FilingTab
             filingTasks={filingTasks}
             assignment={assignment}
+            businessType={profile?.business_type || null}
           />
         </TabsContent>
       </Tabs>
