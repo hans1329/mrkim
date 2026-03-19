@@ -191,6 +191,26 @@ export default function AccountantSignup() {
                   ))}
                 </div>
               )}
+            <div className="space-y-2">
+              <Label htmlFor="signup-password-confirm">비밀번호 확인 *</Label>
+              <Input
+                id="signup-password-confirm"
+                type="password"
+                value={passwordConfirm}
+                onChange={e => setPasswordConfirm(e.target.value)}
+                placeholder="비밀번호 재입력"
+                required
+              />
+              {passwordConfirm && !passwordsMatch && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <X className="h-3 w-3" /> 비밀번호가 일치하지 않습니다
+                </p>
+              )}
+              {passwordConfirm && passwordsMatch && (
+                <p className="text-xs text-green-600 flex items-center gap-1">
+                  <Check className="h-3 w-3" /> 비밀번호 일치
+                </p>
+              )}
             </div>
 
             {/* Optional profile fields */}
