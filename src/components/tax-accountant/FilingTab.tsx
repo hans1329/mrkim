@@ -291,18 +291,18 @@ function FilingSendSection({ taskId, assignment, basicItems, task }: {
       </div>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 gap-0">
-          <DialogHeader className="p-4 pb-2 shrink-0">
-            <DialogTitle className="text-base">신고 자료 이메일 미리보기</DialogTitle>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 gap-0 w-[calc(100vw-1rem)] sm:w-auto">
+          <DialogHeader className="p-3 sm:p-4 pb-2 shrink-0">
+            <DialogTitle className="text-sm sm:text-base">신고 자료 이메일 미리보기</DialogTitle>
             {accountantInfo.email && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">
                 수신: {accountantInfo.name} ({accountantInfo.email})
               </p>
             )}
           </DialogHeader>
           <div className="flex-1 overflow-auto border-y border-border bg-white">
             {previewLoading ? (
-              <div className="p-6 space-y-4">
+              <div className="p-4 sm:p-6 space-y-4">
                 <Skeleton className="h-16 rounded-lg" />
                 <Skeleton className="h-40 rounded-lg" />
                 <Skeleton className="h-32 rounded-lg" />
@@ -310,17 +310,17 @@ function FilingSendSection({ taskId, assignment, basicItems, task }: {
             ) : (
               <iframe
                 srcDoc={previewHtml}
-                className="w-full h-full min-h-[500px] border-0"
+                className="w-full h-full min-h-[400px] sm:min-h-[500px] border-0"
                 title="신고 자료 이메일 미리보기"
                 sandbox="allow-same-origin"
               />
             )}
           </div>
-          <div className="p-4 pt-3 shrink-0 flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(false)}>
+          <div className="p-3 sm:p-4 pt-2 sm:pt-3 shrink-0 flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(false)} className="text-xs">
               닫기
             </Button>
-            <Button size="sm" onClick={handleSend} disabled={sending || previewLoading}>
+            <Button size="sm" onClick={handleSend} disabled={sending || previewLoading} className="text-xs">
               <Send className="h-3.5 w-3.5 mr-1.5" />
               {sending ? "전달 중..." : "이메일 발송"}
             </Button>
