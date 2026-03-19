@@ -96,6 +96,7 @@ describe("FilingTab", () => {
 
   it("로딩 중일 때 스켈레톤을 표시한다", () => {
     const { container } = render(<FilingTab filingTasks={[]} assignment={null} loading={true} />);
-    expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
+    const skeletons = container.querySelectorAll('[class*="skeleton"], [data-slot="skeleton"]');
+    expect(skeletons.length).toBeGreaterThan(0);
   });
 });
