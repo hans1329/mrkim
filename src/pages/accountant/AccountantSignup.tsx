@@ -18,7 +18,7 @@ const PASSWORD_RULES = [
 ];
 
 export default function AccountantSignup() {
-  const [step, setStep] = useState<"form" | "done">("form");
+  const [step, setStep] = useState<"form" | "done" | "existing">("form");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -48,7 +48,19 @@ export default function AccountantSignup() {
     setLoading(true);
 
     try {
-      // 1. Create auth user
+      // 1. 이미 tax_accountants에 같은 이메일이 있는지 확인
+      const { data: existingAccountant } = await supabase
+        .from("tax_accountants")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (existingAccountant) {
+        toast.error("이미 파트너로 등록된 이메일입니다. 로그인해주세요.");
+        return;
+      }
+
+      // 2. Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -72,7 +84,10 @@ export default function AccountantSignup() {
         return;
       }
 
-      // 2. Create tax_accountants record (user_id linked after email confirmation & login)
+      // 3. 기존 계정인지 확인 (identities가 비어있으면 이미 가입된 사용자)
+      const isExistingUser = !authData.user.identities || authData.user.identities.length === 0;
+
+      // 4. Create tax_accountants record
       const { error: insertError } = await supabase
         .from("tax_accountants")
         .insert({
@@ -94,14 +109,45 @@ export default function AccountantSignup() {
         return;
       }
 
-      setStep("done");
-      toast.success("회원가입이 완료되었습니다!");
+      if (isExistingUser) {
+        setStep("existing");
+        toast.success("파트너 등록이 완료되었습니다!");
+      } else {
+        setStep("done");
+        toast.success("회원가입이 완료되었습니다!");
+      }
     } catch (error: any) {
       toast.error("회원가입에 실패했습니다.");
     } finally {
       setLoading(false);
     }
   };
+
+  if (step === "existing") {
+    return (
+      <div className="h-full overflow-y-auto bg-muted/30">
+        <div className="min-h-full flex items-center justify-center p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-2">
+                <Check className="w-6 h-6 text-success" />
+              </div>
+              <CardTitle className="text-xl">파트너 등록 완료!</CardTitle>
+              <CardDescription>
+                기존 계정으로 파트너 등록이 완료되었습니다.<br />
+                기존 비밀번호로 로그인해주세요.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={() => navigate("/accountant/login")}>
+                로그인 페이지로 이동
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (step === "done") {
     return (
