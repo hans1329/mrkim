@@ -384,8 +384,11 @@ export function useAIChat() {
         });
       }
       
-      // AI 응답 저장
-      const assistantMessageId = await saveMessage("assistant", assistantContent);
+      // AI 응답 저장 (메타데이터 포함)
+      const msgMetadata = (visualization || sources || suggestedActions || followUpSuggestions)
+        ? { visualization, sources, suggestedActions, followUpSuggestions }
+        : null;
+      const assistantMessageId = await saveMessage("assistant", assistantContent, msgMetadata);
       
       const assistantMessage: ChatMessage = {
         id: assistantMessageId || (Date.now() + 1).toString(),
