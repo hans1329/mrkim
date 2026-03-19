@@ -118,11 +118,38 @@ function getChecklistProgress(task: TaxFilingTask, items: ChecklistItem[]): { co
   };
 }
 
+// 데모용 목업 태스크 (DB에 신고 태스크가 없을 때 표시)
+const DEMO_FILING_TASK: TaxFilingTask = {
+  id: "demo-vat-2025-2",
+  user_id: "",
+  accountant_id: null,
+  filing_type: "부가가치세 확정신고",
+  tax_period: "2025년 2기 (7월~12월)",
+  deadline: "2026-01-16",
+  status: "preparing",
+  prepared_data: {
+    invoice_ready: true,
+    card_ready: false,
+    purchase_ready: true,
+    fixed_asset_ready: false,
+    expense_ready: false,
+    bank_ready: false,
+  },
+  review_notes: [],
+  filing_method: "accountant",
+  notified_at: null,
+  submitted_at: null,
+  created_at: new Date().toISOString(),
+};
+
 export default function FilingTab({ filingTasks, assignment, businessType, loading }: FilingTabProps) {
   const isCorporate = businessType?.includes("법인") || false;
   const basicItems = isCorporate ? CORPORATE_BASIC_ITEMS : INDIVIDUAL_BASIC_ITEMS;
   const industryReqs = getMatchingIndustryRequirements(businessType || null);
   const deadlineInfo = getDeadlineInfo(isCorporate);
+
+  // DB에 태스크가 없으면 데모 태스크 표시
+  const effectiveTasks = filingTasks.length > 0 ? filingTasks : [DEMO_FILING_TASK];
 
   if (loading) {
     return (
