@@ -528,6 +528,7 @@ interface ClassifiedIntent {
   dataSource: DataSource | null;
   requiresConnection: string | null;
   timePeriod?: { type: string };
+  needsTaxConsultation?: boolean;
 }
 
 // DB 키워드 캐시 (5분 TTL)
