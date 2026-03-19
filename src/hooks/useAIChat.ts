@@ -256,18 +256,27 @@ export function useAIChat() {
   }, [loadSessions, loadTodayMessages, loadQuota]);
 
   // 메시지 저장
-  const saveMessage = async (role: "user" | "assistant", content: string): Promise<string | null> => {
+  const saveMessage = async (
+    role: "user" | "assistant",
+    content: string,
+    metadata?: { visualization?: any; sources?: any; suggestedActions?: any; followUpSuggestions?: any } | null,
+  ): Promise<string | null> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
+      const insertData: any = {
+        user_id: user.id,
+        role,
+        content,
+      };
+      if (metadata) {
+        insertData.metadata = metadata;
+      }
+
       const { data, error } = await supabase
         .from("chat_messages")
-        .insert({
-          user_id: user.id,
-          role,
-          content,
-        })
+        .insert(insertData)
         .select("id")
         .single();
 
