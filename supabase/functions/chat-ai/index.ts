@@ -1483,9 +1483,12 @@ serve(async (req) => {
     // ━━━ Case 0: 복합 질문 또는 세무사 관련 → Tool Calling 파이프라인 ━━━
     const complexQuery = isComplexQuery(lastMsg);
     const isTaxAccountantQuery = /세무사|담당\s*세무|신고\s*(일정|마감|준비)|상담\s*(내역|기록|요청)|세무\s*상담/.test(lastMsg.toLowerCase());
-    if ((complexQuery || isTaxAccountantQuery) && !voiceMode) {
-      console.log(`${complexQuery ? "Complex" : "Tax accountant"} query detected → Tool Calling pipeline`);
+    const useToolCalling = complexQuery || isTaxAccountantQuery;
+    // 음성 모드: 세무사 질문만 Tool Calling 허용 (복합 질문은 레이턴시 이슈로 제외)
+    if (useToolCalling && (!voiceMode || isTaxAccountantQuery)) {
+      console.log(`${complexQuery ? "Complex" : "Tax accountant"} query detected → Tool Calling pipeline${voiceMode ? " (voice)" : ""}`);
       try {
+        // 음성 모드에서는 "잠시만요" 안내를 응답에 포함하지 않음 (프론트에서 TTS 선행 재생)
         const complexResult = await handleComplexQuery(
           GEMINI_API_KEY, geminiMessages, lastMsg, userId, authHeader,
           secretaryName, genderDesc, toneInst, voiceMode, voiceDataInst,
@@ -1495,6 +1498,7 @@ serve(async (req) => {
           visualization: complexResult.visualization || null,
           sources: complexResult.sources || null,
           taxConsultationCreated,
+          toolCallingUsed: true,
           quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
         }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       } catch (toolErr: any) {
