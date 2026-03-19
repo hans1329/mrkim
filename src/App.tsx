@@ -51,6 +51,7 @@ import AdminTaxAccountants from "./pages/admin/AdminTaxAccountants";
 import AdminEmail from "./pages/admin/AdminEmail";
 // Accountant portal
 import AccountantLogin from "./pages/accountant/AccountantLogin";
+import AccountantSignup from "./pages/accountant/AccountantSignup";
 import AccountantDashboard from "./pages/accountant/AccountantDashboard";
 import AccountantClients from "./pages/accountant/AccountantClients";
 import AccountantConsultations from "./pages/accountant/AccountantConsultations";
