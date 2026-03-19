@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import IrregularFilingSection from "./IrregularFilingSection";
 import { toast } from "sonner";
 import {
   FileText,
@@ -290,18 +291,18 @@ function FilingSendSection({ taskId, assignment, basicItems, task }: {
       </div>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 gap-0">
-          <DialogHeader className="p-4 pb-2 shrink-0">
-            <DialogTitle className="text-base">신고 자료 이메일 미리보기</DialogTitle>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 gap-0 w-[calc(100vw-1rem)] sm:w-auto">
+          <DialogHeader className="p-3 sm:p-4 pb-2 shrink-0">
+            <DialogTitle className="text-sm sm:text-base">신고 자료 이메일 미리보기</DialogTitle>
             {accountantInfo.email && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">
                 수신: {accountantInfo.name} ({accountantInfo.email})
               </p>
             )}
           </DialogHeader>
           <div className="flex-1 overflow-auto border-y border-border bg-white">
             {previewLoading ? (
-              <div className="p-6 space-y-4">
+              <div className="p-4 sm:p-6 space-y-4">
                 <Skeleton className="h-16 rounded-lg" />
                 <Skeleton className="h-40 rounded-lg" />
                 <Skeleton className="h-32 rounded-lg" />
@@ -309,17 +310,17 @@ function FilingSendSection({ taskId, assignment, basicItems, task }: {
             ) : (
               <iframe
                 srcDoc={previewHtml}
-                className="w-full h-full min-h-[500px] border-0"
+                className="w-full h-full min-h-[400px] sm:min-h-[500px] border-0"
                 title="신고 자료 이메일 미리보기"
                 sandbox="allow-same-origin"
               />
             )}
           </div>
-          <div className="p-4 pt-3 shrink-0 flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(false)}>
+          <div className="p-3 sm:p-4 pt-2 sm:pt-3 shrink-0 flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(false)} className="text-xs">
               닫기
             </Button>
-            <Button size="sm" onClick={handleSend} disabled={sending || previewLoading}>
+            <Button size="sm" onClick={handleSend} disabled={sending || previewLoading} className="text-xs">
               <Send className="h-3.5 w-3.5 mr-1.5" />
               {sending ? "전달 중..." : "이메일 발송"}
             </Button>
@@ -389,13 +390,13 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* 마감일 안내 배너 */}
       <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="p-3">
+        <CardContent className="p-2.5 sm:p-3">
           <div className="flex items-center gap-2 mb-1">
-            {isCorporate ? <Building2 className="h-4 w-4 text-primary" /> : <User className="h-4 w-4 text-primary" />}
-            <span className="text-xs font-semibold text-primary">
+            {isCorporate ? <Building2 className="h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary" /> : <User className="h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary" />}
+            <span className="text-[11px] sm:text-xs font-semibold text-primary">
               {isCorporate ? "법인사업자" : "개인사업자"}
             </span>
           </div>
@@ -410,12 +411,12 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
 
       {/* 김비서 자동 처리 요약 배너 */}
       <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
-        <CardContent className="p-3">
+        <CardContent className="p-2.5 sm:p-3">
           <div className="flex items-center gap-2 mb-1.5">
-            <Zap className="h-4 w-4 text-primary" />
-            <span className="text-xs font-semibold">김비서가 대신 처리해드려요</span>
+            <Zap className="h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary" />
+            <span className="text-[11px] sm:text-xs font-semibold">김비서가 대신 처리해드려요</span>
           </div>
-          <p className="text-[10px] text-muted-foreground mb-2">
+          <p className="text-[10px] text-muted-foreground mb-2 leading-relaxed">
             기본 {basicItems.length}개 항목 중 <span className="font-semibold text-primary">{autoItems.length}개</span>는 연동 데이터에서 자동 수집됩니다.
             {manualItems.length > 0 && (
               <> 사장님은 <span className="font-semibold text-foreground">{manualItems.length}개</span>만 직접 준비하시면 됩니다.</>
@@ -448,14 +449,14 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
 
         return (
           <Card key={task.id}>
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="p-3 sm:p-4 space-y-2.5 sm:space-y-3">
               {/* 헤더 */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="text-sm font-semibold">{task.filing_type}</h4>
-                  <p className="text-xs text-muted-foreground">{task.tax_period}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h4 className="text-[13px] sm:text-sm font-semibold truncate">{task.filing_type}</h4>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground">{task.tax_period}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   <DeadlineBadge deadline={task.deadline} />
                   <Badge variant={statusConfig.variant} className="text-[10px]">
                     {statusConfig.label}
@@ -578,6 +579,12 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
           </Card>
         );
       })}
+
+      {/* 구분선 */}
+      <div className="border-t border-border/50 pt-3 sm:pt-4" />
+
+      {/* 비정기 신고 섹션 */}
+      <IrregularFilingSection assignment={assignment} />
     </div>
   );
 }
