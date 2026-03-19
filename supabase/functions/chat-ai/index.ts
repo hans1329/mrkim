@@ -1637,7 +1637,7 @@ serve(async (req) => {
       if (missingSource) {
         console.log("Connection required:", missingSource);
         return new Response(
-          JSON.stringify({ response: buildConnectionRequiredResponse(missingSource, voiceMode), requiresConnection: true, taxConsultationCreated, quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }),
+          JSON.stringify({ response: buildConnectionRequiredResponse(missingSource, voiceMode), requiresConnection: true, taxConsultationCreated, followUpSuggestions: ["데이터 연동 방법 알려줘", "어떤 데이터를 연동할 수 있어?"], quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit } }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
