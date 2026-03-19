@@ -411,12 +411,12 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
 
       {/* 김비서 자동 처리 요약 배너 */}
       <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
-        <CardContent className="p-3">
+        <CardContent className="p-2.5 sm:p-3">
           <div className="flex items-center gap-2 mb-1.5">
-            <Zap className="h-4 w-4 text-primary" />
-            <span className="text-xs font-semibold">김비서가 대신 처리해드려요</span>
+            <Zap className="h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary" />
+            <span className="text-[11px] sm:text-xs font-semibold">김비서가 대신 처리해드려요</span>
           </div>
-          <p className="text-[10px] text-muted-foreground mb-2">
+          <p className="text-[10px] text-muted-foreground mb-2 leading-relaxed">
             기본 {basicItems.length}개 항목 중 <span className="font-semibold text-primary">{autoItems.length}개</span>는 연동 데이터에서 자동 수집됩니다.
             {manualItems.length > 0 && (
               <> 사장님은 <span className="font-semibold text-foreground">{manualItems.length}개</span>만 직접 준비하시면 됩니다.</>
