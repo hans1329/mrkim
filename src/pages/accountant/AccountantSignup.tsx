@@ -191,6 +191,8 @@ export default function AccountantSignup() {
                   ))}
                 </div>
               )}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="signup-password-confirm">비밀번호 확인 *</Label>
               <Input
