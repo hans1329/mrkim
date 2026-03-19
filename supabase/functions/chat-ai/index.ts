@@ -876,6 +876,7 @@ function isComplexQuery(text: string): boolean {
     { src: "deposit", re: /예치금|적립금|비상금/ },
     { src: "savings", re: /저축|예금|적금|투자/ },
     { src: "auto_transfer", re: /자동이체/ },
+    { src: "tax_accountant", re: /세무사|신고\s*일정|세무\s*상담/ },
   ];
   const matched = sourceKeywords.filter(s => s.re.test(t));
   if (matched.length >= 2) return true;
@@ -884,6 +885,141 @@ function isComplexQuery(text: string): boolean {
     .filter(r => r.test(t)).length;
   if (periodCount >= 2) return true;
   return false;
+}
+
+// ============ 세무사 관련 데이터 조회 함수 ============
+
+async function fetchTaxAccountantData(userId: string, authHeader: string) {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
+
+    const { data: assignment } = await sb
+      .from("tax_accountant_assignments")
+      .select("accountant_id, status, confirmed_at")
+      .eq("user_id", userId)
+      .eq("status", "confirmed")
+      .limit(1)
+      .maybeSingle();
+
+    if (!assignment) return { assigned: false, message: "담당 세무사가 배정되어 있지 않습니다." };
+
+    const { data: accountant } = await sb
+      .from("tax_accountants")
+      .select("name, email, phone, firm_name, specialties, industry_types, region, bio")
+      .eq("id", assignment.accountant_id)
+      .maybeSingle();
+
+    if (!accountant) return { assigned: false, message: "세무사 정보를 찾을 수 없습니다." };
+
+    return {
+      assigned: true,
+      name: accountant.name,
+      email: accountant.email,
+      phone: accountant.phone,
+      firmName: accountant.firm_name,
+      specialties: accountant.specialties || [],
+      industryTypes: accountant.industry_types || [],
+      region: accountant.region,
+      bio: accountant.bio,
+      confirmedAt: assignment.confirmed_at,
+    };
+  } catch (e) { console.error("fetchTaxAccountantData error:", e); return null; }
+}
+
+async function fetchFilingTasksData(userId: string, authHeader: string) {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
+
+    const { data: tasks, error } = await sb
+      .from("tax_filing_tasks")
+      .select("id, filing_type, tax_period, deadline, status, prepared_data, review_notes, filing_method, submitted_at")
+      .eq("user_id", userId)
+      .order("deadline", { ascending: true })
+      .limit(10);
+
+    if (error) return null;
+
+    const now = new Date();
+    const formatted = (tasks || []).map((t: any) => {
+      const deadline = new Date(t.deadline);
+      const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const prep = t.prepared_data || {};
+      const readyCount = [prep.sales_ready, prep.purchase_ready, prep.invoice_ready, prep.card_ready].filter(Boolean).length;
+      return {
+        id: t.id,
+        filingType: t.filing_type,
+        taxPeriod: t.tax_period,
+        deadline: t.deadline,
+        daysLeft,
+        status: t.status,
+        dataReadiness: `${readyCount}/4`,
+        hasReviewNotes: Array.isArray(t.review_notes) && t.review_notes.length > 0,
+        submittedAt: t.submitted_at,
+      };
+    });
+
+    return { count: formatted.length, tasks: formatted };
+  } catch (e) { console.error("fetchFilingTasksData error:", e); return null; }
+}
+
+async function fetchConsultationsData(userId: string, authHeader: string, limit = 5) {
+  try {
+    const sb = createSupabaseClient(authHeader);
+    if (!sb || !userId) return null;
+
+    const { data, error } = await sb
+      .from("tax_consultations")
+      .select("id, subject, user_question, ai_preliminary_answer, status, accountant_response, email_sent_at, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) return null;
+
+    return {
+      count: (data || []).length,
+      consultations: (data || []).map((c: any) => ({
+        id: c.id,
+        subject: c.subject,
+        question: c.user_question,
+        status: c.status,
+        hasAccountantResponse: !!c.accountant_response,
+        accountantResponse: c.accountant_response,
+        emailSent: !!c.email_sent_at,
+        createdAt: c.created_at,
+      })),
+    };
+  } catch (e) { console.error("fetchConsultationsData error:", e); return null; }
+}
+
+async function sendConsultationToAccountant(userId: string, authHeader: string, consultationId: string) {
+  if (!consultationId) return { success: false, error: "상담 ID가 필요합니다." };
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    if (!supabaseUrl) return { success: false, error: "서버 설정 오류" };
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-tax-consultation`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authHeader,
+      },
+      body: JSON.stringify({ consultationId }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("send-tax-consultation error:", err);
+      return { success: false, error: "이메일 전송에 실패했습니다." };
+    }
+
+    return { success: true, message: "세무사에게 상담 내용이 이메일로 전달되었습니다." };
+  } catch (e) {
+    console.error("sendConsultationToAccountant error:", e);
+    return { success: false, error: "이메일 전송 중 오류가 발생했습니다." };
+  }
 }
 
 // ============ Gemini Tool Calling 도구 정의 ============
@@ -944,6 +1080,38 @@ const TOOL_DECLARATIONS = {
       description: "등록된 자동이체 규칙 목록을 조회합니다.",
       parameters: { type: "object", properties: {}, required: [] },
     },
+    {
+      name: "get_tax_accountant",
+      description: "담당 세무사 정보(이름, 연락처, 전문분야, 소속 사무소)를 조회합니다.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+    {
+      name: "get_filing_tasks",
+      description: "다가오는 세금 신고 일정(부가세, 종소세 등)과 마감일, 준비 상태를 조회합니다.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+    {
+      name: "get_consultations",
+      description: "세무 상담 요청 내역(질문, 상태, 세무사 응답)을 조회합니다.",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: { type: "number", description: "조회할 최대 건수 (기본 5)" },
+        },
+        required: [],
+      },
+    },
+    {
+      name: "send_consultation_to_accountant",
+      description: "특정 세무 상담을 담당 세무사에게 이메일로 전달합니다. 사용자가 명시적으로 요청한 경우에만 사용하세요.",
+      parameters: {
+        type: "object",
+        properties: {
+          consultation_id: { type: "string", description: "전달할 상담의 ID" },
+        },
+        required: ["consultation_id"],
+      },
+    },
   ],
 };
 
@@ -991,6 +1159,25 @@ async function executeToolCall(
         const data = await fetchAutoTransferData(userId, authHeader);
         if (!data) return JSON.stringify({ error: "자동이체 데이터를 조회할 수 없습니다." });
         return JSON.stringify(data);
+      }
+      case "get_tax_accountant": {
+        const data = await fetchTaxAccountantData(userId, authHeader);
+        if (!data) return JSON.stringify({ error: "세무사 정보를 조회할 수 없습니다." });
+        return JSON.stringify(data);
+      }
+      case "get_filing_tasks": {
+        const data = await fetchFilingTasksData(userId, authHeader);
+        if (!data) return JSON.stringify({ error: "신고 일정을 조회할 수 없습니다." });
+        return JSON.stringify(data);
+      }
+      case "get_consultations": {
+        const data = await fetchConsultationsData(userId, authHeader, args?.limit || 5);
+        if (!data) return JSON.stringify({ error: "상담 내역을 조회할 수 없습니다." });
+        return JSON.stringify(data);
+      }
+      case "send_consultation_to_accountant": {
+        const result = await sendConsultationToAccountant(userId, authHeader, args?.consultation_id);
+        return JSON.stringify(result);
       }
       default:
         return JSON.stringify({ error: `알 수 없는 함수: ${fnName}` });
@@ -1293,25 +1480,27 @@ serve(async (req) => {
       }
     }
 
-    // ━━━ Case 0: 복합 질문 → Tool Calling 파이프라인 (현재 비활성화 - 안정화 후 활성화 예정) ━━━
-    // const complexQuery = isComplexQuery(lastMsg);
-    // if (complexQuery && !voiceMode) {
-    //   console.log("Complex query detected → Tool Calling pipeline");
-    //   try {
-    //     const complexResult = await handleComplexQuery(
-    //       GEMINI_API_KEY, geminiMessages, lastMsg, userId, authHeader,
-    //       secretaryName, genderDesc, toneInst, voiceMode, voiceDataInst,
-    //     );
-    //     return new Response(JSON.stringify({
-    //       response: complexResult.response,
-    //       visualization: complexResult.visualization || null,
-    //       sources: complexResult.sources || null,
-    //       quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
-    //     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    //   } catch (toolErr: any) {
-    //     console.warn("Complex query fallback to simple pipeline:", toolErr?.status || toolErr);
-    //   }
-    // }
+    // ━━━ Case 0: 복합 질문 또는 세무사 관련 → Tool Calling 파이프라인 ━━━
+    const complexQuery = isComplexQuery(lastMsg);
+    const isTaxAccountantQuery = /세무사|담당\s*세무|신고\s*(일정|마감|준비)|상담\s*(내역|기록|요청)|세무\s*상담/.test(lastMsg.toLowerCase());
+    if ((complexQuery || isTaxAccountantQuery) && !voiceMode) {
+      console.log(`${complexQuery ? "Complex" : "Tax accountant"} query detected → Tool Calling pipeline`);
+      try {
+        const complexResult = await handleComplexQuery(
+          GEMINI_API_KEY, geminiMessages, lastMsg, userId, authHeader,
+          secretaryName, genderDesc, toneInst, voiceMode, voiceDataInst,
+        );
+        return new Response(JSON.stringify({
+          response: complexResult.response,
+          visualization: complexResult.visualization || null,
+          sources: complexResult.sources || null,
+          taxConsultationCreated,
+          quota: { used: quota.used + 1, remaining: quota.remaining - 1, limit: quota.limit },
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      } catch (toolErr: any) {
+        console.warn("Tool Calling fallback to simple pipeline:", toolErr?.status || toolErr);
+      }
+    }
 
     // ━━━ Case 1: 데이터 불필요 → 자유 대화 ━━━
     if (!classified.needsData || !classified.dataSource) {
