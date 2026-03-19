@@ -375,8 +375,23 @@ export function AIChatPanel() {
           </ScrollArea>
 
           {!isViewingPastSession && (
-            <div className="border-t px-4 py-2">
-              <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="border-t px-4 py-2 space-y-1.5">
+              {/* 세무사 퀵액션 */}
+              <div className="flex gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {taxQuickCommands.map((cmd) => (
+                  <Button
+                    key={cmd}
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 text-xs border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                    onClick={() => handleQuickCommand(cmd)}
+                  >
+                    🧾 {cmd}
+                  </Button>
+                ))}
+              </div>
+              {/* 일반 퀵커맨드 */}
+              <div className="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {defaultQuickCommands.map((cmd) => (
                   <Button
                     key={cmd}
