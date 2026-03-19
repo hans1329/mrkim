@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +35,7 @@ export default function AccountantLogin() {
 
       if (accError || !accountant) {
         await supabase.auth.signOut();
-        toast.error("세무사 계정이 아닙니다. 관리자에게 문의해주세요.");
+        toast.error("세무사 계정이 아닙니다. 회원가입을 먼저 진행해주세요.");
         return;
       }
 
@@ -91,6 +91,14 @@ export default function AccountantLogin() {
               {loading ? "로그인 중..." : "로그인"}
             </Button>
           </form>
+          <div className="mt-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              아직 계정이 없으신가요?{" "}
+              <Link to="/accountant/signup" className="text-primary font-medium hover:underline">
+                회원가입
+              </Link>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
