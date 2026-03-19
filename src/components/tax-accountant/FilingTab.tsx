@@ -292,9 +292,8 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
                 )}
               </CardContent>
             </Card>
-          );
-        })
-      )}
+        );
+      })}
 
       {/* 업종별 추가 안내 (신고 태스크가 없어도 표시) */}
       {industryReqs.length > 0 && filingTasks.length === 0 && (
