@@ -634,25 +634,45 @@ function classifyByKeyword(text: string, dbKeywords: { intent: string; keywords:
     }
   }
 
-  // 2차: 금융 키워드 직접 매칭 (기간 불필요)
-  // 손익/매출/지출 등 명확한 금융 키워드는 기간 없이도 데이터 조회
+  // 2차: 세무 전문 상담 감지 (세무사 연결 필요 판단)
+  const TAX_CONSULTATION_PATTERNS = [
+    /세무사.*(상담|문의|질문|물어|연결|소개|추천)/,
+    /절세.*(방법|전략|상담|도움)/,
+    /종소세.*(신고|준비|도움|상담)/,
+    /부가세.*(신고|납부|기한|마감|환급).*(도움|상담|어떻게|방법)/,
+    /세무.*(상담|전문|도움|질문)/,
+    /세금.*(줄이|절약|아끼|절세|상담|전문)/,
+    /법인세.*(신고|준비|도움)/,
+    /원천징수.*(신고|방법|도움)/,
+    /가산세|추징|세무조사/,
+    /경정청구|수정신고/,
+    /기장.*(대행|맡기|위탁|의뢰)/,
+  ];
+  const needsTaxConsultation = TAX_CONSULTATION_PATTERNS.some(p => p.test(t));
+
+  // 3차: 금융 키워드 직접 매칭 (기간 불필요)
   if (/손익|순이익|이익|적자|흑자|수익|마진|영업이익|순수익|현금흐름|현금\s*흐름|캐시플로|자금흐름|자금\s*사정|자금\s*현황|돈\s*흐름|자금\s*상황|현금\s*상황/.test(t)) {
-    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" } };
+    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" }, needsTaxConsultation };
   }
   if (/매출|매입|매상|장사|벌이|벌었|팔았|팔린|판매/.test(t)) {
-    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" } };
+    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" }, needsTaxConsultation };
   }
   if (/지출|경비|비용|소비|결제|카드값|출금/.test(t)) {
-    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" } };
+    return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod: timePeriod || { type: "month" }, needsTaxConsultation };
   }
   if (/급여|월급|인건비|급료|페이/.test(t)) {
-    return { needsData: true, dataSource: "employee", requiresConnection: null };
+    return { needsData: true, dataSource: "employee", requiresConnection: null, needsTaxConsultation };
   }
   if (/세금계산서|세계서|부가세|부가가치세|매출세액|매입세액/.test(t)) {
-    return { needsData: true, dataSource: "tax_invoice", requiresConnection: "hometax", timePeriod: timePeriod || { type: "month" } };
+    return { needsData: true, dataSource: "tax_invoice", requiresConnection: "hometax", timePeriod: timePeriod || { type: "month" }, needsTaxConsultation };
   }
 
-  // 3차: 기간 키워드 + 조회 동사 (구어체 포함) - 폴백
+  // 4차: 세무 전문 상담만 매칭 (데이터 조회 불필요하지만 상담 필요)
+  if (needsTaxConsultation) {
+    return { needsData: false, dataSource: null, requiresConnection: null, needsTaxConsultation: true };
+  }
+
+  // 5차: 기간 키워드 + 조회 동사 (구어체 포함) - 폴백
   if (timePeriod && /얼마|얼만큼|어때|어떻게|알려|보여|확인|맞아|맞냐|괜찮|잘\s*[됐된돼]|좋았/.test(t)) {
     return { needsData: true, dataSource: "transaction", requiresConnection: "card_or_bank", timePeriod };
   }
