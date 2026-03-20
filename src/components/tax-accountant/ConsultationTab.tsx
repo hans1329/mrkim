@@ -24,12 +24,19 @@ import { type TaxConsultation, type TaxAccountantAssignment } from "@/hooks/useT
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 
+interface BusinessContext {
+  businessName: string | null;
+  businessType: string | null;
+  businessRegistrationNumber: string | null;
+}
+
 interface ConsultationTabProps {
   consultations: TaxConsultation[];
   assignment: TaxAccountantAssignment | null;
   onCreated: () => void;
   loading?: boolean;
   secretaryName?: string;
+  businessContext?: BusinessContext;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -48,6 +55,7 @@ export default function ConsultationTab({
   onCreated,
   loading,
   secretaryName = "김비서",
+  businessContext,
 }: ConsultationTabProps) {
   const [showForm, setShowForm] = useState(false);
   const [subject, setSubject] = useState("");
@@ -88,7 +96,7 @@ export default function ConsultationTab({
     setDrafting(true);
     try {
       const { data, error } = await supabase.functions.invoke("draft-consultation", {
-        body: { briefDescription: input },
+        body: { briefDescription: input, businessContext },
       });
       if (error) throw error;
       if (data?.subject) setSubject(data.subject);
@@ -107,7 +115,7 @@ export default function ConsultationTab({
     setDrafting(true);
     try {
       const { data, error } = await supabase.functions.invoke("draft-consultation", {
-        body: { briefDescription: briefInput.trim() },
+        body: { briefDescription: briefInput.trim(), businessContext },
       });
       if (error) throw error;
       if (data?.subject) setSubject(data.subject);
