@@ -68,11 +68,14 @@ export default function ConsultationTab({
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [attachingId, setAttachingId] = useState<string | null>(null);
+  const [previewLinks, setPreviewLinks] = useState<{ label: string; url: string; description: string }[]>([]);
+  const [previewReady, setPreviewReady] = useState(false);
 
   // AI 작성 도우미 상태
   const [drafting, setDrafting] = useState(false);
   const draftInFlightRef = useRef(false);
   const submitInFlightRef = useRef(false);
+  const previewInFlightRef = useRef(false);
   const lastDraftInputRef = useRef<string | null>(null);
 
   // 한국어 조사 처리: 받침 유무에 따라 이/가, 은/는 등 선택
@@ -81,8 +84,16 @@ export default function ConsultationTab({
     if (lastChar < 0xAC00 || lastChar > 0xD7A3) return false;
     return (lastChar - 0xAC00) % 28 !== 0;
   };
-  const subjectParticle = hasLastConsonant(secretaryName) ? "이가" : "가";
   const topicParticle = hasLastConsonant(secretaryName) ? "이" : "가";
+
+  const resetForm = () => {
+    setShowForm(false);
+    setSubject("");
+    setQuestion("");
+    setPreviewLinks([]);
+    setPreviewReady(false);
+    lastDraftInputRef.current = null;
+  };
 
   const getDownloadLinks = (c: TaxConsultation): { label: string; url: string; description: string }[] => {
     const dp = c.data_package as Record<string, unknown> | null;
@@ -112,6 +123,8 @@ export default function ConsultationTab({
     draftInFlightRef.current = true;
     lastDraftInputRef.current = trimmedInput;
     setDrafting(true);
+    setPreviewReady(false);
+    setPreviewLinks([]);
     try {
       const { data, error } = await supabase.functions.invoke("draft-consultation", {
         body: { briefDescription: trimmedInput, businessContext },
@@ -119,7 +132,7 @@ export default function ConsultationTab({
       if (error) throw error;
       if (data?.subject) setSubject(data.subject);
       if (data?.question) setQuestion(data.question);
-      toast.success(`${secretaryName}${topicParticle} 상담서를 작성했습니다. 내용을 확인 후 '상담 등록'을 눌러주세요.`);
+      toast.success(`${secretaryName}${topicParticle} 상담서를 작성했습니다. 이제 자료를 미리 생성해 확인해보세요.`);
     } catch (e) {
       lastDraftInputRef.current = null;
       toast.error("AI 작성에 실패했습니다. 직접 작성해주세요.");
@@ -129,6 +142,48 @@ export default function ConsultationTab({
       setDrafting(false);
     }
   }, [businessContext, secretaryName, topicParticle]);
+
+  const generatePreviewDataPackage = async (silent = false) => {
+    if (previewInFlightRef.current || attachingId === "preview") return null;
+
+    previewInFlightRef.current = true;
+    setAttachingId("preview");
+    try {
+      const { data, error } = await supabase.functions.invoke("attach-consultation-data", {
+        body: { preview: true },
+      });
+
+      if (error) throw error;
+
+      const links = Array.isArray(data?.links)
+        ? (data.links as { label: string; url: string; description: string }[])
+        : [];
+
+      setPreviewLinks(links);
+      setPreviewReady(true);
+
+      if (!silent) {
+        if (links.length > 0) {
+          toast.success(`미리보기 자료 ${links.length}건을 준비했습니다`);
+        } else {
+          toast.info("미리보기할 자료가 아직 없습니다. 연동 후 다시 시도해주세요.");
+        }
+      }
+
+      return data;
+    } catch (e) {
+      setPreviewReady(false);
+      setPreviewLinks([]);
+      console.error("Preview data package error:", e);
+      if (!silent) {
+        toast.error("자료 미리보기에 실패했습니다. 다시 시도해주세요.");
+      }
+      throw e;
+    } finally {
+      previewInFlightRef.current = false;
+      setAttachingId(null);
+    }
+  };
 
   const attachDataToConsultation = async (consultationId: string, silent = false) => {
     setAttachingId(consultationId);
@@ -167,43 +222,32 @@ export default function ConsultationTab({
       return;
     }
 
+    if (!previewReady) {
+      toast.error("먼저 자료를 생성해서 확인해 주세요");
+      return;
+    }
+
     submitInFlightRef.current = true;
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다");
 
-      const { data, error } = await supabase.from("tax_consultations").insert({
+      const dataPackage = previewLinks.length > 0 ? { downloadLinks: previewLinks } : {};
+      const { error } = await supabase.from("tax_consultations").insert({
         user_id: user.id,
         accountant_id: assignment?.accountant_id || null,
         subject: subject.trim(),
         user_question: question.trim(),
         consultation_type: "ad_hoc",
         status: "pending",
-      }).select("id").single();
+        data_package: dataPackage,
+      });
 
       if (error) throw error;
 
-      // 자료 첨부 (실패해도 상담은 등록된 상태 유지)
-      let attachedCount = 0;
-      if (data?.id) {
-        try {
-          const result = await attachDataToConsultation(data.id, true);
-          attachedCount = result?.totalFiles || 0;
-        } catch {
-          console.warn("자료 첨부 실패 - 상담은 등록됨");
-        }
-      }
-
-      if (attachedCount > 0) {
-        toast.success(`상담이 등록되었습니다 (자료 ${attachedCount}건 첨부)`);
-      } else {
-        toast.success("상담이 등록되었습니다 (첨부할 자료 없음)");
-      }
-      setSubject("");
-      setQuestion("");
-      setShowForm(false);
-      lastDraftInputRef.current = null;
+      toast.success(`상담이 등록되었습니다${previewLinks.length > 0 ? ` (자료 ${previewLinks.length}건 첨부)` : ""}`);
+      resetForm();
       onCreated();
     } catch (e) {
       toast.error((e as Error).message || "상담 등록에 실패했습니다");
@@ -281,14 +325,13 @@ export default function ConsultationTab({
           <CardContent className="p-4 space-y-3">
             <h4 className="text-sm font-semibold">새 상담 요청</h4>
 
-            {/* AI 작성 도우미 */}
             <div className="p-3 rounded-lg bg-primary/5 border border-primary/15 space-y-2.5">
               <p className="text-xs font-medium flex items-center gap-1.5 text-primary">
                 <Wand2 className="h-3.5 w-3.5" />
                 {secretaryName}{topicParticle} 도와드려요!
               </p>
               <p className="text-[11px] text-muted-foreground">
-                아래 고민을 선택하면 {secretaryName}{topicParticle} 세무사에게 보낼 상담서를 작성해 드립니다
+                먼저 상담 내용을 작성하고, 자료를 미리 생성해 확인한 뒤 최종 등록할 수 있습니다
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {getSuggestedConcerns().map((concern) => (
@@ -316,27 +359,79 @@ export default function ConsultationTab({
             <Input
               placeholder="상담 제목 (예: 부가세 신고 관련 문의)"
               value={subject}
-              onChange={(e) => setSubject(e.target.value)}
+              onChange={(e) => {
+                setSubject(e.target.value);
+                setPreviewReady(false);
+              }}
               className="text-sm"
             />
             <Textarea
               placeholder="세무사에게 질문할 내용을 작성해 주세요..."
               value={question}
-              onChange={(e) => setQuestion(e.target.value)}
+              onChange={(e) => {
+                setQuestion(e.target.value);
+                setPreviewReady(false);
+              }}
               rows={5}
               className="text-sm"
             />
-            {!assignment && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Sparkles className="h-3 w-3" />
-                담당 세무사 배정 후 이메일로 전달할 수 있습니다
-              </p>
-            )}
+
+            <div className="rounded-lg border border-border/50 bg-muted/20 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium">첨부 자료 미리보기</p>
+                  <p className="text-[11px] text-muted-foreground">최근 3개월 자료를 먼저 생성해서 확인한 뒤 상담을 등록합니다</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs shrink-0"
+                  disabled={drafting || submitting || !subject.trim() || !question.trim() || attachingId === "preview"}
+                  onClick={() => void generatePreviewDataPackage()}
+                >
+                  {attachingId === "preview" ? (
+                    <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />자료 생성 중...</>
+                  ) : (
+                    <><Paperclip className="h-3.5 w-3.5 mr-1.5" />자료 미리 생성</>
+                  )}
+                </Button>
+              </div>
+
+              {attachingId === "preview" ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-14 rounded-md" />
+                  <Skeleton className="h-14 rounded-md" />
+                </div>
+              ) : previewLinks.length > 0 ? (
+                <div className="space-y-1.5">
+                  {previewLinks.map((link, i) => (
+                    <a
+                      key={i}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-2 rounded-md bg-background hover:bg-accent/50 transition-colors group"
+                    >
+                      <FileText className="h-4 w-4 text-primary shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{link.label}</p>
+                        <p className="text-[10px] text-muted-foreground">{link.description}</p>
+                      </div>
+                      <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                    </a>
+                  ))}
+                  <p className="text-[10px] text-muted-foreground">⏰ 다운로드 링크는 7일간 유효합니다</p>
+                </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">아직 생성된 미리보기 자료가 없습니다.</p>
+              )}
+            </div>
+
             <div className="flex gap-2">
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => { setShowForm(false); setSubject(""); setQuestion(""); lastDraftInputRef.current = null; }}
+                onClick={resetForm}
               >
                 취소
               </Button>
@@ -344,9 +439,9 @@ export default function ConsultationTab({
                 size="sm"
                 className="flex-1"
                 onClick={handleSubmit}
-                disabled={submitting || !subject.trim() || !question.trim()}
+                disabled={submitting || drafting || attachingId === "preview" || !subject.trim() || !question.trim() || !previewReady}
               >
-                {submitting ? (attachingId ? "자료 첨부 중..." : "등록 중...") : "상담 등록"}
+                {submitting ? "상담 등록 중..." : "자료 확인 후 상담 등록"}
               </Button>
             </div>
           </CardContent>
