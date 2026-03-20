@@ -50,7 +50,7 @@ export default function TaxAccountant() {
 
   return (
     <MainLayout title="세무사" showBackButton>
-      <Tabs defaultValue={defaultTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="w-full grid grid-cols-3">
           <TabsTrigger value="matching" className="text-xs">
             <UserCheck className="h-3.5 w-3.5 mr-1" />
