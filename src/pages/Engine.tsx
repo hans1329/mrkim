@@ -31,7 +31,13 @@ import {
   CircleDot,
   CheckCircle2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Briefcase,
+  Mail,
+  FileCheck,
+  UserCheck,
+  CalendarClock,
+  ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
