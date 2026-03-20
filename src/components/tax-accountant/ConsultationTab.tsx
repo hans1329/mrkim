@@ -325,7 +325,7 @@ export default function ConsultationTab({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => { setShowForm(false); setSubject(""); setQuestion(""); setBriefInput(""); }}
+                onClick={() => { setShowForm(false); setSubject(""); setQuestion(""); lastDraftInputRef.current = null; }}
               >
                 취소
               </Button>
