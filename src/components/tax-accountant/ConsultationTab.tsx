@@ -66,6 +66,7 @@ export default function ConsultationTab({
   const [submitting, setSubmitting] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [attachingId, setAttachingId] = useState<string | null>(null);
 
   // AI 작성 도우미 상태
   const [briefInput, setBriefInput] = useState("");
