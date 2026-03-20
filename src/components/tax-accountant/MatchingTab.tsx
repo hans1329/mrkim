@@ -286,7 +286,7 @@ export default function MatchingTab({
               variant="ghost"
               size="sm"
               className="w-full mt-3 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={onRemove}
+              onClick={() => setShowTerminate(true)}
             >
               계약 해지
             </Button>
