@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
           [tx.transaction_date, tx.type === "income" ? "수입" : "지출", toCsvValue(tx.description), tx.amount, tx.category || "미분류", toCsvValue(tx.merchant_name), tx.source_type].join(",")
         );
         const csv = "\uFEFF" + [header, ...rows].join("\n");
-        const path = `${folder}/거래내역_${periodLabel}.csv`;
+        const path = `${folder}/transactions_${periodLabel}.csv`;
         const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
         if (error) {
           uploadErrors.push(`거래내역 업로드 실패: ${error.message}`);
