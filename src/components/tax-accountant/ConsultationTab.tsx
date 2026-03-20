@@ -119,7 +119,7 @@ export default function ConsultationTab({
       if (error) throw error;
       if (data?.subject) setSubject(data.subject);
       if (data?.question) setQuestion(data.question);
-      toast.success(`${secretaryName}${topicParticle} 상담서를 작성했습니다. 첨부까지 하려면 아래 '상담 등록'을 눌러주세요.`);
+      toast.success(`${secretaryName}${topicParticle} 상담서를 작성했습니다. 내용을 확인 후 '상담 등록'을 눌러주세요.`);
     } catch (e) {
       lastDraftInputRef.current = null;
       toast.error("AI 작성에 실패했습니다. 직접 작성해주세요.");
