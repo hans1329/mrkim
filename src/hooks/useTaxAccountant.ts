@@ -180,6 +180,52 @@ export function useTaxAccountant() {
     }
   };
 
+  const createFilingTask = async (filingType: string, taxPeriod: string, deadline: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("로그인이 필요합니다");
+
+      // 중복 확인
+      const { data: existing } = await supabase
+        .from("tax_filing_tasks")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("filing_type", filingType)
+        .eq("tax_period", taxPeriod)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        toast.error("동일한 신고 태스크가 이미 존재합니다");
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from("tax_filing_tasks")
+        .insert({
+          user_id: user.id,
+          accountant_id: assignment?.accountant_id || null,
+          filing_type: filingType,
+          tax_period: taxPeriod,
+          deadline,
+          status: "preparing",
+          prepared_data: {},
+          review_notes: [],
+          filing_method: "accountant",
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      setFilingTasks(prev => [data as unknown as TaxFilingTask, ...prev].sort((a, b) => a.deadline.localeCompare(b.deadline)));
+      toast.success("신고 태스크가 생성되었습니다");
+      return data as unknown as TaxFilingTask;
+    } catch (e) {
+      console.error("Failed to create filing task:", e);
+      toast.error("신고 태스크 생성에 실패했습니다");
+      return null;
+    }
+  };
+
   return {
     accountants,
     assignment,
@@ -189,6 +235,7 @@ export function useTaxAccountant() {
     selectAccountant,
     removeAssignment,
     createConsultation,
+    createFilingTask,
     refetch: fetchAll,
   };
 }

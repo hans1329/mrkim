@@ -49,6 +49,7 @@ interface FilingTabProps {
   assignment: TaxAccountantAssignment | null;
   businessType?: string | null;
   loading?: boolean;
+  onCreateTask?: (filingType: string, taxPeriod: string, deadline: string) => Promise<unknown>;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: typeof Clock }> = {
