@@ -245,12 +245,6 @@ export default function MatchingTab({
                 <CheckCircle2 className="h-4 w-4 text-primary" />
                 담당 세무사
               </h3>
-              <button
-                onClick={onRemove}
-                className="text-muted-foreground hover:text-destructive transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -287,6 +281,14 @@ export default function MatchingTab({
                 </div>
               )}
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full mt-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={onRemove}
+            >
+              계약 해지
+            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -305,68 +307,71 @@ export default function MatchingTab({
         </Card>
       )}
 
-      {/* 세무사 목록 */}
-      {sorted.length > 0 ? (
-        <div className="space-y-3">
-          {recommendedCount > 0 && (
-            <>
-              <h3 className="text-sm font-semibold text-primary px-1 flex items-center gap-1.5">
-                <Star className="h-3.5 w-3.5" />
-                {businessType ? `${businessType} 전문 추천` : "추천 세무사"} ({recommendedCount}명)
-              </h3>
-              {sorted.filter(a => recommendedIds.has(a.id)).map((accountant) => (
-                <AccountantCard
-                  key={accountant.id}
-                  accountant={accountant}
-                  isAssigned={assignment?.accountant_id === accountant.id}
-                  isRecommended={true}
-                  onSelect={setConfirmTarget}
-                />
-              ))}
-              {sorted.length > recommendedCount && (
-                <h3 className="text-sm font-semibold text-muted-foreground px-1 pt-2">
-                  기타 세무사
-                </h3>
+      {/* 세무사 목록: 매칭 완료 시 숨김 */}
+      {!assignment?.accountant && (
+        <>
+          {sorted.length > 0 ? (
+            <div className="space-y-3">
+              {recommendedCount > 0 && (
+                <>
+                  <h3 className="text-sm font-semibold text-primary px-1 flex items-center gap-1.5">
+                    <Star className="h-3.5 w-3.5" />
+                    {businessType ? `${businessType} 전문 추천` : "추천 세무사"} ({recommendedCount}명)
+                  </h3>
+                  {sorted.filter(a => recommendedIds.has(a.id)).map((accountant) => (
+                    <AccountantCard
+                      key={accountant.id}
+                      accountant={accountant}
+                      isAssigned={false}
+                      isRecommended={true}
+                      onSelect={setConfirmTarget}
+                    />
+                  ))}
+                  {sorted.length > recommendedCount && (
+                    <h3 className="text-sm font-semibold text-muted-foreground px-1 pt-2">
+                      기타 세무사
+                    </h3>
+                  )}
+                  {sorted.filter(a => !recommendedIds.has(a.id)).map((accountant) => (
+                    <AccountantCard
+                      key={accountant.id}
+                      accountant={accountant}
+                      isAssigned={false}
+                      isRecommended={false}
+                      onSelect={setConfirmTarget}
+                    />
+                  ))}
+                </>
               )}
-              {sorted.filter(a => !recommendedIds.has(a.id)).map((accountant) => (
-                <AccountantCard
-                  key={accountant.id}
-                  accountant={accountant}
-                  isAssigned={assignment?.accountant_id === accountant.id}
-                  isRecommended={false}
-                  onSelect={setConfirmTarget}
-                />
-              ))}
-            </>
+              {recommendedCount === 0 && (
+                <>
+                  <h3 className="text-sm font-semibold text-muted-foreground px-1">
+                    추천 세무사
+                  </h3>
+                  {sorted.map((accountant) => (
+                    <AccountantCard
+                      key={accountant.id}
+                      accountant={accountant}
+                      isAssigned={false}
+                      isRecommended={false}
+                      onSelect={setConfirmTarget}
+                    />
+                  ))}
+                </>
+              )}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <p className="text-sm text-muted-foreground">등록된 세무사가 없습니다</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  곧 업종별 전문 세무사를 매칭해 드릴 예정입니다
+                </p>
+              </CardContent>
+            </Card>
           )}
-          {recommendedCount === 0 && (
-            <>
-              <h3 className="text-sm font-semibold text-muted-foreground px-1">
-                추천 세무사
-              </h3>
-              {sorted.map((accountant) => (
-                <AccountantCard
-                  key={accountant.id}
-                  accountant={accountant}
-                  isAssigned={assignment?.accountant_id === accountant.id}
-                  isRecommended={false}
-                  onSelect={setConfirmTarget}
-                />
-              ))}
-            </>
-          )}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="py-8 text-center">
-            <p className="text-sm text-muted-foreground">등록된 세무사가 없습니다</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              곧 업종별 전문 세무사를 매칭해 드릴 예정입니다
-            </p>
-          </CardContent>
-        </Card>
+        </>
       )}
-
       {/* 선택 확인 다이얼로그 */}
       <AlertDialog open={!!confirmTarget} onOpenChange={(open) => !open && setConfirmTarget(null)}>
         <AlertDialogContent>
