@@ -81,6 +81,12 @@ export default function ConsultationTab({
   const subjectParticle = hasLastConsonant(secretaryName) ? "이가" : "가";
   const topicParticle = hasLastConsonant(secretaryName) ? "이" : "가";
 
+  const getDownloadLinks = (c: TaxConsultation): { label: string; url: string; description: string }[] => {
+    const dp = c.data_package as Record<string, unknown> | null;
+    if (!dp?.downloadLinks || !Array.isArray(dp.downloadLinks)) return [];
+    return dp.downloadLinks as { label: string; url: string; description: string }[];
+  };
+
   const getSuggestedConcerns = (): string[] => {
     const month = new Date().getMonth() + 1;
     const base = [
