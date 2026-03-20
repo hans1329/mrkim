@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +71,7 @@ export default function ConsultationTab({
   // AI 작성 도우미 상태
   const [briefInput, setBriefInput] = useState("");
   const [drafting, setDrafting] = useState(false);
+  const draftInFlightRef = useRef(false);
 
   // 한국어 조사 처리: 받침 유무에 따라 이/가, 은/는 등 선택
   const hasLastConsonant = (name: string) => {
@@ -102,30 +103,15 @@ export default function ConsultationTab({
     return base.slice(0, 4);
   };
 
-  const handleAIDraftWithInput = async (input: string) => {
-    setDrafting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("draft-consultation", {
-        body: { briefDescription: input, businessContext },
-      });
-      if (error) throw error;
-      if (data?.subject) setSubject(data.subject);
-      if (data?.question) setQuestion(data.question);
-      toast.success(`${secretaryName}${topicParticle} 상담서를 작성했습니다. 내용을 확인 후 수정해주세요.`);
-    } catch (e) {
-      toast.error("AI 작성에 실패했습니다. 직접 작성해주세요.");
-      console.error("AI draft error:", e);
-    } finally {
-      setDrafting(false);
-    }
-  };
+  const requestAIDraft = useCallback(async (input: string) => {
+    const trimmedInput = input.trim();
+    if (!trimmedInput || draftInFlightRef.current) return;
 
-  const handleAIDraft = async () => {
-    if (!briefInput.trim()) return;
+    draftInFlightRef.current = true;
     setDrafting(true);
     try {
       const { data, error } = await supabase.functions.invoke("draft-consultation", {
-        body: { briefDescription: briefInput.trim(), businessContext },
+        body: { briefDescription: trimmedInput, businessContext },
       });
       if (error) throw error;
       if (data?.subject) setSubject(data.subject);
@@ -135,9 +121,10 @@ export default function ConsultationTab({
       toast.error("AI 작성에 실패했습니다. 직접 작성해주세요.");
       console.error("AI draft error:", e);
     } finally {
+      draftInFlightRef.current = false;
       setDrafting(false);
     }
-  };
+  }, [businessContext, secretaryName, topicParticle]);
 
   const attachDataToConsultation = async (consultationId: string) => {
     setAttachingId(consultationId);
