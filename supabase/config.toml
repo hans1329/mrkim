@@ -3,6 +3,9 @@ project_id = "kuxpsfxkumbfuqsvcucx"
 [functions.chat-ai]
 verify_jwt = false
 
+[functions.draft-consultation]
+verify_jwt = false
+
 [functions.service-chat]
 verify_jwt = false
 
