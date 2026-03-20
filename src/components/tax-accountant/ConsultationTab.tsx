@@ -164,9 +164,11 @@ export default function ConsultationTab({
 
       if (!silent) {
         if (links.length > 0) {
-          toast.success(`미리보기 자료 ${links.length}건을 준비했습니다`);
+          toast.success(`관련 자료 ${links.length}건을 준비했습니다`);
         } else {
-          toast.info("미리보기할 자료가 아직 없습니다. 연동 후 다시 시도해주세요.");
+          const missing = Array.isArray(data?.missingSources) ? data.missingSources as string[] : [];
+          const missingText = missing.length > 0 ? missing.join(", ") : "거래내역, 세금계산서, 배달주문, 직원현황";
+          toast.info(`${missingText} 데이터가 없습니다. 해당 서비스를 먼저 연동해주세요.`);
         }
       }
 
