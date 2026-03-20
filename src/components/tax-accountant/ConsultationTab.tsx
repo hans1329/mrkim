@@ -55,6 +55,7 @@ export default function ConsultationTab({
   onCreated,
   loading,
   secretaryName = "김비서",
+  businessContext,
 }: ConsultationTabProps) {
   const [showForm, setShowForm] = useState(false);
   const [subject, setSubject] = useState("");
