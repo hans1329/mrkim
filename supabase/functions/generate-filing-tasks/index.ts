@@ -19,12 +19,26 @@ interface FilingSchedule {
 
 function getFilingSchedules(year: number): FilingSchedule[] {
   return [
+    // 부가가치세 1기 예정 (1~3월) → 4/25
+    {
+      filing_type: "부가가치세 예정신고",
+      tax_period: `${year}년 1기 (1월~3월)`,
+      deadline: `${year}-04-25`,
+      generate_after: `${year}-02-25`,
+    },
     // 부가가치세 1기 확정 (1~6월) → 7/25
     {
       filing_type: "부가가치세 확정신고",
       tax_period: `${year}년 1기 (1월~6월)`,
       deadline: `${year}-07-25`,
       generate_after: `${year}-05-25`,
+    },
+    // 부가가치세 2기 예정 (7~9월) → 10/25
+    {
+      filing_type: "부가가치세 예정신고",
+      tax_period: `${year}년 2기 (7월~9월)`,
+      deadline: `${year}-10-25`,
+      generate_after: `${year}-08-25`,
     },
     // 부가가치세 2기 확정 (7~12월) → 다음해 1/25
     {
@@ -36,6 +50,31 @@ function getFilingSchedules(year: number): FilingSchedule[] {
     // 종합소득세 → 5/31
     {
       filing_type: "종합소득세 신고",
+      tax_period: `${year - 1}년 귀속`,
+      deadline: `${year}-05-31`,
+      generate_after: `${year}-03-31`,
+    },
+    // 원천세 (매월 10일) — 1월~12월분, 각각 다음달 10일 마감
+    ...Array.from({ length: 12 }, (_, i) => {
+      const month = i + 1;
+      const deadlineMonth = month === 12 ? 1 : month + 1;
+      const deadlineYear = month === 12 ? year + 1 : year;
+      const paddedMonth = String(month).padStart(2, "0");
+      const paddedDeadlineMonth = String(deadlineMonth).padStart(2, "0");
+      // 마감 20일 전부터 생성
+      const genDay = 20;
+      const genMonth = month;
+      const paddedGenMonth = String(genMonth).padStart(2, "0");
+      return {
+        filing_type: "원천세 신고",
+        tax_period: `${year}년 ${paddedMonth}월분`,
+        deadline: `${deadlineYear}-${paddedDeadlineMonth}-10`,
+        generate_after: `${year}-${paddedGenMonth}-${String(genDay).padStart(2, "0")}`,
+      };
+    }),
+    // 지방소득세 (종합소득세와 동일 기한) → 5/31
+    {
+      filing_type: "지방소득세 신고",
       tax_period: `${year - 1}년 귀속`,
       deadline: `${year}-05-31`,
       generate_after: `${year}-03-31`,

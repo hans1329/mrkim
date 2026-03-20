@@ -347,8 +347,11 @@ function getChecklistProgress(task: TaxFilingTask, items: ChecklistItem[]): { co
 }
 
 const FILING_TYPE_OPTIONS = [
+  { label: "부가가치세 예정신고", periods: (y: number) => [`${y}년 1기 (1월~3월)`, `${y}년 2기 (7월~9월)`] },
   { label: "부가가치세 확정신고", periods: (y: number) => [`${y}년 1기 (1월~6월)`, `${y}년 2기 (7월~12월)`] },
   { label: "종합소득세 신고", periods: (y: number) => [`${y - 1}년 귀속`] },
+  { label: "원천세 신고", periods: (y: number) => Array.from({ length: 12 }, (_, i) => `${y}년 ${String(i + 1).padStart(2, "0")}월분`) },
+  { label: "지방소득세 신고", periods: (y: number) => [`${y - 1}년 귀속`] },
 ];
 
 function CreateFilingTaskCard({ onCreateTask }: { onCreateTask: (ft: string, tp: string, dl: string) => Promise<unknown> }) {
