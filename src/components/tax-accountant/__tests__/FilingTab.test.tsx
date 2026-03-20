@@ -91,7 +91,7 @@ describe("FilingTab", () => {
 
   it("신고가 없으면 빈 상태를 표시한다", () => {
     render(<FilingTab filingTasks={[]} assignment={null} />);
-    expect(screen.getByText("예정된 신고가 없습니다")).toBeInTheDocument();
+    expect(screen.getByText("담당 세무사를 먼저 배정해주세요")).toBeInTheDocument();
   });
 
   it("로딩 중일 때 스켈레톤을 표시한다", () => {
