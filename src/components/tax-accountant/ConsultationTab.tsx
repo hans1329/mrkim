@@ -60,6 +60,15 @@ export default function ConsultationTab({
   const [briefInput, setBriefInput] = useState("");
   const [drafting, setDrafting] = useState(false);
 
+  // 한국어 조사 처리: 받침 유무에 따라 이/가, 은/는 등 선택
+  const hasLastConsonant = (name: string) => {
+    const lastChar = name.charCodeAt(name.length - 1);
+    if (lastChar < 0xAC00 || lastChar > 0xD7A3) return false;
+    return (lastChar - 0xAC00) % 28 !== 0;
+  };
+  const subjectParticle = hasLastConsonant(secretaryName) ? "이가" : "가";
+  const topicParticle = hasLastConsonant(secretaryName) ? "이" : "가";
+
   const getSuggestedConcerns = (): string[] => {
     const month = new Date().getMonth() + 1;
     const base = [
@@ -84,7 +93,7 @@ export default function ConsultationTab({
       if (error) throw error;
       if (data?.subject) setSubject(data.subject);
       if (data?.question) setQuestion(data.question);
-      toast.success(`${secretaryName}가 상담서를 작성했습니다. 내용을 확인 후 수정해주세요.`);
+      toast.success(`${secretaryName}${topicParticle} 상담서를 작성했습니다. 내용을 확인 후 수정해주세요.`);
     } catch (e) {
       toast.error("AI 작성에 실패했습니다. 직접 작성해주세요.");
       console.error("AI draft error:", e);
@@ -103,7 +112,7 @@ export default function ConsultationTab({
       if (error) throw error;
       if (data?.subject) setSubject(data.subject);
       if (data?.question) setQuestion(data.question);
-      toast.success(`${secretaryName}가 상담서를 작성했습니다. 내용을 확인 후 수정해주세요.`);
+      toast.success(`${secretaryName}${topicParticle} 상담서를 작성했습니다. 내용을 확인 후 수정해주세요.`);
     } catch (e) {
       toast.error("AI 작성에 실패했습니다. 직접 작성해주세요.");
       console.error("AI draft error:", e);
@@ -202,10 +211,10 @@ export default function ConsultationTab({
             <div className="p-3 rounded-lg bg-primary/5 border border-primary/15 space-y-2.5">
               <p className="text-xs font-medium flex items-center gap-1.5 text-primary">
                 <Wand2 className="h-3.5 w-3.5" />
-                {secretaryName}가 도와드려요!
+                {secretaryName}{topicParticle} 도와드려요!
               </p>
               <p className="text-[11px] text-muted-foreground">
-                아래 고민을 선택하면 {secretaryName}가 세무사에게 보낼 상담서를 작성해 드립니다
+                아래 고민을 선택하면 {secretaryName}{topicParticle} 세무사에게 보낼 상담서를 작성해 드립니다
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {getSuggestedConcerns().map((concern) => (
@@ -226,7 +235,7 @@ export default function ConsultationTab({
               {drafting && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                  {secretaryName}가 상담서를 작성하고 있어요...
+                  {secretaryName}{topicParticle} 상담서를 작성하고 있어요...
                 </div>
               )}
             </div>
