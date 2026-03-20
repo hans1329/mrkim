@@ -29,6 +29,7 @@ interface ConsultationTabProps {
   assignment: TaxAccountantAssignment | null;
   onCreated: () => void;
   loading?: boolean;
+  secretaryName?: string;
 }
 
 function StatusBadge({ status }: { status: string }) {
