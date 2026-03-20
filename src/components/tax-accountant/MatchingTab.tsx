@@ -397,6 +397,35 @@ export default function MatchingTab({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 계약 해지 확인 다이얼로그 */}
+      <AlertDialog open={showTerminate} onOpenChange={setShowTerminate}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>계약 해지 확인</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{assignment?.accountant?.name}</strong>
+              {assignment?.accountant?.firm_name && ` (${assignment.accountant.firm_name})`}
+              님과의 세무사 계약을 해지하시겠습니까?
+              <span className="block mt-2 text-destructive">
+                해지 후에는 상담 내역이 유지되지만, 새로운 세무사를 다시 선택해야 합니다.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                onRemove();
+                setShowTerminate(false);
+              }}
+            >
+              계약 해지
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
