@@ -19,6 +19,9 @@ import {
   Sparkles,
   Wand2,
   Loader2,
+  Paperclip,
+  Download,
+  FileText,
 } from "lucide-react";
 import { type TaxConsultation, type TaxAccountantAssignment } from "@/hooks/useTaxAccountant";
 import { formatDistanceToNow } from "date-fns";
@@ -63,6 +66,7 @@ export default function ConsultationTab({
   const [submitting, setSubmitting] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [attachingId, setAttachingId] = useState<string | null>(null);
 
   // AI 작성 도우미 상태
   const [briefInput, setBriefInput] = useState("");
@@ -76,6 +80,12 @@ export default function ConsultationTab({
   };
   const subjectParticle = hasLastConsonant(secretaryName) ? "이가" : "가";
   const topicParticle = hasLastConsonant(secretaryName) ? "이" : "가";
+
+  const getDownloadLinks = (c: TaxConsultation): { label: string; url: string; description: string }[] => {
+    const dp = c.data_package as Record<string, unknown> | null;
+    if (!dp?.downloadLinks || !Array.isArray(dp.downloadLinks)) return [];
+    return dp.downloadLinks as { label: string; url: string; description: string }[];
+  };
 
   const getSuggestedConcerns = (): string[] => {
     const month = new Date().getMonth() + 1;
@@ -129,6 +139,38 @@ export default function ConsultationTab({
     }
   };
 
+  const attachDataToConsultation = async (consultationId: string) => {
+    setAttachingId(consultationId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/attach-consultation-data`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ consultationId }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      if (data.totalFiles > 0) {
+        toast.success(`${data.totalFiles}개 자료가 첨부되었습니다`);
+      } else {
+        toast.info("첨부할 데이터가 아직 없습니다. 연동 후 다시 시도해주세요.");
+      }
+      onCreated();
+    } catch (e) {
+      console.error("Attach data error:", e);
+      // Non-blocking: don't show error toast for attachment failures
+    } finally {
+      setAttachingId(null);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!subject.trim() || !question.trim()) {
       toast.error("제목과 질문을 입력해 주세요");
@@ -139,14 +181,14 @@ export default function ConsultationTab({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다");
 
-      const { error } = await supabase.from("tax_consultations").insert({
+      const { data, error } = await supabase.from("tax_consultations").insert({
         user_id: user.id,
         accountant_id: assignment?.accountant_id || null,
         subject: subject.trim(),
         user_question: question.trim(),
         consultation_type: "ad_hoc",
         status: "pending",
-      });
+      }).select("id").single();
 
       if (error) throw error;
       toast.success("상담 요청이 등록되었습니다");
@@ -154,6 +196,11 @@ export default function ConsultationTab({
       setQuestion("");
       setShowForm(false);
       onCreated();
+
+      // Auto-attach data in background
+      if (data?.id) {
+        attachDataToConsultation(data.id);
+      }
     } catch (e) {
       toast.error((e as Error).message || "상담 등록에 실패했습니다");
     } finally {
@@ -335,7 +382,68 @@ export default function ConsultationTab({
                       이메일 전달됨
                     </>
                   )}
+                  {getDownloadLinks(c).length > 0 && (
+                    <>
+                      <span>•</span>
+                      <Paperclip className="h-3 w-3" />
+                      자료 {getDownloadLinks(c).length}건
+                    </>
+                  )}
                 </div>
+
+                {/* 첨부 자료 */}
+                {isExpanded && (() => {
+                  const links = getDownloadLinks(c);
+                  if (links.length === 0 && c.status === "pending") {
+                    return (
+                      <div className="mt-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs w-full border-dashed"
+                          disabled={attachingId === c.id}
+                          onClick={() => attachDataToConsultation(c.id)}
+                        >
+                          {attachingId === c.id ? (
+                            <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />자료 수집 중...</>
+                          ) : (
+                            <><Paperclip className="h-3.5 w-3.5 mr-1.5" />관련 자료 첨부하기</>
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  }
+                  if (links.length > 0) {
+                    return (
+                      <div className="mt-3 p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2">
+                        <p className="text-xs font-medium flex items-center gap-1">
+                          <Paperclip className="h-3 w-3 text-primary" />
+                          첨부 자료
+                        </p>
+                        <div className="space-y-1.5">
+                          {links.map((link, i) => (
+                            <a
+                              key={i}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-2 rounded-md bg-background hover:bg-accent/50 transition-colors group"
+                            >
+                              <FileText className="h-4 w-4 text-primary shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium truncate">{link.label}</p>
+                                <p className="text-[10px] text-muted-foreground">{link.description}</p>
+                              </div>
+                              <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                            </a>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">⏰ 다운로드 링크는 7일간 유효합니다</p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
 
                 {/* AI 사전 답변 */}
                 {isExpanded && c.ai_preliminary_answer && (
