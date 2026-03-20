@@ -166,9 +166,19 @@ export default function ConsultationTab({
         if (links.length > 0) {
           toast.success(`관련 자료 ${links.length}건을 준비했습니다`);
         } else {
-          const missing = Array.isArray(data?.missingSources) ? data.missingSources as string[] : [];
-          const missingText = missing.length > 0 ? missing.join(", ") : "거래내역, 세금계산서, 배달주문, 직원현황";
-          toast.info(`${missingText} 데이터가 없습니다. 해당 서비스를 먼저 연동해주세요.`);
+          const sources = Array.isArray(data?.sources)
+            ? (data.sources as { name: string; found: boolean }[])
+            : [];
+          const foundSources = sources.filter((source) => source.found).map((source) => source.name);
+          const missingSources = sources.filter((source) => !source.found).map((source) => source.name);
+
+          if (foundSources.length > 0) {
+            toast.error(`데이터는 확인됐지만 자료 파일 생성에 실패했습니다. (${foundSources.join(", ")})`);
+          } else if (missingSources.length > 0) {
+            toast.info(`${missingSources.join(", ")} 데이터가 없습니다. 해당 서비스를 먼저 연동해주세요.`);
+          } else {
+            toast.error("자료 상태를 확인하지 못했습니다. 다시 시도해주세요.");
+          }
         }
       }
 
