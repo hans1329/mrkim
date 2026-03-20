@@ -1222,6 +1222,41 @@ export default function Engine() {
                       <td className="py-2 px-3"><Badge className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/20">하이픈</Badge></td>
                     </tr>
 
+                    {/* 세무사 */}
+                    <tr className="border-b bg-muted/20">
+                      <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>📋 세무사 통합</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">draft-consultation</code></td>
+                      <td className="py-2 px-3">AI 상담 초안 생성 (Gemini)</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">JWT</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">attach-consultation-data</code></td>
+                      <td className="py-2 px-3">3개월 데이터 CSV 패키징 + Storage 업로드</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">JWT</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">send-tax-consultation</code></td>
+                      <td className="py-2 px-3">Resend로 세무사에게 데이터 이메일 발송</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">JWT</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">notify-accountant-assignment</code></td>
+                      <td className="py-2 px-3">세무사 배정 알림 (이메일 + 앱 내)</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">JWT</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">generate-filing-tasks</code></td>
+                      <td className="py-2 px-3">정기 신고 태스크 자동 생성 (5종)</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Service Role</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+
                     {/* 공유 모듈 */}
                     <tr className="bg-muted/20">
                       <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>📦 공유 모듈</td>
