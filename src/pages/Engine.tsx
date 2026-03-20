@@ -53,7 +53,7 @@ export default function Engine() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">김비서 AI 엔진 아키텍처</h1>
-              <p className="text-muted-foreground text-sm">v2.1 · 2026-02-18 업데이트</p>
+              <p className="text-muted-foreground text-sm">v2.2 · 2026-03-20 업데이트</p>
             </div>
           </div>
         </div>
