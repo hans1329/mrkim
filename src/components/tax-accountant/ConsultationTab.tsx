@@ -24,12 +24,19 @@ import { type TaxConsultation, type TaxAccountantAssignment } from "@/hooks/useT
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 
+interface BusinessContext {
+  businessName: string | null;
+  businessType: string | null;
+  businessRegistrationNumber: string | null;
+}
+
 interface ConsultationTabProps {
   consultations: TaxConsultation[];
   assignment: TaxAccountantAssignment | null;
   onCreated: () => void;
   loading?: boolean;
   secretaryName?: string;
+  businessContext?: BusinessContext;
 }
 
 function StatusBadge({ status }: { status: string }) {
