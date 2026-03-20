@@ -49,6 +49,7 @@ interface FilingTabProps {
   assignment: TaxAccountantAssignment | null;
   businessType?: string | null;
   loading?: boolean;
+  onCreateTask?: (filingType: string, taxPeriod: string, deadline: string) => Promise<unknown>;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: typeof Clock }> = {
@@ -345,36 +346,109 @@ function getChecklistProgress(task: TaxFilingTask, items: ChecklistItem[]): { co
   };
 }
 
-// 데모용 목업 태스크 (DB에 신고 태스크가 없을 때 표시)
-const DEMO_FILING_TASK: TaxFilingTask = {
-  id: "demo-vat-2025-2",
-  user_id: "",
-  accountant_id: null,
-  filing_type: "부가가치세 확정신고",
-  tax_period: "2025년 2기 (7월~12월)",
-  deadline: "2026-01-16",
-  status: "preparing",
-  prepared_data: {
-    invoice_ready: true,
-    card_ready: true,
-    purchase_ready: true,
-    fixed_asset_ready: false,
-    expense_ready: true,
-    bank_ready: true,
-  },
-  review_notes: [],
-  filing_method: "accountant",
-  notified_at: null,
-  submitted_at: null,
-  created_at: new Date().toISOString(),
-};
+const FILING_TYPE_OPTIONS = [
+  { label: "부가가치세 확정신고", periods: (y: number) => [`${y}년 1기 (1월~6월)`, `${y}년 2기 (7월~12월)`] },
+  { label: "종합소득세 신고", periods: (y: number) => [`${y - 1}년 귀속`] },
+];
 
-export default function FilingTab({ filingTasks, assignment, businessType, loading }: FilingTabProps) {
+function CreateFilingTaskCard({ onCreateTask }: { onCreateTask: (ft: string, tp: string, dl: string) => Promise<unknown> }) {
+  const [open, setOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [filingType, setFilingType] = useState("");
+  const [taxPeriod, setTaxPeriod] = useState("");
+  const [deadline, setDeadline] = useState("");
+
+  const currentYear = new Date().getFullYear();
+  const selectedType = FILING_TYPE_OPTIONS.find(o => o.label === filingType);
+  const periods = selectedType ? selectedType.periods(currentYear) : [];
+
+  const handleCreate = async () => {
+    if (!filingType || !taxPeriod || !deadline) {
+      toast.error("모든 항목을 입력해주세요");
+      return;
+    }
+    setCreating(true);
+    const result = await onCreateTask(filingType, taxPeriod, deadline);
+    setCreating(false);
+    if (result) {
+      setOpen(false);
+      setFilingType("");
+      setTaxPeriod("");
+      setDeadline("");
+    }
+  };
+
+  if (!open) {
+    return (
+      <Card className="border-dashed border-primary/30 hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setOpen(true)}>
+        <CardContent className="py-8 text-center">
+          <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+          <h3 className="text-sm font-semibold mb-1">예정된 신고가 없습니다</h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            신고 마감이 다가오면 자동으로 생성됩니다
+          </p>
+          <Button variant="outline" size="sm" className="text-xs">
+            <FileText className="h-3.5 w-3.5 mr-1" />
+            직접 신고 추가
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-3">
+        <h4 className="text-sm font-semibold">신고 태스크 추가</h4>
+        <div className="space-y-2">
+          <label className="text-xs font-medium">신고 유형</label>
+          <select
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs"
+            value={filingType}
+            onChange={(e) => { setFilingType(e.target.value); setTaxPeriod(""); }}
+          >
+            <option value="">선택하세요</option>
+            {FILING_TYPE_OPTIONS.map(o => <option key={o.label} value={o.label}>{o.label}</option>)}
+          </select>
+        </div>
+        {filingType && (
+          <div className="space-y-2">
+            <label className="text-xs font-medium">과세기간</label>
+            <select
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs"
+              value={taxPeriod}
+              onChange={(e) => setTaxPeriod(e.target.value)}
+            >
+              <option value="">선택하세요</option>
+              {periods.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+        )}
+        <div className="space-y-2">
+          <label className="text-xs font-medium">마감일</label>
+          <input
+            type="date"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" className="text-xs" onClick={() => setOpen(false)}>취소</Button>
+          <Button size="sm" className="text-xs flex-1" onClick={handleCreate} disabled={creating}>
+            {creating ? "생성 중..." : "추가"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function FilingTab({ filingTasks, assignment, businessType, loading, onCreateTask }: FilingTabProps) {
   const isCorporate = businessType?.includes("법인") || false;
   const basicItems = isCorporate ? CORPORATE_BASIC_ITEMS : INDIVIDUAL_BASIC_ITEMS;
   const industryReqs = getMatchingIndustryRequirements(businessType || null);
   const deadlineInfo = getDeadlineInfo(isCorporate);
-  const effectiveTasks = filingTasks.length > 0 ? filingTasks : [DEMO_FILING_TASK];
 
   // 자동/수동 구분 통계
   const autoItems = basicItems.filter((i) => i.autoSource);
@@ -450,8 +524,21 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
         </CardContent>
       </Card>
 
+      {/* 신고 태스크가 없으면 생성 카드 표시 */}
+      {filingTasks.length === 0 && onCreateTask && (
+        <CreateFilingTaskCard onCreateTask={onCreateTask} />
+      )}
+      {filingTasks.length === 0 && !onCreateTask && (
+        <Card className="border-dashed">
+          <CardContent className="py-8 text-center">
+            <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">예정된 신고가 없습니다</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 신고 태스크별 카드 */}
-      {effectiveTasks.map((task) => {
+      {filingTasks.map((task) => {
         const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.upcoming;
         const allItems = [...basicItems];
         industryReqs.forEach((req) => allItems.push(...req.items));

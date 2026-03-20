@@ -23,6 +23,7 @@ export default function TaxAccountant() {
     loading,
     selectAccountant,
     removeAssignment,
+    createFilingTask,
     refetch,
   } = useTaxAccountant();
 
@@ -91,6 +92,7 @@ export default function TaxAccountant() {
             filingTasks={filingTasks}
             assignment={assignment}
             businessType={profile?.business_type || null}
+            onCreateTask={createFilingTask}
           />
         </TabsContent>
       </Tabs>
