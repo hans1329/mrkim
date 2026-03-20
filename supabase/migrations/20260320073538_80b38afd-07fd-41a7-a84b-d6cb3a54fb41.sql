@@ -1,0 +1,1 @@
+DELETE FROM tax_accountants WHERE id = '39b25a64-e5ee-4c70-9790-fcc5c74a022f';
