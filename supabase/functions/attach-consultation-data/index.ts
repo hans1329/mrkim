@@ -82,6 +82,7 @@ Deno.serve(async (req: Request) => {
 
     // Upload each CSV in parallel
     const uploads: Promise<void>[] = [];
+    const uploadErrors: string[] = [];
 
     if (txRes.data && txRes.data.length > 0) {
       uploads.push((async () => {
@@ -92,10 +93,16 @@ Deno.serve(async (req: Request) => {
         const csv = "\uFEFF" + [header, ...rows].join("\n");
         const path = `${folder}/거래내역_${periodLabel}.csv`;
         const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
-        if (!error) {
-          const { data: signed } = await supabase.storage.from("tax-filing-packages").createSignedUrl(path, SIGNED_URL_EXPIRY);
-          if (signed?.signedUrl) links.push({ label: "거래내역", url: signed.signedUrl, description: `${txRes.data.length}건 (${periodLabel})`, fileCount: txRes.data.length });
+        if (error) {
+          uploadErrors.push(`거래내역 업로드 실패: ${error.message}`);
+          return;
         }
+        const { data: signed, error: signedError } = await supabase.storage.from("tax-filing-packages").createSignedUrl(path, SIGNED_URL_EXPIRY);
+        if (signedError || !signed?.signedUrl) {
+          uploadErrors.push(`거래내역 링크 생성 실패: ${signedError?.message ?? "signedUrl 없음"}`);
+          return;
+        }
+        links.push({ label: "거래내역", url: signed.signedUrl, description: `${txRes.data.length}건 (${periodLabel})`, fileCount: txRes.data.length });
       })());
     }
 
@@ -108,10 +115,16 @@ Deno.serve(async (req: Request) => {
         const csv = "\uFEFF" + [header, ...rows].join("\n");
         const path = `${folder}/세금계산서_${periodLabel}.csv`;
         const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
-        if (!error) {
-          const { data: signed } = await supabase.storage.from("tax-filing-packages").createSignedUrl(path, SIGNED_URL_EXPIRY);
-          if (signed?.signedUrl) links.push({ label: "세금계산서", url: signed.signedUrl, description: `${invRes.data.length}건 (${periodLabel})`, fileCount: invRes.data.length });
+        if (error) {
+          uploadErrors.push(`세금계산서 업로드 실패: ${error.message}`);
+          return;
         }
+        const { data: signed, error: signedError } = await supabase.storage.from("tax-filing-packages").createSignedUrl(path, SIGNED_URL_EXPIRY);
+        if (signedError || !signed?.signedUrl) {
+          uploadErrors.push(`세금계산서 링크 생성 실패: ${signedError?.message ?? "signedUrl 없음"}`);
+          return;
+        }
+        links.push({ label: "세금계산서", url: signed.signedUrl, description: `${invRes.data.length}건 (${periodLabel})`, fileCount: invRes.data.length });
       })());
     }
 
@@ -124,10 +137,16 @@ Deno.serve(async (req: Request) => {
         const csv = "\uFEFF" + [header, ...rows].join("\n");
         const path = `${folder}/배달주문내역_${periodLabel}.csv`;
         const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
-        if (!error) {
-          const { data: signed } = await supabase.storage.from("tax-filing-packages").createSignedUrl(path, SIGNED_URL_EXPIRY);
-          if (signed?.signedUrl) links.push({ label: "배달앱 주문내역", url: signed.signedUrl, description: `${delRes.data.length}건 (${periodLabel})`, fileCount: delRes.data.length });
+        if (error) {
+          uploadErrors.push(`배달주문 업로드 실패: ${error.message}`);
+          return;
         }
+        const { data: signed, error: signedError } = await supabase.storage.from("tax-filing-packages").createSignedUrl(path, SIGNED_URL_EXPIRY);
+        if (signedError || !signed?.signedUrl) {
+          uploadErrors.push(`배달주문 링크 생성 실패: ${signedError?.message ?? "signedUrl 없음"}`);
+          return;
+        }
+        links.push({ label: "배달앱 주문내역", url: signed.signedUrl, description: `${delRes.data.length}건 (${periodLabel})`, fileCount: delRes.data.length });
       })());
     }
 
@@ -140,10 +159,16 @@ Deno.serve(async (req: Request) => {
         const csv = "\uFEFF" + [header, ...rows].join("\n");
         const path = `${folder}/직원현황.csv`;
         const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
-        if (!error) {
-          const { data: signed } = await supabase.storage.from("tax-filing-packages").createSignedUrl(path, SIGNED_URL_EXPIRY);
-          if (signed?.signedUrl) links.push({ label: "직원 현황", url: signed.signedUrl, description: `${empRes.data.length}명`, fileCount: empRes.data.length });
+        if (error) {
+          uploadErrors.push(`직원현황 업로드 실패: ${error.message}`);
+          return;
         }
+        const { data: signed, error: signedError } = await supabase.storage.from("tax-filing-packages").createSignedUrl(path, SIGNED_URL_EXPIRY);
+        if (signedError || !signed?.signedUrl) {
+          uploadErrors.push(`직원현황 링크 생성 실패: ${signedError?.message ?? "signedUrl 없음"}`);
+          return;
+        }
+        links.push({ label: "직원 현황", url: signed.signedUrl, description: `${empRes.data.length}명`, fileCount: empRes.data.length });
       })());
     }
 
