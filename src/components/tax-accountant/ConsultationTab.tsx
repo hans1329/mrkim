@@ -70,9 +70,10 @@ export default function ConsultationTab({
   const [attachingId, setAttachingId] = useState<string | null>(null);
 
   // AI 작성 도우미 상태
-  const [briefInput, setBriefInput] = useState("");
   const [drafting, setDrafting] = useState(false);
   const draftInFlightRef = useRef(false);
+  const submitInFlightRef = useRef(false);
+  const lastDraftInputRef = useRef<string | null>(null);
 
   // 한국어 조사 처리: 받침 유무에 따라 이/가, 은/는 등 선택
   const hasLastConsonant = (name: string) => {
@@ -106,9 +107,10 @@ export default function ConsultationTab({
 
   const requestAIDraft = useCallback(async (input: string) => {
     const trimmedInput = input.trim();
-    if (!trimmedInput || draftInFlightRef.current) return;
+    if (!trimmedInput || draftInFlightRef.current || lastDraftInputRef.current === trimmedInput) return;
 
     draftInFlightRef.current = true;
+    lastDraftInputRef.current = trimmedInput;
     setDrafting(true);
     try {
       const { data, error } = await supabase.functions.invoke("draft-consultation", {
@@ -117,9 +119,9 @@ export default function ConsultationTab({
       if (error) throw error;
       if (data?.subject) setSubject(data.subject);
       if (data?.question) setQuestion(data.question);
-      setShowForm(true);
       toast.success(`${secretaryName}${topicParticle} 상담서를 작성했습니다. 첨부까지 하려면 아래 '상담 등록'을 눌러주세요.`);
     } catch (e) {
+      lastDraftInputRef.current = null;
       toast.error("AI 작성에 실패했습니다. 직접 작성해주세요.");
       console.error("AI draft error:", e);
     } finally {
@@ -158,10 +160,14 @@ export default function ConsultationTab({
   };
 
   const handleSubmit = async () => {
+    if (submitInFlightRef.current || submitting) return;
+
     if (!subject.trim() || !question.trim()) {
       toast.error("제목과 질문을 입력해 주세요");
       return;
     }
+
+    submitInFlightRef.current = true;
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -186,10 +192,12 @@ export default function ConsultationTab({
       setSubject("");
       setQuestion("");
       setShowForm(false);
+      lastDraftInputRef.current = null;
       onCreated();
     } catch (e) {
       toast.error((e as Error).message || "상담 등록에 실패했습니다");
     } finally {
+      submitInFlightRef.current = false;
       setSubmitting(false);
     }
   };
