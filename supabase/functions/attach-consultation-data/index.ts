@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
     const now = new Date();
     const endDate = now.toISOString().split("T")[0];
     const startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().split("T")[0];
-    const periodLabel = `최근3개월`;
+    const periodLabel = `3months`;
     const timestamp = Date.now();
     const folder = `${user.id}/${timestamp}`;
 
@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
           [tx.transaction_date, tx.type === "income" ? "수입" : "지출", toCsvValue(tx.description), tx.amount, tx.category || "미분류", toCsvValue(tx.merchant_name), tx.source_type].join(",")
         );
         const csv = "\uFEFF" + [header, ...rows].join("\n");
-        const path = `${folder}/거래내역_${periodLabel}.csv`;
+        const path = `${folder}/transactions_${periodLabel}.csv`;
         const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
         if (error) {
           uploadErrors.push(`거래내역 업로드 실패: ${error.message}`);
@@ -113,7 +113,7 @@ Deno.serve(async (req: Request) => {
           [inv.invoice_date, inv.invoice_type === "sales" ? "매출" : "매입", toCsvValue(inv.supplier_name), toCsvValue(inv.buyer_name), inv.supply_amount, inv.tax_amount, inv.total_amount, toCsvValue(inv.item_name)].join(",")
         );
         const csv = "\uFEFF" + [header, ...rows].join("\n");
-        const path = `${folder}/세금계산서_${periodLabel}.csv`;
+        const path = `${folder}/tax_invoices_${periodLabel}.csv`;
         const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
         if (error) {
           uploadErrors.push(`세금계산서 업로드 실패: ${error.message}`);
@@ -135,7 +135,7 @@ Deno.serve(async (req: Request) => {
           [o.order_dt || "", o.order_tm || "", o.platform, toCsvValue(o.order_name), o.total_amt || 0, o.settle_amt || 0, o.order_fee || 0, o.delivery_amt || 0].join(",")
         );
         const csv = "\uFEFF" + [header, ...rows].join("\n");
-        const path = `${folder}/배달주문내역_${periodLabel}.csv`;
+        const path = `${folder}/delivery_orders_${periodLabel}.csv`;
         const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
         if (error) {
           uploadErrors.push(`배달주문 업로드 실패: ${error.message}`);
@@ -157,7 +157,7 @@ Deno.serve(async (req: Request) => {
           [e.name, e.employee_type, e.status, e.monthly_salary || 0, e.start_date || "", e.insurance_health ? "O" : "X", e.insurance_national_pension ? "O" : "X", e.insurance_employment ? "O" : "X", e.insurance_industrial ? "O" : "X"].join(",")
         );
         const csv = "\uFEFF" + [header, ...rows].join("\n");
-        const path = `${folder}/직원현황.csv`;
+        const path = `${folder}/employees.csv`;
         const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
         if (error) {
           uploadErrors.push(`직원현황 업로드 실패: ${error.message}`);
