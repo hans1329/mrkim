@@ -60,6 +60,39 @@ export default function ConsultationTab({
   const [briefInput, setBriefInput] = useState("");
   const [drafting, setDrafting] = useState(false);
 
+  const getSuggestedConcerns = (): string[] => {
+    const month = new Date().getMonth() + 1;
+    const base = [
+      "매출이 늘었는데 절세 방법이 궁금해요",
+      "직원 급여 신고 방법을 알고 싶어요",
+      "경비 처리 가능한 항목이 뭔지 궁금해요",
+    ];
+    if (month >= 1 && month <= 1) base.unshift("부가세 확정신고 준비가 필요해요");
+    if (month >= 5 && month <= 5) base.unshift("종합소득세 신고를 준비하고 싶어요");
+    if (month >= 7 && month <= 7) base.unshift("부가세 확정신고 준비가 필요해요");
+    if (month >= 3 && month <= 4) base.unshift("법인세 신고 관련 상담이 필요해요");
+    if (month >= 11 && month <= 12) base.unshift("연말정산 준비를 시작하고 싶어요");
+    return base.slice(0, 4);
+  };
+
+  const handleAIDraftWithInput = async (input: string) => {
+    setDrafting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("draft-consultation", {
+        body: { briefDescription: input },
+      });
+      if (error) throw error;
+      if (data?.subject) setSubject(data.subject);
+      if (data?.question) setQuestion(data.question);
+      toast.success(`${secretaryName}가 상담서를 작성했습니다. 내용을 확인 후 수정해주세요.`);
+    } catch (e) {
+      toast.error("AI 작성에 실패했습니다. 직접 작성해주세요.");
+      console.error("AI draft error:", e);
+    } finally {
+      setDrafting(false);
+    }
+  };
+
   const handleAIDraft = async () => {
     if (!briefInput.trim()) return;
     setDrafting(true);
