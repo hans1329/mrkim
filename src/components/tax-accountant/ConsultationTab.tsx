@@ -143,6 +143,45 @@ export default function ConsultationTab({
         <Card>
           <CardContent className="p-4 space-y-3">
             <h4 className="text-sm font-semibold">새 상담 요청</h4>
+
+            {/* AI 작성 도우미 */}
+            <div className="p-3 rounded-lg bg-primary/5 border border-primary/15 space-y-2">
+              <p className="text-xs font-medium flex items-center gap-1.5 text-primary">
+                <Wand2 className="h-3.5 w-3.5" />
+                AI 작성 도우미
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                고민을 간단히 적으면 AI가 세무사에게 보낼 상담서를 작성해 드립니다
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="예: 부가세 신고 때 매입세액 공제 가능한지"
+                  value={briefInput}
+                  onChange={(e) => setBriefInput(e.target.value)}
+                  className="text-xs flex-1"
+                  disabled={drafting}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && briefInput.trim() && !drafting) {
+                      handleAIDraft();
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={drafting || !briefInput.trim()}
+                  onClick={handleAIDraft}
+                  className="shrink-0"
+                >
+                  {drafting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
             <Input
               placeholder="상담 제목 (예: 부가세 신고 관련 문의)"
               value={subject}
@@ -153,7 +192,7 @@ export default function ConsultationTab({
               placeholder="세무사에게 질문할 내용을 작성해 주세요..."
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              rows={4}
+              rows={5}
               className="text-sm"
             />
             {!assignment && (
@@ -166,7 +205,7 @@ export default function ConsultationTab({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => { setShowForm(false); setSubject(""); setQuestion(""); }}
+                onClick={() => { setShowForm(false); setSubject(""); setQuestion(""); setBriefInput(""); }}
               >
                 취소
               </Button>
