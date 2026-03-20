@@ -106,7 +106,7 @@ describe("ConsultationTab", () => {
     render(
       <ConsultationTab
         consultations={[]}
-        assignment={null}
+        assignment={mockAssignment}
         onCreated={vi.fn()}
       />
     );
