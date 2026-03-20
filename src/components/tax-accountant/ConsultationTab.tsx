@@ -93,7 +93,7 @@ export default function ConsultationTab({
       if (error) throw error;
       if (data?.subject) setSubject(data.subject);
       if (data?.question) setQuestion(data.question);
-      toast.success(`${secretaryName}가 상담서를 작성했습니다. 내용을 확인 후 수정해주세요.`);
+      toast.success(`${secretaryName}${topicParticle} 상담서를 작성했습니다. 내용을 확인 후 수정해주세요.`);
     } catch (e) {
       toast.error("AI 작성에 실패했습니다. 직접 작성해주세요.");
       console.error("AI draft error:", e);
