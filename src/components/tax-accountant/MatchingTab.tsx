@@ -197,6 +197,7 @@ export default function MatchingTab({
 }: MatchingTabProps) {
   const [confirmTarget, setConfirmTarget] = useState<TaxAccountant | null>(null);
   const [selecting, setSelecting] = useState(false);
+  const [showTerminate, setShowTerminate] = useState(false);
 
   // 멀티팩터 스코어링 기반 정렬
   const { sorted, recommendedIds } = useMemo(() => {
