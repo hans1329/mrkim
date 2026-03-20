@@ -184,11 +184,22 @@ export default function ConsultationTab({
 
       if (error) throw error;
 
+      // 자료 첨부 (실패해도 상담은 등록된 상태 유지)
+      let attachedCount = 0;
       if (data?.id) {
-        await attachDataToConsultation(data.id, true);
+        try {
+          const result = await attachDataToConsultation(data.id, true);
+          attachedCount = result?.totalFiles || 0;
+        } catch {
+          console.warn("자료 첨부 실패 - 상담은 등록됨");
+        }
       }
 
-      toast.success("상담 요청이 등록되었습니다");
+      if (attachedCount > 0) {
+        toast.success(`상담이 등록되었습니다 (자료 ${attachedCount}건 첨부)`);
+      } else {
+        toast.success("상담이 등록되었습니다 (첨부할 자료 없음)");
+      }
       setSubject("");
       setQuestion("");
       setShowForm(false);
