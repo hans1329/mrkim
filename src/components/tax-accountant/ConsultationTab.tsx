@@ -133,6 +133,38 @@ export default function ConsultationTab({
     }
   };
 
+  const attachDataToConsultation = async (consultationId: string) => {
+    setAttachingId(consultationId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/attach-consultation-data`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ consultationId }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      if (data.totalFiles > 0) {
+        toast.success(`${data.totalFiles}개 자료가 첨부되었습니다`);
+      } else {
+        toast.info("첨부할 데이터가 아직 없습니다. 연동 후 다시 시도해주세요.");
+      }
+      onCreated();
+    } catch (e) {
+      console.error("Attach data error:", e);
+      // Non-blocking: don't show error toast for attachment failures
+    } finally {
+      setAttachingId(null);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!subject.trim() || !question.trim()) {
       toast.error("제목과 질문을 입력해 주세요");
@@ -143,14 +175,14 @@ export default function ConsultationTab({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다");
 
-      const { error } = await supabase.from("tax_consultations").insert({
+      const { data, error } = await supabase.from("tax_consultations").insert({
         user_id: user.id,
         accountant_id: assignment?.accountant_id || null,
         subject: subject.trim(),
         user_question: question.trim(),
         consultation_type: "ad_hoc",
         status: "pending",
-      });
+      }).select("id").single();
 
       if (error) throw error;
       toast.success("상담 요청이 등록되었습니다");
@@ -158,6 +190,11 @@ export default function ConsultationTab({
       setQuestion("");
       setShowForm(false);
       onCreated();
+
+      // Auto-attach data in background
+      if (data?.id) {
+        attachDataToConsultation(data.id);
+      }
     } catch (e) {
       toast.error((e as Error).message || "상담 등록에 실패했습니다");
     } finally {
