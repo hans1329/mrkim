@@ -88,10 +88,11 @@ export default function AccountantSignup() {
       const isExistingUser = !authData.user.identities || authData.user.identities.length === 0;
 
       // 4. Create tax_accountants record
+      // 기존 계정이면 user_id를 바로 연결, 신규면 인증 완료 후 연결
       const { error: insertError } = await supabase
         .from("tax_accountants")
         .insert({
-          user_id: null,
+          user_id: isExistingUser ? authData.user.id : null,
           name,
           email,
           phone: phone || null,
