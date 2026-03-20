@@ -17,6 +17,8 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
+  Wand2,
+  Loader2,
 } from "lucide-react";
 import { type TaxConsultation, type TaxAccountantAssignment } from "@/hooks/useTaxAccountant";
 import { formatDistanceToNow } from "date-fns";
@@ -51,6 +53,10 @@ export default function ConsultationTab({
   const [submitting, setSubmitting] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // AI 작성 도우미 상태
+  const [briefInput, setBriefInput] = useState("");
+  const [drafting, setDrafting] = useState(false);
 
   const handleSubmit = async () => {
     if (!subject.trim() || !question.trim()) {
