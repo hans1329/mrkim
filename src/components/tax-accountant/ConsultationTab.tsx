@@ -60,6 +60,39 @@ export default function ConsultationTab({
   const [briefInput, setBriefInput] = useState("");
   const [drafting, setDrafting] = useState(false);
 
+  const getSuggestedConcerns = (): string[] => {
+    const month = new Date().getMonth() + 1;
+    const base = [
+      "매출이 늘었는데 절세 방법이 궁금해요",
+      "직원 급여 신고 방법을 알고 싶어요",
+      "경비 처리 가능한 항목이 뭔지 궁금해요",
+    ];
+    if (month >= 1 && month <= 1) base.unshift("부가세 확정신고 준비가 필요해요");
+    if (month >= 5 && month <= 5) base.unshift("종합소득세 신고를 준비하고 싶어요");
+    if (month >= 7 && month <= 7) base.unshift("부가세 확정신고 준비가 필요해요");
+    if (month >= 3 && month <= 4) base.unshift("법인세 신고 관련 상담이 필요해요");
+    if (month >= 11 && month <= 12) base.unshift("연말정산 준비를 시작하고 싶어요");
+    return base.slice(0, 4);
+  };
+
+  const handleAIDraftWithInput = async (input: string) => {
+    setDrafting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("draft-consultation", {
+        body: { briefDescription: input },
+      });
+      if (error) throw error;
+      if (data?.subject) setSubject(data.subject);
+      if (data?.question) setQuestion(data.question);
+      toast.success(`${secretaryName}가 상담서를 작성했습니다. 내용을 확인 후 수정해주세요.`);
+    } catch (e) {
+      toast.error("AI 작성에 실패했습니다. 직접 작성해주세요.");
+      console.error("AI draft error:", e);
+    } finally {
+      setDrafting(false);
+    }
+  };
+
   const handleAIDraft = async () => {
     if (!briefInput.trim()) return;
     setDrafting(true);
@@ -166,41 +199,36 @@ export default function ConsultationTab({
             <h4 className="text-sm font-semibold">새 상담 요청</h4>
 
             {/* AI 작성 도우미 */}
-            <div className="p-3 rounded-lg bg-primary/5 border border-primary/15 space-y-2">
+            <div className="p-3 rounded-lg bg-primary/5 border border-primary/15 space-y-2.5">
               <p className="text-xs font-medium flex items-center gap-1.5 text-primary">
                 <Wand2 className="h-3.5 w-3.5" />
                 {secretaryName}가 도와드려요!
               </p>
               <p className="text-[11px] text-muted-foreground">
-                고민을 간단히 적으면 {secretaryName}가 세무사에게 보낼 상담서를 작성해 드립니다
+                아래 고민을 선택하면 {secretaryName}가 세무사에게 보낼 상담서를 작성해 드립니다
               </p>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="예: 부가세 신고 때 매입세액 공제 가능한지"
-                  value={briefInput}
-                  onChange={(e) => setBriefInput(e.target.value)}
-                  className="text-xs flex-1"
-                  disabled={drafting}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && briefInput.trim() && !drafting) {
-                      handleAIDraft();
-                    }
-                  }}
-                />
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={drafting || !briefInput.trim()}
-                  onClick={handleAIDraft}
-                  className="shrink-0"
-                >
-                  {drafting ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                </Button>
+              <div className="flex flex-wrap gap-1.5">
+                {getSuggestedConcerns().map((concern) => (
+                  <button
+                    key={concern}
+                    type="button"
+                    disabled={drafting}
+                    onClick={() => {
+                      setBriefInput(concern);
+                      handleAIDraftWithInput(concern);
+                    }}
+                    className="text-[11px] px-2.5 py-1.5 rounded-full border border-primary/20 bg-background hover:bg-primary/10 hover:border-primary/40 text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {concern}
+                  </button>
+                ))}
               </div>
+              {drafting && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                  {secretaryName}가 상담서를 작성하고 있어요...
+                </div>
+              )}
             </div>
 
             <Input
