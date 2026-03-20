@@ -121,6 +121,12 @@ export function useTaxAccountant() {
       setAssignment(newAssignment);
       
       toast.success(`${matched?.name || "세무사"}님이 담당 세무사로 배정되었습니다`);
+
+      // 세무사에게 알림 발송 (비동기, 실패해도 배정은 유지)
+      supabase.functions.invoke("notify-accountant-assignment", {
+        body: { accountant_id: accountantId },
+      }).catch((err) => console.error("Failed to notify accountant:", err));
+
       return true;
     } catch (e) {
       console.error("Failed to assign accountant:", e);
