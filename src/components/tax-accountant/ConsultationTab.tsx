@@ -392,7 +392,7 @@ export default function ConsultationTab({
                   {attachingId === "preview" ? (
                     <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />자료 생성 중...</>
                   ) : (
-                    <><Paperclip className="h-3.5 w-3.5 mr-1.5" />자료 미리 생성</>
+                    <><Paperclip className="h-3.5 w-3.5 mr-1.5" />관련자료 생성</>
                   )}
                 </Button>
               </div>
