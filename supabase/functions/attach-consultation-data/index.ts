@@ -157,7 +157,7 @@ Deno.serve(async (req: Request) => {
           [e.name, e.employee_type, e.status, e.monthly_salary || 0, e.start_date || "", e.insurance_health ? "O" : "X", e.insurance_national_pension ? "O" : "X", e.insurance_employment ? "O" : "X", e.insurance_industrial ? "O" : "X"].join(",")
         );
         const csv = "\uFEFF" + [header, ...rows].join("\n");
-        const path = `${folder}/직원현황.csv`;
+        const path = `${folder}/employees.csv`;
         const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
         if (error) {
           uploadErrors.push(`직원현황 업로드 실패: ${error.message}`);
