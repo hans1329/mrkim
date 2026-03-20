@@ -30,7 +30,13 @@ import {
   CircleDot,
   CheckCircle2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Briefcase,
+  Mail,
+  FileCheck,
+  UserCheck,
+  CalendarClock,
+  ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -46,7 +52,7 @@ export default function Engine() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">김비서 AI 엔진 아키텍처</h1>
-              <p className="text-muted-foreground text-sm">v2.1 · 2026-02-18 업데이트</p>
+              <p className="text-muted-foreground text-sm">v2.2 · 2026-03-20 업데이트</p>
             </div>
           </div>
         </div>
@@ -1216,6 +1222,41 @@ export default function Engine() {
                       <td className="py-2 px-3"><Badge className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/20">하이픈</Badge></td>
                     </tr>
 
+                    {/* 세무사 */}
+                    <tr className="border-b bg-muted/20">
+                      <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>📋 세무사 통합</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">draft-consultation</code></td>
+                      <td className="py-2 px-3">AI 상담 초안 생성 (Gemini)</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">JWT</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">attach-consultation-data</code></td>
+                      <td className="py-2 px-3">3개월 데이터 CSV 패키징 + Storage 업로드</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">JWT</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">send-tax-consultation</code></td>
+                      <td className="py-2 px-3">Resend로 세무사에게 데이터 이메일 발송</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">JWT</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">notify-accountant-assignment</code></td>
+                      <td className="py-2 px-3">세무사 배정 알림 (이메일 + 앱 내)</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">JWT</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-3"><code className="text-xs bg-muted px-1 rounded">generate-filing-tasks</code></td>
+                      <td className="py-2 px-3">정기 신고 태스크 자동 생성 (5종)</td>
+                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">Service Role</Badge></td>
+                      <td className="py-2 px-3"><Badge variant="secondary" className="text-xs bg-green-500/20 text-green-700">완료</Badge></td>
+                    </tr>
+
                     {/* 공유 모듈 */}
                     <tr className="bg-muted/20">
                       <td className="py-2 px-3 font-medium text-foreground" colSpan={4}>📦 공유 모듈</td>
@@ -1229,6 +1270,322 @@ export default function Engine() {
                   </tbody>
                 </table>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* 세무사 통합 시스템 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-emerald-600" />
+                세무사 통합 시스템
+                <Badge className="text-[10px] bg-green-500/10 text-green-600 border-green-500/20">v1.0 완료</Badge>
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                사장님 ↔ 세무사 간 데이터 공유, 상담, 정기 신고를 자동화하는 양방향 플랫폼
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+
+              {/* 아키텍처 개요 */}
+              <div className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                <p className="text-xs font-medium mb-3">🏗️ 전체 아키텍처</p>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <Badge variant="outline" className="bg-blue-500/10">사장님 앱</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">매칭 · 상담 · 신고</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="outline" className="bg-emerald-500/10">Edge Functions</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">이메일 · CSV · Storage</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="outline" className="bg-purple-500/10">세무사 파트너 포털</Badge>
+                </div>
+              </div>
+
+              {/* DB 스키마 */}
+              <div className="p-4 rounded-lg border">
+                <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <Database className="h-4 w-4" /> DB 스키마 (4개 테이블)
+                </p>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="p-3 rounded bg-muted/30 text-xs">
+                    <code className="font-mono text-[11px] font-bold">tax_accountants</code>
+                    <p className="text-muted-foreground mt-1">세무사 마스터. 이름, 이메일, 전문 분야(specialties[]), 업종(industry_types[]), 지역, 소개, 가격 정보(pricing_info JSON), user_id(파트너 포털 로그인용)</p>
+                  </div>
+                  <div className="p-3 rounded bg-muted/30 text-xs">
+                    <code className="font-mono text-[11px] font-bold">tax_accountant_assignments</code>
+                    <p className="text-muted-foreground mt-1">사장님↔세무사 배정. user_id + accountant_id unique. status: pending → confirmed</p>
+                  </div>
+                  <div className="p-3 rounded bg-muted/30 text-xs">
+                    <code className="font-mono text-[11px] font-bold">tax_consultations</code>
+                    <p className="text-muted-foreground mt-1">비정기 상담. subject, user_question, ai_preliminary_answer, data_package(JSON), accountant_response, email_sent_at</p>
+                  </div>
+                  <div className="p-3 rounded bg-muted/30 text-xs">
+                    <code className="font-mono text-[11px] font-bold">tax_filing_tasks</code>
+                    <p className="text-muted-foreground mt-1">정기 신고. filing_type, tax_period, deadline, prepared_data(체크리스트 JSON), review_notes, status: preparing→submitted</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3탭 구조 */}
+              <div className="space-y-4">
+                <p className="text-sm font-medium">📱 사용자 UI: /tax-accountant (3탭 구조)</p>
+                
+                {/* 탭 1: 매칭 */}
+                <div className="p-4 rounded-lg border border-blue-500/20 bg-blue-500/5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <UserCheck className="h-4 w-4 text-blue-600" />
+                    <p className="text-sm font-semibold">탭 1: 세무사 매칭</p>
+                    <Badge variant="secondary" className="text-[10px]">85점 만점 스코어링</Badge>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-3 text-xs text-muted-foreground">
+                    <div>
+                      <p className="font-medium text-foreground mb-1">스코어링 알고리즘</p>
+                      <ul className="space-y-0.5">
+                        <li>• 업종 일치 (40점) — business_type ↔ industry_types 매칭</li>
+                        <li>• 전문 분야 다양성 (15점)</li>
+                        <li>• 가격 투명성 (10점) — pricing_info 존재 여부</li>
+                        <li>• 지역 · 프로필 · 소개 (각 5점)</li>
+                        <li>• 40점 이상 시 "추천" 배지 + 상단 정렬</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground mb-1">기능</p>
+                      <ul className="space-y-0.5">
+                        <li>• 세무사 카드 리스트 (전문 분야 태그)</li>
+                        <li>• 배정 변경 시 확인 다이얼로그</li>
+                        <li>• 배정 알림: notify-accountant-assignment Edge Function</li>
+                        <li>• 이메일(Resend) + 앱 내 알림 동시 발송</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 탭 2: 상담 */}
+                <div className="p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Mail className="h-4 w-4 text-amber-600" />
+                    <p className="text-sm font-semibold">탭 2: 세무 상담</p>
+                    <Badge variant="secondary" className="text-[10px]">담당 세무사 필수</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-2">
+                    <p className="font-medium text-foreground">상담 워크플로우 (4단계)</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="bg-amber-500/10">1. AI 비서 초안</Badge>
+                      <ArrowRight className="h-3 w-3" />
+                      <Badge variant="outline" className="bg-amber-500/10">2. 관련자료 생성</Badge>
+                      <ArrowRight className="h-3 w-3" />
+                      <Badge variant="outline" className="bg-amber-500/10">3. 사용자 검토</Badge>
+                      <ArrowRight className="h-3 w-3" />
+                      <Badge variant="outline" className="bg-amber-500/10">4. 상담 등록</Badge>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-3 mt-2">
+                      <div>
+                        <p className="font-medium text-foreground mb-1">AI 초안 (draft-consultation)</p>
+                        <ul className="space-y-0.5">
+                          <li>• Gemini로 사용자 질문 → 세무 상담 제목/질문/AI 사전답변 초안 생성</li>
+                          <li>• 업종 컨텍스트 반영 (businessContext)</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground mb-1">자료 패키징 (attach-consultation-data)</p>
+                        <ul className="space-y-0.5">
+                          <li>• 최근 3개월 데이터 CSV 생성 (거래/세금계산서/배달/직원)</li>
+                          <li>• Supabase Storage <code className="bg-muted px-1 rounded">tax-filing-packages</code> 업로드</li>
+                          <li>• 7일 만료 Signed URL 발급</li>
+                          <li>• Programmatic download (Blob) — 탭 이탈 방지</li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <p className="font-medium text-foreground mb-1">이메일 전달 (send-tax-consultation)</p>
+                      <ul className="space-y-0.5">
+                        <li>• Resend API로 세무사에게 정리된 재무 데이터 이메일 발송</li>
+                        <li>• data_package: 사업정보, 매출/매입 요약, 세금계산서, 거래 분류, 배달앱, 직원 현황</li>
+                        <li>• CSV 다운로드 링크 포함 (7일 유효)</li>
+                        <li>• AI 비서 액션카드: 채팅 중 "세무사에게 자료 전달하기" 동적 제안</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 탭 3: 신고 */}
+                <div className="p-4 rounded-lg border border-green-500/20 bg-green-500/5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileCheck className="h-4 w-4 text-green-600" />
+                    <p className="text-sm font-semibold">탭 3: 정기 신고</p>
+                    <Badge variant="secondary" className="text-[10px]">자동 생성 + 수동 추가</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-2">
+                    <p className="font-medium text-foreground">자동 생성 일정 (generate-filing-tasks)</p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-1.5 px-2">신고 유형</th>
+                            <th className="text-left py-1.5 px-2">주기</th>
+                            <th className="text-left py-1.5 px-2">마감일</th>
+                            <th className="text-left py-1.5 px-2">자동 생성 시작</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-b"><td className="py-1.5 px-2">부가가치세 예정신고</td><td className="py-1.5 px-2">반기</td><td className="py-1.5 px-2">4/25, 10/25</td><td className="py-1.5 px-2">마감 60일 전</td></tr>
+                          <tr className="border-b"><td className="py-1.5 px-2">부가가치세 확정신고</td><td className="py-1.5 px-2">반기</td><td className="py-1.5 px-2">7/25, 1/25</td><td className="py-1.5 px-2">마감 60일 전</td></tr>
+                          <tr className="border-b"><td className="py-1.5 px-2">종합소득세</td><td className="py-1.5 px-2">연간</td><td className="py-1.5 px-2">5/31</td><td className="py-1.5 px-2">마감 60일 전</td></tr>
+                          <tr className="border-b"><td className="py-1.5 px-2">지방소득세</td><td className="py-1.5 px-2">연간</td><td className="py-1.5 px-2">5/31</td><td className="py-1.5 px-2">마감 60일 전</td></tr>
+                          <tr><td className="py-1.5 px-2">원천세</td><td className="py-1.5 px-2">매월</td><td className="py-1.5 px-2">매월 10일</td><td className="py-1.5 px-2">마감 20일 전</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-3 mt-2">
+                      <div>
+                        <p className="font-medium text-foreground mb-1">자동화 인프라</p>
+                        <ul className="space-y-0.5">
+                          <li>• pg_cron 매일 00:00 UTC (KST 09:00) 실행</li>
+                          <li>• pg_net으로 generate-filing-tasks Edge Function 호출</li>
+                          <li>• 담당 세무사 배정된 사용자만 대상</li>
+                          <li>• filing_type + tax_period 중복 방지 (사용자 수동 생성 포함)</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground mb-1">체크리스트 (prepared_data)</p>
+                        <ul className="space-y-0.5">
+                          <li>• 6항목 기본: 세금계산서, 카드매출, 매입자료, 고정자산, 비용영수증, 통장내역</li>
+                          <li>• 업종별 추가: 수출입, 부동산, 건설, 전자상거래</li>
+                          <li>• 연동 상태 기반 자동 커버리지 계산</li>
+                          <li>• 항목별 상세 안내 펼침 UI</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 세무사 파트너 포털 */}
+              <div className="p-4 rounded-lg border border-purple-500/20">
+                <div className="flex items-center gap-2 mb-3">
+                  <ShieldCheck className="h-5 w-5 text-purple-600" />
+                  <p className="text-sm font-semibold">세무사 파트너 포털 (/accountant)</p>
+                  <Badge variant="secondary" className="text-[10px]">김비서 파트너</Badge>
+                </div>
+                <div className="grid md:grid-cols-2 gap-3 text-xs text-muted-foreground">
+                  <div>
+                    <p className="font-medium text-foreground mb-1">인증 & 접근</p>
+                    <ul className="space-y-0.5">
+                      <li>• 독립 회원가입/로그인 (/accountant/login, /accountant/signup)</li>
+                      <li>• tax_accountants.user_id로 세무사 식별</li>
+                      <li>• RLS: 배정된 고객 데이터만 읽기 전용 접근</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">기능</p>
+                    <ul className="space-y-0.5">
+                      <li>• 고객 목록 (배정 confirmed인 사용자)</li>
+                      <li>• 고객 상세: 사업 정보, 거래, 세금계산서, 직원, 배달앱</li>
+                      <li>• 상담 답변 작성 (accountant_response 업데이트)</li>
+                      <li>• 신고 태스크 상태 관리</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* RLS 정책 요약 */}
+              <div className="p-4 rounded-lg bg-muted/30">
+                <p className="text-xs font-medium mb-3">🔒 RLS 정책 요약</p>
+                <div className="grid md:grid-cols-2 gap-3 text-xs text-muted-foreground">
+                  <div>
+                    <p className="font-medium text-foreground mb-1">사장님 측</p>
+                    <ul className="space-y-0.5">
+                      <li>• tax_accountants: 누구나 SELECT (is_active=true)</li>
+                      <li>• assignments: 본인 user_id만 CRUD</li>
+                      <li>• consultations: 본인 user_id만 CRUD</li>
+                      <li>• filing_tasks: 본인 user_id만 CRUD</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">세무사 측</p>
+                    <ul className="space-y-0.5">
+                      <li>• assignments: tax_accountants.user_id = auth.uid() 매칭</li>
+                      <li>• profiles/transactions/tax_invoices/employees/delivery_orders: 배정 고객만 SELECT</li>
+                      <li>• consultations: accountant_response UPDATE</li>
+                      <li>• filing_tasks: 상태 UPDATE</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Edge Functions */}
+              <div className="p-4 rounded-lg border">
+                <p className="text-sm font-medium mb-3">⚡ 관련 Edge Functions</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-1.5 px-2">함수명</th>
+                        <th className="text-left py-1.5 px-2">역할</th>
+                        <th className="text-left py-1.5 px-2">트리거</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-muted-foreground">
+                      <tr className="border-b">
+                        <td className="py-1.5 px-2"><code className="bg-muted px-1 rounded">draft-consultation</code></td>
+                        <td className="py-1.5 px-2">Gemini로 AI 상담 초안 생성 (제목/질문/사전답변)</td>
+                        <td className="py-1.5 px-2">사용자 상담 작성 시</td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="py-1.5 px-2"><code className="bg-muted px-1 rounded">attach-consultation-data</code></td>
+                        <td className="py-1.5 px-2">3개월 데이터 CSV 생성 → Storage 업로드 → Signed URL</td>
+                        <td className="py-1.5 px-2">자료 생성 버튼</td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="py-1.5 px-2"><code className="bg-muted px-1 rounded">send-tax-consultation</code></td>
+                        <td className="py-1.5 px-2">Resend로 세무사에게 데이터 패키지 이메일 발송</td>
+                        <td className="py-1.5 px-2">상담 등록 시 / AI 액션카드</td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="py-1.5 px-2"><code className="bg-muted px-1 rounded">notify-accountant-assignment</code></td>
+                        <td className="py-1.5 px-2">세무사 배정 알림 (이메일 + 앱 내 알림)</td>
+                        <td className="py-1.5 px-2">매칭 확정 시</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-2"><code className="bg-muted px-1 rounded">generate-filing-tasks</code></td>
+                        <td className="py-1.5 px-2">정기 신고 태스크 자동 생성 (5종 × 주기별)</td>
+                        <td className="py-1.5 px-2">pg_cron 매일 09:00 KST</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 프론트엔드 파일 구조 */}
+              <div className="p-4 rounded-lg bg-muted/30">
+                <p className="text-xs font-medium mb-3">📁 프론트엔드 파일 구조</p>
+                <div className="grid md:grid-cols-2 gap-3 text-xs text-muted-foreground font-mono">
+                  <div>
+                    <p className="font-semibold text-foreground mb-1 font-sans">사장님 측</p>
+                    <p>pages/TaxAccountant.tsx</p>
+                    <p>components/tax-accountant/MatchingTab.tsx</p>
+                    <p>components/tax-accountant/ConsultationTab.tsx</p>
+                    <p>components/tax-accountant/FilingTab.tsx</p>
+                    <p>components/tax-accountant/EmailPreviewDialog.tsx</p>
+                    <p>components/tax-accountant/IrregularFilingSection.tsx</p>
+                    <p>hooks/useTaxAccountant.ts</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground mb-1 font-sans">세무사 파트너 측</p>
+                    <p>pages/accountant/AccountantDashboard.tsx</p>
+                    <p>pages/accountant/AccountantClients.tsx</p>
+                    <p>pages/accountant/AccountantConsultations.tsx</p>
+                    <p>pages/accountant/AccountantFilings.tsx</p>
+                    <p>pages/accountant/AccountantLogin.tsx</p>
+                    <p>pages/accountant/AccountantSignup.tsx</p>
+                    <p>components/accountant/AccountantClientDetail.tsx</p>
+                    <p>hooks/useAccountantData.ts</p>
+                  </div>
+                </div>
+              </div>
+
             </CardContent>
           </Card>
 
@@ -1257,10 +1614,15 @@ export default function Engine() {
                   { step: 15, name: "음성 Persistent Audio + STT 라이프사이클 (v1)", priority: "완료", color: "bg-green-500" },
                   { step: 16, name: "ElevenLabs Conversational AI WebRTC (v2.0 음성)", priority: "완료", color: "bg-green-500" },
                   { step: 17, name: "PC 사이드바 사용자 아바타 반영", priority: "완료", color: "bg-green-500" },
-                  { step: 18, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
-                  { step: 17, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
-                  { step: 18, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
-                  { step: 19, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
+                  { step: 18, name: "세무사 매칭 시스템 (85점 스코어링)", priority: "완료", color: "bg-green-500" },
+                  { step: 19, name: "세무 상담 워크플로우 (AI 초안 + CSV 패키징)", priority: "완료", color: "bg-green-500" },
+                  { step: 20, name: "세무사 파트너 포털 (김비서 파트너)", priority: "완료", color: "bg-green-500" },
+                  { step: 21, name: "정기 신고 자동 생성 (5종 × pg_cron)", priority: "완료", color: "bg-green-500" },
+                  { step: 22, name: "세무사 배정 알림 (이메일 + 앱 내)", priority: "완료", color: "bg-green-500" },
+                  { step: 23, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
+                  { step: 24, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
+                  { step: 25, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
+                  { step: 26, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
                 ].map((item) => (
                   <div key={item.step} className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
