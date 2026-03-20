@@ -127,21 +127,30 @@ export default function ConsultationTab({
     }
   }, [businessContext, secretaryName, topicParticle]);
 
-  const attachDataToConsultation = async (consultationId: string) => {
+  const attachDataToConsultation = async (consultationId: string, silent = false) => {
     setAttachingId(consultationId);
     try {
       const { data, error } = await supabase.functions.invoke("attach-consultation-data", {
         body: { consultationId },
       });
+
       if (error) throw error;
-      if (data?.totalFiles > 0) {
-        toast.success(`${data.totalFiles}개 자료가 첨부되었습니다`);
-      } else {
-        toast.info("첨부할 데이터가 아직 없습니다. 연동 후 다시 시도해주세요.");
+
+      if (!silent) {
+        if (data?.totalFiles > 0) {
+          toast.success(`${data.totalFiles}개 자료가 첨부되었습니다`);
+        } else {
+          toast.info("첨부할 데이터가 아직 없습니다. 연동 후 다시 시도해주세요.");
+        }
       }
-      onCreated();
+
+      return data;
     } catch (e) {
       console.error("Attach data error:", e);
+      if (!silent) {
+        toast.error("자료 첨부에 실패했습니다. 다시 시도해주세요.");
+      }
+      throw e;
     } finally {
       setAttachingId(null);
     }
@@ -167,16 +176,16 @@ export default function ConsultationTab({
       }).select("id").single();
 
       if (error) throw error;
+
+      if (data?.id) {
+        await attachDataToConsultation(data.id, true);
+      }
+
       toast.success("상담 요청이 등록되었습니다");
       setSubject("");
       setQuestion("");
       setShowForm(false);
       onCreated();
-
-      // Auto-attach data in background
-      if (data?.id) {
-        attachDataToConsultation(data.id);
-      }
     } catch (e) {
       toast.error((e as Error).message || "상담 등록에 실패했습니다");
     } finally {
