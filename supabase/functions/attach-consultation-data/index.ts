@@ -41,14 +41,15 @@ Deno.serve(async (req: Request) => {
     const { consultationId, preview } = body;
     if (!consultationId && !preview) throw new Error("consultationId 또는 preview가 필요합니다");
 
-    // Verify consultation belongs to user
-    const { data: consultation, error: cErr } = await supabase
-      .from("tax_consultations")
-      .select("id, user_id")
-      .eq("id", consultationId)
-      .eq("user_id", user.id)
-      .single();
-    if (cErr || !consultation) throw new Error("상담 정보를 찾을 수 없습니다");
+    if (consultationId) {
+      const { data: consultation, error: cErr } = await supabase
+        .from("tax_consultations")
+        .select("id, user_id")
+        .eq("id", consultationId)
+        .eq("user_id", user.id)
+        .single();
+      if (cErr || !consultation) throw new Error("상담 정보를 찾을 수 없습니다");
+    }
 
     // Determine date range: last 3 months
     const now = new Date();
