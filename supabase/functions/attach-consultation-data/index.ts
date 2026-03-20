@@ -38,8 +38,8 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const body = await req.json();
-    const { consultationId } = body;
-    if (!consultationId) throw new Error("consultationId가 필요합니다");
+    const { consultationId, preview } = body;
+    if (!consultationId && !preview) throw new Error("consultationId 또는 preview가 필요합니다");
 
     // Verify consultation belongs to user
     const { data: consultation, error: cErr } = await supabase
