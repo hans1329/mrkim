@@ -6,6 +6,10 @@ verify_jwt = false
 [functions.draft-consultation]
 verify_jwt = false
 
+[functions.attach-consultation-data]
+verify_jwt = false
+
+
 [functions.service-chat]
 verify_jwt = false
 
