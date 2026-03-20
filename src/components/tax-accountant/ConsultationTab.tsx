@@ -130,22 +130,11 @@ export default function ConsultationTab({
   const attachDataToConsultation = async (consultationId: string) => {
     setAttachingId(consultationId);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/attach-consultation-data`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session?.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ consultationId }),
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      if (data.totalFiles > 0) {
+      const { data, error } = await supabase.functions.invoke("attach-consultation-data", {
+        body: { consultationId },
+      });
+      if (error) throw error;
+      if (data?.totalFiles > 0) {
         toast.success(`${data.totalFiles}개 자료가 첨부되었습니다`);
       } else {
         toast.info("첨부할 데이터가 아직 없습니다. 연동 후 다시 시도해주세요.");
@@ -153,7 +142,6 @@ export default function ConsultationTab({
       onCreated();
     } catch (e) {
       console.error("Attach data error:", e);
-      // Non-blocking: don't show error toast for attachment failures
     } finally {
       setAttachingId(null);
     }
