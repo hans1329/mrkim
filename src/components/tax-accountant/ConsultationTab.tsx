@@ -70,6 +70,7 @@ export default function ConsultationTab({
   const [attachingId, setAttachingId] = useState<string | null>(null);
   const [previewLinks, setPreviewLinks] = useState<{ label: string; url: string; description: string }[]>([]);
   const [previewReady, setPreviewReady] = useState(false);
+  const [downloadingUrl, setDownloadingUrl] = useState<string | null>(null);
 
   // AI 작성 도우미 상태
   const [drafting, setDrafting] = useState(false);
@@ -81,8 +82,8 @@ export default function ConsultationTab({
   // 한국어 조사 처리: 받침 유무에 따라 이/가, 은/는 등 선택
   const hasLastConsonant = (name: string) => {
     const lastChar = name.charCodeAt(name.length - 1);
-    if (lastChar < 0xAC00 || lastChar > 0xD7A3) return false;
-    return (lastChar - 0xAC00) % 28 !== 0;
+    if (lastChar < 0xac00 || lastChar > 0xd7a3) return false;
+    return (lastChar - 0xac00) % 28 !== 0;
   };
   const topicParticle = hasLastConsonant(secretaryName) ? "이" : "가";
 
@@ -115,6 +116,31 @@ export default function ConsultationTab({
     if (month >= 11 && month <= 12) base.unshift("연말정산 준비를 시작하고 싶어요");
     return base.slice(0, 4);
   };
+
+  const handleDownload = useCallback(async (url: string, fileName: string) => {
+    try {
+      setDownloadingUrl(url);
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("download_failed");
+      }
+
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("파일 다운로드에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setDownloadingUrl(null);
+    }
+  }, []);
 
   const requestAIDraft = useCallback(async (input: string) => {
     const trimmedInput = input.trim();
@@ -322,7 +348,6 @@ export default function ConsultationTab({
 
   return (
     <div className="space-y-3">
-      {/* 새 상담 요청 버튼 / 폼 */}
       {!showForm ? (
         <Button
           variant="outline"
@@ -417,20 +442,24 @@ export default function ConsultationTab({
               ) : previewLinks.length > 0 ? (
                 <div className="space-y-1.5">
                   {previewLinks.map((link, i) => (
-                    <a
-                      key={i}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-2 rounded-md bg-background hover:bg-accent/50 transition-colors group"
+                    <button
+                      key={`${link.url}-${i}`}
+                      type="button"
+                      onClick={() => void handleDownload(link.url, link.label)}
+                      disabled={downloadingUrl === link.url}
+                      className="flex w-full items-center gap-2 rounded-md bg-background p-2 text-left transition-colors hover:bg-accent/50 group disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <FileText className="h-4 w-4 text-primary shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">{link.label}</p>
                         <p className="text-[10px] text-muted-foreground">{link.description}</p>
                       </div>
-                      <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                    </a>
+                      {downloadingUrl === link.url ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0" />
+                      ) : (
+                        <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                      )}
+                    </button>
                   ))}
                   <p className="text-[10px] text-muted-foreground">⏰ 다운로드 링크는 7일간 유효합니다</p>
                 </div>
@@ -460,7 +489,6 @@ export default function ConsultationTab({
         </Card>
       )}
 
-      {/* 상담 목록 */}
       {consultations.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
@@ -516,7 +544,6 @@ export default function ConsultationTab({
                   )}
                 </div>
 
-                {/* 첨부 자료 */}
                 {isExpanded && (() => {
                   const links = getDownloadLinks(c);
                   if (links.length === 0 && c.status === "pending") {
@@ -547,20 +574,24 @@ export default function ConsultationTab({
                         </p>
                         <div className="space-y-1.5">
                           {links.map((link, i) => (
-                            <a
-                              key={i}
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 p-2 rounded-md bg-background hover:bg-accent/50 transition-colors group"
+                            <button
+                              key={`${c.id}-${link.url}-${i}`}
+                              type="button"
+                              onClick={() => void handleDownload(link.url, link.label)}
+                              disabled={downloadingUrl === link.url}
+                              className="flex w-full items-center gap-2 rounded-md bg-background p-2 text-left transition-colors hover:bg-accent/50 group disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                               <FileText className="h-4 w-4 text-primary shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium truncate">{link.label}</p>
                                 <p className="text-[10px] text-muted-foreground">{link.description}</p>
                               </div>
-                              <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                            </a>
+                              {downloadingUrl === link.url ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0" />
+                              ) : (
+                                <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                              )}
+                            </button>
                           ))}
                         </div>
                         <p className="text-[10px] text-muted-foreground">⏰ 다운로드 링크는 7일간 유효합니다</p>
@@ -570,7 +601,6 @@ export default function ConsultationTab({
                   return null;
                 })()}
 
-                {/* AI 사전 답변 */}
                 {isExpanded && c.ai_preliminary_answer && (
                   <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border/50">
                     <p className="text-xs font-medium mb-1 flex items-center gap-1">
@@ -581,7 +611,6 @@ export default function ConsultationTab({
                   </div>
                 )}
 
-                {/* 세무사에게 이메일 전달 버튼 */}
                 {c.status === "pending" && assignment && (
                   <div className="mt-3 space-y-1.5">
                     {assignment.accountant?.email && (
@@ -606,7 +635,6 @@ export default function ConsultationTab({
                   </div>
                 )}
 
-                {/* 세무사 답변 */}
                 {isExpanded && c.accountant_response && (
                   <div className="mt-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
                     <p className="text-xs font-medium mb-1">세무사 답변</p>
