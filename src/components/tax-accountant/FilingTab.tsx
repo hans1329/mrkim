@@ -524,8 +524,21 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
         </CardContent>
       </Card>
 
+      {/* 신고 태스크가 없으면 생성 카드 표시 */}
+      {filingTasks.length === 0 && onCreateTask && (
+        <CreateFilingTaskCard onCreateTask={onCreateTask} />
+      )}
+      {filingTasks.length === 0 && !onCreateTask && (
+        <Card className="border-dashed">
+          <CardContent className="py-8 text-center">
+            <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">예정된 신고가 없습니다</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 신고 태스크별 카드 */}
-      {effectiveTasks.map((task) => {
+      {filingTasks.map((task) => {
         const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.upcoming;
         const allItems = [...basicItems];
         industryReqs.forEach((req) => allItems.push(...req.items));
