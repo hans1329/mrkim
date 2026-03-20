@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
     const now = new Date();
     const endDate = now.toISOString().split("T")[0];
     const startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().split("T")[0];
-    const periodLabel = `최근3개월`;
+    const periodLabel = `3months`;
     const timestamp = Date.now();
     const folder = `${user.id}/${timestamp}`;
 
