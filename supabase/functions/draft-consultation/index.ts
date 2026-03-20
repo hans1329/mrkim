@@ -5,13 +5,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface BusinessContext {
+  businessName?: string | null;
+  businessType?: string | null;
+  businessRegistrationNumber?: string | null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { briefDescription } = await req.json();
+    const { briefDescription, businessContext } = await req.json();
     if (!briefDescription || typeof briefDescription !== "string") {
       return new Response(JSON.stringify({ error: "briefDescription is required" }), {
         status: 400,
@@ -19,9 +25,11 @@ serve(async (req) => {
       });
     }
 
+    const ctx = (businessContext || {}) as BusinessContext;
+    const prompt = buildPrompt(briefDescription, ctx);
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      // Fallback to GEMINI_API_KEY
       const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
       if (!GEMINI_API_KEY) {
         throw new Error("No API key configured");
@@ -36,7 +44,7 @@ serve(async (req) => {
             contents: [
               {
                 role: "user",
-                parts: [{ text: buildPrompt(briefDescription) }],
+                parts: [{ text: prompt }],
               },
             ],
             generationConfig: {
@@ -84,7 +92,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: buildSystemPrompt(),
+            content: buildSystemPrompt(ctx),
           },
           {
             role: "user",
@@ -146,7 +154,6 @@ serve(async (req) => {
       });
     }
 
-    // Fallback: try to parse content
     const content = data.choices?.[0]?.message?.content || "";
     try {
       const parsed = JSON.parse(content);
@@ -168,19 +175,34 @@ serve(async (req) => {
   }
 });
 
-function buildSystemPrompt(): string {
+function buildBusinessInfo(ctx: BusinessContext): string {
+  const parts: string[] = [];
+  if (ctx.businessName) parts.push(`- 상호명: ${ctx.businessName}`);
+  if (ctx.businessType) parts.push(`- 업종: ${ctx.businessType}`);
+  if (ctx.businessRegistrationNumber) parts.push(`- 사업자등록번호: ${ctx.businessRegistrationNumber}`);
+
+  if (parts.length === 0) {
+    return "\n사용자의 사업 정보가 아직 등록되지 않았습니다. 구체적인 수치나 업종을 임의로 지어내지 마세요. 대신 \"(상호명 기입)\", \"(업종 기입)\" 등의 빈칸으로 남겨두세요.";
+  }
+
+  return `\n사용자의 실제 사업 정보:\n${parts.join("\n")}\n\n위 정보만 사용하세요. 매출액, 투자 금액 등 제공되지 않은 수치는 절대 지어내지 말고, "(구체적 금액 기입)" 같은 빈칸으로 남기세요.`;
+}
+
+function buildSystemPrompt(ctx: BusinessContext): string {
   return `당신은 한국의 소상공인을 위한 세무 상담 작성 도우미입니다.
 사용자가 간단히 설명한 세무 관련 고민을 바탕으로, 세무사에게 보낼 정식 상담 요청서를 작성해주세요.
+${buildBusinessInfo(ctx)}
 
 작성 규칙:
 - subject: 핵심 키워드를 포함한 간결한 제목 (15~25자)
-- question: 세무사가 정확한 답변을 할 수 있도록 구체적인 상황, 금액, 시기 등을 포함한 질문 (200~400자)
+- question: 세무사가 정확한 답변을 할 수 있도록 구체적인 상황 설명 포함 (200~400자)
 - 존댓말 사용, 전문적이면서도 이해하기 쉬운 표현
-- 사용자가 언급하지 않은 내용은 "___" 또는 "(구체적 금액 기입)" 같은 빈칸으로 표시하여 사용자가 채울 수 있게 할 것`;
+- **절대로 제공되지 않은 정보(매출액, 업종, 금액 등)를 임의로 만들어내지 마세요**
+- 사용자가 언급하지 않았고 위 사업 정보에도 없는 내용은 반드시 "___" 또는 "(구체적 금액 기입)", "(해당 업종 기입)" 같은 빈칸으로 표시하여 사용자가 채울 수 있게 할 것`;
 }
 
-function buildPrompt(desc: string): string {
-  return `${buildSystemPrompt()}
+function buildPrompt(desc: string, ctx: BusinessContext): string {
+  return `${buildSystemPrompt(ctx)}
 
 사용자 설명: ${desc}
 

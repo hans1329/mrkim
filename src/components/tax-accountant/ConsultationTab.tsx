@@ -115,7 +115,7 @@ export default function ConsultationTab({
     setDrafting(true);
     try {
       const { data, error } = await supabase.functions.invoke("draft-consultation", {
-        body: { briefDescription: briefInput.trim() },
+        body: { briefDescription: briefInput.trim(), businessContext },
       });
       if (error) throw error;
       if (data?.subject) setSubject(data.subject);

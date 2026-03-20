@@ -70,6 +70,11 @@ export default function TaxAccountant() {
             assignment={assignment}
             onCreated={refetch}
             secretaryName={profile?.secretary_name || "김비서"}
+            businessContext={{
+              businessName: profile?.business_name || null,
+              businessType: profile?.business_type || null,
+              businessRegistrationNumber: profile?.business_registration_number || null,
+            }}
           />
         </TabsContent>
 
