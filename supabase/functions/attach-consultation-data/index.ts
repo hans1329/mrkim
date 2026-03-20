@@ -113,7 +113,7 @@ Deno.serve(async (req: Request) => {
           [inv.invoice_date, inv.invoice_type === "sales" ? "매출" : "매입", toCsvValue(inv.supplier_name), toCsvValue(inv.buyer_name), inv.supply_amount, inv.tax_amount, inv.total_amount, toCsvValue(inv.item_name)].join(",")
         );
         const csv = "\uFEFF" + [header, ...rows].join("\n");
-        const path = `${folder}/세금계산서_${periodLabel}.csv`;
+        const path = `${folder}/tax_invoices_${periodLabel}.csv`;
         const { error } = await supabase.storage.from("tax-filing-packages").upload(path, new Blob([csv], { type: "text/csv;charset=utf-8" }), { contentType: "text/csv;charset=utf-8", upsert: true });
         if (error) {
           uploadErrors.push(`세금계산서 업로드 실패: ${error.message}`);
