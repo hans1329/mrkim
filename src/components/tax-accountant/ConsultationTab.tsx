@@ -235,7 +235,7 @@ export default function ConsultationTab({
               {drafting && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                  {secretaryName}가 상담서를 작성하고 있어요...
+                  {secretaryName}{topicParticle} 상담서를 작성하고 있어요...
                 </div>
               )}
             </div>
