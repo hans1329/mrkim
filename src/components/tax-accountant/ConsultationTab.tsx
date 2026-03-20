@@ -29,6 +29,7 @@ interface ConsultationTabProps {
   assignment: TaxAccountantAssignment | null;
   onCreated: () => void;
   loading?: boolean;
+  secretaryName?: string;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -46,6 +47,7 @@ export default function ConsultationTab({
   assignment,
   onCreated,
   loading,
+  secretaryName = "김비서",
 }: ConsultationTabProps) {
   const [showForm, setShowForm] = useState(false);
   const [subject, setSubject] = useState("");
@@ -68,7 +70,7 @@ export default function ConsultationTab({
       if (error) throw error;
       if (data?.subject) setSubject(data.subject);
       if (data?.question) setQuestion(data.question);
-      toast.success("AI가 상담서를 작성했습니다. 내용을 확인 후 수정해주세요.");
+      toast.success(`${secretaryName}가 상담서를 작성했습니다. 내용을 확인 후 수정해주세요.`);
     } catch (e) {
       toast.error("AI 작성에 실패했습니다. 직접 작성해주세요.");
       console.error("AI draft error:", e);
@@ -167,10 +169,10 @@ export default function ConsultationTab({
             <div className="p-3 rounded-lg bg-primary/5 border border-primary/15 space-y-2">
               <p className="text-xs font-medium flex items-center gap-1.5 text-primary">
                 <Wand2 className="h-3.5 w-3.5" />
-                AI 작성 도우미
+                {secretaryName}가 도와드려요!
               </p>
               <p className="text-[11px] text-muted-foreground">
-                고민을 간단히 적으면 AI가 세무사에게 보낼 상담서를 작성해 드립니다
+                고민을 간단히 적으면 {secretaryName}가 세무사에게 보낼 상담서를 작성해 드립니다
               </p>
               <div className="flex gap-2">
                 <Input
