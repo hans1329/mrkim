@@ -149,6 +149,15 @@ Deno.serve(async (req: Request) => {
 
     await Promise.all(uploads);
 
+    // 각 데이터 소스 현황
+    const sources = [
+      { name: "거래내역", found: (txRes.data?.length ?? 0) > 0 },
+      { name: "세금계산서", found: (invRes.data?.length ?? 0) > 0 },
+      { name: "배달주문", found: (delRes.data?.length ?? 0) > 0 },
+      { name: "직원현황", found: (empRes.data?.length ?? 0) > 0 },
+    ];
+    const missingSources = sources.filter(s => !s.found).map(s => s.name);
+
     if (consultationId && links.length > 0) {
       await supabase.from("tax_consultations")
         .update({ data_package: { downloadLinks: links } })
@@ -156,7 +165,7 @@ Deno.serve(async (req: Request) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, links, totalFiles: links.length }),
+      JSON.stringify({ success: true, links, totalFiles: links.length, sources, missingSources }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
