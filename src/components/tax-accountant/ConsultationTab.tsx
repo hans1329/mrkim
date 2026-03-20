@@ -376,7 +376,68 @@ export default function ConsultationTab({
                       이메일 전달됨
                     </>
                   )}
+                  {getDownloadLinks(c).length > 0 && (
+                    <>
+                      <span>•</span>
+                      <Paperclip className="h-3 w-3" />
+                      자료 {getDownloadLinks(c).length}건
+                    </>
+                  )}
                 </div>
+
+                {/* 첨부 자료 */}
+                {isExpanded && (() => {
+                  const links = getDownloadLinks(c);
+                  if (links.length === 0 && c.status === "pending") {
+                    return (
+                      <div className="mt-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs w-full border-dashed"
+                          disabled={attachingId === c.id}
+                          onClick={() => attachDataToConsultation(c.id)}
+                        >
+                          {attachingId === c.id ? (
+                            <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />자료 수집 중...</>
+                          ) : (
+                            <><Paperclip className="h-3.5 w-3.5 mr-1.5" />관련 자료 첨부하기</>
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  }
+                  if (links.length > 0) {
+                    return (
+                      <div className="mt-3 p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2">
+                        <p className="text-xs font-medium flex items-center gap-1">
+                          <Paperclip className="h-3 w-3 text-primary" />
+                          첨부 자료
+                        </p>
+                        <div className="space-y-1.5">
+                          {links.map((link, i) => (
+                            <a
+                              key={i}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-2 rounded-md bg-background hover:bg-accent/50 transition-colors group"
+                            >
+                              <FileText className="h-4 w-4 text-primary shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium truncate">{link.label}</p>
+                                <p className="text-[10px] text-muted-foreground">{link.description}</p>
+                              </div>
+                              <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                            </a>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">⏰ 다운로드 링크는 7일간 유효합니다</p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
 
                 {/* AI 사전 답변 */}
                 {isExpanded && c.ai_preliminary_answer && (
