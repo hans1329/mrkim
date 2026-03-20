@@ -69,6 +69,7 @@ export default function TaxAccountant() {
             consultations={consultations}
             assignment={assignment}
             onCreated={refetch}
+            secretaryName={profile?.secretary_name || "김비서"}
           />
         </TabsContent>
 
