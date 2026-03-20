@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,6 +24,16 @@ export default function TaxAccountant() {
     removeAssignment,
     refetch,
   } = useTaxAccountant();
+
+  const businessContext = useMemo(() => ({
+    businessName: profile?.business_name || null,
+    businessType: profile?.business_type || null,
+    businessRegistrationNumber: profile?.business_registration_number || null,
+  }), [
+    profile?.business_name,
+    profile?.business_type,
+    profile?.business_registration_number,
+  ]);
 
   if (loading || profileLoading) {
     return (
@@ -70,11 +81,7 @@ export default function TaxAccountant() {
             assignment={assignment}
             onCreated={refetch}
             secretaryName={profile?.secretary_name || "김비서"}
-            businessContext={{
-              businessName: profile?.business_name || null,
-              businessType: profile?.business_type || null,
-              businessRegistrationNumber: profile?.business_registration_number || null,
-            }}
+            businessContext={businessContext}
           />
         </TabsContent>
 
