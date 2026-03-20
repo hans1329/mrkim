@@ -19,6 +19,7 @@ import {
   Info,
   Building2,
   User,
+  UserCheck,
   Zap,
   Upload,
   ShieldCheck,
