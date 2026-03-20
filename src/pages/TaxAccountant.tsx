@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,7 @@ import FilingTab from "@/components/tax-accountant/FilingTab";
 export default function TaxAccountant() {
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "matching";
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const { profile, loading: profileLoading } = useProfile();
   const {
     accountants,
@@ -49,7 +50,7 @@ export default function TaxAccountant() {
 
   return (
     <MainLayout title="세무사" showBackButton>
-      <Tabs defaultValue={defaultTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="w-full grid grid-cols-3">
           <TabsTrigger value="matching" className="text-xs">
             <UserCheck className="h-3.5 w-3.5 mr-1" />
