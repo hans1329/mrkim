@@ -58,6 +58,25 @@ export default function ConsultationTab({
   const [briefInput, setBriefInput] = useState("");
   const [drafting, setDrafting] = useState(false);
 
+  const handleAIDraft = async () => {
+    if (!briefInput.trim()) return;
+    setDrafting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("draft-consultation", {
+        body: { briefDescription: briefInput.trim() },
+      });
+      if (error) throw error;
+      if (data?.subject) setSubject(data.subject);
+      if (data?.question) setQuestion(data.question);
+      toast.success("AI가 상담서를 작성했습니다. 내용을 확인 후 수정해주세요.");
+    } catch (e) {
+      toast.error("AI 작성에 실패했습니다. 직접 작성해주세요.");
+      console.error("AI draft error:", e);
+    } finally {
+      setDrafting(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!subject.trim() || !question.trim()) {
       toast.error("제목과 질문을 입력해 주세요");
