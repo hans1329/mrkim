@@ -19,6 +19,7 @@ import {
   Info,
   Building2,
   User,
+  UserCheck,
   Zap,
   Upload,
   ShieldCheck,
@@ -386,6 +387,20 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
         <Skeleton className="h-32 rounded-lg" />
         <Skeleton className="h-32 rounded-lg" />
       </div>
+    );
+  }
+
+  if (!assignment) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="py-12 text-center">
+          <UserCheck className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+          <h3 className="font-semibold mb-1">담당 세무사를 먼저 배정해주세요</h3>
+          <p className="text-xs text-muted-foreground">
+            신고 관리를 이용하려면 먼저 매칭 탭에서<br />담당 세무사를 선택해야 합니다
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
