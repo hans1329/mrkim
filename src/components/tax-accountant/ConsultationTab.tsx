@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
+  UserCheck,
   Wand2,
   Loader2,
   Paperclip,
