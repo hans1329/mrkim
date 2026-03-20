@@ -149,8 +149,7 @@ Deno.serve(async (req: Request) => {
 
     await Promise.all(uploads);
 
-    // Store links in consultation's data_package
-    if (links.length > 0) {
+    if (consultationId && links.length > 0) {
       await supabase.from("tax_consultations")
         .update({ data_package: { downloadLinks: links } })
         .eq("id", consultationId);
