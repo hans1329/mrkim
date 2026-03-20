@@ -286,7 +286,6 @@ export default function ConsultationTab({
                     type="button"
                     disabled={drafting}
                     onClick={() => {
-                      setBriefInput(concern);
                       void requestAIDraft(concern);
                     }}
                     className="text-[11px] px-2.5 py-1.5 rounded-full border border-primary/20 bg-background hover:bg-primary/10 hover:border-primary/40 text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
