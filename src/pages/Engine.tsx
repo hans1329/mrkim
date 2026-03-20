@@ -1587,8 +1587,8 @@ export default function Engine() {
                   { step: 22, name: "세무사 배정 알림 (이메일 + 앱 내)", priority: "완료", color: "bg-green-500" },
                   { step: 23, name: "Codef 정식 전환 (실 ConnectedId)", priority: "예정", color: "bg-amber-500" },
                   { step: 24, name: "하이픈 연동 (자동이체·급여 집행)", priority: "예정", color: "bg-purple-500" },
-                  { step: 18, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
-                  { step: 19, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
+                  { step: 25, name: "일일 경영 브리핑", priority: "예정", color: "bg-gray-400" },
+                  { step: 26, name: "전화 알림 (Twilio)", priority: "예정", color: "bg-gray-400" },
                 ].map((item) => (
                   <div key={item.step} className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
