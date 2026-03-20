@@ -346,7 +346,7 @@ export default function ConsultationTab({
                 onClick={handleSubmit}
                 disabled={submitting || !subject.trim() || !question.trim()}
               >
-                {submitting ? "등록 중..." : "상담 등록 후 자료 첨부"}
+                {submitting ? (attachingId ? "자료 첨부 중..." : "등록 중...") : "상담 등록"}
               </Button>
             </div>
           </CardContent>
