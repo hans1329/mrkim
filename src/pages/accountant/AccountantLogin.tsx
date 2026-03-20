@@ -26,14 +26,31 @@ export default function AccountantLogin() {
 
       if (authError) throw authError;
 
-      // Verify this user is a tax accountant
-      const { data: accountant, error: accError } = await supabase
+      // Verify this user is a tax accountant (user_id → email fallback + auto-link)
+      let { data: accountant } = await supabase
         .from("tax_accountants")
         .select("id")
         .eq("user_id", authData.user.id)
         .maybeSingle();
 
-      if (accError || !accountant) {
+      if (!accountant && authData.user.email) {
+        const { data: emailMatch } = await supabase
+          .from("tax_accountants")
+          .select("id")
+          .eq("email", authData.user.email)
+          .is("user_id", null)
+          .maybeSingle();
+
+        if (emailMatch) {
+          await supabase
+            .from("tax_accountants")
+            .update({ user_id: authData.user.id })
+            .eq("id", emailMatch.id);
+          accountant = emailMatch;
+        }
+      }
+
+      if (!accountant) {
         await supabase.auth.signOut();
         toast.error("세무사 계정이 아닙니다. 회원가입을 먼저 진행해주세요.");
         return;
