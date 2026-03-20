@@ -69,6 +69,7 @@ export default function ConsultationTab({
   const subjectParticle = hasLastConsonant(secretaryName) ? "이가" : "가";
   const topicParticle = hasLastConsonant(secretaryName) ? "이" : "가";
 
+  const getSuggestedConcerns = (): string[] => {
     const month = new Date().getMonth() + 1;
     const base = [
       "매출이 늘었는데 절세 방법이 궁금해요",
