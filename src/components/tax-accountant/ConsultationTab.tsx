@@ -211,7 +211,7 @@ export default function ConsultationTab({
             <div className="p-3 rounded-lg bg-primary/5 border border-primary/15 space-y-2.5">
               <p className="text-xs font-medium flex items-center gap-1.5 text-primary">
                 <Wand2 className="h-3.5 w-3.5" />
-                {secretaryName}가 도와드려요!
+                {secretaryName}{topicParticle} 도와드려요!
               </p>
               <p className="text-[11px] text-muted-foreground">
                 아래 고민을 선택하면 {secretaryName}가 세무사에게 보낼 상담서를 작성해 드립니다
