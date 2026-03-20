@@ -19,6 +19,9 @@ import {
   Sparkles,
   Wand2,
   Loader2,
+  Paperclip,
+  Download,
+  FileText,
 } from "lucide-react";
 import { type TaxConsultation, type TaxAccountantAssignment } from "@/hooks/useTaxAccountant";
 import { formatDistanceToNow } from "date-fns";
