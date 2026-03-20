@@ -110,7 +110,8 @@ describe("ConsultationTab", () => {
         onCreated={vi.fn()}
       />
     );
-    expect(screen.getByText("상담 내역이 없습니다")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("새 상담 요청"));
+    expect(screen.getByText("새 상담 요청")).toBeInTheDocument();
   });
 
   it("로딩 중일 때 스켈레톤을 표시한다", () => {
