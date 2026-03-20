@@ -60,7 +60,15 @@ export default function ConsultationTab({
   const [briefInput, setBriefInput] = useState("");
   const [drafting, setDrafting] = useState(false);
 
-  const getSuggestedConcerns = (): string[] => {
+  // 한국어 조사 처리: 받침 유무에 따라 이/가, 은/는 등 선택
+  const hasLastConsonant = (name: string) => {
+    const lastChar = name.charCodeAt(name.length - 1);
+    if (lastChar < 0xAC00 || lastChar > 0xD7A3) return false;
+    return (lastChar - 0xAC00) % 28 !== 0;
+  };
+  const subjectParticle = hasLastConsonant(secretaryName) ? "이가" : "가";
+  const topicParticle = hasLastConsonant(secretaryName) ? "이" : "가";
+
     const month = new Date().getMonth() + 1;
     const base = [
       "매출이 늘었는데 절세 방법이 궁금해요",
