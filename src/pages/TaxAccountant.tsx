@@ -13,6 +13,7 @@ import FilingTab from "@/components/tax-accountant/FilingTab";
 export default function TaxAccountant() {
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "matching";
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const { profile, loading: profileLoading } = useProfile();
   const {
     accountants,
