@@ -214,7 +214,7 @@ export default function ConsultationTab({
                 {secretaryName}{topicParticle} 도와드려요!
               </p>
               <p className="text-[11px] text-muted-foreground">
-                아래 고민을 선택하면 {secretaryName}가 세무사에게 보낼 상담서를 작성해 드립니다
+                아래 고민을 선택하면 {secretaryName}{topicParticle} 세무사에게 보낼 상담서를 작성해 드립니다
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {getSuggestedConcerns().map((concern) => (
