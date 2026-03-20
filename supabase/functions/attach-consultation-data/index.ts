@@ -129,10 +129,15 @@ Deno.serve(async (req: Request) => {
     }
 
     if (delRes.data && delRes.data.length > 0) {
+      const platformNames: Record<string, string> = {
+        baemin: "배달의민족",
+        coupangeats: "쿠팡이츠",
+        yogiyo: "요기요",
+      };
       uploads.push((async () => {
         const header = "주문일자,주문시간,플랫폼,주문명,총액,정산액,수수료,배달비";
         const rows = delRes.data.map(o =>
-          [o.order_dt || "", o.order_tm || "", o.platform, toCsvValue(o.order_name), o.total_amt || 0, o.settle_amt || 0, o.order_fee || 0, o.delivery_amt || 0].join(",")
+          [o.order_dt || "", o.order_tm || "", platformNames[o.platform] || o.platform, toCsvValue(o.order_name), o.total_amt || 0, o.settle_amt || 0, o.order_fee || 0, o.delivery_amt || 0].join(",")
         );
         const csv = "\uFEFF" + [header, ...rows].join("\n");
         const path = `${folder}/delivery_orders_${periodLabel}.csv`;
