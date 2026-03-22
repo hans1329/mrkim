@@ -821,11 +821,7 @@ export default function SecretarySettings() {
                         size="sm"
                         className="text-xs"
                         onClick={() => {
-                          setPhoneAlertTimes(prev =>
-                            prev.includes(option.id)
-                              ? prev.filter(t => t !== option.id)
-                              : [...prev, option.id]
-                          );
+                          setPhoneAlertTimes([option.id]);
                         }}
                       >
                         {option.label}
