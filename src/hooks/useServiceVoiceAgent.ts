@@ -28,6 +28,7 @@ function stripMarkdown(text: string) {
 }
 
 const FAQ_CACHE_TTL_MS = 5 * 60 * 1000;
+const SPEAKING_GRACE_MS = 1200;
 let faqPromptCache: { faqs: ServiceFAQItem[]; fetchedAt: number } | null = null;
 
 async function loadServiceFaqs(): Promise<ServiceFAQItem[]> {
@@ -94,6 +95,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
   const conversationHistoryRef = useRef<{ role: string; content: string }[]>([]);
   const conversationRef = useRef<ReturnType<typeof useConversation> | null>(null);
   const [micMuted, setMicMuted] = useState(false);
+  const speakingReleaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const buildSessionOverrides = useCallback((faqs: ServiceFAQItem[]) => ({
     agent: {
@@ -118,6 +120,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
   const handleConnect = useCallback(() => {
     setIsConnecting(false);
     setLastError(null);
+    setMicMuted(false);
     setVoiceStatus("listening");
     sessionActiveRef.current = true;
   }, []);
@@ -131,6 +134,12 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     hasStartedRef.current = false;
     sessionActiveRef.current = false;
     setIsConnecting(false);
+    setMicMuted(false);
+
+    if (speakingReleaseTimeoutRef.current) {
+      clearTimeout(speakingReleaseTimeoutRef.current);
+      speakingReleaseTimeoutRef.current = null;
+    }
 
     if (!endingRef.current) {
       setVoiceStatus("idle");
@@ -206,6 +215,39 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     }
   }, []);
 
+  const clearSpeakingReleaseTimeout = useCallback(() => {
+    if (speakingReleaseTimeoutRef.current) {
+      clearTimeout(speakingReleaseTimeoutRef.current);
+      speakingReleaseTimeoutRef.current = null;
+    }
+  }, []);
+
+  const holdSpeakingState = useCallback(() => {
+    clearSpeakingReleaseTimeout();
+    setVoiceStatus("speaking");
+    setMicMuted(true);
+  }, [clearSpeakingReleaseTimeout]);
+
+  const restoreListeningState = useCallback(() => {
+    clearSpeakingReleaseTimeout();
+
+    if (!sessionActiveRef.current || toolCallActiveRef.current || conversationRef.current?.isSpeaking) {
+      return;
+    }
+
+    setVoiceStatus("listening");
+    setMicMuted(false);
+  }, [clearSpeakingReleaseTimeout]);
+
+  const scheduleListeningRestore = useCallback(() => {
+    clearSpeakingReleaseTimeout();
+
+    speakingReleaseTimeoutRef.current = setTimeout(() => {
+      speakingReleaseTimeoutRef.current = null;
+      restoreListeningState();
+    }, SPEAKING_GRACE_MS);
+  }, [clearSpeakingReleaseTimeout, restoreListeningState]);
+
   const handleError = useCallback((error: unknown) => {
     console.error("[ServiceVoice] error", error);
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -272,6 +314,8 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     if (isConnecting) return;
 
     if (conversation.status === "disconnected") {
+      clearSpeakingReleaseTimeout();
+      setMicMuted(false);
       if (!sessionActiveRef.current && !hasStartedRef.current) {
         setVoiceStatus("idle");
       }
@@ -279,21 +323,20 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     }
 
     if (toolCallActiveRef.current) {
+      clearSpeakingReleaseTimeout();
       setVoiceStatus("processing");
       return;
     }
 
     if (conversation.isSpeaking) {
-      setVoiceStatus("speaking");
-      setMicMuted(true);
+      holdSpeakingState();
       return;
     }
 
     if (sessionActiveRef.current) {
-      setVoiceStatus("listening");
-      setMicMuted(false);
+      scheduleListeningRestore();
     }
-  }, [conversation.isSpeaking, conversation.status, isConnecting]);
+  }, [clearSpeakingReleaseTimeout, conversation.isSpeaking, conversation.status, holdSpeakingState, isConnecting, scheduleListeningRestore]);
 
   const startSession = useCallback(async () => {
     if (isConnecting || hasStartedRef.current || permissionDenied) return;
@@ -332,6 +375,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
       hasStartedRef.current = false;
       sessionActiveRef.current = false;
       setIsConnecting(false);
+      setMicMuted(false);
       setVoiceStatus("idle");
 
       if (error?.name === "NotAllowedError") {
@@ -355,8 +399,10 @@ export function useServiceVoiceAgent(isOpen: boolean) {
       console.error("[ServiceVoice] endSession error", error);
     }
 
+    clearSpeakingReleaseTimeout();
+    setMicMuted(false);
     setVoiceStatus("idle");
-  }, [conversation]);
+  }, [clearSpeakingReleaseTimeout, conversation]);
 
   const resetPermission = useCallback(() => {
     setPermissionDenied(false);
@@ -383,11 +429,12 @@ export function useServiceVoiceAgent(isOpen: boolean) {
 
   useEffect(() => {
     return () => {
+      clearSpeakingReleaseTimeout();
       if (hasStartedRef.current || sessionActiveRef.current) {
         void conversation.endSession();
       }
     };
-  }, []);
+  }, [clearSpeakingReleaseTimeout]);
 
   return {
     status: voiceStatus,
