@@ -181,17 +181,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
   }) => {
     const { token, signedUrl } = params;
 
-    // 서비스 안내 봇은 현재 WebRTC validate 경로가 404를 반환하므로
-    // signedUrl 기반 websocket을 우선 사용해 연결 취소를 방지한다.
-    if (signedUrl) {
-      await conversation.startSession({
-        signedUrl,
-        connectionType: "websocket",
-        overrides,
-      });
-      return;
-    }
-
+    // WebRTC 우선 (비서와 동일 — 오디오 자동 재생 지원)
     if (token) {
       try {
         await conversation.startSession({
@@ -201,12 +191,18 @@ export function useServiceVoiceAgent(isOpen: boolean) {
         });
         return;
       } catch (error) {
-        console.warn("[ServiceVoice] WebRTC connection failed, falling back to websocket", error);
-
-        if (!signedUrl) {
-          throw error;
-        }
+        console.warn("[ServiceVoice] WebRTC failed, falling back to websocket", error);
+        if (!signedUrl) throw error;
       }
+    }
+
+    if (signedUrl) {
+      await conversation.startSession({
+        signedUrl,
+        connectionType: "websocket",
+        overrides,
+      });
+      return;
     }
 
     throw new Error("연결 URL을 가져오지 못했습니다.");
