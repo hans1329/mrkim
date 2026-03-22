@@ -126,7 +126,6 @@ export function ServiceVoiceOverlay() {
       audioUrlRef.current = url;
 
       const audio = new Audio(url);
-      audio.playsInline = true;
       audio.preload = "auto";
       audioRef.current = audio;
 
