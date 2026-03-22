@@ -25,6 +25,20 @@ export function ServiceVoiceOverlay() {
   const [response, setResponse] = useState("");
   const [conversationHistory, setConversationHistory] = useState<{ role: string; content: string }[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
+
+  const cleanupAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+    }
+
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+  }, []);
 
   // TTS 재생
   const speakText = useCallback(async (text: string) => {
@@ -32,45 +46,51 @@ export function ServiceVoiceOverlay() {
       const cleanText = stripMarkdown(text);
       if (!cleanText) return;
 
-      const { data, error } = await supabase.functions.invoke("elevenlabs-tts", {
-        body: { text: cleanText, gender: "female" },
+      const { data: sessionData } = await supabase.auth.getSession();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${sessionData.session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ text: cleanText, gender: "female" }),
       });
 
-      if (error) {
-        console.error("TTS error:", error);
-        return;
+      if (!response.ok) {
+        throw new Error(`TTS request failed: ${response.status}`);
       }
 
-      // data는 ArrayBuffer
-      const blob = new Blob([data], { type: "audio/mpeg" });
+      const blob = await response.blob();
+      if (!blob.size || !blob.type.startsWith("audio/")) {
+        throw new Error(`Invalid audio response: ${blob.type || "unknown"}`);
+      }
+
       const url = URL.createObjectURL(blob);
-
-      // 기존 오디오 정리
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-      }
+      cleanupAudio();
+      audioUrlRef.current = url;
 
       const audio = new Audio(url);
       audioRef.current = audio;
 
       audio.onended = () => {
-        URL.revokeObjectURL(url);
+        cleanupAudio();
         setStatus("idle");
       };
 
       audio.onerror = () => {
-        URL.revokeObjectURL(url);
+        cleanupAudio();
         setStatus("idle");
       };
 
       await audio.play();
     } catch (e) {
       console.error("TTS playback error:", e);
+      cleanupAudio();
       // TTS 실패해도 4초 후 idle로
       setTimeout(() => setStatus("idle"), 4000);
     }
-  }, []);
+  }, [cleanupAudio]);
 
   const askServiceChat = useCallback(async (question: string) => {
     try {
@@ -139,13 +159,13 @@ export function ServiceVoiceOverlay() {
       setStatus("idle");
       setTranscript("");
       setResponse("");
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-        audioRef.current = null;
-      }
+      cleanupAudio();
     }
-  }, [isVoiceOpen]);
+  }, [cleanupAudio, isVoiceOpen]);
+
+  useEffect(() => {
+    return () => cleanupAudio();
+  }, [cleanupAudio]);
 
   const getStatusText = () => {
     switch (status) {
