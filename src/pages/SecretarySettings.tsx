@@ -92,7 +92,7 @@ const phoneAlertTimeOptions = [
   { id: "10", label: "오전 10시" },
   { id: "12", label: "점심 12시" },
   { id: "14", label: "오후 2시" },
-  { id: "17", label: "오후 5시" },
+  { id: "16:30", label: "오후 4시 30분" },
   { id: "19", label: "저녁 7시" },
 ];
 
@@ -821,11 +821,7 @@ export default function SecretarySettings() {
                         size="sm"
                         className="text-xs"
                         onClick={() => {
-                          setPhoneAlertTimes(prev =>
-                            prev.includes(option.id)
-                              ? prev.filter(t => t !== option.id)
-                              : [...prev, option.id]
-                          );
+                          setPhoneAlertTimes([option.id]);
                         }}
                       >
                         {option.label}
