@@ -335,7 +335,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
         void conversation.endSession();
       }
     };
-  }, [conversation]);
+  }, []);
 
   return {
     status: voiceStatus,
