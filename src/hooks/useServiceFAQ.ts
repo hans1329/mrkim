@@ -56,7 +56,7 @@ export function useServiceFAQ() {
     return FALLBACK_RESPONSE;
   }, [faqs]);
 
-  const quickQuestions = faqs.slice(0, 4).map((faq) => faq.question);
+  const quickQuestions = faqs.slice(0, 3).map((faq) => faq.question);
 
   return {
     faqs,
