@@ -119,6 +119,10 @@ export function useServiceVoiceAgent(isOpen: boolean) {
 
   const handleDisconnect = useCallback((details: unknown) => {
     console.log("[ServiceVoice] disconnected", details);
+
+    // 폴백 연결 중이면 상태 초기화하지 않음
+    if (connectingRef.current) return;
+
     hasStartedRef.current = false;
     sessionActiveRef.current = false;
     setIsConnecting(false);
