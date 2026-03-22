@@ -175,6 +175,40 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     onError: handleError,
   });
 
+  const connectWithFallback = useCallback(async (params: {
+    token?: string;
+    signedUrl?: string;
+  }) => {
+    const { token, signedUrl } = params;
+
+    if (token) {
+      try {
+        await conversation.startSession({
+          conversationToken: token,
+          connectionType: "webrtc",
+          overrides,
+        });
+        return;
+      } catch (error) {
+        console.warn("[ServiceVoice] WebRTC connection failed, falling back to websocket", error);
+
+        if (!signedUrl) {
+          throw error;
+        }
+      }
+    }
+
+    if (!signedUrl) {
+      throw new Error("연결 URL을 가져오지 못했습니다.");
+    }
+
+    await conversation.startSession({
+      signedUrl,
+      connectionType: "websocket",
+      overrides,
+    });
+  }, [conversation, overrides]);
+
   useEffect(() => {
     if (isConnecting) return;
 
@@ -224,24 +258,11 @@ export function useServiceVoiceAgent(isOpen: boolean) {
       const token = data?.token as string | undefined;
       const signedUrl = (data?.signedUrl || data?.signed_url) as string | undefined;
 
-      if (token) {
-        await conversation.startSession({
-          conversationToken: token,
-          connectionType: "webrtc",
-          overrides,
-        });
-        return;
-      }
-
-      if (!signedUrl) {
+      if (!token && !signedUrl) {
         throw new Error("연결 토큰을 가져오지 못했습니다.");
       }
 
-      await conversation.startSession({
-        signedUrl,
-        connectionType: "websocket",
-        overrides,
-      });
+      await connectWithFallback({ token, signedUrl });
     } catch (error: any) {
       console.error("[ServiceVoice] startSession error", error);
       hasStartedRef.current = false;
@@ -257,7 +278,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
         toast.error(error?.message || "서비스 음성 연결에 실패했습니다.");
       }
     }
-  }, [conversation, isConnecting, overrides, permissionDenied]);
+  }, [connectWithFallback, isConnecting, permissionDenied]);
 
   const endSession = useCallback(async () => {
     endingRef.current = true;
