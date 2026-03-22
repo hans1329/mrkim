@@ -33,7 +33,7 @@ export function ServiceVoiceOverlay() {
   endSessionRef.current = endSession;
 
   useEffect(() => {
-    if (!wasOpenRef.current && isVoiceOpen && !isActive && !isConnecting) {
+    if (!wasOpenRef.current && isVoiceOpen) {
       void startSessionRef.current();
     }
 
@@ -42,7 +42,7 @@ export function ServiceVoiceOverlay() {
     }
 
     wasOpenRef.current = isVoiceOpen;
-  }, [isActive, isConnecting, isVoiceOpen]);
+  }, [isVoiceOpen]);
 
   useEffect(() => {
     return () => {
