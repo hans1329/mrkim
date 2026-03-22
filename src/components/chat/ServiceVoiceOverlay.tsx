@@ -25,25 +25,30 @@ export function ServiceVoiceOverlay() {
     sendTextDirectly,
   } = useServiceVoiceAgent(isVoiceOpen);
 
+  const endSessionRef = useRef(endSession);
+  const startSessionRef = useRef(startSession);
+  endSessionRef.current = endSession;
+  startSessionRef.current = startSession;
+
   const wasOpenRef = useRef(isVoiceOpen);
 
   useEffect(() => {
     if (!wasOpenRef.current && isVoiceOpen && !isActive) {
-      void startSession();
+      void startSessionRef.current();
     }
 
     if (wasOpenRef.current && !isVoiceOpen) {
-      void endSession();
+      void endSessionRef.current();
     }
 
     wasOpenRef.current = isVoiceOpen;
-  }, [endSession, isActive, isVoiceOpen, startSession]);
+  }, [isActive, isVoiceOpen]);
 
   useEffect(() => {
     return () => {
-      void endSession();
+      void endSessionRef.current();
     };
-  }, [endSession]);
+  }, []);
 
   const handleMicClick = () => {
     if (isProcessing) return;
