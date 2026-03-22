@@ -38,7 +38,7 @@ async function getFAQContext(): Promise<string> {
 
     const { data, error } = await supabase
       .from("service_faq")
-      .select("question, answer")
+      .select("question, answer, keywords")
       .eq("is_active", true)
       .order("priority", { ascending: false });
 
@@ -48,10 +48,13 @@ async function getFAQContext(): Promise<string> {
     }
 
     const faqText = data
-      .map((f: { question: string; answer: string }, i: number) => `Q${i + 1}: ${f.question}\nA${i + 1}: ${f.answer}`)
+      .map((f: { question: string; answer: string; keywords: string[] }, i: number) => {
+        const kw = f.keywords?.length ? `키워드: ${f.keywords.join(", ")}` : "";
+        return `Q${i + 1}: ${f.question}${kw ? `\n${kw}` : ""}\nA${i + 1}: ${f.answer}`;
+      })
       .join("\n\n");
 
-    const context = `\n\n## 서비스 FAQ 데이터베이스\n아래 FAQ를 참고하여 정확하게 답변하세요. FAQ에 있는 내용은 그대로 활용하되, 자연스럽게 응답하세요.\n\n${faqText}`;
+    const context = `\n\n## 서비스 FAQ 데이터베이스\n사용자의 질문에 아래 키워드가 포함되면 해당 FAQ의 답변을 기반으로 정확하게 응답하세요. 키워드가 매칭되지 않더라도 의미적으로 관련된 FAQ가 있으면 활용하세요.\n\n${faqText}`;
 
     faqCache = { data: context, fetchedAt: now };
     return context;
