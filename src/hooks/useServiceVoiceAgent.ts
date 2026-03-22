@@ -34,6 +34,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
   const toolCallActiveRef = useRef(false);
   const hasStartedRef = useRef(false);
   const endingRef = useRef(false);
+  const connectingRef = useRef(false);  // WebRTC→WS 폴백 중 disconnect 무시용
   const transcriptRef = useRef("");
   const responseRef = useRef("");
   const conversationHistoryRef = useRef<{ role: string; content: string }[]>([]);
@@ -118,6 +119,10 @@ export function useServiceVoiceAgent(isOpen: boolean) {
 
   const handleDisconnect = useCallback((details: unknown) => {
     console.log("[ServiceVoice] disconnected", details);
+
+    // 폴백 연결 중이면 상태 초기화하지 않음
+    if (connectingRef.current) return;
+
     hasStartedRef.current = false;
     sessionActiveRef.current = false;
     setIsConnecting(false);
@@ -181,31 +186,39 @@ export function useServiceVoiceAgent(isOpen: boolean) {
   }) => {
     const { token, signedUrl } = params;
 
-    // WebRTC 우선 (비서와 동일 — 오디오 자동 재생 지원)
-    if (token) {
-      try {
+    connectingRef.current = true;
+
+    try {
+      // WebRTC 우선 (비서와 동일 — 오디오 자동 재생 지원)
+      if (token) {
+        try {
+          await conversation.startSession({
+            conversationToken: token,
+            connectionType: "webrtc",
+            overrides,
+          });
+          return;
+        } catch (error) {
+          console.warn("[ServiceVoice] WebRTC failed, falling back to websocket", error);
+          if (!signedUrl) throw error;
+          // WebRTC 실패 후 SDK 정리 대기
+          await new Promise((r) => setTimeout(r, 300));
+        }
+      }
+
+      if (signedUrl) {
         await conversation.startSession({
-          conversationToken: token,
-          connectionType: "webrtc",
+          signedUrl,
+          connectionType: "websocket",
           overrides,
         });
         return;
-      } catch (error) {
-        console.warn("[ServiceVoice] WebRTC failed, falling back to websocket", error);
-        if (!signedUrl) throw error;
       }
-    }
 
-    if (signedUrl) {
-      await conversation.startSession({
-        signedUrl,
-        connectionType: "websocket",
-        overrides,
-      });
-      return;
+      throw new Error("연결 URL을 가져오지 못했습니다.");
+    } finally {
+      connectingRef.current = false;
     }
-
-    throw new Error("연결 URL을 가져오지 못했습니다.");
   }, [conversation, overrides]);
 
   useEffect(() => {
