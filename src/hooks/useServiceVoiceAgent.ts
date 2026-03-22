@@ -36,6 +36,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
   const endingRef = useRef(false);
   const transcriptRef = useRef("");
   const responseRef = useRef("");
+  const conversationHistoryRef = useRef<{ role: string; content: string }[]>([]);
 
   const systemPrompt = useMemo(() => `당신은 김비서 서비스 안내 담당입니다. 대표님과 한국어 음성으로 대화합니다.
 
@@ -66,6 +67,10 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     },
   }), [systemPrompt]);
 
+  useEffect(() => {
+    conversationHistoryRef.current = conversationHistory;
+  }, [conversationHistory]);
+
   const clientTools = useMemo(() => ({
     answer_service_question: async (params: { question: string }) => {
       try {
@@ -75,7 +80,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
         const { data, error } = await supabase.functions.invoke("service-chat", {
           body: {
             message: params.question,
-            conversationHistory: conversationHistory.slice(-10),
+            conversationHistory: conversationHistoryRef.current.slice(-10),
           },
         });
 
@@ -102,7 +107,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
         toolCallActiveRef.current = false;
       }
     },
-  }), [conversationHistory]);
+  }), []);
 
   const handleConnect = useCallback(() => {
     setIsConnecting(false);
@@ -206,6 +211,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     setResponse("");
     transcriptRef.current = "";
     responseRef.current = "";
+    conversationHistoryRef.current = [];
     setConversationHistory([]);
 
     try {
@@ -273,6 +279,17 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     hasStartedRef.current = false;
   }, []);
 
+  const sendTextDirectly = useCallback((text: string) => {
+    if (conversation.status !== "connected") return;
+
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    transcriptRef.current = trimmed;
+    setTranscript(trimmed);
+    conversation.sendUserMessage(trimmed);
+  }, [conversation]);
+
   useEffect(() => {
     if (!isOpen && (hasStartedRef.current || sessionActiveRef.current)) {
       void endSession();
@@ -301,5 +318,6 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     startSession,
     endSession,
     resetPermission,
+    sendTextDirectly,
   };
 }
