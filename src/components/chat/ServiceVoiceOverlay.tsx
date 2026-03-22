@@ -180,24 +180,29 @@ export function ServiceVoiceOverlay() {
                 onClick={handleMicClick}
                 disabled={isProcessing}
                 className={cn(
-                  "relative z-10 flex h-32 w-32 items-center justify-center rounded-full transition-all duration-300",
+                  "relative z-10 flex h-32 w-32 items-center justify-center rounded-full transition-all duration-300 overflow-hidden",
                   isConnecting
-                    ? "bg-white/30 text-white"
+                    ? "bg-white/30"
                     : isListening
-                      ? "scale-110 bg-white text-primary shadow-2xl"
+                      ? "scale-110 bg-white shadow-2xl"
                       : isSpeaking
-                        ? "bg-white/40 text-white"
+                        ? "bg-white/40"
                         : isProcessing
-                          ? "cursor-wait bg-white/30 text-white"
-                          : "bg-white/20 text-white hover:scale-105 hover:bg-white/30"
+                          ? "cursor-wait bg-white/30"
+                          : "bg-white/20 hover:scale-105 hover:bg-white/30"
                 )}
               >
                 {isConnecting ? (
-                  <Loader2 className="h-12 w-12 animate-spin" />
-                ) : isListening ? (
-                  <MicOff className="h-12 w-12" />
+                  <Loader2 className="h-12 w-12 animate-spin text-white" />
                 ) : (
-                  <Mic className="h-12 w-12" />
+                  <img
+                    src="/images/icc-5.webp"
+                    alt="김비서"
+                    className={cn(
+                      "h-20 w-20 object-contain",
+                      isListening && "animate-pulse"
+                    )}
+                  />
                 )}
               </button>
             </div>
