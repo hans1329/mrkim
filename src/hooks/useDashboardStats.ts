@@ -215,7 +215,12 @@ async function fetchActionData(): Promise<ActionData | null> {
   const currentDay = today.getDate();
   const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
   const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split("T")[0];
-  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split("T")[0];
+  // 동기간 비교: 지난달 1일 ~ 지난달 오늘 일자까지
+  const lastMonthSameDay = new Date(today.getFullYear(), today.getMonth() - 1, currentDay);
+  // 지난달이 짧은 경우(예: 3월 31일 vs 2월 28일) 말일로 클램프
+  const lastMonthLastDay = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+  const clampedDay = Math.min(currentDay, lastMonthLastDay);
+  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth() - 1, clampedDay).toISOString().split("T")[0];
 
   const [thisMonthResult, lastMonthResult, unclassifiedResult, profileResult, employeesResult, autoTransfersResult] = await Promise.all([
     supabase

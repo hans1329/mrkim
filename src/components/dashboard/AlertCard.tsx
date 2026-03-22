@@ -71,7 +71,13 @@ function useRealAlerts() {
       // 3. 이번 달 vs 지난 달 지출 비교
       const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
       const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split("T")[0];
-      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split("T")[0];
+      // 동기간 비교: 지난달 1일 ~ 지난달 오늘 일자까지
+      const currentDay = now.getDate();
+      const lastMonthLastDay = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+      const clampedDay = Math.min(currentDay, lastMonthLastDay);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth() - 1, clampedDay).toISOString().split("T")[0];
+
+      const todayStr = now.toISOString().split("T")[0];
 
       const [thisMonthRes, lastMonthRes] = await Promise.all([
         supabase
@@ -79,7 +85,8 @@ function useRealAlerts() {
           .select("amount")
           .eq("user_id", userId)
           .eq("type", "expense")
-          .gte("transaction_date", thisMonthStart),
+          .gte("transaction_date", thisMonthStart)
+          .lte("transaction_date", todayStr),
         supabase
           .from("transactions")
           .select("amount")
@@ -99,7 +106,7 @@ function useRealAlerts() {
             id: "expense-up",
             type: "warning",
             title: `이번 달 지출 ${changePercent}% 증가`,
-            time: "전월 대비",
+            time: "전월 동기간 대비",
             icon: TrendingUp,
           });
         } else if (changePercent < -10) {
@@ -107,7 +114,7 @@ function useRealAlerts() {
             id: "expense-down",
             type: "success",
             title: `이번 달 지출 ${Math.abs(changePercent)}% 감소`,
-            time: "전월 대비",
+            time: "전월 동기간 대비",
             icon: TrendingDown,
           });
         }
