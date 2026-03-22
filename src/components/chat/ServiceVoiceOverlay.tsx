@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Mic, MicOff, Sparkles, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 type VoiceStatus = "idle" | "listening" | "processing" | "speaking";
 
+// 마크다운 기호 제거 (TTS용)
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/[*_~`#>\-\[\]()!]/g, "")
+    .replace(/\n{2,}/g, ". ")
+    .replace(/\n/g, " ")
+    .trim();
+}
+
 export function ServiceVoiceOverlay() {
   const { isVoiceOpen, closeVoice, switchToChat } = useServiceChat();
   const { faqs, isLoading: faqLoading } = useServiceFAQ();
@@ -15,6 +24,53 @@ export function ServiceVoiceOverlay() {
   const [transcript, setTranscript] = useState("");
   const [response, setResponse] = useState("");
   const [conversationHistory, setConversationHistory] = useState<{ role: string; content: string }[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // TTS 재생
+  const speakText = useCallback(async (text: string) => {
+    try {
+      const cleanText = stripMarkdown(text);
+      if (!cleanText) return;
+
+      const { data, error } = await supabase.functions.invoke("elevenlabs-tts", {
+        body: { text: cleanText, gender: "female" },
+      });
+
+      if (error) {
+        console.error("TTS error:", error);
+        return;
+      }
+
+      // data는 ArrayBuffer
+      const blob = new Blob([data], { type: "audio/mpeg" });
+      const url = URL.createObjectURL(blob);
+
+      // 기존 오디오 정리
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      }
+
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        setStatus("idle");
+      };
+
+      audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        setStatus("idle");
+      };
+
+      await audio.play();
+    } catch (e) {
+      console.error("TTS playback error:", e);
+      // TTS 실패해도 4초 후 idle로
+      setTimeout(() => setStatus("idle"), 4000);
+    }
+  }, []);
 
   const askServiceChat = useCallback(async (question: string) => {
     try {
@@ -50,10 +106,11 @@ export function ServiceVoiceOverlay() {
     setResponse(answer);
     setStatus("speaking");
 
-    setTimeout(() => setStatus("idle"), 4000);
-  }, [askServiceChat]);
+    // TTS로 음성 재생
+    await speakText(answer);
+  }, [askServiceChat, speakText]);
 
-  // 데모용 마이크 (실제 STT 미연동 — 탭하면 시뮬레이션)
+  // 데모용 마이크
   const handleMicClick = useCallback(() => {
     if (status === "idle") {
       setStatus("listening");
@@ -69,19 +126,24 @@ export function ServiceVoiceOverlay() {
         setResponse(answer);
         setStatus("speaking");
 
-        setTimeout(() => setStatus("idle"), 4000);
+        await speakText(answer);
       }, 3000);
     } else if (status === "listening") {
       setStatus("idle");
     }
-  }, [status, askServiceChat]);
+  }, [status, askServiceChat, speakText]);
 
-  // 오버레이가 닫힐 때 상태 리셋
+  // 오버레이 닫힐 때 정리
   useEffect(() => {
     if (!isVoiceOpen) {
       setStatus("idle");
       setTranscript("");
       setResponse("");
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current = null;
+      }
     }
   }, [isVoiceOpen]);
 
@@ -94,7 +156,6 @@ export function ServiceVoiceOverlay() {
     }
   };
 
-  // FAQ에서 해시태그 생성 (최대 7개)
   const faqTags = faqs.slice(0, 7).map(f => f.question);
 
   return (
@@ -127,7 +188,6 @@ export function ServiceVoiceOverlay() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">
-        {/* 사용자 발화 */}
         {transcript && (
           <div className="mb-6 max-w-xs text-center animate-fade-in">
             <p className="text-sm text-white/60 mb-1">내가 말한 내용</p>
@@ -135,7 +195,6 @@ export function ServiceVoiceOverlay() {
           </div>
         )}
 
-        {/* 음성 시각화 영역 */}
         <div className="relative mb-8">
           {status === "listening" && (
             <>
@@ -172,10 +231,8 @@ export function ServiceVoiceOverlay() {
           </button>
         </div>
 
-        {/* 상태 텍스트 */}
         <p className="text-white/80 text-sm mb-4">{getStatusText()}</p>
 
-        {/* FAQ 해시태그 버튼 — DB 연동 */}
         {status === "idle" && (
           <div className="flex flex-wrap justify-center gap-2 max-w-sm mb-4">
             {faqLoading ? (
@@ -196,7 +253,6 @@ export function ServiceVoiceOverlay() {
           </div>
         )}
 
-        {/* 음파 애니메이션 (듣는 중) */}
         {status === "listening" && (
           <div className="flex items-center gap-1 h-8">
             {[...Array(5)].map((_, i) => (
@@ -213,7 +269,6 @@ export function ServiceVoiceOverlay() {
           </div>
         )}
 
-        {/* AI 응답 */}
         {response && (
           <div className="mt-6 max-w-sm text-center animate-fade-in">
             <div className="rounded-2xl bg-white/20 backdrop-blur-sm px-6 py-4">
