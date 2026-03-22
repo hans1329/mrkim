@@ -5,6 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 type ServiceVoiceStatus = "idle" | "listening" | "processing" | "speaking";
 
+interface ServiceFAQItem {
+  question: string;
+  answer: string;
+  keywords: string[];
+}
+
 interface ServiceVoiceMessage {
   role: "user" | "agent";
   text: string;
@@ -19,6 +25,54 @@ function stripMarkdown(text: string) {
     .replace(/\p{Extended_Pictographic}/gu, "")
     .replace(/\s{2,}/g, " ")
     .trim();
+}
+
+const FAQ_CACHE_TTL_MS = 5 * 60 * 1000;
+let faqPromptCache: { faqs: ServiceFAQItem[]; fetchedAt: number } | null = null;
+
+async function loadServiceFaqs(): Promise<ServiceFAQItem[]> {
+  const now = Date.now();
+
+  if (faqPromptCache && now - faqPromptCache.fetchedAt < FAQ_CACHE_TTL_MS) {
+    return faqPromptCache.faqs;
+  }
+
+  const { data, error } = await supabase
+    .from("service_faq")
+    .select("question, answer, keywords")
+    .eq("is_active", true)
+    .order("priority", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  const faqs = (data ?? []) as ServiceFAQItem[];
+  faqPromptCache = { faqs, fetchedAt: now };
+  return faqs;
+}
+
+function buildSystemPrompt(faqs: ServiceFAQItem[]) {
+  const faqContext = faqs.length
+    ? `\n\n## 서비스 FAQ 데이터\n아래는 공식 FAQ입니다. 질문과 키워드를 우선 매칭해서 답변하세요. 가장 비슷한 FAQ를 골라 그 answer를 자연스럽게 말하세요.\n${faqs
+        .map(
+          (faq, index) =>
+            `\n[FAQ ${index + 1}]\n질문: ${faq.question}\n키워드: ${(faq.keywords || []).join(", ")}\n답변: ${faq.answer}`,
+        )
+        .join("\n")}`
+    : "";
+
+  return `당신은 김비서 서비스 안내 음성 봇입니다. 대표님과 한국어 음성으로 대화합니다.
+
+## 핵심 규칙
+1. 상대방 호칭은 항상 "대표님"입니다.
+2. 서비스, 기능, 요금, 가입, 사용법, 업종, 대상, 연동 관련 질문은 아래 FAQ 데이터와 키워드를 최우선으로 사용하세요.
+3. 절대 "도구를 찾지 못했다", "도구가 없다", "답변할 수 있는 도구가 없다" 같은 표현을 하지 마세요.
+4. 답변은 마크다운 없이 짧고 자연스러운 구어체로 말하세요.
+5. FAQ에 정확히 일치하지 않아도 키워드나 의미가 가까우면 가장 적절한 FAQ 답변을 활용하세요.
+6. 정말 정보가 부족하면 김비서 서비스 안내 범위에서 아는 내용만 짧게 말하고, 필요하면 텍스트 문의를 권유하세요.
+7. 서비스와 무관한 가벼운 인사나 잡담만 짧게 응답하세요.
+8. 작별 의사를 들으면 짧게 인사하고 마무리하세요.${faqContext}`;
 }
 
 export function useServiceVoiceAgent(isOpen: boolean) {
@@ -38,30 +92,11 @@ export function useServiceVoiceAgent(isOpen: boolean) {
   const transcriptRef = useRef("");
   const responseRef = useRef("");
   const conversationHistoryRef = useRef<{ role: string; content: string }[]>([]);
+  const conversationRef = useRef<ReturnType<typeof useConversation> | null>(null);
 
-  const systemPrompt = useMemo(() => `당신은 김비서 서비스 안내 음성 봇입니다. 대표님과 한국어 음성으로 대화합니다.
-
-## 핵심 규칙 (반드시 지켜야 합니다)
-1. 서비스, 기능, 요금, 가입, 사용법, 업종, FAQ 등 김비서 관련 질문을 받으면 **반드시** answer_service_question 도구를 호출하세요
-2. **절대** 도구 없이 서비스 관련 답변을 임의로 만들지 마세요. 모르면 도구를 호출하세요.
-3. 도구를 호출하기 전에 "확인해볼게요" 같은 말을 하지 말고 즉시 호출하세요
-4. 도구 결과를 받으면 마크다운 없이 자연스러운 구어체로 짧게 읽어주세요
-5. 서비스와 완전히 무관한 가벼운 인사나 잡담만 도구 없이 짧게 응답하세요
-
-## 도구 호출 판단 기준
-다음 키워드가 포함되면 무조건 answer_service_question을 호출하세요:
-- 뭐야, 뭐하는, 어떤, 기능, 할 수 있, 가능, 요금, 비용, 가격, 무료, 유료
-- 가입, 시작, 사용법, 어떻게, 업종, 업계, 대상, 누가, 어디서
-- 연동, 연결, 세금, 세무, 직원, 매출, 거래, 은행, 카드, 홈택스
-
-## 호칭 및 말투
-- 상대방 호칭은 항상 "대표님"
-- 이모지, 마크다운, 대괄호 감정 태그 사용 금지
-- 작별 의사를 들으면 짧게 인사하고 마무리`, []);
-
-  const overrides = useMemo(() => ({
+  const buildSessionOverrides = useCallback((faqs: ServiceFAQItem[]) => ({
     agent: {
-      prompt: { prompt: systemPrompt },
+      prompt: { prompt: buildSystemPrompt(faqs) },
       firstMessage: "안녕하세요 대표님, 김비서 서비스 안내예요. 무엇을 도와드릴까요?",
       language: "ko",
     },
@@ -71,49 +106,13 @@ export function useServiceVoiceAgent(isOpen: boolean) {
       stability: 0.7,
       similarity_boost: 0.8,
     },
-  }), [systemPrompt]);
+  }), []);
 
   useEffect(() => {
     conversationHistoryRef.current = conversationHistory;
   }, [conversationHistory]);
 
-  const clientTools = useMemo(() => ({
-    answer_service_question: async (params: { question: string }) => {
-      try {
-        toolCallActiveRef.current = true;
-        setVoiceStatus("processing");
-
-        const { data, error } = await supabase.functions.invoke("service-chat", {
-          body: {
-            message: params.question,
-            conversationHistory: conversationHistoryRef.current.slice(-10),
-          },
-        });
-
-        if (error) throw error;
-
-        const answer = stripMarkdown(data?.response || "죄송합니다. 답변을 준비하지 못했습니다.");
-
-        setConversationHistory((prev) => [
-          ...prev,
-          { role: "user", content: params.question },
-          { role: "assistant", content: answer },
-        ]);
-        setResponse(answer);
-        responseRef.current = answer;
-
-        return `다음 내용을 자연스럽게 읽어주세요. ${answer}`;
-      } catch (error) {
-        console.error("[ServiceVoice] answer_service_question error:", error);
-        const fallback = "죄송합니다. 잠시 후 다시 시도해주세요.";
-        setResponse(fallback);
-        responseRef.current = fallback;
-        return fallback;
-      } finally {
-        toolCallActiveRef.current = false;
-      }
-    },
-  }), []);
+  const clientTools = useMemo(() => ({}), []);
 
   const handleConnect = useCallback(() => {
     setIsConnecting(false);
@@ -155,6 +154,44 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     if (message.type === "agent_response") {
       const agentText = stripMarkdown(message.agent_response_event?.agent_response || "");
       if (agentText) {
+        if (/도구를 찾지 못했|도구가 없|답변을 드릴 수 있는 도구/.test(agentText)) {
+          const failedQuestion = transcriptRef.current.trim();
+
+          if (failedQuestion) {
+            void (async () => {
+              try {
+                toolCallActiveRef.current = true;
+                setVoiceStatus("processing");
+
+                const { data, error } = await supabase.functions.invoke("service-chat", {
+                  body: {
+                    message: failedQuestion,
+                    conversationHistory: conversationHistoryRef.current.slice(-10),
+                  },
+                });
+
+                if (error) throw error;
+
+                const answer = stripMarkdown(data?.response || "죄송합니다. 답변을 준비하지 못했습니다.");
+                responseRef.current = answer;
+                setResponse(answer);
+                setConversationHistory((prev) => [...prev, { role: "assistant", content: answer }]);
+
+                await conversationRef.current?.sendContextualUpdate?.(
+                  `방금 대표님 질문은 "${failedQuestion}" 입니다. 공식 FAQ 기반 답변은 "${answer}" 입니다. 이 내용을 바탕으로 지금 다시 한두 문장으로 자연스럽게 답변하세요. 도구가 없다는 말은 절대 하지 마세요.`,
+                );
+                conversationRef.current?.sendUserMessage?.("방금 질문에 대해 다시 정확히 안내해줘.");
+              } catch (error) {
+                console.error("[ServiceVoice] fallback answer error", error);
+              } finally {
+                toolCallActiveRef.current = false;
+              }
+            })();
+          }
+
+          return;
+        }
+
         responseRef.current = agentText;
         setResponse(agentText);
         setConversationHistory((prev) => {
@@ -185,11 +222,14 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     onError: handleError,
   });
 
+  conversationRef.current = conversation;
+
   const connectWithFallback = useCallback(async (params: {
     token?: string;
     signedUrl?: string;
+    overrides: ReturnType<typeof buildSessionOverrides>;
   }) => {
-    const { token, signedUrl } = params;
+    const { token, signedUrl, overrides } = params;
 
     connectingRef.current = true;
 
@@ -269,6 +309,9 @@ export function useServiceVoiceAgent(isOpen: boolean) {
       const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       permissionStream.getTracks().forEach((track) => track.stop());
 
+      const faqs = await loadServiceFaqs();
+      const sessionOverrides = buildSessionOverrides(faqs);
+
       const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
       if (error) throw new Error(error.message);
 
@@ -279,7 +322,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
         throw new Error("연결 토큰을 가져오지 못했습니다.");
       }
 
-      await connectWithFallback({ token, signedUrl });
+      await connectWithFallback({ token, signedUrl, overrides: sessionOverrides });
     } catch (error: any) {
       console.error("[ServiceVoice] startSession error", error);
       hasStartedRef.current = false;
@@ -295,7 +338,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
         toast.error(error?.message || "서비스 음성 연결에 실패했습니다.");
       }
     }
-  }, [connectWithFallback, isConnecting, permissionDenied]);
+  }, [buildSessionOverrides, connectWithFallback, isConnecting, permissionDenied]);
 
   const endSession = useCallback(async () => {
     endingRef.current = true;
