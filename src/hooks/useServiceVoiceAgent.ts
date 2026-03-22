@@ -34,6 +34,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
   const toolCallActiveRef = useRef(false);
   const hasStartedRef = useRef(false);
   const endingRef = useRef(false);
+  const connectingRef = useRef(false);  // WebRTC→WS 폴백 중 disconnect 무시용
   const transcriptRef = useRef("");
   const responseRef = useRef("");
   const conversationHistoryRef = useRef<{ role: string; content: string }[]>([]);
