@@ -48,9 +48,32 @@ serve(async (req) => {
     if (tokenRes.ok) {
       const tokenData = await tokenRes.json();
 
+      let signedUrl: string | undefined;
+      try {
+        const signedUrlRes = await fetch(
+          `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${ELEVENLABS_AGENT_ID}`,
+          {
+            method: "GET",
+            headers: {
+              "xi-api-key": ELEVENLABS_API_KEY,
+            },
+          }
+        );
+
+        if (signedUrlRes.ok) {
+          const signedUrlData = await signedUrlRes.json();
+          signedUrl = signedUrlData.signed_url;
+        } else {
+          console.warn("Signed URL prefetch failed:", signedUrlRes.status, await signedUrlRes.text());
+        }
+      } catch (signedUrlError) {
+        console.warn("Signed URL prefetch exception:", signedUrlError);
+      }
+
       return new Response(
         JSON.stringify({
           token: tokenData.token,
+          signedUrl,
           agentId: ELEVENLABS_AGENT_ID,
           overrides,
         }),
