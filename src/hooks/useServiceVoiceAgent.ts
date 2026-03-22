@@ -264,7 +264,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     } finally {
       connectingRef.current = false;
     }
-  }, [conversation, overrides]);
+  }, [conversation]);
 
   useEffect(() => {
     if (isConnecting) return;
