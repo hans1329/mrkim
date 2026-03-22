@@ -1,44 +1,80 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Mic, MicOff, Sparkles, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useServiceChat } from "@/contexts/ServiceChatContext";
+import { useServiceFAQ } from "@/hooks/useServiceFAQ";
+import { supabase } from "@/integrations/supabase/client";
 
 type VoiceStatus = "idle" | "listening" | "processing" | "speaking";
 
 export function ServiceVoiceOverlay() {
   const { isVoiceOpen, closeVoice, switchToChat } = useServiceChat();
+  const { faqs, isLoading: faqLoading } = useServiceFAQ();
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [transcript, setTranscript] = useState("");
   const [response, setResponse] = useState("");
+  const [conversationHistory, setConversationHistory] = useState<{ role: string; content: string }[]>([]);
 
-  // 데모용 상태 시뮬레이션
-  const handleMicClick = () => {
+  const askServiceChat = useCallback(async (question: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("service-chat", {
+        body: {
+          message: question,
+          conversationHistory: conversationHistory.slice(-10),
+        },
+      });
+
+      if (error) throw error;
+
+      const answer = data?.response || "죄송합니다, 응답을 생성하지 못했습니다.";
+
+      setConversationHistory(prev => [
+        ...prev,
+        { role: "user", content: question },
+        { role: "assistant", content: answer },
+      ]);
+
+      return answer;
+    } catch (e) {
+      console.error("Service voice chat error:", e);
+      return "죄송합니다, 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+    }
+  }, [conversationHistory]);
+
+  const handleTagClick = useCallback(async (question: string) => {
+    setTranscript(question);
+    setStatus("processing");
+
+    const answer = await askServiceChat(question);
+    setResponse(answer);
+    setStatus("speaking");
+
+    setTimeout(() => setStatus("idle"), 4000);
+  }, [askServiceChat]);
+
+  // 데모용 마이크 (실제 STT 미연동 — 탭하면 시뮬레이션)
+  const handleMicClick = useCallback(() => {
     if (status === "idle") {
       setStatus("listening");
       setTranscript("");
       setResponse("");
-      
-      // 시뮬레이션: 3초 후 인식 완료
-      setTimeout(() => {
-        setTranscript("김비서가 뭐야?");
+
+      setTimeout(async () => {
+        const demoQuestion = "김비서가 뭐야?";
+        setTranscript(demoQuestion);
         setStatus("processing");
-        
-        // 처리 후 응답
-        setTimeout(() => {
-          setResponse("김비서는 소상공인을 위한 AI 경영 비서입니다! 매출 관리, 직원 급여, 세금 신고까지 음성 명령 한 마디로 해결해드려요.");
-          setStatus("speaking");
-          
-          // 응답 후 대기
-          setTimeout(() => {
-            setStatus("idle");
-          }, 3000);
-        }, 1000);
+
+        const answer = await askServiceChat(demoQuestion);
+        setResponse(answer);
+        setStatus("speaking");
+
+        setTimeout(() => setStatus("idle"), 4000);
       }, 3000);
     } else if (status === "listening") {
       setStatus("idle");
     }
-  };
+  }, [status, askServiceChat]);
 
   // 오버레이가 닫힐 때 상태 리셋
   useEffect(() => {
@@ -51,16 +87,15 @@ export function ServiceVoiceOverlay() {
 
   const getStatusText = () => {
     switch (status) {
-      case "listening":
-        return "듣고 있어요...";
-      case "processing":
-        return "처리 중...";
-      case "speaking":
-        return "김비서가 답변 중...";
-      default:
-        return "마이크를 눌러 말씀하세요";
+      case "listening": return "듣고 있어요...";
+      case "processing": return "처리 중...";
+      case "speaking": return "김비서가 답변 중...";
+      default: return "마이크를 눌러 말씀하세요";
     }
   };
+
+  // FAQ에서 해시태그 생성 (최대 7개)
+  const faqTags = faqs.slice(0, 7).map(f => f.question);
 
   return (
     <div
@@ -81,20 +116,10 @@ export function ServiceVoiceOverlay() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={switchToChat}
-            className="text-white hover:bg-white/20"
-          >
+          <Button variant="ghost" size="icon" onClick={switchToChat} className="text-white hover:bg-white/20">
             <MessageCircle className="h-5 w-5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={closeVoice}
-            className="text-white hover:bg-white/20"
-          >
+          <Button variant="ghost" size="icon" onClick={closeVoice} className="text-white hover:bg-white/20">
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -112,7 +137,6 @@ export function ServiceVoiceOverlay() {
 
         {/* 음성 시각화 영역 */}
         <div className="relative mb-8">
-          {/* 외곽 펄스 애니메이션 */}
           {status === "listening" && (
             <>
               <div className="absolute inset-0 rounded-full bg-white/20 animate-ping" style={{ animationDuration: '1.5s' }} />
@@ -125,15 +149,14 @@ export function ServiceVoiceOverlay() {
               <div className="absolute inset-[-25px] rounded-full bg-white/10 animate-pulse" style={{ animationDelay: '0.2s' }} />
             </>
           )}
-          
-          {/* 메인 마이크 버튼 */}
+
           <button
             onClick={handleMicClick}
             disabled={status === "processing" || status === "speaking"}
             className={cn(
               "relative z-10 flex h-32 w-32 items-center justify-center rounded-full transition-all duration-300",
-              status === "listening" 
-                ? "bg-white text-primary scale-110 shadow-2xl" 
+              status === "listening"
+                ? "bg-white text-primary scale-110 shadow-2xl"
                 : status === "processing" || status === "speaking"
                 ? "bg-white/30 text-white cursor-not-allowed"
                 : "bg-white/20 text-white hover:bg-white/30 hover:scale-105"
@@ -152,43 +175,24 @@ export function ServiceVoiceOverlay() {
         {/* 상태 텍스트 */}
         <p className="text-white/80 text-sm mb-4">{getStatusText()}</p>
 
-        {/* FAQ 해시태그 버튼 */}
+        {/* FAQ 해시태그 버튼 — DB 연동 */}
         {status === "idle" && (
           <div className="flex flex-wrap justify-center gap-2 max-w-sm mb-4">
-            {["#김비서가 뭐야?", "#뭘 해줄 수 있어?", "#어떻게 써?", "#얼마야?", "#왜 써야 해?", "#누가 쓰면 좋아?", "#무료로 써볼 수 있어?"].map((tag) => (
-              <button
-                key={tag}
-                onClick={() => {
-                  setTranscript(tag.replace("#", ""));
-                  setStatus("processing");
-                  setTimeout(() => {
-                    const question = tag.replace("#", "");
-                    let answer = "김비서에 대해 더 궁금한 점이 있으시면 말씀해주세요!";
-                    if (question.includes("뭐야")) {
-                      answer = "김비서는 소상공인을 위한 AI 경영 비서예요. 말 한마디로 매출, 세금, 직원 관리를 도와드려요!";
-                    } else if (question.includes("해줄")) {
-                      answer = "매출 분석, 세금 알림, 직원 급여 계산, 자동이체 관리 등 사업 운영 전반을 도와드려요.";
-                    } else if (question.includes("어떻게")) {
-                      answer = "계좌랑 카드만 연결하면 끝! 그 다음부턴 음성으로 물어보거나 명령하시면 돼요.";
-                    } else if (question.includes("얼마")) {
-                      answer = "월 29,000원부터 시작해요. 14일 무료 체험도 가능하고요!";
-                    } else if (question.includes("왜")) {
-                      answer = "복잡한 장부 정리, 세금 걱정 없이 본업에만 집중하실 수 있어요!";
-                    } else if (question.includes("누가")) {
-                      answer = "카페, 음식점, 소매점 등 매장을 운영하시는 사장님들께 딱이에요!";
-                    } else if (question.includes("무료")) {
-                      answer = "네! 14일간 모든 기능을 무료로 체험하실 수 있어요.";
-                    }
-                    setResponse(answer);
-                    setStatus("speaking");
-                    setTimeout(() => setStatus("idle"), 3000);
-                  }, 800);
-                }}
-                className="px-3 py-1.5 rounded-full bg-white/20 text-white/90 text-sm hover:bg-white/30 transition-colors"
-              >
-                {tag}
-              </button>
-            ))}
+            {faqLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-8 w-24 rounded-full bg-white/10 animate-pulse" />
+              ))
+            ) : (
+              faqTags.map((q) => (
+                <button
+                  key={q}
+                  onClick={() => handleTagClick(q)}
+                  className="px-3 py-1.5 rounded-full bg-white/20 text-white/90 text-sm hover:bg-white/30 transition-colors"
+                >
+                  #{q}
+                </button>
+              ))
+            )}
           </div>
         )}
 
@@ -219,7 +223,7 @@ export function ServiceVoiceOverlay() {
         )}
       </div>
 
-      {/* Footer 힌트 */}
+      {/* Footer */}
       <div className="pb-[calc(env(safe-area-inset-bottom)+24px)] text-center">
         <Button
           variant="ghost"
