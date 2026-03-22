@@ -50,7 +50,7 @@ export function ServiceVoiceOverlay() {
     };
   }, []);
 
-  const faqTags = useMemo(() => faqs.slice(0, 7).map((faq) => faq.question), [faqs]);
+  const faqTags = useMemo(() => faqs.slice(0, 3).map((faq) => faq.question), [faqs]);
 
   const handleMicClick = () => {
     if (isProcessing) return;
