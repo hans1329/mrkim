@@ -26,8 +26,18 @@ export function ServiceVoiceOverlay() {
   const [conversationHistory, setConversationHistory] = useState<{ role: string; content: string }[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
 
   const cleanupAudio = useCallback(() => {
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.stop();
+      } catch {}
+      sourceNodeRef.current.disconnect();
+      sourceNodeRef.current = null;
+    }
+
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = "";
@@ -38,6 +48,31 @@ export function ServiceVoiceOverlay() {
       URL.revokeObjectURL(audioUrlRef.current);
       audioUrlRef.current = null;
     }
+  }, []);
+
+  const ensureAudioUnlocked = useCallback(async () => {
+    if (typeof window === "undefined") return null;
+
+    const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextCtor) return null;
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContextCtor();
+    }
+
+    const context = audioContextRef.current;
+    if (context.state === "suspended") {
+      await context.resume();
+    }
+
+    const silentBuffer = context.createBuffer(1, 1, 22050);
+    const silentSource = context.createBufferSource();
+    silentSource.buffer = silentBuffer;
+    silentSource.connect(context.destination);
+    silentSource.start(0);
+    silentSource.disconnect();
+
+    return context;
   }, []);
 
   // TTS 재생
@@ -66,11 +101,32 @@ export function ServiceVoiceOverlay() {
         throw new Error(`Invalid audio response: ${blob.type || "unknown"}`);
       }
 
-      const url = URL.createObjectURL(blob);
       cleanupAudio();
+
+      const context = await ensureAudioUnlocked();
+      if (context) {
+        const arrayBuffer = await blob.arrayBuffer();
+        const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0));
+        const source = context.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(context.destination);
+        sourceNodeRef.current = source;
+        source.onended = () => {
+          source.disconnect();
+          if (sourceNodeRef.current === source) {
+            sourceNodeRef.current = null;
+          }
+          setStatus("idle");
+        };
+        source.start(0);
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
       audioUrlRef.current = url;
 
       const audio = new Audio(url);
+      audio.preload = "auto";
       audioRef.current = audio;
 
       audio.onended = () => {
@@ -90,7 +146,7 @@ export function ServiceVoiceOverlay() {
       // TTS 실패해도 4초 후 idle로
       setTimeout(() => setStatus("idle"), 4000);
     }
-  }, [cleanupAudio]);
+  }, [cleanupAudio, ensureAudioUnlocked]);
 
   const askServiceChat = useCallback(async (question: string) => {
     try {
@@ -119,6 +175,7 @@ export function ServiceVoiceOverlay() {
   }, [conversationHistory]);
 
   const handleTagClick = useCallback(async (question: string) => {
+    await ensureAudioUnlocked();
     setTranscript(question);
     setStatus("processing");
 
@@ -128,30 +185,33 @@ export function ServiceVoiceOverlay() {
 
     // TTS로 음성 재생
     await speakText(answer);
-  }, [askServiceChat, speakText]);
+  }, [askServiceChat, ensureAudioUnlocked, speakText]);
 
   // 데모용 마이크
   const handleMicClick = useCallback(() => {
     if (status === "idle") {
-      setStatus("listening");
-      setTranscript("");
-      setResponse("");
+      void (async () => {
+        await ensureAudioUnlocked();
+        setStatus("listening");
+        setTranscript("");
+        setResponse("");
 
-      setTimeout(async () => {
-        const demoQuestion = "김비서가 뭐야?";
-        setTranscript(demoQuestion);
-        setStatus("processing");
+        setTimeout(async () => {
+          const demoQuestion = "김비서가 뭐야?";
+          setTranscript(demoQuestion);
+          setStatus("processing");
 
-        const answer = await askServiceChat(demoQuestion);
-        setResponse(answer);
-        setStatus("speaking");
+          const answer = await askServiceChat(demoQuestion);
+          setResponse(answer);
+          setStatus("speaking");
 
-        await speakText(answer);
-      }, 3000);
+          await speakText(answer);
+        }, 3000);
+      })();
     } else if (status === "listening") {
       setStatus("idle");
     }
-  }, [status, askServiceChat, speakText]);
+  }, [status, askServiceChat, ensureAudioUnlocked, speakText]);
 
   // 오버레이 닫힐 때 정리
   useEffect(() => {
@@ -164,7 +224,13 @@ export function ServiceVoiceOverlay() {
   }, [cleanupAudio, isVoiceOpen]);
 
   useEffect(() => {
-    return () => cleanupAudio();
+    return () => {
+      cleanupAudio();
+      if (audioContextRef.current) {
+        void audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+    };
   }, [cleanupAudio]);
 
   const getStatusText = () => {
