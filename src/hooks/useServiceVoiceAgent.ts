@@ -93,6 +93,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
   const responseRef = useRef("");
   const conversationHistoryRef = useRef<{ role: string; content: string }[]>([]);
   const conversationRef = useRef<ReturnType<typeof useConversation> | null>(null);
+  const [micMuted, setMicMuted] = useState(false);
 
   const buildSessionOverrides = useCallback((faqs: ServiceFAQItem[]) => ({
     agent: {
@@ -216,6 +217,7 @@ export function useServiceVoiceAgent(isOpen: boolean) {
 
   const conversation = useConversation({
     clientTools,
+    micMuted,
     onConnect: handleConnect,
     onDisconnect: handleDisconnect,
     onMessage: handleMessage,
@@ -283,11 +285,13 @@ export function useServiceVoiceAgent(isOpen: boolean) {
 
     if (conversation.isSpeaking) {
       setVoiceStatus("speaking");
+      setMicMuted(true);
       return;
     }
 
     if (sessionActiveRef.current) {
       setVoiceStatus("listening");
+      setMicMuted(false);
     }
   }, [conversation.isSpeaking, conversation.status, isConnecting]);
 
