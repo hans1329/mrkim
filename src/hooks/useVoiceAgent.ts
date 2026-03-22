@@ -606,20 +606,22 @@ export function useVoiceAgent() {
         throw new Error("연결 토큰을 가져오지 못했습니다.");
       }
 
-      console.log("[Session] Starting conversation", token ? "(WebRTC)" : "(WebSocket)");
+      console.log("[Session] Starting conversation", signedUrl ? "(WebSocket)" : token ? "(WebRTC)" : "(Unknown)");
 
-      if (token) {
+      if (signedUrl) {
+        await conversation.startSession({
+          signedUrl,
+          connectionType: "websocket",
+          overrides,
+        });
+      } else if (token) {
         await conversation.startSession({
           conversationToken: token,
           connectionType: "webrtc",
           overrides,
         });
       } else {
-        await conversation.startSession({
-          signedUrl: signedUrl!,
-          connectionType: "websocket",
-          overrides,
-        });
+        throw new Error("연결 토큰을 가져오지 못했습니다.");
       }
 
       setIsTTSPreparing(false);
