@@ -458,5 +458,6 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     endSession,
     resetPermission,
     sendTextDirectly,
+    interruptSpeaking,
   };
 }
