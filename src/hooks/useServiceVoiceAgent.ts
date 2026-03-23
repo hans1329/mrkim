@@ -410,6 +410,13 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     hasStartedRef.current = false;
   }, []);
 
+  const interruptSpeaking = useCallback(() => {
+    if (voiceStatus !== "speaking") return;
+    clearSpeakingReleaseTimeout();
+    setMicMuted(false);
+    setVoiceStatus("listening");
+  }, [clearSpeakingReleaseTimeout, voiceStatus]);
+
   const sendTextDirectly = useCallback((text: string) => {
     if (conversation.status !== "connected") return;
 
@@ -451,5 +458,6 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     endSession,
     resetPermission,
     sendTextDirectly,
+    interruptSpeaking,
   };
 }

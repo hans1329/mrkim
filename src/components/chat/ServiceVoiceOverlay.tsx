@@ -23,6 +23,7 @@ export function ServiceVoiceOverlay() {
     endSession,
     resetPermission,
     sendTextDirectly,
+    interruptSpeaking,
   } = useServiceVoiceAgent(isVoiceOpen);
 
   const wasOpenRef = useRef(isVoiceOpen);
@@ -54,6 +55,11 @@ export function ServiceVoiceOverlay() {
 
   const handleMicClick = () => {
     if (isProcessing) return;
+
+    if (isSpeaking) {
+      interruptSpeaking();
+      return;
+    }
 
     if (isActive || isConnecting) {
       void endSession();
