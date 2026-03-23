@@ -56,6 +56,11 @@ export function ServiceVoiceOverlay() {
   const handleMicClick = () => {
     if (isProcessing) return;
 
+    if (isSpeaking) {
+      interruptSpeaking();
+      return;
+    }
+
     if (isActive || isConnecting) {
       void endSession();
       return;
