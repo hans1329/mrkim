@@ -23,6 +23,7 @@ export function ServiceVoiceOverlay() {
     endSession,
     resetPermission,
     sendTextDirectly,
+    interruptSpeaking,
   } = useServiceVoiceAgent(isVoiceOpen);
 
   const wasOpenRef = useRef(isVoiceOpen);
