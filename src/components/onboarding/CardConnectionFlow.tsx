@@ -299,29 +299,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 </div>
               )}
 
-              {/* 인증 방법 탭 */}
-              <div className="flex gap-2 p-1 bg-muted rounded-lg">
-                <button
-                  onClick={() => setAuthMethod("id")}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm transition-all",
-                    authMethod === "id" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"
-                  )}
-                >
-                  <Smartphone className="h-4 w-4" />
-                  아이디 로그인
-                </button>
-                <button
-                  onClick={() => setAuthMethod("cert")}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm transition-all",
-                    authMethod === "cert" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"
-                  )}
-                >
-                  <Lock className="h-4 w-4" />
-                  공동인증서
-                </button>
-              </div>
+              {/* 인증 방법: 아이디 로그인만 사용 (공동인증서 숨김) */}
 
               {/* 아이디/비밀번호 */}
               {authMethod === "id" ? (
