@@ -63,7 +63,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
   const [error, setError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number } | null>(null);
-  const certFileInputRef = useRef<HTMLInputElement>(null);
+  
 
   const { isLoading, registerCardAccount, getCards, connectedId } = useCardConnection();
   const cardSync = useCardSync();
