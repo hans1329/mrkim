@@ -301,97 +301,35 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
 
               {/* 인증 방법: 아이디 로그인만 사용 (공동인증서 숨김) */}
 
-              {/* 아이디/비밀번호 */}
-              {authMethod === "id" ? (
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs">아이디</Label>
-                    <Input
-                      placeholder="카드사 홈페이지 아이디"
-                      value={credentials.id}
-                      onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">비밀번호</Label>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="비밀번호"
-                        value={credentials.password}
-                        onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
+              {/* 아이디/비밀번호 입력 */}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">아이디</Label>
+                  <Input
+                    placeholder="카드사 홈페이지 아이디"
+                    value={credentials.id}
+                    onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
+                  />
                 </div>
-              ) : (
-                /* 공동인증서 */
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs">공동인증서 파일 (.pfx, .p12)</Label>
-                    <input
-                      ref={certFileInputRef}
-                      type="file"
-                      accept=".pfx,.p12"
-                      className="hidden"
-                      onChange={(e) => setCertFile(e.target.files?.[0] || null)}
+                <div className="space-y-2">
+                  <Label className="text-xs">비밀번호</Label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="비밀번호"
+                      value={credentials.password}
+                      onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
                     />
                     <button
                       type="button"
-                      onClick={() => certFileInputRef.current?.click()}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed transition-all text-left",
-                        certFile ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                      )}
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                     >
-                      {certFile ? (
-                        <>
-                          <FileKey className="h-5 w-5 text-primary shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">{certFile.name}</p>
-                            <p className="text-xs text-muted-foreground">{(certFile.size / 1024).toFixed(1)} KB</p>
-                          </div>
-                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
-                          <div>
-                            <p className="text-sm text-muted-foreground">인증서 파일 선택</p>
-                            <p className="text-xs text-muted-foreground">.pfx 또는 .p12 파일</p>
-                          </div>
-                        </>
-                      )}
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">인증서 비밀번호</Label>
-                    <div className="relative">
-                      <Input
-                        type={showCertPassword ? "text" : "password"}
-                        placeholder="공동인증서 비밀번호"
-                        value={certPassword}
-                        onChange={(e) => setCertPassword(e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCertPassword(!showCertPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showCertPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
                 </div>
-              )}
-
+              </div>
               {/* 보안 안내 */}
               <div className="flex items-start gap-2 bg-primary/5 rounded-lg p-3 text-xs">
                 <Shield className="h-4 w-4 shrink-0 text-primary mt-0.5" />
