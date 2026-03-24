@@ -101,30 +101,17 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
 
   const handleAuth = async () => {
     if (!agreedTerms || !selectedCompany) return;
-    if (authMethod === "cert" && (!certFile || !certPassword)) return;
-    if (authMethod === "id" && (!credentials.id || !credentials.password)) return;
+    if (!credentials.id || !credentials.password) return;
     
     setError(null);
     setStep("loading");
     
     try {
-      let newConnectedId: string | null = null;
-
-      if (authMethod === "cert" && certFile) {
-        const certBase64 = await fileToBase64(certFile);
-        newConnectedId = await registerCardAccount(
-          selectedCompany,
-          "",
-          certPassword,
-          { loginType: "2", certFile: certBase64, certPassword }
-        );
-      } else {
-        newConnectedId = await registerCardAccount(
-          selectedCompany,
-          credentials.id,
-          credentials.password
-        );
-      }
+      const newConnectedId = await registerCardAccount(
+        selectedCompany,
+        credentials.id,
+        credentials.password
+      );
       
       if (newConnectedId) {
         localStorage.setItem("codef_connected_id", newConnectedId);
