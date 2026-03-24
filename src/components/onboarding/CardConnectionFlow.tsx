@@ -343,8 +343,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                   onClick={handleAuth}
                   disabled={
                     !agreedTerms || isLoading ||
-                    (authMethod === "id" && (!credentials.id || !credentials.password)) ||
-                    (authMethod === "cert" && (!certFile || !certPassword))
+                    !credentials.id || !credentials.password
                   }
                   className="flex-1"
                 >
