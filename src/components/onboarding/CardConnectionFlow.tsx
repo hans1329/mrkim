@@ -59,12 +59,8 @@ interface CardInfo {
 export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowProps) {
   const [step, setStep] = useState<FlowStep>("select-company");
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-  const [authMethod, setAuthMethod] = useState<"id" | "cert">("id");
   const [credentials, setCredentials] = useState({ id: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [certFile, setCertFile] = useState<File | null>(null);
-  const [certPassword, setCertPassword] = useState("");
-  const [showCertPassword, setShowCertPassword] = useState(false);
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [fetchedCards, setFetchedCards] = useState<CardInfo[]>([]);
