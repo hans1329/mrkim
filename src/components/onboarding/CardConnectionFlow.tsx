@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,7 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  Smartphone,
-  Lock,
   AlertCircle,
-  Upload,
-  FileKey
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCardConnection } from "@/hooks/useCardConnection";
@@ -59,19 +55,15 @@ interface CardInfo {
 export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowProps) {
   const [step, setStep] = useState<FlowStep>("select-company");
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-  const [authMethod, setAuthMethod] = useState<"id" | "cert">("id");
   const [credentials, setCredentials] = useState({ id: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [certFile, setCertFile] = useState<File | null>(null);
-  const [certPassword, setCertPassword] = useState("");
-  const [showCertPassword, setShowCertPassword] = useState(false);
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [fetchedCards, setFetchedCards] = useState<CardInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number } | null>(null);
-  const certFileInputRef = useRef<HTMLInputElement>(null);
+  
 
   const { isLoading, registerCardAccount, getCards, connectedId } = useCardConnection();
   const cardSync = useCardSync();
@@ -90,45 +82,20 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
     setError(null);
   };
 
-  // File → Base64 변환
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const result = reader.result as string;
-        resolve(result.split(",")[1]);
-      };
-      reader.onerror = reject;
-    });
-  };
 
   const handleAuth = async () => {
     if (!agreedTerms || !selectedCompany) return;
-    if (authMethod === "cert" && (!certFile || !certPassword)) return;
-    if (authMethod === "id" && (!credentials.id || !credentials.password)) return;
+    if (!credentials.id || !credentials.password) return;
     
     setError(null);
     setStep("loading");
     
     try {
-      let newConnectedId: string | null = null;
-
-      if (authMethod === "cert" && certFile) {
-        const certBase64 = await fileToBase64(certFile);
-        newConnectedId = await registerCardAccount(
-          selectedCompany,
-          "",
-          certPassword,
-          { loginType: "2", certFile: certBase64, certPassword }
-        );
-      } else {
-        newConnectedId = await registerCardAccount(
-          selectedCompany,
-          credentials.id,
-          credentials.password
-        );
-      }
+      const newConnectedId = await registerCardAccount(
+        selectedCompany,
+        credentials.id,
+        credentials.password
+      );
       
       if (newConnectedId) {
         localStorage.setItem("codef_connected_id", newConnectedId);
@@ -299,121 +266,37 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 </div>
               )}
 
-              {/* 인증 방법 탭 */}
-              <div className="flex gap-2 p-1 bg-muted rounded-lg">
-                <button
-                  onClick={() => setAuthMethod("id")}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm transition-all",
-                    authMethod === "id" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"
-                  )}
-                >
-                  <Smartphone className="h-4 w-4" />
-                  아이디 로그인
-                </button>
-                <button
-                  onClick={() => setAuthMethod("cert")}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm transition-all",
-                    authMethod === "cert" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"
-                  )}
-                >
-                  <Lock className="h-4 w-4" />
-                  공동인증서
-                </button>
-              </div>
+              {/* 인증 방법: 아이디 로그인만 사용 (공동인증서 숨김) */}
 
-              {/* 아이디/비밀번호 */}
-              {authMethod === "id" ? (
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs">아이디</Label>
-                    <Input
-                      placeholder="카드사 홈페이지 아이디"
-                      value={credentials.id}
-                      onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">비밀번호</Label>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="비밀번호"
-                        value={credentials.password}
-                        onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
+              {/* 아이디/비밀번호 입력 */}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">아이디</Label>
+                  <Input
+                    placeholder="카드사 홈페이지 아이디"
+                    value={credentials.id}
+                    onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
+                  />
                 </div>
-              ) : (
-                /* 공동인증서 */
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs">공동인증서 파일 (.pfx, .p12)</Label>
-                    <input
-                      ref={certFileInputRef}
-                      type="file"
-                      accept=".pfx,.p12"
-                      className="hidden"
-                      onChange={(e) => setCertFile(e.target.files?.[0] || null)}
+                <div className="space-y-2">
+                  <Label className="text-xs">비밀번호</Label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="비밀번호"
+                      value={credentials.password}
+                      onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
                     />
                     <button
                       type="button"
-                      onClick={() => certFileInputRef.current?.click()}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed transition-all text-left",
-                        certFile ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                      )}
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                     >
-                      {certFile ? (
-                        <>
-                          <FileKey className="h-5 w-5 text-primary shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">{certFile.name}</p>
-                            <p className="text-xs text-muted-foreground">{(certFile.size / 1024).toFixed(1)} KB</p>
-                          </div>
-                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
-                          <div>
-                            <p className="text-sm text-muted-foreground">인증서 파일 선택</p>
-                            <p className="text-xs text-muted-foreground">.pfx 또는 .p12 파일</p>
-                          </div>
-                        </>
-                      )}
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">인증서 비밀번호</Label>
-                    <div className="relative">
-                      <Input
-                        type={showCertPassword ? "text" : "password"}
-                        placeholder="공동인증서 비밀번호"
-                        value={certPassword}
-                        onChange={(e) => setCertPassword(e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCertPassword(!showCertPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showCertPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
                 </div>
-              )}
-
+              </div>
               {/* 보안 안내 */}
               <div className="flex items-start gap-2 bg-primary/5 rounded-lg p-3 text-xs">
                 <Shield className="h-4 w-4 shrink-0 text-primary mt-0.5" />
@@ -444,8 +327,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                   onClick={handleAuth}
                   disabled={
                     !agreedTerms || isLoading ||
-                    (authMethod === "id" && (!credentials.id || !credentials.password)) ||
-                    (authMethod === "cert" && (!certFile || !certPassword))
+                    !credentials.id || !credentials.password
                   }
                   className="flex-1"
                 >
