@@ -225,8 +225,13 @@ export default function Transactions() {
                 {isCardConnected ? (
                   <div className="flex items-center gap-0.5 shrink-0">
                     <Button size="sm" variant="ghost" onClick={handleCardSync}
+                      disabled={isDrawerOpen && activeDrawerType === "card"}
                       className="h-6 px-1.5 gap-0.5 text-xs text-primary hover:text-primary hover:bg-primary/10">
-                      <RefreshCw className="h-3 w-3" />
+                      {isDrawerOpen && activeDrawerType === "card" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" />
+                      )}
                       재연동
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => openDrawer("card")}
