@@ -341,7 +341,7 @@ export function AIChatCard() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg hover:bg-muted transition-colors overflow-hidden">
+                <button onClick={() => requireAuth(() => navigate("/secretary-settings"))} className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg hover:bg-muted transition-colors overflow-hidden">
                   <img src={profileImgSrc} alt={secretaryName || "비서"} className={secretaryAvatarUrl ? "h-full w-auto object-contain" : "h-10 w-10 object-contain"} loading="eager" decoding="async" />
                 </button>
                 <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 flex items-center justify-center bg-muted rounded-full">
@@ -374,7 +374,7 @@ export function AIChatCard() {
           {isBriefingResponse && response && !isTyping && (
             <button
               className="w-full mb-3 rounded-xl border bg-muted/60 border-border/50 px-3 py-2.5 text-left hover:bg-muted transition-colors flex items-center gap-2"
-              onClick={() => setBriefingDrawerOpen(true)}
+              onClick={() => requireAuth(() => setBriefingDrawerOpen(true))}
             >
               <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="text-xs font-medium text-foreground">오늘의 브리핑 도착</span>
@@ -384,7 +384,7 @@ export function AIChatCard() {
 
           {/* Input */}
           <form onSubmit={handleSubmit} className="flex gap-2 mb-3">
-            <Input value={input} onChange={e => setInput(e.target.value)} placeholder="비서에게 요청해주세요!" className="flex-1 bg-muted border-border text-sm font-medium placeholder:text-xs placeholder:font-normal placeholder:text-muted-foreground placeholder:leading-normal focus-visible:ring-primary/30 leading-normal text-foreground rounded-full" disabled={isTyping || profileLoading || realStats.isLoading} />
+            <Input value={input} onChange={e => setInput(e.target.value)} onFocus={() => { if (!isLoggedIn) { navigate("/login"); } }} placeholder="비서에게 요청해주세요!" className="flex-1 bg-muted border-border text-sm font-medium placeholder:text-xs placeholder:font-normal placeholder:text-muted-foreground placeholder:leading-normal focus-visible:ring-primary/30 leading-normal text-foreground rounded-full" disabled={isTyping || profileLoading || realStats.isLoading} />
             <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 rounded-full h-9 w-9 shrink-0">
               <Send className="h-4 w-4" />
             </Button>
