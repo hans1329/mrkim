@@ -108,10 +108,7 @@ export function AIChatCard() {
   const [response, setResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isBriefingResponse, setIsBriefingResponse] = useState(false);
-  const [isPlayingTTS, setIsPlayingTTS] = useState(false);
-  const [isTTSLoading, setIsTTSLoading] = useState(false);
-  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
-  const ttsAbortRef = useRef<AbortController | null>(null);
+  const [briefingDrawerOpen, setBriefingDrawerOpen] = useState(false);
   const [realStats, setRealStats] = useState<RealTimeStats>({
     todayIncome: 0,
     todayExpense: 0,
