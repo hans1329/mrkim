@@ -454,9 +454,24 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
   const industryReqs = getMatchingIndustryRequirements(businessType || null);
   const deadlineInfo = getDeadlineInfo(isCorporate);
 
+  const { data: classificationStats } = useClassificationStats();
+  const runClassification = useRunAIClassification();
+
   // 자동/수동 구분 통계
   const autoItems = basicItems.filter((i) => i.autoSource);
   const manualItems = basicItems.filter((i) => !i.autoSource);
+
+  const unclassifiedCount = classificationStats?.unclassified ?? 0;
+  const totalExpenses = classificationStats?.total ?? 0;
+
+  const handleRunClassification = async () => {
+    try {
+      const result = await runClassification.mutateAsync();
+      toast.success(`${result.classified}건 거래가 AI 분류되었습니다`);
+    } catch (err: any) {
+      toast.error(err.message || "AI 분류 실행 중 오류가 발생했습니다");
+    }
+  };
 
   if (loading) {
     return (
