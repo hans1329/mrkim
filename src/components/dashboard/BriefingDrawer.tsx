@@ -151,7 +151,7 @@ export function BriefingDrawer({
         </DrawerHeader>
 
         <div className="px-4 pb-2 overflow-y-auto flex-1">
-          <div className="rounded-2xl bg-muted/60 border border-border/50 p-4">
+          <div className="rounded-2xl bg-muted/60 border border-success/40 p-4">
             <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">{cleanText}</p>
           </div>
         </div>
