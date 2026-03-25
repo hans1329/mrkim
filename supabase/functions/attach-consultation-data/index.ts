@@ -64,7 +64,7 @@ Deno.serve(async (req: Request) => {
     // Parallel data fetch
     const [txRes, invRes, delRes, empRes] = await Promise.all([
       supabase.from("transactions")
-        .select("transaction_date, type, description, amount, category, merchant_name, source_type")
+        .select("transaction_date, type, description, amount, category, merchant_name, source_type, tax_account_code, tax_account_name, vat_deductible, vat_amount, is_fixed_asset, business_use_ratio, tax_classification_status")
         .eq("user_id", user.id).gte("transaction_date", startDate).lte("transaction_date", endDate)
         .order("transaction_date", { ascending: true }).limit(1000),
       supabase.from("tax_invoices")
