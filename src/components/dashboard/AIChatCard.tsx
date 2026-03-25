@@ -423,6 +423,7 @@ export function AIChatCard() {
           onOpenChange={setBriefingDrawerOpen}
           briefingText={response}
           secretaryName={secretaryName || "김비서"}
+          secretaryAvatarUrl={secretaryAvatarUrl || undefined}
           voiceId={profile?.secretary_voice_id || undefined}
           onOpenChat={() => requireAuth(openChat)}
           onDismiss={handleDismissBriefing}

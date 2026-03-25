@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
-import { Clock, Volume2, VolumeX, Loader2, Mic, X, Sparkles } from "lucide-react";
+import { Volume2, VolumeX, Loader2, Mic, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface BriefingDrawerProps {
@@ -9,6 +9,7 @@ interface BriefingDrawerProps {
   onOpenChange: (open: boolean) => void;
   briefingText: string;
   secretaryName: string;
+  secretaryAvatarUrl?: string;
   voiceId?: string;
   onOpenChat: () => void;
   onDismiss: () => void;
@@ -19,6 +20,7 @@ export function BriefingDrawer({
   onOpenChange,
   briefingText,
   secretaryName,
+  secretaryAvatarUrl,
   voiceId,
   onOpenChat,
   onDismiss,
@@ -27,6 +29,8 @@ export function BriefingDrawer({
   const [isTTSLoading, setIsTTSLoading] = useState(false);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const ttsAbortRef = useRef<AbortController | null>(null);
+
+  const profileImgSrc = secretaryAvatarUrl || "/images/icc-5.webp";
 
   const cleanText = briefingText
     .replace(/\*\*(.*?)\*\*/g, "$1")
@@ -116,8 +120,12 @@ export function BriefingDrawer({
         <DrawerHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-success/15 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-success" />
+              <div className="h-9 w-9 rounded-full bg-muted overflow-hidden flex items-center justify-center shadow-sm">
+                <img
+                  src={profileImgSrc}
+                  alt={secretaryName}
+                  className={secretaryAvatarUrl ? "h-full w-full object-cover" : "h-6 w-6 object-contain"}
+                />
               </div>
               <div>
                 <DrawerTitle className="text-base">오늘의 경영 브리핑</DrawerTitle>
@@ -127,7 +135,7 @@ export function BriefingDrawer({
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1.5 text-success hover:text-success hover:bg-success/10 rounded-full text-xs h-8 px-3"
+              className="gap-1.5 text-primary hover:text-primary hover:bg-primary/10 rounded-full text-xs h-8 px-3"
               onClick={handleTTS}
               disabled={isTTSLoading && !isPlayingTTS}
             >
@@ -143,7 +151,7 @@ export function BriefingDrawer({
         </DrawerHeader>
 
         <div className="px-4 pb-2 overflow-y-auto flex-1">
-          <div className="rounded-2xl bg-success/5 border border-success/15 p-4">
+          <div className="rounded-2xl bg-muted/60 border border-border/50 p-4">
             <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">{cleanText}</p>
           </div>
         </div>
