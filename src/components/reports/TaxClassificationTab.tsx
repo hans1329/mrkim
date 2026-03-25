@@ -46,7 +46,7 @@ export function TaxClassificationTab() {
 
   const handleRunAI = async () => {
     try {
-      const result = await runAI.mutateAsync();
+      const result = await runAI.mutateAsync(undefined);
       toast.success(`${result.classified}건의 거래를 AI가 분류했습니다`);
     } catch (e: any) {
       toast.error(e.message || "AI 분류 실패");
