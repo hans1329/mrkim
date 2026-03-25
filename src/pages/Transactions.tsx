@@ -257,8 +257,13 @@ export default function Transactions() {
                 {isAccountConnected ? (
                   <div className="flex items-center gap-0.5 shrink-0">
                     <Button size="sm" variant="ghost" onClick={handleBankSync}
+                      disabled={isDrawerOpen && activeDrawerType === "account"}
                       className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
-                      <RefreshCw className="h-3 w-3" />
+                      {isDrawerOpen && activeDrawerType === "account" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" />
+                      )}
                       재연동
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => openDrawer("account")}
