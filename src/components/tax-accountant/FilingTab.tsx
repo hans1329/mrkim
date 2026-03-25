@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import IrregularFilingSection from "./IrregularFilingSection";
 import { toast } from "sonner";
+import { useClassificationStats, useRunAIClassification } from "@/hooks/useTaxClassification";
 import {
   FileText,
   AlertCircle,
@@ -453,9 +454,24 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
   const industryReqs = getMatchingIndustryRequirements(businessType || null);
   const deadlineInfo = getDeadlineInfo(isCorporate);
 
+  const { data: classificationStats } = useClassificationStats();
+  const runClassification = useRunAIClassification();
+
   // 자동/수동 구분 통계
   const autoItems = basicItems.filter((i) => i.autoSource);
   const manualItems = basicItems.filter((i) => !i.autoSource);
+
+  const unclassifiedCount = classificationStats?.unclassified ?? 0;
+  const totalExpenses = classificationStats?.total ?? 0;
+
+  const handleRunClassification = async () => {
+    try {
+      const result = await runClassification.mutateAsync(undefined);
+      toast.success(`${result.classified}건 거래가 AI 분류되었습니다`);
+    } catch (err: any) {
+      toast.error(err.message || "AI 분류 실행 중 오류가 발생했습니다");
+    }
+  };
 
   if (loading) {
     return (
@@ -526,6 +542,41 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
           </div>
         </CardContent>
       </Card>
+
+      {/* 미분류 거래 경고 배너 */}
+      {unclassifiedCount > 0 && totalExpenses > 0 && (
+        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-700">
+          <CardContent className="p-2.5 sm:p-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] sm:text-xs font-semibold text-amber-800 dark:text-amber-300">
+                  미분류 비용 거래 {unclassifiedCount}건
+                </p>
+                <p className="text-[10px] text-amber-700/80 dark:text-amber-400/70 mt-0.5 leading-relaxed">
+                  전체 {totalExpenses}건 중 {unclassifiedCount}건이 세무 계정과목으로 분류되지 않았습니다.
+                  분류 후 신고하면 세무사가 더 정확하게 처리할 수 있습니다.
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-[10px] h-7 border-amber-400 text-amber-800 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900/30"
+                    onClick={handleRunClassification}
+                    disabled={runClassification.isPending}
+                  >
+                    <Zap className="h-3 w-3 mr-1" />
+                    {runClassification.isPending ? "분류 중..." : "AI 자동 분류 실행"}
+                  </Button>
+                  <a href="/reports?tab=classify" className="text-[10px] text-amber-700 dark:text-amber-400 underline underline-offset-2">
+                    직접 분류하기
+                  </a>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 신고 태스크가 없으면 생성 카드 표시 */}
       {filingTasks.length === 0 && onCreateTask && (

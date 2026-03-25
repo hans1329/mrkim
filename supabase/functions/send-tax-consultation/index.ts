@@ -54,10 +54,17 @@ function formatAmount(amount: number): string {
 
 // ====== CSV Generators ======
 
-function generateTransactionsCsv(transactions: { transaction_date: string; type: string; description: string; amount: number; category: string | null; merchant_name: string | null; source_type: string }[]): string {
-  const header = "거래일자,유형,설명,금액,카테고리,거래처,출처";
+function generateTransactionsCsv(transactions: { transaction_date: string; type: string; description: string; amount: number; category: string | null; merchant_name: string | null; source_type: string; tax_account_code?: string | null; tax_account_name?: string | null; vat_deductible?: boolean | null; vat_amount?: number | null; is_fixed_asset?: boolean | null; business_use_ratio?: number | null; tax_classification_status?: string | null }[]): string {
+  const header = "거래일자,유형,설명,금액,카테고리,거래처,출처,세무계정과목코드,세무계정과목명,부가세공제여부,부가세액,고정자산여부,업무사용비율,분류상태";
+  const statusLabel = (s: string | null | undefined) => {
+    if (!s || s === "unclassified") return "미분류";
+    if (s === "ai_suggested") return "AI추천";
+    if (s === "confirmed") return "확인완료";
+    if (s === "manual") return "수동분류";
+    return s;
+  };
   const rows = transactions.map(tx =>
-    [tx.transaction_date, tx.type === "income" ? "수입" : "지출", `"${(tx.description || "").replace(/"/g, '""')}"`, tx.amount, tx.category || "미분류", `"${(tx.merchant_name || "").replace(/"/g, '""')}"`, tx.source_type].join(",")
+    [tx.transaction_date, tx.type === "income" ? "수입" : "지출", `"${(tx.description || "").replace(/"/g, '""')}"`, tx.amount, tx.category || "미분류", `"${(tx.merchant_name || "").replace(/"/g, '""')}"`, tx.source_type, tx.tax_account_code || "", `"${(tx.tax_account_name || "").replace(/"/g, '""')}"`, tx.vat_deductible == null ? "" : tx.vat_deductible ? "O" : "X", tx.vat_amount || "", tx.is_fixed_asset ? "O" : "", tx.business_use_ratio ?? "", statusLabel(tx.tax_classification_status)].join(",")
   );
   return "\uFEFF" + [header, ...rows].join("\n");
 }
@@ -103,7 +110,7 @@ async function uploadDataPackageFiles(
   // 1. Transactions CSV
   const { data: txData } = await supabase
     .from("transactions")
-    .select("transaction_date, type, description, amount, category, merchant_name, source_type")
+    .select("transaction_date, type, description, amount, category, merchant_name, source_type, tax_account_code, tax_account_name, vat_deductible, vat_amount, is_fixed_asset, business_use_ratio, tax_classification_status")
     .eq("user_id", userId)
     .gte("transaction_date", startDate)
     .lte("transaction_date", endDate)
