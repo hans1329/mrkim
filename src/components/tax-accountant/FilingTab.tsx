@@ -466,7 +466,7 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
 
   const handleRunClassification = async () => {
     try {
-      const result = await runClassification.mutateAsync();
+      const result = await runClassification.mutateAsync(undefined);
       toast.success(`${result.classified}건 거래가 AI 분류되었습니다`);
     } catch (err: any) {
       toast.error(err.message || "AI 분류 실행 중 오류가 발생했습니다");
