@@ -39,7 +39,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, PlusCircle, CalendarIcon, Trash2, Bike, UtensilsCrossed } from "lucide-react";
+import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, PlusCircle, CalendarIcon, Trash2, Bike, UtensilsCrossed, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { cn } from "@/lib/utils";
