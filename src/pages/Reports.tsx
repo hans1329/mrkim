@@ -6,8 +6,9 @@ import { ExpenseAnalysisTab } from "@/components/reports/ExpenseAnalysisTab";
 import { EmployeeReportTab } from "@/components/reports/EmployeeReportTab";
 import { AIInsightsTab } from "@/components/reports/AIInsightsTab";
 import { TaxInvoiceTab } from "@/components/reports/TaxInvoiceTab";
+import { TaxClassificationTab } from "@/components/reports/TaxClassificationTab";
 
-const VALID_TABS = ["sales", "expense", "tax", "employee", "insights"] as const;
+const VALID_TABS = ["sales", "expense", "classify", "tax", "employee", "insights"] as const;
 type TabValue = typeof VALID_TABS[number];
 
 export default function Reports() {
