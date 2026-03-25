@@ -373,21 +373,12 @@ export function AIChatCard() {
 
           {isBriefingResponse && response && !isTyping && (
             <button
-              className="w-full mb-3 rounded-2xl border bg-success/8 border-success/25 px-4 py-3 text-left hover:bg-success/12 transition-colors"
+              className="w-full mb-3 rounded-xl border bg-muted/60 border-border/50 px-3 py-2.5 text-left hover:bg-muted transition-colors flex items-center gap-2"
               onClick={() => setBriefingDrawerOpen(true)}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-success/15 flex items-center justify-center">
-                    <Sparkles className="h-3 w-3 text-success" />
-                  </div>
-                  <span className="text-xs font-bold text-success">오늘의 브리핑이 준비되었습니다</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-success/70">자세히 보기</span>
-                  <Clock className="h-3 w-3 text-success/50" />
-                </div>
-              </div>
+              <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="text-xs font-medium text-foreground">오늘의 브리핑 도착</span>
+              <span className="text-[10px] text-muted-foreground ml-auto">보기 →</span>
             </button>
           )}
 
