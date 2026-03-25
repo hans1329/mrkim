@@ -1378,6 +1378,57 @@ export type Database = {
           },
         ]
       }
+      tax_account_codes: {
+        Row: {
+          category: string
+          created_at: string | null
+          default_useful_life: number | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          is_asset: boolean | null
+          keywords: string[] | null
+          name: string
+          sub_category: string | null
+          tax_limit_description: string | null
+          tax_limit_type: string | null
+          vat_deductible_default: boolean | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          default_useful_life?: number | null
+          description?: string | null
+          display_order?: number | null
+          id: string
+          is_active?: boolean | null
+          is_asset?: boolean | null
+          keywords?: string[] | null
+          name: string
+          sub_category?: string | null
+          tax_limit_description?: string | null
+          tax_limit_type?: string | null
+          vat_deductible_default?: boolean | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          default_useful_life?: number | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_asset?: boolean | null
+          keywords?: string[] | null
+          name?: string
+          sub_category?: string | null
+          tax_limit_description?: string | null
+          tax_limit_type?: string | null
+          vat_deductible_default?: boolean | null
+        }
+        Relationships: []
+      }
       tax_accountant_assignments: {
         Row: {
           accountant_id: string
@@ -1656,14 +1707,18 @@ export type Database = {
       }
       transactions: {
         Row: {
+          ai_confidence_score: number | null
           amount: number
+          business_use_ratio: number | null
           category: string | null
           category_icon: string | null
           classification_confidence: string | null
           created_at: string
+          depreciation_method: string | null
           description: string
           external_tx_id: string | null
           id: string
+          is_fixed_asset: boolean | null
           is_manually_classified: boolean | null
           memo: string | null
           merchant_category: string | null
@@ -1673,21 +1728,32 @@ export type Database = {
           source_type: string
           sub_category: string | null
           synced_at: string | null
+          tax_account_code: string | null
+          tax_account_name: string | null
+          tax_classification_status: string | null
+          tax_notes: string | null
           transaction_date: string
           transaction_time: string | null
           type: string
           updated_at: string
+          useful_life_years: number | null
           user_id: string
+          vat_amount: number | null
+          vat_deductible: boolean | null
         }
         Insert: {
+          ai_confidence_score?: number | null
           amount: number
+          business_use_ratio?: number | null
           category?: string | null
           category_icon?: string | null
           classification_confidence?: string | null
           created_at?: string
+          depreciation_method?: string | null
           description: string
           external_tx_id?: string | null
           id?: string
+          is_fixed_asset?: boolean | null
           is_manually_classified?: boolean | null
           memo?: string | null
           merchant_category?: string | null
@@ -1697,21 +1763,32 @@ export type Database = {
           source_type: string
           sub_category?: string | null
           synced_at?: string | null
+          tax_account_code?: string | null
+          tax_account_name?: string | null
+          tax_classification_status?: string | null
+          tax_notes?: string | null
           transaction_date: string
           transaction_time?: string | null
           type: string
           updated_at?: string
+          useful_life_years?: number | null
           user_id: string
+          vat_amount?: number | null
+          vat_deductible?: boolean | null
         }
         Update: {
+          ai_confidence_score?: number | null
           amount?: number
+          business_use_ratio?: number | null
           category?: string | null
           category_icon?: string | null
           classification_confidence?: string | null
           created_at?: string
+          depreciation_method?: string | null
           description?: string
           external_tx_id?: string | null
           id?: string
+          is_fixed_asset?: boolean | null
           is_manually_classified?: boolean | null
           memo?: string | null
           merchant_category?: string | null
@@ -1721,11 +1798,18 @@ export type Database = {
           source_type?: string
           sub_category?: string | null
           synced_at?: string | null
+          tax_account_code?: string | null
+          tax_account_name?: string | null
+          tax_classification_status?: string | null
+          tax_notes?: string | null
           transaction_date?: string
           transaction_time?: string | null
           type?: string
           updated_at?: string
+          useful_life_years?: number | null
           user_id?: string
+          vat_amount?: number | null
+          vat_deductible?: boolean | null
         }
         Relationships: []
       }
