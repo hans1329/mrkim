@@ -84,11 +84,24 @@ Deno.serve(async (req: Request) => {
     const uploads: Promise<void>[] = [];
     const uploadErrors: string[] = [];
 
+    // Count unclassified expense transactions
+    const unclassifiedCount = txRes.data
+      ? txRes.data.filter((tx: any) => tx.type === "expense" && (!tx.tax_classification_status || tx.tax_classification_status === "unclassified")).length
+      : 0;
+    const expenseCount = txRes.data ? txRes.data.filter((tx: any) => tx.type === "expense").length : 0;
+
     if (txRes.data && txRes.data.length > 0) {
       uploads.push((async () => {
-        const header = "거래일자,유형,설명,금액,카테고리,거래처,출처";
-        const rows = txRes.data.map(tx =>
-          [tx.transaction_date, tx.type === "income" ? "수입" : "지출", toCsvValue(tx.description), tx.amount, tx.category || "미분류", toCsvValue(tx.merchant_name), tx.source_type].join(",")
+        const header = "거래일자,유형,설명,금액,카테고리,거래처,출처,세무계정과목코드,세무계정과목명,부가세공제여부,부가세액,고정자산여부,업무사용비율,분류상태";
+        const statusLabel = (s: string | null) => {
+          if (!s || s === "unclassified") return "미분류";
+          if (s === "ai_suggested") return "AI추천";
+          if (s === "confirmed") return "확인완료";
+          if (s === "manual") return "수동분류";
+          return s;
+        };
+        const rows = txRes.data.map((tx: any) =>
+          [tx.transaction_date, tx.type === "income" ? "수입" : "지출", toCsvValue(tx.description), tx.amount, tx.category || "미분류", toCsvValue(tx.merchant_name), tx.source_type, tx.tax_account_code || "", toCsvValue(tx.tax_account_name), tx.vat_deductible == null ? "" : tx.vat_deductible ? "O" : "X", tx.vat_amount || "", tx.is_fixed_asset ? "O" : "", tx.business_use_ratio ?? "", statusLabel(tx.tax_classification_status)].join(",")
         );
         const csv = "\uFEFF" + [header, ...rows].join("\n");
         const path = `${folder}/transactions_${periodLabel}.csv`;
