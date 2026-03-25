@@ -374,7 +374,7 @@ export function AIChatCard() {
           {isBriefingResponse && response && !isTyping && (
             <button
               className="w-full mb-3 rounded-xl border bg-muted/60 border-border/50 px-3 py-2.5 text-left hover:bg-muted transition-colors flex items-center gap-2"
-              onClick={() => setBriefingDrawerOpen(true)}
+              onClick={() => requireAuth(() => setBriefingDrawerOpen(true))}
             >
               <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="text-xs font-medium text-foreground">오늘의 브리핑 도착</span>
