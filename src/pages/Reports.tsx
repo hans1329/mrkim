@@ -6,8 +6,9 @@ import { ExpenseAnalysisTab } from "@/components/reports/ExpenseAnalysisTab";
 import { EmployeeReportTab } from "@/components/reports/EmployeeReportTab";
 import { AIInsightsTab } from "@/components/reports/AIInsightsTab";
 import { TaxInvoiceTab } from "@/components/reports/TaxInvoiceTab";
+import { TaxClassificationTab } from "@/components/reports/TaxClassificationTab";
 
-const VALID_TABS = ["sales", "expense", "tax", "employee", "insights"] as const;
+const VALID_TABS = ["sales", "expense", "classify", "tax", "employee", "insights"] as const;
 type TabValue = typeof VALID_TABS[number];
 
 export default function Reports() {
@@ -32,9 +33,10 @@ export default function Reports() {
   return (
     <MainLayout title="리포트" subtitle="경영 현황 분석" showBackButton>
       <Tabs defaultValue={defaultTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 mb-4 h-11 bg-transparent p-0">
+        <TabsList className="grid w-full grid-cols-6 mb-4 h-11 bg-transparent p-0">
           <TabsTrigger value="sales" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none">매출</TabsTrigger>
           <TabsTrigger value="expense" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none">지출</TabsTrigger>
+          <TabsTrigger value="classify" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none">비용분류</TabsTrigger>
           <TabsTrigger value="tax" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none">세금계산서</TabsTrigger>
           <TabsTrigger value="employee" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none">직원</TabsTrigger>
           <TabsTrigger value="insights" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none">AI분석</TabsTrigger>
@@ -46,6 +48,10 @@ export default function Reports() {
 
         <TabsContent value="expense">
           <ExpenseAnalysisTab />
+        </TabsContent>
+
+        <TabsContent value="classify">
+          <TaxClassificationTab />
         </TabsContent>
 
         <TabsContent value="tax">
