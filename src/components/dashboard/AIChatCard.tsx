@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Sparkles, Mic, Clock, Settings, Volume2, VolumeX, X, Loader2 } from "lucide-react";
+import { Send, Sparkles, Mic, Clock, Settings, X } from "lucide-react";
+import { BriefingDrawer } from "./BriefingDrawer";
 import { formatCurrency } from "@/data/mockData";
 import { josa } from "@/lib/utils";
 import { useChat } from "@/contexts/ChatContext";
@@ -107,10 +108,7 @@ export function AIChatCard() {
   const [response, setResponse] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isBriefingResponse, setIsBriefingResponse] = useState(false);
-  const [isPlayingTTS, setIsPlayingTTS] = useState(false);
-  const [isTTSLoading, setIsTTSLoading] = useState(false);
-  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
-  const ttsAbortRef = useRef<AbortController | null>(null);
+  const [briefingDrawerOpen, setBriefingDrawerOpen] = useState(false);
   const [realStats, setRealStats] = useState<RealTimeStats>({
     todayIncome: 0,
     todayExpense: 0,
@@ -280,6 +278,7 @@ export function AIChatCard() {
         }
         setIsBriefingResponse(true);
         setResponse(data.response);
+        setBriefingDrawerOpen(true);
       }
     } catch (err) {
       console.error('AI briefing error:', err);
@@ -329,226 +328,107 @@ export function AIChatCard() {
     setInput("");
   };
 
-  // 브리핑 TTS 재생/정지
-  const stopTTS = () => {
-    ttsAbortRef.current?.abort();
-    ttsAbortRef.current = null;
-    if (ttsAudioRef.current) {
-      ttsAudioRef.current.pause();
-      ttsAudioRef.current.src = "";
-      ttsAudioRef.current = null;
-    }
-    setIsPlayingTTS(false);
-    setIsTTSLoading(false);
+  const handleDismissBriefing = () => {
+    setResponse(null);
+    setIsBriefingResponse(false);
   };
 
-  const handleBriefingTTS = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isPlayingTTS) {
-      stopTTS();
-      return;
-    }
-    if (!response) return;
-
-    stopTTS();
-    const abort = new AbortController();
-    ttsAbortRef.current = abort;
-
-    try {
-      setIsTTSLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session || abort.signal.aborted) return;
-
-      // 마크다운 기호 제거 (**, *, #, 번호 목록 등)
-      const cleanText = response
-        .replace(/\*\*(.*?)\*\*/g, "$1")   // **굵게** → 굵게
-        .replace(/\*(.*?)\*/g, "$1")        // *기울기* → 기울기
-        .replace(/^#+\s/gm, "")             // ## 제목 제거
-        .replace(/^\d+\.\s+/gm, "")         // 1. 번호 제거
-        .replace(/^[-•]\s+/gm, "")          // - 불릿 제거
-        .replace(/\n{3,}/g, "\n\n")         // 과도한 빈줄 정리
-        .trim();
-
-      const voiceId = profile?.secretary_voice_id || "EXAVITQu4vr4xnSDxMaL";
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
-        {
-          method: "POST",
-          signal: abort.signal,
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${session.access_token}`,
-            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ text: cleanText, voiceId }),
-        }
-      );
-      if (abort.signal.aborted) return;
-      if (!res.ok) throw new Error("TTS failed");
-
-      // 스트리밍 응답을 바로 blob으로 받아 즉시 재생 (chunked transfer 활용)
-      const blob = await res.blob();
-      if (abort.signal.aborted) return;
-
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      ttsAudioRef.current = audio;
-      audio.onplay = () => {
-        setIsTTSLoading(false);
-        setIsPlayingTTS(true);
-      };
-      audio.onended = () => {
-        setIsPlayingTTS(false);
-        setIsTTSLoading(false);
-        ttsAudioRef.current = null;
-        ttsAbortRef.current = null;
-        URL.revokeObjectURL(url);
-      };
-      audio.onerror = () => {
-        setIsPlayingTTS(false);
-        setIsTTSLoading(false);
-        ttsAudioRef.current = null;
-        ttsAbortRef.current = null;
-      };
-      await audio.play();
-    } catch (err: any) {
-      if (err?.name === "AbortError") return;
-      console.error("TTS playback failed:", err);
-      setIsPlayingTTS(false);
-      setIsTTSLoading(false);
-    }
-  };
-
-  // 화면 표시용 마크다운 제거
-  const displayMessage = response
-    ? response
-        .replace(/\*\*(.*?)\*\*/g, "$1")
-        .replace(/\*(.*?)\*/g, "$1")
-        .replace(/^#+\s/gm, "")
-        .replace(/^\d+\.\s+/gm, "")
-        .replace(/^[-•]\s+/gm, "")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim()
-    : null;
-  const isBriefingDisplay = isBriefingResponse && !!response;
-  return <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/90 backdrop-blur-md border-border/50" : "bg-card border-border"}`}>
-      <CardContent className="p-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg hover:bg-muted transition-colors overflow-hidden">
-                <img src={profileImgSrc} alt={secretaryName || "비서"} className={secretaryAvatarUrl ? "h-full w-auto object-contain" : "h-10 w-10 object-contain"} loading="eager" decoding="async" />
-              </button>
-              <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 flex items-center justify-center bg-muted rounded-full">
-                <Settings className="h-3 w-3 text-muted-foreground/50" />
+  return (
+    <>
+      <Card className={`overflow-hidden shadow-lg ${isMobile ? "bg-white/90 backdrop-blur-md border-border/50" : "bg-card border-border"}`}>
+        <CardContent className="p-4">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg hover:bg-muted transition-colors overflow-hidden">
+                  <img src={profileImgSrc} alt={secretaryName || "비서"} className={secretaryAvatarUrl ? "h-full w-auto object-contain" : "h-10 w-10 object-contain"} loading="eager" decoding="async" />
+                </button>
+                <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 flex items-center justify-center bg-muted rounded-full">
+                  <Settings className="h-3 w-3 text-muted-foreground/50" />
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground tracking-wide mb-0.5">당신의 경영 비서</p>
+                {secretaryName ? <h3 className="font-bold text-foreground">{secretaryName}</h3> : <Skeleton className="h-5 w-16" />}
               </div>
             </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground tracking-wide mb-0.5">당신의 경영 비서</p>
-              {secretaryName ? <h3 className="font-bold text-foreground">{secretaryName}</h3> : <Skeleton className="h-5 w-16" />}
-            </div>
+
+            {/* 우상단: 마이크 아이콘 */}
+            <Button variant="ghost" size="sm" onClick={() => requireAuth(openVoice)} className="gap-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary px-3">
+              <Mic className="h-4 w-4" />
+              대화
+            </Button>
           </div>
 
-          {/* 우상단: 마이크 아이콘 */}
-          <Button variant="ghost" size="sm" onClick={() => requireAuth(openVoice)} className="gap-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary px-3">
-            <Mic className="h-4 w-4" />
-            대화
-          </Button>
-        </div>
-
-        {/* Response/Briefing Area */}
-        {(displayMessage || isTyping) && (
-          <div className={`mb-3 rounded-2xl border transition-all ${isBriefingDisplay ? "bg-success/8 border-success/25" : "bg-muted/60 border-border"}`}>
-            {isTyping ? (
-              <div className="flex items-center gap-2.5 px-4 py-5">
+          {/* 브리핑 준비 완료 배너 */}
+          {isTyping && isBriefingResponse && (
+            <div className="mb-3 rounded-2xl border bg-success/8 border-success/25 px-4 py-3">
+              <div className="flex items-center gap-2.5">
                 <Sparkles className="h-4 w-4 animate-pulse text-success shrink-0" />
-                <span className="text-sm text-muted-foreground">{isBriefingResponse ? "브리핑 생성 중..." : "답변 중..."}</span>
+                <span className="text-sm text-muted-foreground">브리핑 생성 중...</span>
               </div>
-            ) : (
-              <div className="flex flex-col gap-0">
-                {/* 브리핑 헤더 */}
-                {isBriefingDisplay && (
-                  <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-success/15">
-                    <div className="flex items-center gap-2">
-                      {isTTSLoading && !isPlayingTTS
-                        ? <Loader2 className="h-3.5 w-3.5 text-success animate-spin shrink-0" />
-                        : isPlayingTTS
-                          ? <Volume2 className="h-3.5 w-3.5 text-success animate-pulse shrink-0" />
-                          : <Clock className="h-3.5 w-3.5 text-success shrink-0" />}
-                      <span className="text-xs font-bold text-success tracking-wide">오늘의 경영 브리핑</span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 text-success hover:text-success hover:bg-success/10 rounded-full text-xs h-7 px-2.5"
-                      onClick={handleBriefingTTS}
-                      disabled={isTTSLoading && !isPlayingTTS}
-                    >
-                      {isTTSLoading && !isPlayingTTS
-                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />연결 중...</>
-                        : isPlayingTTS
-                          ? <><VolumeX className="h-3.5 w-3.5" />중지</>
-                          : <><Volume2 className="h-3.5 w-3.5" />듣기</>}
-                    </Button>
+            </div>
+          )}
+
+          {isBriefingResponse && response && !isTyping && (
+            <button
+              className="w-full mb-3 rounded-2xl border bg-success/8 border-success/25 px-4 py-3 text-left hover:bg-success/12 transition-colors"
+              onClick={() => setBriefingDrawerOpen(true)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-success/15 flex items-center justify-center">
+                    <Sparkles className="h-3 w-3 text-success" />
                   </div>
-                )}
-
-                {/* 본문 */}
-                <div
-                  className="px-4 py-3 cursor-pointer"
-                  onClick={isBriefingDisplay ? handleBriefingTTS : () => requireAuth(openChat)}
-                >
-                  <p className="text-xs text-foreground/85 leading-relaxed whitespace-pre-line">{displayMessage}</p>
+                  <span className="text-xs font-bold text-success">오늘의 브리핑이 준비되었습니다</span>
                 </div>
-
-                {/* 브리핑 액션 */}
-                <div className="flex items-center justify-between px-3 pb-2.5">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1.5 text-primary hover:bg-primary/10 rounded-full text-xs h-7 px-3"
-                    onClick={() => requireAuth(openChat)}
-                  >
-                    <Mic className="h-3.5 w-3.5" />비서와 대화하기
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={e => {
-                    e.stopPropagation();
-                    stopTTS();
-                    setResponse(null);
-                    setIsBriefingResponse(false);
-                  }}>
-                    <X className="h-3.5 w-3.5 text-muted-foreground" />
-                  </Button>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-success/70">자세히 보기</span>
+                  <Clock className="h-3 w-3 text-success/50" />
                 </div>
               </div>
-            )}
+            </button>
+          )}
+
+          {/* Input */}
+          <form onSubmit={handleSubmit} className="flex gap-2 mb-3">
+            <Input value={input} onChange={e => setInput(e.target.value)} placeholder="비서에게 요청해주세요!" className="flex-1 bg-muted border-border text-sm font-medium placeholder:text-xs placeholder:font-normal placeholder:text-muted-foreground placeholder:leading-normal focus-visible:ring-primary/30 leading-normal text-foreground rounded-full" disabled={isTyping || profileLoading || realStats.isLoading} />
+            <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 rounded-full h-9 w-9 shrink-0">
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+
+          {/* Quick Prompts + 브리핑 버튼 */}
+          <div className="flex flex-wrap gap-1.5 items-center">
+            <button
+              type="button"
+              disabled={isTyping}
+              onClick={() => requireAuth(() => triggerBriefing(true))}
+              className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-primary/40 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+            >
+              <Sparkles className="h-3 w-3" />브리핑
+            </button>
+            {quickPrompts.map(prompt => <button key={prompt} type="button" className="text-xs px-1.5 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50" onClick={() => handleQuickAsk(prompt)} disabled={isTyping}>
+                #{prompt}
+              </button>)}
           </div>
-        )}
+        </CardContent>
+      </Card>
 
-        {/* Input */}
-        <form onSubmit={handleSubmit} className="flex gap-2 mb-3">
-          <Input value={input} onChange={e => setInput(e.target.value)} placeholder="비서에게 요청해주세요!" className="flex-1 bg-muted border-border text-sm font-medium placeholder:text-xs placeholder:font-normal placeholder:text-muted-foreground placeholder:leading-normal focus-visible:ring-primary/30 leading-normal text-foreground rounded-full" disabled={isTyping || profileLoading || realStats.isLoading} />
-          <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 rounded-full h-9 w-9 shrink-0">
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
-
-        {/* Quick Prompts + 브리핑 버튼 */}
-        <div className="flex flex-wrap gap-1.5 items-center">
-          <button
-            type="button"
-            disabled={isTyping}
-            onClick={() => requireAuth(() => triggerBriefing(true))}
-            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-primary/40 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
-          >
-            <Sparkles className="h-3 w-3" />브리핑
-          </button>
-          {quickPrompts.map(prompt => <button key={prompt} type="button" className="text-xs px-1.5 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50" onClick={() => handleQuickAsk(prompt)} disabled={isTyping}>
-              #{prompt}
-            </button>)}
-        </div>
-      </CardContent>
-    </Card>;
+      {/* 브리핑 드로워 */}
+      {response && (
+        <BriefingDrawer
+          open={briefingDrawerOpen}
+          onOpenChange={setBriefingDrawerOpen}
+          briefingText={response}
+          secretaryName={secretaryName || "김비서"}
+          voiceId={profile?.secretary_voice_id || undefined}
+          onOpenChat={() => requireAuth(openChat)}
+          onDismiss={handleDismissBriefing}
+        />
+      )}
+    </>
+  );
 }
 
