@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { useRef, useEffect } from "react";
 import { CardConnectionFlow } from "./CardConnectionFlow";
 import { AccountConnectionFlow } from "./AccountConnectionFlow";
 import { HometaxConnectionFlow } from "./HometaxConnectionFlow";
 import { CoupangeatsConnectionFlow } from "./CoupangeatsConnectionFlow";
 import { BaeminConnectionFlow } from "./BaeminConnectionFlow";
+import { cn } from "@/lib/utils";
 
 export type ConnectionType = "hometax" | "card" | "account" | "coupangeats" | "baemin";
 
@@ -24,6 +24,8 @@ const TITLES: Record<ConnectionType, string> = {
 };
 
 export function ConnectionDrawer({ open, type, onClose, onComplete }: ConnectionDrawerProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const handleComplete = () => {
     onComplete?.();
     onClose();
@@ -33,18 +35,48 @@ export function ConnectionDrawer({ open, type, onClose, onComplete }: Connection
     onClose();
   };
 
+  // Prevent body scroll when open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
   return (
-    <Drawer open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DrawerContent className="max-h-[88dvh] mx-auto w-full max-w-md">
+    <>
+      {/* Overlay */}
+      <div
+        className={cn(
+          "fixed inset-0 z-50 bg-black/80 transition-opacity duration-300",
+          open ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+        onClick={onClose}
+      />
+      {/* Sheet */}
+      <div
+        ref={contentRef}
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-md max-h-[88dvh] flex flex-col rounded-t-[10px] border bg-background transition-transform duration-300 ease-out",
+          open ? "translate-y-0" : "translate-y-full"
+        )}
+      >
+        {/* Handle */}
         <div className="flex justify-center pt-3 pb-4">
           <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
         </div>
-        <DrawerHeader className="pb-2 pt-2 px-4">
-          <DrawerTitle className="text-base font-semibold">
+        {/* Header */}
+        <div className="pb-2 pt-2 px-4">
+          <h2 className="text-base font-semibold text-center sm:text-left">
             {type ? TITLES[type] : ""}
-          </DrawerTitle>
-        </DrawerHeader>
-        <div className="overflow-y-auto px-4 pb-6">
+          </h2>
+        </div>
+        {/* Content - always mounted */}
+        <div className="overflow-y-auto px-4 pb-6 flex-1">
           {type === "hometax" && (
             <HometaxConnectionFlow onComplete={handleComplete} onBack={handleBack} />
           )}
@@ -61,7 +93,7 @@ export function ConnectionDrawer({ open, type, onClose, onComplete }: Connection
             <BaeminConnectionFlow onComplete={handleComplete} onBack={handleBack} />
           )}
         </div>
-      </DrawerContent>
-    </Drawer>
+      </div>
+    </>
   );
 }
