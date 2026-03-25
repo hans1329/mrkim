@@ -341,7 +341,7 @@ export function AIChatCard() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <button onClick={() => navigate("/secretary-settings")} className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg hover:bg-muted transition-colors overflow-hidden">
+                <button onClick={() => requireAuth(() => navigate("/secretary-settings"))} className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg hover:bg-muted transition-colors overflow-hidden">
                   <img src={profileImgSrc} alt={secretaryName || "비서"} className={secretaryAvatarUrl ? "h-full w-auto object-contain" : "h-10 w-10 object-contain"} loading="eager" decoding="async" />
                 </button>
                 <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 flex items-center justify-center bg-muted rounded-full">
