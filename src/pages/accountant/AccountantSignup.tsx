@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Briefcase, Check, X } from "lucide-react";
+import { Briefcase, Check, X, AlertCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 const PASSWORD_RULES = [
   { key: "length", label: "8자 이상", test: (p: string) => p.length >= 8 },
@@ -20,6 +21,7 @@ const PASSWORD_RULES = [
 export default function AccountantSignup() {
   const [step, setStep] = useState<"form" | "done" | "existing">("form");
   const [loading, setLoading] = useState(false);
+  const [hasExistingAccount, setHasExistingAccount] = useState(false);
   const navigate = useNavigate();
 
   // Auth fields
@@ -39,12 +41,13 @@ export default function AccountantSignup() {
   const allRulesPass = PASSWORD_RULES.every(r => r.test(password));
   const passwordsMatch = password === passwordConfirm;
 
+  const isFormValid = hasExistingAccount
+    ? name.length > 0 && email.length > 0 && email.includes("@")
+    : name.length > 0 && email.length > 0 && email.includes("@") && allRulesPass && passwordsMatch;
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!allRulesPass || !passwordsMatch) {
-      toast.error(!allRulesPass ? "비밀번호 조건을 모두 충족해주세요." : "비밀번호가 일치하지 않습니다.");
-      return;
-    }
+    if (!isFormValid) return;
     setLoading(true);
 
     try {
@@ -60,63 +63,93 @@ export default function AccountantSignup() {
         return;
       }
 
-      // 2. Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin + "/accountant/login",
-          data: { name },
-        },
-      });
+      if (hasExistingAccount) {
+        // 기존 계정: auth signUp 호출 없이 tax_accountants 레코드만 생성
+        const { error: insertError } = await supabase
+          .from("tax_accountants")
+          .insert({
+            user_id: null,
+            name,
+            email,
+            phone: phone || null,
+            firm_name: firmName || null,
+            region: region || null,
+            specialties: specialties ? specialties.split(",").map(s => s.trim()).filter(Boolean) : [],
+            industry_types: industryTypes ? industryTypes.split(",").map(s => s.trim()).filter(Boolean) : [],
+            bio: bio || null,
+            is_active: true,
+          });
 
-      if (authError) {
-        if (authError.message.includes("already registered")) {
-          toast.error("이미 등록된 이메일입니다.");
-        } else {
-          toast.error(authError.message);
+        if (insertError) {
+          console.error("Failed to create accountant record:", insertError);
+          toast.error("세무사 정보 등록에 실패했습니다.");
+          return;
         }
-        return;
-      }
 
-      if (!authData.user) {
-        toast.error("회원가입에 실패했습니다.");
-        return;
-      }
-
-      // 3. 기존 계정인지 확인 (identities가 비어있으면 이미 가입된 사용자)
-      const isExistingUser = !authData.user.identities || authData.user.identities.length === 0;
-
-      // 4. Create tax_accountants record
-      // repeated signup 응답은 실제 세션/사용자 연결을 보장하지 않으므로 항상 null로 저장 후,
-      // 이후 실제 로그인 시 이메일 기반으로 user_id를 자동 연결한다.
-      const { error: insertError } = await supabase
-        .from("tax_accountants")
-        .insert({
-          user_id: null,
-          name,
-          email,
-          phone: phone || null,
-          firm_name: firmName || null,
-          region: region || null,
-          specialties: specialties ? specialties.split(",").map(s => s.trim()).filter(Boolean) : [],
-          industry_types: industryTypes ? industryTypes.split(",").map(s => s.trim()).filter(Boolean) : [],
-          bio: bio || null,
-          is_active: true,
-        });
-
-      if (insertError) {
-        console.error("Failed to create accountant record:", insertError);
-        toast.error("세무사 정보 등록에 실패했습니다. 관리자에게 문의해주세요.");
-        return;
-      }
-
-      if (isExistingUser) {
         setStep("existing");
         toast.success("파트너 등록이 완료되었습니다!");
       } else {
-        setStep("done");
-        toast.success("회원가입이 완료되었습니다!");
+        // 새 계정: auth signUp + tax_accountants 레코드 생성
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin + "/accountant/login",
+            data: { name },
+          },
+        });
+
+        if (authError) {
+          if (authError.message.includes("already registered")) {
+            toast.error("이미 등록된 이메일입니다. '기존 김비서 계정이 있습니다'를 활성화해주세요.");
+          } else {
+            toast.error(authError.message);
+          }
+          return;
+        }
+
+        if (!authData.user) {
+          toast.error("회원가입에 실패했습니다.");
+          return;
+        }
+
+        // identities가 비어있으면 이미 가입된 사용자 (user_repeated_signup)
+        const isRepeated = !authData.user.identities || authData.user.identities.length === 0;
+
+        if (isRepeated) {
+          // 이미 가입된 계정인데 새 계정으로 시도한 경우
+          // 비밀번호는 무시되었으므로 기존 비밀번호 안내
+          toast.warning("이미 가입된 이메일입니다. 기존 비밀번호로 로그인해주세요.");
+        }
+
+        const { error: insertError } = await supabase
+          .from("tax_accountants")
+          .insert({
+            user_id: null,
+            name,
+            email,
+            phone: phone || null,
+            firm_name: firmName || null,
+            region: region || null,
+            specialties: specialties ? specialties.split(",").map(s => s.trim()).filter(Boolean) : [],
+            industry_types: industryTypes ? industryTypes.split(",").map(s => s.trim()).filter(Boolean) : [],
+            bio: bio || null,
+            is_active: true,
+          });
+
+        if (insertError) {
+          console.error("Failed to create accountant record:", insertError);
+          toast.error("세무사 정보 등록에 실패했습니다.");
+          return;
+        }
+
+        if (isRepeated) {
+          setStep("existing");
+          toast.success("파트너 등록이 완료되었습니다!");
+        } else {
+          setStep("done");
+          toast.success("회원가입이 완료되었습니다!");
+        }
       }
     } catch (error: any) {
       toast.error("회원가입에 실패했습니다.");
@@ -136,8 +169,8 @@ export default function AccountantSignup() {
               </div>
               <CardTitle className="text-xl">파트너 등록 완료!</CardTitle>
               <CardDescription>
-                기존 계정으로 파트너 등록이 완료되었습니다.<br />
-                기존 비밀번호로 로그인해주세요.
+                기존 김비서 계정으로 파트너 등록이 완료되었습니다.<br />
+                <strong>기존 비밀번호</strong>로 로그인해주세요.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -191,6 +224,35 @@ export default function AccountantSignup() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSignup} className="space-y-4">
+              {/* 기존 계정 여부 토글 */}
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="existing-toggle" className="text-sm font-normal cursor-pointer">
+                    기존 김비서 계정이 있습니다
+                  </Label>
+                </div>
+                <Switch
+                  id="existing-toggle"
+                  checked={hasExistingAccount}
+                  onCheckedChange={(checked) => {
+                    setHasExistingAccount(checked);
+                    if (checked) {
+                      setPassword("");
+                      setPasswordConfirm("");
+                    }
+                  }}
+                />
+              </div>
+
+              {hasExistingAccount && (
+                <div className="p-3 bg-primary/5 rounded-lg">
+                  <p className="text-xs text-muted-foreground">
+                    기존 계정의 이메일을 입력해주세요. 등록 후 <strong>기존 비밀번호</strong>로 파트너 포털에 로그인할 수 있습니다.
+                  </p>
+                </div>
+              )}
+
               {/* Required fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -216,55 +278,60 @@ export default function AccountantSignup() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="signup-password">비밀번호 *</Label>
-                <Input
-                  id="signup-password"
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="비밀번호 입력"
-                  required
-                />
-                {password && (
-                  <div className="grid grid-cols-2 gap-1 mt-2">
-                    {PASSWORD_RULES.map(rule => (
-                      <div key={rule.key} className="flex items-center gap-1.5 text-xs">
-                        {rule.test(password) ? (
-                          <Check className="h-3 w-3 text-success" />
-                        ) : (
-                          <X className="h-3 w-3 text-destructive" />
-                        )}
-                        <span className={rule.test(password) ? "text-success" : "text-muted-foreground"}>
-                          {rule.label}
-                        </span>
+              {/* 새 계정인 경우에만 비밀번호 입력 */}
+              {!hasExistingAccount && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">비밀번호 *</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="비밀번호 입력"
+                      required
+                    />
+                    {password && (
+                      <div className="grid grid-cols-2 gap-1 mt-2">
+                        {PASSWORD_RULES.map(rule => (
+                          <div key={rule.key} className="flex items-center gap-1.5 text-xs">
+                            {rule.test(password) ? (
+                              <Check className="h-3 w-3 text-success" />
+                            ) : (
+                              <X className="h-3 w-3 text-destructive" />
+                            )}
+                            <span className={rule.test(password) ? "text-success" : "text-muted-foreground"}>
+                              {rule.label}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="signup-password-confirm">비밀번호 확인 *</Label>
-                <Input
-                  id="signup-password-confirm"
-                  type="password"
-                  value={passwordConfirm}
-                  onChange={e => setPasswordConfirm(e.target.value)}
-                  placeholder="비밀번호 재입력"
-                  required
-                />
-                {passwordConfirm && !passwordsMatch && (
-                  <p className="text-xs text-destructive flex items-center gap-1">
-                    <X className="h-3 w-3" /> 비밀번호가 일치하지 않습니다
-                  </p>
-                )}
-                {passwordConfirm && passwordsMatch && (
-                  <p className="text-xs text-success flex items-center gap-1">
-                    <Check className="h-3 w-3" /> 비밀번호 일치
-                  </p>
-                )}
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password-confirm">비밀번호 확인 *</Label>
+                    <Input
+                      id="signup-password-confirm"
+                      type="password"
+                      value={passwordConfirm}
+                      onChange={e => setPasswordConfirm(e.target.value)}
+                      placeholder="비밀번호 재입력"
+                      required
+                    />
+                    {passwordConfirm && !passwordsMatch && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <X className="h-3 w-3" /> 비밀번호가 일치하지 않습니다
+                      </p>
+                    )}
+                    {passwordConfirm && passwordsMatch && (
+                      <p className="text-xs text-success flex items-center gap-1">
+                        <Check className="h-3 w-3" /> 비밀번호 일치
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Optional profile fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -332,13 +399,13 @@ export default function AccountantSignup() {
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading || !allRulesPass || !passwordsMatch}>
-                {loading ? "가입 처리 중..." : "회원가입"}
+              <Button type="submit" className="w-full" disabled={loading || !isFormValid}>
+                {loading ? "처리 중..." : hasExistingAccount ? "파트너 등록" : "회원가입"}
               </Button>
             </form>
             <div className="mt-4 text-center">
               <p className="text-sm text-muted-foreground">
-                이미 계정이 있으신가요?{" "}
+                이미 파트너 계정이 있으신가요?{" "}
                 <Link to="/accountant/login" className="text-primary font-medium hover:underline">
                   로그인
                 </Link>
