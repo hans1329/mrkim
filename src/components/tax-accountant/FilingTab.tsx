@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import IrregularFilingSection from "./IrregularFilingSection";
 import { toast } from "sonner";
+import { useClassificationStats, useRunAIClassification } from "@/hooks/useTaxClassification";
 import {
   FileText,
   AlertCircle,
