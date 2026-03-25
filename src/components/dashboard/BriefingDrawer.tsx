@@ -116,7 +116,7 @@ export function BriefingDrawer({
   return (
     <Drawer open={open} onOpenChange={(v) => { if (!v) stopTTS(); onOpenChange(v); }}>
       <DrawerContent className="max-h-[85vh]">
-        <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted my-3" />
+        <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-foreground/30 my-3" />
         <DrawerHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
