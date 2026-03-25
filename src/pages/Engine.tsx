@@ -1945,6 +1945,194 @@ export default function Engine() {
             </CardContent>
           </Card>
 
+          {/* AI 비용 자동분류 엔진 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="h-5 w-5 text-emerald-500" />
+                AI 비용 자동분류 엔진
+                <Badge variant="secondary" className="ml-auto">classify-transactions</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-sm text-muted-foreground">
+                Gemini 2.5 Flash 기반으로 거래 내역을 약 30종의 전문 세무 계정과목으로 자동 분류합니다.
+                AI 추천 후 사용자가 확인/수정하는 <strong>하이브리드 방식</strong>을 채택합니다.
+              </p>
+
+              {/* 분류 파이프라인 */}
+              <div>
+                <p className="text-xs font-medium mb-3">📊 분류 파이프라인</p>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <Badge variant="outline">미분류 거래 조회</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">계정과목 마스터 로드</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">Gemini 배치 분류</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">JSON 파싱</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant="secondary">DB 업데이트</Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge>사용자 확인</Badge>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* 분류 상태 플로우 */}
+              <div>
+                <p className="text-xs font-medium mb-3">🔄 분류 상태 (tax_classification_status)</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { status: "unclassified", label: "미분류", color: "text-muted-foreground", desc: "신규 거래 기본값" },
+                    { status: "ai_suggested", label: "AI 추천", color: "text-blue-500", desc: "Gemini가 분류 완료" },
+                    { status: "confirmed", label: "확인 완료", color: "text-green-500", desc: "사용자가 AI 추천 승인" },
+                    { status: "manual", label: "수동 분류", color: "text-amber-500", desc: "사용자가 직접 지정" },
+                  ].map((s) => (
+                    <div key={s.status} className="p-3 rounded-lg border bg-card text-center">
+                      <p className={`text-sm font-semibold ${s.color}`}>{s.label}</p>
+                      <code className="text-[10px] text-muted-foreground">{s.status}</code>
+                      <p className="text-xs text-muted-foreground mt-1">{s.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* 핵심 분류 규칙 */}
+              <div>
+                <p className="text-xs font-medium mb-3">📋 핵심 분류 규칙 (시스템 프롬프트)</p>
+                <div className="space-y-2">
+                  {[
+                    { rule: "100만원 이상 비품/장비 → 고정자산(213 비품)", tag: "자산 판별" },
+                    { rule: "음식점/카페 → 업무용이면 복리후생비(812), 거래처 접대면 접대비(811)", tag: "접대비 구분" },
+                    { rule: "10만원 이상 음식 지출 → 접대비(811) 가능성 높음", tag: "금액 기준" },
+                    { rule: "주유/주차/세차 → 차량유지비(820)", tag: "차량 관련" },
+                    { rule: "택시/대중교통/항공 → 여비교통비(813)", tag: "교통비" },
+                    { rule: "월정액 결제 패턴 → 구독서비스(831) 또는 임차료(818)", tag: "구독/임대" },
+                    { rule: "접대비·보험료·세금·감가상각·인건비 → 부가세 불공제", tag: "VAT 공제" },
+                    { rule: "차량 관련 비용 → 업무사용비율(business_use_ratio) 적용", tag: "사용 비율" },
+                  ].map((r, i) => (
+                    <div key={i} className="flex items-start gap-2 p-2 rounded bg-muted/30">
+                      <Badge variant="outline" className="text-[10px] shrink-0 mt-0.5">{r.tag}</Badge>
+                      <p className="text-xs text-muted-foreground">{r.rule}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* DB 스키마 */}
+              <div>
+                <p className="text-xs font-medium mb-3">🗄️ DB 스키마 확장 (transactions 테이블)</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-2 font-medium">컬럼</th>
+                        <th className="text-left py-2 px-2 font-medium">타입</th>
+                        <th className="text-left py-2 px-2 font-medium">설명</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-muted-foreground">
+                      {[
+                        ["tax_account_code", "TEXT", "계정과목 코드 (예: 811, 812)"],
+                        ["tax_account_name", "TEXT", "계정과목명 (예: 접대비)"],
+                        ["vat_deductible", "BOOLEAN", "부가세 공제 가능 여부"],
+                        ["vat_amount", "INTEGER", "부가세 금액 (공급가액의 10%)"],
+                        ["is_fixed_asset", "BOOLEAN", "고정자산 여부"],
+                        ["depreciation_method", "TEXT", "감가상각 방법 (정액법/정률법)"],
+                        ["useful_life_years", "INTEGER", "내용연수 (년)"],
+                        ["tax_classification_status", "TEXT", "분류 상태"],
+                        ["ai_confidence_score", "NUMERIC", "AI 신뢰도 (0.0~1.0)"],
+                        ["business_use_ratio", "NUMERIC", "업무 사용 비율 (0~100%)"],
+                        ["tax_notes", "TEXT", "AI 분류 사유 메모"],
+                        ["is_manually_classified", "BOOLEAN", "수동 분류 여부"],
+                      ].map(([col, type, desc], i) => (
+                        <tr key={i} className="border-b border-muted/30">
+                          <td className="py-1.5 px-2 font-mono">{col}</td>
+                          <td className="py-1.5 px-2">{type}</td>
+                          <td className="py-1.5 px-2">{desc}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* 계정과목 마스터 */}
+              <div>
+                <p className="text-xs font-medium mb-3">📖 계정과목 마스터 (tax_account_codes) — 주요 항목</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {[
+                    { code: "811", name: "접대비", vat: false },
+                    { code: "812", name: "복리후생비", vat: true },
+                    { code: "813", name: "여비교통비", vat: true },
+                    { code: "818", name: "임차료", vat: true },
+                    { code: "820", name: "차량유지비", vat: true },
+                    { code: "831", name: "통신비/구독", vat: true },
+                    { code: "213", name: "비품 (자산)", vat: true },
+                    { code: "214", name: "차량운반구 (자산)", vat: true },
+                    { code: "825", name: "세금과공과", vat: false },
+                  ].map((c) => (
+                    <div key={c.code} className="flex items-center gap-2 p-2 rounded border bg-card">
+                      <code className="text-[11px] font-bold text-primary">{c.code}</code>
+                      <span className="text-xs">{c.name}</span>
+                      <Badge variant={c.vat ? "default" : "destructive"} className="text-[9px] ml-auto">
+                        {c.vat ? "VAT 공제" : "불공제"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* AI 분류 출력 형식 */}
+              <div>
+                <p className="text-xs font-medium mb-3">🤖 Gemini 응답 형식</p>
+                <pre className="text-[11px] p-3 rounded-lg bg-muted/50 overflow-x-auto">
+{`[{
+  "id": "거래ID",
+  "tax_account_code": "812",
+  "tax_account_name": "복리후생비",
+  "vat_deductible": true,
+  "is_fixed_asset": false,
+  "business_use_ratio": 100,
+  "confidence": 0.92,
+  "reason": "직원 식사비 (업무용 복리후생)"
+}]`}
+                </pre>
+              </div>
+
+              {/* 에러 핸들링 */}
+              <div className="p-4 rounded-lg bg-muted/30">
+                <p className="text-xs font-medium mb-3">⚠️ 에러 핸들링</p>
+                <div className="space-y-1.5 text-xs text-muted-foreground">
+                  <p>• <strong>429 (Rate Limit)</strong>: "요청 한도 초과. 잠시 후 다시 시도해주세요"</p>
+                  <p>• <strong>402 (Credit)</strong>: "AI 크레딧이 부족합니다"</p>
+                  <p>• <strong>JSON 파싱 실패</strong>: 마크다운 코드블록 자동 제거 후 재파싱</p>
+                  <p>• <strong>배치 최대</strong>: 미분류 거래 최대 50건씩 처리</p>
+                </div>
+              </div>
+
+              {/* 사용량 로깅 */}
+              <div className="p-4 rounded-lg bg-muted/30">
+                <p className="text-xs font-medium mb-2">📈 사용량 추적</p>
+                <p className="text-xs text-muted-foreground">
+                  분류 완료 후 <code className="text-primary">api_usage_logs</code> 테이블에 
+                  서비스(<code>gemini</code>), 엔드포인트(<code>classify-transactions</code>), 
+                  입출력 토큰 수, 처리 건수를 자동 기록합니다.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           <p className="text-center text-xs text-muted-foreground pb-8">
             © 2026 김비서 · 내부 문서
           </p>
