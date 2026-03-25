@@ -113,7 +113,7 @@ export default function Transactions() {
   const bankSync = useBankSync();
 
   const navigate = useNavigate();
-  const { openDrawer } = useConnectionDrawer();
+  const { openDrawer, isDrawerOpen, activeDrawerType } = useConnectionDrawer();
   const cardInfo = useCardConnectionInfo();
   const bankInfo = useBankConnectionInfo();
   const { data: connectorInstances = [] } = useConnectorInstances();
