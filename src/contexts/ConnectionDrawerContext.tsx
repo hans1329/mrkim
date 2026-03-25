@@ -5,6 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 interface ConnectionDrawerContextValue {
   openDrawer: (type: ConnectionType) => void;
   closeDrawer: () => void;
+  isDrawerOpen: boolean;
+  activeDrawerType: ConnectionType | null;
 }
 
 const ConnectionDrawerContext = createContext<ConnectionDrawerContextValue | null>(null);
@@ -36,7 +38,7 @@ export function ConnectionDrawerProvider({ children }: { children: ReactNode }) 
   };
 
   return (
-    <ConnectionDrawerContext.Provider value={{ openDrawer, closeDrawer }}>
+    <ConnectionDrawerContext.Provider value={{ openDrawer, closeDrawer, isDrawerOpen: open, activeDrawerType: type }}>
       {children}
       <ConnectionDrawer
         open={open}

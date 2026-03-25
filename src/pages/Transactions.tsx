@@ -39,7 +39,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, PlusCircle, CalendarIcon, Trash2, Bike, UtensilsCrossed } from "lucide-react";
+import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, PlusCircle, CalendarIcon, Trash2, Bike, UtensilsCrossed, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { cn } from "@/lib/utils";
@@ -113,7 +113,7 @@ export default function Transactions() {
   const bankSync = useBankSync();
 
   const navigate = useNavigate();
-  const { openDrawer } = useConnectionDrawer();
+  const { openDrawer, isDrawerOpen, activeDrawerType } = useConnectionDrawer();
   const cardInfo = useCardConnectionInfo();
   const bankInfo = useBankConnectionInfo();
   const { data: connectorInstances = [] } = useConnectorInstances();
@@ -225,8 +225,13 @@ export default function Transactions() {
                 {isCardConnected ? (
                   <div className="flex items-center gap-0.5 shrink-0">
                     <Button size="sm" variant="ghost" onClick={handleCardSync}
+                      disabled={isDrawerOpen && activeDrawerType === "card"}
                       className="h-6 px-1.5 gap-0.5 text-xs text-primary hover:text-primary hover:bg-primary/10">
-                      <RefreshCw className="h-3 w-3" />
+                      {isDrawerOpen && activeDrawerType === "card" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" />
+                      )}
                       재연동
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => openDrawer("card")}
@@ -252,8 +257,13 @@ export default function Transactions() {
                 {isAccountConnected ? (
                   <div className="flex items-center gap-0.5 shrink-0">
                     <Button size="sm" variant="ghost" onClick={handleBankSync}
+                      disabled={isDrawerOpen && activeDrawerType === "account"}
                       className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
-                      <RefreshCw className="h-3 w-3" />
+                      {isDrawerOpen && activeDrawerType === "account" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" />
+                      )}
                       재연동
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => openDrawer("account")}
@@ -278,8 +288,13 @@ export default function Transactions() {
                 <p className="text-xs font-medium truncate">🛵 쿠팡이츠</p>
                 {isCoupangeatsConnected ? (
                   <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                    <RefreshCw className="h-3 w-3" />
+                    {isDrawerOpen && activeDrawerType === "coupangeats" ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
                     <Button size="sm" variant="ghost" onClick={() => openDrawer("coupangeats")}
+                      disabled={isDrawerOpen && activeDrawerType === "coupangeats"}
                       className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
                       재연동
                     </Button>
@@ -300,8 +315,13 @@ export default function Transactions() {
                 <p className="text-xs font-medium truncate">🏍️ 배달의민족</p>
                 {isBaeminConnected ? (
                   <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                    <RefreshCw className="h-3 w-3" />
+                    {isDrawerOpen && activeDrawerType === "baemin" ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
                     <Button size="sm" variant="ghost" onClick={() => openDrawer("baemin")}
+                      disabled={isDrawerOpen && activeDrawerType === "baemin"}
                       className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
                       재연동
                     </Button>
