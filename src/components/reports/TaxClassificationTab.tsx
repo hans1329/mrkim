@@ -365,7 +365,7 @@ function EditClassificationDialog({
   };
 
   // 카테고리별 그룹핑
-  const groupedCodes = accountCodes.reduce((acc: Record<string, any[]>, c) => {
+  const groupedCodes = accountCodes.reduce<Record<string, any[]>>((acc, c) => {
     (acc[c.category] = acc[c.category] || []).push(c);
     return acc;
   }, {});
