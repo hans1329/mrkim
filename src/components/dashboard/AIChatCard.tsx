@@ -149,6 +149,7 @@ export function AIChatCard() {
             isLoading: false
           }));
           setHasConversationHistory(false);
+          return;
         }
         setIsLoggedIn(true);
         const today = new Date();
