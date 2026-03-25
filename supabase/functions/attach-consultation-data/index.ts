@@ -208,7 +208,7 @@ Deno.serve(async (req: Request) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, links, totalFiles: links.length, sources, missingSources, uploadErrors }),
+      JSON.stringify({ success: true, links, totalFiles: links.length, sources, missingSources, uploadErrors, taxClassification: { unclassifiedCount, expenseCount } }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {

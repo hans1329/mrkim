@@ -110,7 +110,7 @@ async function uploadDataPackageFiles(
   // 1. Transactions CSV
   const { data: txData } = await supabase
     .from("transactions")
-    .select("transaction_date, type, description, amount, category, merchant_name, source_type")
+    .select("transaction_date, type, description, amount, category, merchant_name, source_type, tax_account_code, tax_account_name, vat_deductible, vat_amount, is_fixed_asset, business_use_ratio, tax_classification_status")
     .eq("user_id", userId)
     .gte("transaction_date", startDate)
     .lte("transaction_date", endDate)
