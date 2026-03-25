@@ -270,10 +270,10 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
 
               {/* 하나카드 2차인증 안내 */}
               {selectedCompany === "hana" && (
-                <div className="flex items-start gap-2 bg-amber-500/10 rounded-lg p-3 text-xs">
-                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                <div className="flex items-start gap-2 bg-warning/10 rounded-lg p-3 text-xs">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-warning mt-0.5" />
                   <div className="text-muted-foreground">
-                    <p className="font-medium text-amber-700 dark:text-amber-400">하나카드 연동 전 확인사항</p>
+                    <p className="font-medium text-warning">하나카드 연동 전 확인사항</p>
                     <p className="mt-0.5">
                       하나카드는 2차 인증(SMS/ARS)이 활성화되어 있으면 연동이 불가합니다. 
                       <span className="font-medium text-foreground"> 하나카드 앱 또는 홈페이지에서 2차 인증을 해제</span>한 후 다시 시도해주세요.
