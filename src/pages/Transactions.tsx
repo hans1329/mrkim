@@ -315,8 +315,13 @@ export default function Transactions() {
                 <p className="text-xs font-medium truncate">🏍️ 배달의민족</p>
                 {isBaeminConnected ? (
                   <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                    <RefreshCw className="h-3 w-3" />
+                    {isDrawerOpen && activeDrawerType === "baemin" ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
                     <Button size="sm" variant="ghost" onClick={() => openDrawer("baemin")}
+                      disabled={isDrawerOpen && activeDrawerType === "baemin"}
                       className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
                       재연동
                     </Button>
