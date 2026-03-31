@@ -73,6 +73,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   const stepProgress: Record<FlowStep, number> = {
     "auth": 25,
     "signup": 25,
+    "find-account": 25,
     "loading": 50,
     "select-cards": 75,
     "complete": 100,
