@@ -206,16 +206,15 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
 
               {/* 아이디/비밀번호 입력 */}
               <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs">여신금융협회 아이디</Label>
+                  <div>
+
                     <Input
                       placeholder="여신금융협회 아이디"
                       value={credentials.id}
                       onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">여신금융협회 비밀번호</Label>
+                  <div>
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
@@ -235,8 +234,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
               </div>
 
               {/* 보안 안내 */}
-              <div className="flex items-start gap-2 bg-primary/5 rounded-lg p-3 text-xs">
-                <Shield className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+              <div className="bg-primary/5 rounded-lg p-3 text-xs">
                 <div className="text-muted-foreground">
                   <p className="font-medium text-foreground">256bit SSL 암호화 전송</p>
                   <p className="mt-0.5">입력하신 정보는 RSA로 암호화되어 안전하게 전송됩니다.</p>
