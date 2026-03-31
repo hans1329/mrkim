@@ -181,6 +181,8 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
     }
   };
 
+  useImperativeHandle(ref, () => ({ handleBack }), [step]);
+
   return (
     <div className="space-y-4">
 
