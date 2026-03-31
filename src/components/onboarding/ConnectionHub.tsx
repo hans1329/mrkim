@@ -213,7 +213,7 @@ export function ConnectionHub({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-md mx-auto px-4 py-6">
+          <div className="max-w-md mx-auto px-4 py-5">
             <AnimatePresence mode="wait">
               {view.screen === "hub" && (
                 <motion.div
@@ -222,10 +222,10 @@ export function ConnectionHub({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-6"
+                  className="space-y-4"
                 >
                   {/* Status summary */}
-                  <div className="text-center space-y-1">
+                  <div className="text-center space-y-1 pb-1">
                     <p className="text-sm text-muted-foreground">
                       {connectedCount > 0
                         ? `${connectedCount}개 서비스 연결됨`
@@ -234,7 +234,7 @@ export function ConnectionHub({
                   </div>
 
                   {/* Category list */}
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {CATEGORIES.map((cat, idx) => {
                       const anyConnected = cat.connectedKeys.some(k => isConnected(k));
                       const allConnected = cat.connectedKeys.every(k => isConnected(k));
@@ -249,7 +249,7 @@ export function ConnectionHub({
                           transition={{ delay: idx * 0.06, duration: 0.25 }}
                           onClick={() => handleCategoryClick(cat.key)}
                           className={cn(
-                            "w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left",
+                            "w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all text-left",
                             "active:scale-[0.98]",
                             allConnected
                               ? "bg-green-500/5 border border-green-500/20"
@@ -260,48 +260,48 @@ export function ConnectionHub({
                         >
                           {/* Icon */}
                           <div className={cn(
-                            "h-12 w-12 rounded-xl flex items-center justify-center shrink-0",
+                            "h-11 w-11 rounded-xl flex items-center justify-center shrink-0",
                             allConnected ? "bg-green-500/10" : "bg-primary/10"
                           )}>
                             {allConnected ? (
-                              <CheckCircle2 className="h-6 w-6 text-green-500" />
+                              <CheckCircle2 className="h-5 w-5 text-green-500" />
                             ) : (
-                              <cat.icon className="h-6 w-6 text-primary" />
+                              <cat.icon className="h-5 w-5 text-primary" />
                             )}
                           </div>
 
                           {/* Text */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-foreground">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[13px] font-semibold text-foreground leading-tight">
                                 {cat.label}
                               </span>
                               {allConnected && (
-                                <span className="text-[10px] font-medium text-green-600 bg-green-500/10 px-1.5 py-0.5 rounded-full">
+                                <span className="text-[10px] font-medium text-green-600 bg-green-500/10 px-1.5 py-0.5 rounded-full leading-none">
                                   연결됨
                                 </span>
                               )}
                               {anyConnected && !allConnected && totalSub > 1 && (
-                                <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full leading-none">
                                   {connectedSub}/{totalSub}
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">
+                            <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
                               {cat.description}
                             </p>
                           </div>
 
                           {/* Arrow */}
-                          <ChevronRight className="h-5 w-5 text-muted-foreground/40 shrink-0" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
                         </motion.button>
                       );
                     })}
                   </div>
 
                   {/* Security note */}
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-xl px-4 py-3">
-                    <Shield className="h-4 w-4 text-green-500 shrink-0" />
+                  <div className="flex items-start gap-2.5 text-[11px] text-muted-foreground bg-muted/50 rounded-xl px-3.5 py-2.5">
+                    <Shield className="h-3.5 w-3.5 text-green-500 shrink-0 mt-0.5" />
                     <span>모든 데이터는 256bit SSL 암호화로 안전하게 전송됩니다</span>
                   </div>
                 </motion.div>
@@ -314,12 +314,12 @@ export function ConnectionHub({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-4"
+                  className="space-y-3"
                 >
                   <p className="text-sm text-muted-foreground text-center">
                     연동할 배달앱을 선택해주세요
                   </p>
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {DELIVERY_APPS.map((app, idx) => {
                       const connected = isConnected(app.key);
                       return (
@@ -330,7 +330,7 @@ export function ConnectionHub({
                           transition={{ delay: idx * 0.08 }}
                           onClick={() => setView({ screen: "flow", service: app.key })}
                           className={cn(
-                            "w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left",
+                            "w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all text-left",
                             "active:scale-[0.98]",
                             connected
                               ? "bg-green-500/5 border border-green-500/20"
@@ -338,22 +338,22 @@ export function ConnectionHub({
                           )}
                         >
                           <div className={cn(
-                            "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 text-2xl",
+                            "h-11 w-11 rounded-xl flex items-center justify-center shrink-0 text-xl",
                             connected ? "bg-green-500/10" : "bg-muted"
                           )}>
                             {connected ? (
-                              <CheckCircle2 className="h-6 w-6 text-green-500" />
+                              <CheckCircle2 className="h-5 w-5 text-green-500" />
                             ) : (
                               <span>{app.emoji}</span>
                             )}
                           </div>
                           <div className="flex-1">
-                            <span className="text-sm font-semibold text-foreground">{app.label}</span>
+                            <span className="text-[13px] font-semibold text-foreground">{app.label}</span>
                             {connected && (
-                              <p className="text-xs text-green-600 mt-0.5">연결됨</p>
+                              <p className="text-[11px] text-green-600 mt-0.5">연결됨</p>
                             )}
                           </div>
-                          <ChevronRight className="h-5 w-5 text-muted-foreground/40 shrink-0" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
                         </motion.button>
                       );
                     })}
