@@ -138,14 +138,17 @@ export function AppLayout({
                     </Button>
                     <h1 className="text-lg font-bold text-foreground">{title}</h1>
                   </div>
-                  <Button variant="ghost" size="icon" className="relative h-9 w-9 [&_svg]:!size-5" onClick={() => navigate("/notifications")}>
-                    <Bell />
-                    {unreadCount > 0 && (
-                      <span className="absolute right-0 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
-                    )}
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    {headerRight}
+                    <Button variant="ghost" size="icon" className="relative h-9 w-9 [&_svg]:!size-5" onClick={() => navigate("/notifications")}>
+                      <Bell />
+                      {unreadCount > 0 && (
+                        <span className="absolute right-0 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </header>
             }
