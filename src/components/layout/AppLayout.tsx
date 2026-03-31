@@ -20,6 +20,7 @@ interface AppLayoutProps {
   showBackButton?: boolean;
   onBack?: () => void;
   stickyHeader?: ReactNode;
+  headerRight?: ReactNode;
 }
 
 export function AppLayout({
@@ -29,7 +30,8 @@ export function AppLayout({
   showHeader = true,
   showBackButton = false,
   onBack,
-  stickyHeader
+  stickyHeader,
+  headerRight,
 }: AppLayoutProps) {
   const navigate = useNavigate();
   const isInstalledApp = useIsInstalledApp();
