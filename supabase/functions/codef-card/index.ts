@@ -424,13 +424,6 @@ async function handleGetCards(
   connectedId: string,
   cardCompanyId: string
 ): Promise<Response> {
-  // 여신금융협회는 카드 목록 조회 불필요 (가맹점 매출 서비스)
-  if (isCrefia(cardCompanyId)) {
-    return new Response(
-      JSON.stringify({ success: true, message: "여신금융협회 연동 완료", cards: [] }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
   const organizationCode = CARD_ORGANIZATION_CODES[cardCompanyId];
   if (!organizationCode) {
     return new Response(
