@@ -87,7 +87,7 @@ export function TaxInvoiceTab() {
               홈택스를 연동하면 세금계산서 현황을<br />
               자동으로 확인할 수 있어요
             </p>
-            <Button onClick={() => window.location.href = "/onboarding"}>
+            <Button onClick={() => openDrawer("hometax")}>
               홈택스 연동하기
             </Button>
           </div>
