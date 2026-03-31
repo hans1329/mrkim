@@ -24,7 +24,7 @@ import { useCardSync } from "@/hooks/useCardSync";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { toast } from "sonner";
 
-type FlowStep = "auth" | "signup" | "loading" | "select-cards" | "complete";
+type FlowStep = "auth" | "signup" | "find-account" | "loading" | "select-cards" | "complete";
 
 interface CardConnectionFlowProps {
   onComplete: () => void;
@@ -73,6 +73,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   const stepProgress: Record<FlowStep, number> = {
     "auth": 25,
     "signup": 25,
+    "find-account": 25,
     "loading": 50,
     "select-cards": 75,
     "complete": 100,
@@ -164,6 +165,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   const stepTitle: Record<FlowStep, string> = {
     auth: "카드 연결",
     signup: "여신금융 회원가입",
+    "find-account": "아이디/비밀번호 찾기",
     loading: "연결 중",
     "select-cards": "카드 선택",
     complete: "연결 완료",
@@ -174,7 +176,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   }, [step, onStepChange]);
 
   const handleBack = () => {
-    if (step === "signup") {
+    if (step === "signup" || step === "find-account") {
       setStep("auth");
     } else {
       onBack();
@@ -187,7 +189,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
     <div className="space-y-4">
 
       {/* 진행 상태 - signup 뎁스에서는 숨김 */}
-      {step !== "signup" && (
+      {step !== "signup" && step !== "find-account" && (
         <div className="space-y-2">
           <Progress value={stepProgress[step]} className="h-1.5" />
           <div className="flex justify-between text-[10px] text-muted-foreground">
@@ -314,7 +316,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                 <div className="flex items-center justify-center gap-3 text-[11px] text-muted-foreground">
                   <button
                     type="button"
-                    onClick={() => window.open(CREDIT_FINANCE_ASSOCIATION.findIdUrl, "_blank")}
+                    onClick={() => setStep("find-account")}
                     className="hover:text-foreground transition-colors"
                   >
                     아이디 찾기
@@ -322,7 +324,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                   <span className="text-border">|</span>
                   <button
                     type="button"
-                    onClick={() => window.open(CREDIT_FINANCE_ASSOCIATION.findPwUrl, "_blank")}
+                    onClick={() => setStep("find-account")}
                     className="hover:text-foreground transition-colors"
                   >
                     비밀번호 찾기
@@ -351,6 +353,30 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                 className="w-full h-12 text-base"
               >
                 가입 완료, 로그인하기
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+
+            </div>
+          )}
+
+          {/* 아이디/비밀번호 찾기 (iframe) */}
+          {step === "find-account" && (
+            <div className="space-y-4">
+
+              <div className="rounded-xl border overflow-hidden bg-background" style={{ height: "60vh" }}>
+                <iframe
+                  src="https://m.cardsales.or.kr/page/member/join/findMember"
+                  className="w-full h-full border-0"
+                  title="아이디/비밀번호 찾기"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              <Button
+                onClick={() => setStep("auth")}
+                className="w-full h-12 text-base"
+              >
+                확인 완료, 로그인하기
                 <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
 
