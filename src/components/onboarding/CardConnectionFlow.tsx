@@ -324,12 +324,6 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 </div>
               </div>
 
-              {/* 이전 버튼 */}
-              <div className="flex justify-start">
-                <Button variant="ghost" size="icon" onClick={onBack} className="text-muted-foreground">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </div>
             </div>
           )}
 
