@@ -152,5 +152,6 @@ export function useTaxInvoices(): UseTaxInvoicesReturn {
     salesTotal,
     purchaseTotal,
     vatPayable,
+    hasConnectedId,
   };
 }
