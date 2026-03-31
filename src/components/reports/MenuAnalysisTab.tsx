@@ -231,7 +231,6 @@ export function MenuAnalysisTab() {
             <Card className="border-0 shadow-sm bg-gradient-to-br from-accent/5 to-accent/10">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="w-4 h-4 text-accent-foreground" />
                   <span className="text-xs text-muted-foreground">총 주문수</span>
                 </div>
                 <p className="text-xl font-bold">{totalOrderCount.toLocaleString()}건</p>
