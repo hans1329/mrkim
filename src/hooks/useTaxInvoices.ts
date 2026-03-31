@@ -36,6 +36,7 @@ interface UseTaxInvoicesReturn {
   salesTotal: number;
   purchaseTotal: number;
   vatPayable: number;
+  hasConnectedId: boolean;
 }
 
 export function useTaxInvoices(): UseTaxInvoicesReturn {
@@ -43,6 +44,7 @@ export function useTaxInvoices(): UseTaxInvoicesReturn {
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [hasConnectedId, setHasConnectedId] = useState(false);
   const { profile } = useProfile();
 
   const fetchInvoices = useCallback(async () => {
@@ -68,6 +70,16 @@ export function useTaxInvoices(): UseTaxInvoicesReturn {
       if (!statusError && statusData) {
         setSyncStatus(statusData as SyncStatus);
       }
+
+      // connectedId 존재 여부 확인
+      const { data: instanceData } = await supabase
+        .from("connector_instances")
+        .select("connected_id")
+        .eq("connector_id", "codef_hometax_tax_invoice")
+        .eq("status", "connected")
+        .maybeSingle();
+
+      setHasConnectedId(!!instanceData?.connected_id);
     } catch (error) {
       console.error("Error fetching tax invoices:", error);
     } finally {
@@ -140,5 +152,6 @@ export function useTaxInvoices(): UseTaxInvoicesReturn {
     salesTotal,
     purchaseTotal,
     vatPayable,
+    hasConnectedId,
   };
 }

@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 
 interface HometaxSummaryCardProps {
   isLoggedOut?: boolean;
@@ -23,6 +24,7 @@ interface HometaxSummaryCardProps {
 
 export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardProps) {
   const navigate = useNavigate();
+  const { openDrawer } = useConnectionDrawer();
   const { profile, loading: profileLoading } = useProfile();
   const { 
     syncStatus, 
@@ -32,7 +34,16 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
     salesTotal,
     purchaseTotal,
     vatPayable,
+    hasConnectedId,
   } = useTaxInvoices();
+
+  const handleSync = () => {
+    if (!hasConnectedId) {
+      openDrawer("hometax");
+      return;
+    }
+    syncTaxInvoices();
+  };
 
   // 로그아웃 상태: 목업 데이터 표시
   if (isLoggedOut) {
@@ -141,7 +152,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={syncTaxInvoices}
+              onClick={handleSync}
               disabled={syncing}
             >
               <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
@@ -169,12 +180,18 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
             </p>
             <Button 
               size="sm" 
-              onClick={syncTaxInvoices}
+              onClick={handleSync}
               disabled={syncing}
               className="gap-1.5 h-8 text-xs rounded-full"
             >
-              <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
-              지금 동기화하기
+              {hasConnectedId ? (
+                <>
+                  <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
+                  지금 동기화하기
+                </>
+              ) : (
+                "간편인증으로 연동하기"
+              )}
             </Button>
           </div>
         ) : (
