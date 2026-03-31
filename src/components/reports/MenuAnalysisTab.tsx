@@ -192,8 +192,7 @@ export function MenuAnalysisTab() {
     <div className="space-y-4">
       {/* 플랫폼 필터 */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-          <UtensilsCrossed className="w-4 h-4" />
+        <h3 className="text-sm font-semibold text-muted-foreground">
           메뉴 분석
         </h3>
         <Select value={platform} onValueChange={setPlatform}>
