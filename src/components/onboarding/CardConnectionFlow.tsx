@@ -60,11 +60,6 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
   const [error, setError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number } | null>(null);
-  const [useCertLogin, setUseCertLogin] = useState(false);
-  const [certFile, setCertFile] = useState<File | null>(null);
-  const [certPassword, setCertPassword] = useState("");
-  const [showCertPassword, setShowCertPassword] = useState(false);
-  const certFileInputRef = useRef<HTMLInputElement>(null);
 
   const { isLoading, registerCardAccount, getCards } = useCardConnection();
   const cardSync = useCardSync();
