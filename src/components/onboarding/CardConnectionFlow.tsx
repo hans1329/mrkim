@@ -75,6 +75,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
 
   const stepProgress: Record<FlowStep, number> = {
     "auth": 25,
+    "signup": 25,
     "loading": 50,
     "select-cards": 75,
     "complete": 100,
