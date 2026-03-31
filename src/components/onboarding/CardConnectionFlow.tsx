@@ -316,7 +316,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                 <div className="flex items-center justify-center gap-3 text-[11px] text-muted-foreground">
                   <button
                     type="button"
-                    onClick={() => window.open(CREDIT_FINANCE_ASSOCIATION.findIdUrl, "_blank")}
+                    onClick={() => setStep("find-account")}
                     className="hover:text-foreground transition-colors"
                   >
                     아이디 찾기
@@ -324,7 +324,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                   <span className="text-border">|</span>
                   <button
                     type="button"
-                    onClick={() => window.open(CREDIT_FINANCE_ASSOCIATION.findPwUrl, "_blank")}
+                    onClick={() => setStep("find-account")}
                     className="hover:text-foreground transition-colors"
                   >
                     비밀번호 찾기
