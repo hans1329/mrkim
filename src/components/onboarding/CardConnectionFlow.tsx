@@ -273,23 +273,31 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
               </Button>
 
               {/* 하단 링크 (회원가입, 아이디/비밀번호 찾기) */}
-              <div className="flex flex-col items-center gap-2 pt-1">
-                <button
-                  type="button"
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
                   onClick={() => setStep("signup")}
-                  className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="w-full text-sm"
                 >
                   여신금융 회원가입
-                  <ArrowRight className="h-3 w-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => window.open(CREDIT_FINANCE_ASSOCIATION.findIdUrl, "_blank")}
-                  className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  아이디, 비밀번호 찾기
-                  <ExternalLink className="h-3 w-3" />
-                </button>
+                </Button>
+                <div className="flex items-center justify-center gap-3 text-[11px] text-muted-foreground">
+                  <button
+                    type="button"
+                    onClick={() => window.open(CREDIT_FINANCE_ASSOCIATION.findIdUrl, "_blank")}
+                    className="hover:text-foreground transition-colors"
+                  >
+                    아이디 찾기
+                  </button>
+                  <span className="text-border">|</span>
+                  <button
+                    type="button"
+                    onClick={() => window.open(CREDIT_FINANCE_ASSOCIATION.findPwUrl, "_blank")}
+                    className="hover:text-foreground transition-colors"
+                  >
+                    비밀번호 찾기
+                  </button>
+                </div>
               </div>
 
               {/* 이전 버튼 */}
