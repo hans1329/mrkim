@@ -359,6 +359,30 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
             </div>
           )}
 
+          {/* 아이디/비밀번호 찾기 (iframe) */}
+          {step === "find-account" && (
+            <div className="space-y-4">
+
+              <div className="rounded-xl border overflow-hidden bg-background" style={{ height: "60vh" }}>
+                <iframe
+                  src="https://m.cardsales.or.kr/page/member/join/findMember"
+                  className="w-full h-full border-0"
+                  title="아이디/비밀번호 찾기"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              <Button
+                onClick={() => setStep("auth")}
+                className="w-full h-12 text-base"
+              >
+                확인 완료, 로그인하기
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+
+            </div>
+          )}
+
           {/* Step 2: 로딩 화면 */}
           {step === "loading" && (
             <div className="space-y-4 text-center py-8">
