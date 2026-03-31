@@ -354,11 +354,6 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
 
-              <div className="flex justify-start">
-                <Button variant="ghost" size="icon" onClick={() => setStep("auth")} className="text-muted-foreground">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </div>
             </div>
           )}
 
