@@ -105,6 +105,7 @@ function LayoutShell() {
       showBackButton={config.showBackButton}
       onBack={config.onBack}
       stickyHeader={config.stickyHeader}
+      headerRight={config.headerRight}
     >
       <AnimatedOutlet />
     </AppLayout>

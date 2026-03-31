@@ -6,6 +6,7 @@ export interface LayoutConfig {
   showBackButton?: boolean;
   onBack?: () => void;
   stickyHeader?: ReactNode;
+  headerRight?: ReactNode;
 }
 
 interface LayoutContextType {

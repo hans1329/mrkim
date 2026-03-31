@@ -39,18 +39,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/data/mockData";
-import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, RefreshCw, PlusCircle, CalendarIcon, Trash2, Bike, UtensilsCrossed, Loader2 } from "lucide-react";
+import { Plus, Search, TrendingUp, TrendingDown, Sparkles, LinkIcon, CalendarIcon, Trash2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { cn } from "@/lib/utils";
 import { TransactionClassifier } from "@/components/transactions/TransactionClassifier";
 import { CsvBulkUploadDialog } from "@/components/transactions/CsvBulkUploadDialog";
 import { useTransactions, useTransactionStats, useAddTransaction, useDeleteTransaction, type TransactionInsert } from "@/hooks/useTransactions";
-import { useCardSync } from "@/hooks/useCardSync";
-import { useBankSync } from "@/hooks/useBankSync";
 import { useConnection } from "@/contexts/ConnectionContext";
-import { useCardConnectionInfo, useBankConnectionInfo } from "@/hooks/useCardConnectionInfo";
-import { useConnectorInstances } from "@/hooks/useConnectors";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { format, subMonths } from "date-fns";
@@ -106,28 +102,12 @@ export default function Transactions() {
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
   });
-  const { profile, cardConnected, accountConnected } = useConnection();
+  const { profile } = useConnection();
   const addTransaction = useAddTransaction();
   const deleteTransaction = useDeleteTransaction();
-  const cardSync = useCardSync();
-  const bankSync = useBankSync();
 
   const navigate = useNavigate();
-  const { openDrawer, isDrawerOpen, activeDrawerType } = useConnectionDrawer();
-  const cardInfo = useCardConnectionInfo();
-  const bankInfo = useBankConnectionInfo();
-  const { data: connectorInstances = [] } = useConnectorInstances();
-
-  const isCoupangeatsConnected = connectorInstances.some(i => i.connector_id === "hyphen_coupangeats" && i.status === "connected");
-  const isBaeminConnected = connectorInstances.some(i => i.connector_id === "hyphen_baemin" && i.status === "connected");
-
-  const handleCardSync = () => {
-    openDrawer("card");
-  };
-
-  const handleBankSync = () => {
-    openDrawer("account");
-  };
+  const { openDrawer } = useConnectionDrawer();
 
   const handleAddTransaction = () => {
     if (!newTransaction.description || !newTransaction.amount) {
@@ -164,8 +144,6 @@ export default function Transactions() {
   };
 
   const isEmpty = !isLoading && (!transactions || transactions.length === 0);
-  const isCardConnected = cardConnected;
-  const isAccountConnected = accountConnected;
 
   const visibleTransactions = useMemo(() => 
     transactions?.slice(0, visibleCount) ?? [], 
@@ -181,7 +159,22 @@ export default function Transactions() {
   const resetPagination = useCallback(() => setVisibleCount(PAGE_SIZE), []);
 
   return (
-    <MainLayout title="매출/매입" subtitle="거래 내역을 관리하세요" showBackButton>
+    <MainLayout 
+      title="매출/매입" 
+      subtitle="거래 내역을 관리하세요" 
+      showBackButton
+      headerRight={
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 h-8 text-xs rounded-full"
+          onClick={() => openDrawer()}
+        >
+          <LinkIcon className="h-3.5 w-3.5" />
+          연동 관리
+        </Button>
+      }
+    >
       <Tabs defaultValue="list" className="space-y-2.5">
         <TabsList className="grid w-full grid-cols-2 h-9">
           <TabsTrigger value="list" className="text-sm">거래 목록</TabsTrigger>
@@ -192,150 +185,6 @@ export default function Transactions() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-2.5 mt-0">
-          {/* 미연동 상태: 온보딩 유도 배너 */}
-          {!isCardConnected && !isAccountConnected && (
-            <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center">
-              <div className="flex h-10 w-10 mx-auto items-center justify-center rounded-full bg-primary/10 mb-2">
-                <LinkIcon className="h-5 w-5 text-primary" />
-              </div>
-              <h3 className="text-sm font-semibold mb-1">카드/계좌를 연동해보세요</h3>
-              <p className="text-xs text-muted-foreground mb-2.5">
-                연동하면 거래 내역이 자동으로 수집됩니다
-              </p>
-              <div className="flex gap-2 justify-center">
-                <Button size="sm" variant="outline" className="gap-1 h-8" onClick={() => openDrawer("card")}>
-                  💳 카드 연동
-                </Button>
-                <Button size="sm" variant="outline" className="gap-1 h-8" onClick={() => openDrawer("account")}>
-                  🏦 계좌 연동
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* 동기화 배너 - 모바일: 세로 스택, 넓은 화면: 2열 */}
-          {(isCardConnected || isAccountConnected || isCoupangeatsConnected || isBaeminConnected) && (
-            <div className="flex flex-col sm:grid sm:grid-cols-2 gap-1.5">
-              {/* 카드 */}
-              <div className={cn(
-                "flex items-center justify-between rounded-lg px-3 py-2",
-                isCardConnected ? "bg-primary/5 border border-primary/20" : "bg-muted/50 border border-dashed border-muted-foreground/20"
-              )}>
-                <p className="text-xs font-medium truncate">💳 카드{cardInfo.cardCompanyName ? ` · ${cardInfo.cardCompanyName}` : ""}</p>
-                {isCardConnected ? (
-                  <div className="flex items-center gap-0.5 shrink-0">
-                    <Button size="sm" variant="ghost" onClick={handleCardSync}
-                      disabled={isDrawerOpen && activeDrawerType === "card"}
-                      className="h-6 px-1.5 gap-0.5 text-xs text-primary hover:text-primary hover:bg-primary/10">
-                      {isDrawerOpen && activeDrawerType === "card" ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-3 w-3" />
-                      )}
-                      재연동
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => openDrawer("card")}
-                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10">
-                      <PlusCircle className="h-3 w-3" />
-                      추가
-                    </Button>
-                  </div>
-                ) : (
-                  <Button size="sm" variant="ghost" onClick={() => openDrawer("card")}
-                    className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10 shrink-0">
-                    <LinkIcon className="h-3 w-3" />
-                    연동
-                  </Button>
-                )}
-              </div>
-              {/* 계좌 */}
-              <div className={cn(
-                "flex items-center justify-between rounded-lg px-3 py-2",
-                isAccountConnected ? "bg-muted/50 border border-border" : "bg-muted/50 border border-dashed border-muted-foreground/20"
-              )}>
-                <p className="text-xs font-medium truncate">🏦 계좌{bankInfo.bankName ? ` · ${bankInfo.bankName}` : ""}</p>
-                {isAccountConnected ? (
-                  <div className="flex items-center gap-0.5 shrink-0">
-                    <Button size="sm" variant="ghost" onClick={handleBankSync}
-                      disabled={isDrawerOpen && activeDrawerType === "account"}
-                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
-                      {isDrawerOpen && activeDrawerType === "account" ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-3 w-3" />
-                      )}
-                      재연동
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => openDrawer("account")}
-                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-muted-foreground hover:bg-muted">
-                      <PlusCircle className="h-3 w-3" />
-                      추가
-                    </Button>
-                  </div>
-                ) : (
-                  <Button size="sm" variant="ghost" onClick={() => openDrawer("account")}
-                    className="h-6 px-2 gap-1 text-xs text-success hover:text-success hover:bg-success/10 shrink-0">
-                    <LinkIcon className="h-3 w-3" />
-                    연동
-                  </Button>
-                )}
-              </div>
-              {/* 쿠팡이츠 */}
-              <div className={cn(
-                "flex items-center justify-between rounded-lg px-3 py-2",
-                isCoupangeatsConnected ? "bg-muted/50 border border-border" : "bg-muted/50 border border-dashed border-muted-foreground/20"
-              )}>
-                <p className="text-xs font-medium truncate">🛵 쿠팡이츠</p>
-                {isCoupangeatsConnected ? (
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                    {isDrawerOpen && activeDrawerType === "coupangeats" ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3 w-3" />
-                    )}
-                    <Button size="sm" variant="ghost" onClick={() => openDrawer("coupangeats")}
-                      disabled={isDrawerOpen && activeDrawerType === "coupangeats"}
-                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
-                      재연동
-                    </Button>
-                  </span>
-                ) : (
-                  <Button size="sm" variant="ghost" onClick={() => openDrawer("coupangeats")}
-                    className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10 shrink-0">
-                    <LinkIcon className="h-3 w-3" />
-                    연동
-                  </Button>
-                )}
-              </div>
-              {/* 배달의민족 */}
-              <div className={cn(
-                "flex items-center justify-between rounded-lg px-3 py-2",
-                isBaeminConnected ? "bg-muted/50 border border-border" : "bg-muted/50 border border-dashed border-muted-foreground/20"
-              )}>
-                <p className="text-xs font-medium truncate">🏍️ 배달의민족</p>
-                {isBaeminConnected ? (
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                    {isDrawerOpen && activeDrawerType === "baemin" ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3 w-3" />
-                    )}
-                    <Button size="sm" variant="ghost" onClick={() => openDrawer("baemin")}
-                      disabled={isDrawerOpen && activeDrawerType === "baemin"}
-                      className="h-6 px-1.5 gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted">
-                      재연동
-                    </Button>
-                  </span>
-                ) : (
-                  <Button size="sm" variant="ghost" onClick={() => openDrawer("baemin")}
-                    className="h-6 px-2 gap-1 text-xs text-primary hover:text-primary hover:bg-primary/10 shrink-0">
-                    <LinkIcon className="h-3 w-3" />
-                    연동
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* 기간 설정 - 스크롤 가능한 영역 */}
           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
