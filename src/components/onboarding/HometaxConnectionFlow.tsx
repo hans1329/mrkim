@@ -72,17 +72,42 @@ export function HometaxConnectionFlow({
     profile,
   } = useConnection();
 
-  const [step, setStep] = useState<Step>(
-    hometaxConnected ? "already" : "input"
-  );
+  const [step, setStep] = useState<Step>("input");
   const [businessNumber, setBusinessNumber] = useState("");
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedAuth, setSelectedAuth] = useState<string | null>(null);
   const [twoWayInfo, setTwoWayInfo] = useState<TwoWayInfo | null>(null);
-  const [authTimer, setAuthTimer] = useState(120); // 2분 타이머
+  const [authTimer, setAuthTimer] = useState(120);
   const [connectedId, setConnectedId] = useState<string | null>(null);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
+
+  // 실제 connectedId 존재 여부로 "already" 판단
+  useEffect(() => {
+    if (initialCheckDone) return;
+    const checkConnectedId = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setInitialCheckDone(true); return; }
+
+      const { data } = await supabase
+        .from("connector_instances")
+        .select("connected_id")
+        .eq("connector_id", "codef_hometax_tax_invoice")
+        .eq("status", "connected")
+        .maybeSingle();
+
+      if (data?.connected_id) {
+        setStep("already");
+      } else if (profile?.business_registration_number) {
+        // 사업자번호는 있지만 간편인증 미완료 → confirmed 단계로
+        setBusinessNumber(formatBusinessNumber(profile.business_registration_number));
+        setStep("confirmed");
+      }
+      setInitialCheckDone(true);
+    };
+    checkConnectedId();
+  }, [initialCheckDone, profile?.business_registration_number]);
 
   const isValidNumber = businessNumber.replace(/\D/g, "").length === 10;
 
