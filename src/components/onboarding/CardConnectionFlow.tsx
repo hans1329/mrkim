@@ -361,7 +361,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                       className="hidden"
                     />
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       onClick={() => certFileInputRef.current?.click()}
                       className={`w-full justify-center gap-2 h-11 ${certFile ? '' : 'border-dashed border-2'}`}
                     >
