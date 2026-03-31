@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,11 @@ type FlowStep = "auth" | "signup" | "loading" | "select-cards" | "complete";
 interface CardConnectionFlowProps {
   onComplete: () => void;
   onBack: () => void;
+  onStepChange?: (title: string) => void;
+}
+
+export interface CardConnectionFlowRef {
+  handleBack: () => void;
 }
 
 interface CardInfo {
@@ -50,7 +55,7 @@ const CREDIT_FINANCE_ASSOCIATION = {
   findPwUrl: "https://www.cardsales.or.kr/member/findPw",
 };
 
-export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowProps) {
+export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnectionFlowProps>(function CardConnectionFlow({ onComplete, onBack, onStepChange }, ref) {
   const [step, setStep] = useState<FlowStep>("auth");
   const [credentials, setCredentials] = useState({ id: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -164,6 +169,10 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
     complete: "연결 완료",
   };
 
+  useEffect(() => {
+    onStepChange?.(stepTitle[step]);
+  }, [step, onStepChange]);
+
   const handleBack = () => {
     if (step === "signup") {
       setStep("auth");
@@ -172,15 +181,10 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
     }
   };
 
+  useImperativeHandle(ref, () => ({ handleBack }), [step]);
+
   return (
     <div className="space-y-4">
-      {/* 서브 헤더 */}
-      <div className="flex items-center gap-2 py-2.5">
-        <button onClick={handleBack} className="text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h3 className="text-base font-semibold">{stepTitle[step]}</h3>
-      </div>
 
       {/* 진행 상태 */}
       <div className="space-y-2">
@@ -548,4 +552,4 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
       </AnimatePresence>
     </div>
   );
-}
+});

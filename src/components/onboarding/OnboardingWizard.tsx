@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -8,6 +8,7 @@ import {
   CreditCard, 
   Landmark, 
   CheckCircle2, 
+  ArrowLeft,
   ArrowRight,
   Sparkles,
   Shield,
@@ -15,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OnboardingStep } from "@/hooks/useOnboarding";
-import { CardConnectionFlow } from "./CardConnectionFlow";
+import { CardConnectionFlow, type CardConnectionFlowRef } from "./CardConnectionFlow";
 import { AccountConnectionFlow } from "./AccountConnectionFlow";
 import { HometaxConnectionFlow } from "./HometaxConnectionFlow";
 import { ConnectionSuccessModal } from "./ConnectionSuccessModal";
@@ -53,6 +54,9 @@ export function OnboardingWizard({
   const [showCardFlow, setShowCardFlow] = useState(false);
   const [showAccountFlow, setShowAccountFlow] = useState(false);
   const [successModalType, setSuccessModalType] = useState<"hometax" | "card" | "account" | null>(null);
+  const [cardFlowTitle, setCardFlowTitle] = useState("카드 연결");
+  const handleCardStepChange = useCallback((title: string) => setCardFlowTitle(title), []);
+  const cardFlowRef = useRef<CardConnectionFlowRef>(null);
   const currentIdx = stepIndex(currentStep);
   const progress = ((currentIdx + 1) / steps.length) * 100;
 
@@ -189,11 +193,21 @@ export function OnboardingWizard({
             />
           )}
           {currentStep === "card" && showCardFlow && (
-            <div className="bg-card rounded-3xl p-6 shadow-xl">
-              <CardConnectionFlow 
-                onComplete={handleCardFlowComplete}
-                onBack={handleCardFlowBack}
-              />
+            <div className="w-full max-w-md">
+              <div className="bg-card rounded-t-3xl px-4 py-2.5 flex items-center gap-2 shadow-xl">
+                <button onClick={() => cardFlowRef.current?.handleBack()} className="text-muted-foreground hover:text-foreground transition-colors">
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+                <h3 className="text-base font-semibold">{cardFlowTitle}</h3>
+              </div>
+              <div className="bg-card rounded-b-3xl p-6 shadow-xl">
+                <CardConnectionFlow 
+                  ref={cardFlowRef}
+                  onComplete={handleCardFlowComplete}
+                  onBack={handleCardFlowBack}
+                  onStepChange={handleCardStepChange}
+                />
+              </div>
             </div>
           )}
           {currentStep === "account" && !showAccountFlow && (
