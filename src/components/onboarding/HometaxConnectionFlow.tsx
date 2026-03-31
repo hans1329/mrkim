@@ -73,6 +73,7 @@ export function HometaxConnectionFlow({
   onComplete,
   onBack,
   isOpen,
+  showHeader = true,
 }: HometaxConnectionFlowProps) {
   const {
     refetch: refetchProfile,
