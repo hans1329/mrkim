@@ -1,6 +1,7 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NavLink } from "@/components/NavLink";
+import { Button } from "@/components/ui/button";
 import {
   TrendingUp,
   FileText,
@@ -9,10 +10,13 @@ import {
   HelpCircle,
   ChevronRight,
   UserCheck,
+  LinkIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 
 const menuItems = [
+  { title: "데이터 연동", description: "홈택스·카드·계좌·배달앱", url: "#connection-hub", icon: LinkIcon },
   { title: "리포트", description: "경영 현황 분석", url: "/reports", icon: TrendingUp },
   { title: "세무사", description: "세무사 매칭·상담·신고", url: "/tax-accountant", icon: UserCheck },
   { title: "알림", description: "알림 관리", url: "/notifications", icon: Bell },
