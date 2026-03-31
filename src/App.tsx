@@ -29,6 +29,7 @@ import SecretarySettings from "./pages/SecretarySettings";
 import Onboarding from "./pages/Onboarding";
 import DesignGuide from "./pages/DesignGuide";
 import Engine from "./pages/Engine";
+import MktEngine from "./pages/MktEngine";
 import NotFound from "./pages/NotFound";
 import Community from "./pages/Community";
 import Help from "./pages/Help";
@@ -121,6 +122,7 @@ const App = () => (
                         <Route path="/onboarding" element={<Onboarding />} />
                         <Route path="/design" element={<DesignGuide />} />
                         <Route path="/engine" element={<Engine />} />
+                        <Route path="/mkt-engine" element={<MktEngine />} />
                         <Route path="/community" element={<Community />} />
                         <Route path="/help" element={<Help />} />
                         <Route path="/tax-accountant" element={<TaxAccountant />} />
