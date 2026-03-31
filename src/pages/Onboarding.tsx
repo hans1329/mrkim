@@ -89,8 +89,7 @@ export default function Onboarding() {
           card: (instances || []).some(
             (i: any) =>
               i.connector_id === "codef_card_usage" &&
-              i.status === "connected" &&
-              i.credentials_meta?.card_company_id === "crefia"
+              i.status === "connected"
           ),
           account: connectedIds.has("codef_bank_account"),
         });
