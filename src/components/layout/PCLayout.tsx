@@ -197,7 +197,7 @@ export function PCLayout({ children, title = "김비서", subtitle, showBackButt
 
         {/* 서브페이지 헤더 */}
         {showBackButton && (
-          <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border/50">
+          <div className="sticky top-0 z-20 bg-background border-b border-border/50">
             <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Button
