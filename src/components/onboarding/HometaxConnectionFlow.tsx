@@ -308,8 +308,7 @@ export function HometaxConnectionFlow({
       }
 
       const errorMsg = data.error || "인증 요청에 실패했습니다.";
-      const codeInfo = data.code ? ` (${data.code})` : "";
-      setError(`${errorMsg}${codeInfo}`);
+      setError(errorMsg);
       setStep("auth_select");
     } catch (err) {
       console.error("Auth request error:", err);
