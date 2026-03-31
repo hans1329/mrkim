@@ -198,7 +198,7 @@ export function PCLayout({ children, title = "김비서", subtitle, showBackButt
         {/* 서브페이지 헤더 */}
         {showBackButton && (
           <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border/50">
-            <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+            <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -215,7 +215,7 @@ export function PCLayout({ children, title = "김비서", subtitle, showBackButt
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h1 className="text-lg font-bold text-foreground">{title}</h1>
+                  <h1 className="text-base font-bold text-foreground">{title}</h1>
                   {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
                 </div>
               </div>
