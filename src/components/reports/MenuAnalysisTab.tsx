@@ -290,8 +290,7 @@ export function MenuAnalysisTab() {
           {top10ByCount.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                  <Flame className="w-4 h-4 text-orange-500" />
+                <CardTitle className="text-sm font-semibold">
                   인기 메뉴 TOP 10
                 </CardTitle>
               </CardHeader>
