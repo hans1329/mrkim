@@ -2,6 +2,7 @@ import { createContext, useContext, useState, ReactNode, useCallback, useMemo } 
 import { ConnectionHub, ServiceType } from "@/components/onboarding/ConnectionHub";
 import { useQueryClient } from "@tanstack/react-query";
 import { useConnectorInstances } from "@/hooks/useConnectors";
+import { useConnection } from "@/contexts/ConnectionContext";
 
 // Keep backward compatibility with old ConnectionType
 export type ConnectionType = ServiceType;
@@ -20,21 +21,22 @@ export function ConnectionDrawerProvider({ children }: { children: ReactNode }) 
   const [type, setType] = useState<ConnectionType | null>(null);
   const queryClient = useQueryClient();
   const { data: connectorInstances = [] } = useConnectorInstances();
+  const { profile, hometaxConnected, cardConnected, accountConnected } = useConnection();
 
   const connectionStatus = useMemo(() => {
-    const isConnected = (connectorId: string) =>
+    const isDeliveryConnected = (connectorId: string) =>
       connectorInstances.some(
         (i: any) => i.connector_id === connectorId && i.status === "connected"
       );
 
     return {
-      hometax: isConnected("codef_hometax_tax_invoice"),
-      card: isConnected("codef_card_usage") || isConnected("codef_card_sales"),
-      account: isConnected("codef_bank_account"),
-      baemin: isConnected("hyphen_baemin"),
-      coupangeats: isConnected("hyphen_coupangeats"),
+      hometax: hometaxConnected,
+      card: cardConnected,
+      account: accountConnected,
+      baemin: isDeliveryConnected("hyphen_baemin"),
+      coupangeats: isDeliveryConnected("hyphen_coupangeats"),
     };
-  }, [connectorInstances]);
+  }, [connectorInstances, hometaxConnected, cardConnected, accountConnected]);
 
   const openDrawer = useCallback((t?: ConnectionType) => {
     setType(t || null);
