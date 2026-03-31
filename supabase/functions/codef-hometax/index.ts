@@ -215,13 +215,13 @@ async function handleRegister(
   req: Request,
   body: any
 ): Promise<Response> {
-  const { businessNumber, authMethod } = body;
+  const { businessNumber, authMethod, userName, phoneNo } = body;
 
-  if (!businessNumber || !authMethod) {
+  if (!businessNumber || !authMethod || !userName || !phoneNo) {
     return new Response(
       JSON.stringify({
         success: false,
-        error: "사업자등록번호와 인증 수단을 입력해주세요.",
+        error: "사업자등록번호, 인증 수단, 이름, 전화번호를 모두 입력해주세요.",
       }),
       {
         status: 400,
@@ -244,6 +244,9 @@ async function handleRegister(
     );
   }
 
+  // 전화번호 정리 (010-xxxx-xxxx → 010xxxxxxxx)
+  const cleanedPhone = phoneNo.replace(/\D/g, "");
+
   const cleanedNumber = businessNumber.replace(/\D/g, "");
   const accessToken = await getAccessToken();
   const publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
@@ -258,6 +261,8 @@ async function handleRegister(
         loginType: "5", // 간편인증
         loginTypeLevel, // 인증 수단 (1~5)
         identity: cleanedNumber, // 사업자번호
+        userName: userName, // 사용자 이름
+        phoneNo: cleanedPhone, // 전화번호
       },
     ],
   };
@@ -336,6 +341,8 @@ async function handleConfirm2Way(
   body: any
 ): Promise<Response> {
   const { businessNumber, authMethod, twoWayInfo } = body;
+  const userName = body.userName || "";
+  const phoneNo = body.phoneNo || "";
 
   if (!businessNumber || !authMethod || !twoWayInfo) {
     return new Response(
@@ -352,6 +359,7 @@ async function handleConfirm2Way(
 
   const loginTypeLevel = SIMPLE_AUTH_METHODS[authMethod];
   const cleanedNumber = businessNumber.replace(/\D/g, "");
+  const cleanedPhone = phoneNo.replace(/\D/g, "");
   const accessToken = await getAccessToken();
 
   const requestBody = {
@@ -364,6 +372,8 @@ async function handleConfirm2Way(
         loginType: "5",
         loginTypeLevel,
         identity: cleanedNumber,
+        userName: userName,
+        phoneNo: cleanedPhone,
       },
     ],
     is2Way: true,
