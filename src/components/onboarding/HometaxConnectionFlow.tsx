@@ -90,6 +90,14 @@ export function HometaxConnectionFlow({
   const [authTimer, setAuthTimer] = useState(120);
   const [connectedId, setConnectedId] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [birthDate, setBirthDate] = useState("");
+
+  const formatBirthDate = (value: string) => {
+    const cleaned = value.replace(/\D/g, "").slice(0, 8);
+    if (cleaned.length <= 4) return cleaned;
+    if (cleaned.length <= 6) return `${cleaned.slice(0, 4)}-${cleaned.slice(4)}`;
+    return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 6)}-${cleaned.slice(6)}`;
+  };
 
   const hasVerifiedBusinessInfo = Boolean(
     businessInfo?.businessStatus || businessInfo?.taxationTypeDesc
@@ -107,6 +115,7 @@ export function HometaxConnectionFlow({
       setSelectedAuth(null);
       setTwoWayInfo(null);
       setAuthTimer(120);
+      setBirthDate("");
 
       try {
         const {
@@ -258,6 +267,13 @@ export function HometaxConnectionFlow({
       return;
     }
 
+    // 생년월일 확인
+    const cleanedBirth = birthDate.replace(/\D/g, "");
+    if (cleanedBirth.length !== 8) {
+      setError("생년월일 8자리를 입력해주세요. (예: 19850101)");
+      return;
+    }
+
     setStep("auth_waiting");
     setAuthTimer(120);
     setError(null);
@@ -272,6 +288,7 @@ export function HometaxConnectionFlow({
             authMethod: selectedAuth,
             userName: profile.name,
             phoneNo: userPhone,
+            birthDate: cleanedBirth,
           },
         }
       );
@@ -314,6 +331,7 @@ export function HometaxConnectionFlow({
             twoWayInfo,
             userName: profile?.name || "",
             phoneNo: profile?.phone || profile?.secretary_phone || "",
+            birthDate: birthDate.replace(/\D/g, ""),
           },
         }
       );
@@ -676,11 +694,26 @@ export function HometaxConnectionFlow({
             ))}
           </div>
 
+          {/* 생년월일 입력 */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">생년월일</label>
+            <input
+              type="text"
+              placeholder="1985-01-01"
+              value={formatBirthDate(birthDate)}
+              onChange={(e) => setBirthDate(e.target.value.replace(/\D/g, ""))}
+              className="w-full px-4 py-3 rounded-xl border bg-background text-center font-mono text-base tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              maxLength={10}
+              inputMode="numeric"
+            />
+            <p className="text-xs text-muted-foreground text-center">8자리 숫자를 입력하세요 (예: 19850101)</p>
+          </div>
+
           <Button
             onClick={handleStartAuth}
             size="lg"
             className="w-full"
-            disabled={!selectedAuth}
+            disabled={!selectedAuth || birthDate.replace(/\D/g, "").length !== 8}
           >
             인증 요청
           </Button>
