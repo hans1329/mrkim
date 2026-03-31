@@ -79,7 +79,7 @@ const benefits = [
 
            {/* 연동 버튼 */}
            <Button 
-             onClick={() => openDrawer("hometax")}
+             onClick={() => openDrawer()}
              className="w-full gap-2 h-12 text-base rounded-full"
              size="lg"
            >
