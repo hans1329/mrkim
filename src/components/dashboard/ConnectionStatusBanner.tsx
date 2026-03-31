@@ -107,7 +107,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
   };
 
   const handleLoginConfirm = () => {
-    navigate("/login?redirect=/onboarding");
+    navigate("/login?redirect=/");
   };
 
   const connections = [

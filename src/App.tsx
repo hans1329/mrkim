@@ -26,7 +26,7 @@ import FinancialServices from "./pages/FinancialServices";
 import PitchDeck from "./pages/PitchDeck";
 import Landing from "./pages/Landing";
 import SecretarySettings from "./pages/SecretarySettings";
-import Onboarding from "./pages/Onboarding";
+
 import DesignGuide from "./pages/DesignGuide";
 import Engine from "./pages/Engine";
 import MktEngine from "./pages/MktEngine";
@@ -119,7 +119,7 @@ const App = () => (
                         <Route path="/profile" element={<Profile />} />
                         <Route path="/financial-services" element={<FinancialServices />} />
                         <Route path="/secretary-settings" element={<SecretarySettings />} />
-                        <Route path="/onboarding" element={<Onboarding />} />
+                        
                         <Route path="/design" element={<DesignGuide />} />
                         <Route path="/engine" element={<Engine />} />
                         <Route path="/mkt-engine" element={<MktEngine />} />

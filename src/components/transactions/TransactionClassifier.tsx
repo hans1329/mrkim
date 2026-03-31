@@ -11,10 +11,11 @@ import { CheckCircle2, AlertCircle, Sparkles, RefreshCw, LinkIcon } from "lucide
 import { cn } from "@/lib/utils";
 import { useTransactions, useTransactionStats, useClassifyTransactions, useUpdateTransaction } from "@/hooks/useTransactions";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 
 export function TransactionClassifier() {
   const [classifyingIds, setClassifyingIds] = useState<Set<string>>(new Set());
+  const { openDrawer } = useConnectionDrawer();
 
   const { data: transactions, isLoading } = useTransactions({ type: "expense" });
   const { data: stats, isLoading: isStatsLoading } = useTransactionStats();
@@ -168,9 +169,7 @@ export function TransactionClassifier() {
             <p className="mb-4 text-sm text-muted-foreground">
               카드를 연동하면 지출 내역이 자동으로 수집되고 분류됩니다
             </p>
-            <Button asChild>
-              <Link to="/onboarding">데이터 연동하기</Link>
-            </Button>
+            <Button onClick={() => openDrawer()}>데이터 연동하기</Button>
           </CardContent>
         </Card>
       ) : (
