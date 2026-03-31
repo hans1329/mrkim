@@ -314,12 +314,12 @@ export function ConnectionHub({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-4"
+                  className="space-y-3"
                 >
                   <p className="text-sm text-muted-foreground text-center">
                     연동할 배달앱을 선택해주세요
                   </p>
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {DELIVERY_APPS.map((app, idx) => {
                       const connected = isConnected(app.key);
                       return (
@@ -330,7 +330,7 @@ export function ConnectionHub({
                           transition={{ delay: idx * 0.08 }}
                           onClick={() => setView({ screen: "flow", service: app.key })}
                           className={cn(
-                            "w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left",
+                            "w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all text-left",
                             "active:scale-[0.98]",
                             connected
                               ? "bg-green-500/5 border border-green-500/20"
@@ -338,22 +338,22 @@ export function ConnectionHub({
                           )}
                         >
                           <div className={cn(
-                            "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 text-2xl",
+                            "h-11 w-11 rounded-xl flex items-center justify-center shrink-0 text-xl",
                             connected ? "bg-green-500/10" : "bg-muted"
                           )}>
                             {connected ? (
-                              <CheckCircle2 className="h-6 w-6 text-green-500" />
+                              <CheckCircle2 className="h-5 w-5 text-green-500" />
                             ) : (
                               <span>{app.emoji}</span>
                             )}
                           </div>
                           <div className="flex-1">
-                            <span className="text-sm font-semibold text-foreground">{app.label}</span>
+                            <span className="text-[13px] font-semibold text-foreground">{app.label}</span>
                             {connected && (
-                              <p className="text-xs text-green-600 mt-0.5">연결됨</p>
+                              <p className="text-[11px] text-green-600 mt-0.5">연결됨</p>
                             )}
                           </div>
-                          <ChevronRight className="h-5 w-5 text-muted-foreground/40 shrink-0" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
                         </motion.button>
                       );
                     })}
