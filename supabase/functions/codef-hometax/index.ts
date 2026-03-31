@@ -215,13 +215,13 @@ async function handleRegister(
   req: Request,
   body: any
 ): Promise<Response> {
-  const { businessNumber, authMethod, userName, phoneNo } = body;
+  const { businessNumber, authMethod, userName, phoneNo, birthDate } = body;
 
-  if (!businessNumber || !authMethod || !userName || !phoneNo) {
+  if (!businessNumber || !authMethod || !userName || !phoneNo || !birthDate) {
     return new Response(
       JSON.stringify({
         success: false,
-        error: "사업자등록번호, 인증 수단, 이름, 전화번호를 모두 입력해주세요.",
+        error: "사업자등록번호, 인증 수단, 이름, 전화번호, 생년월일을 모두 입력해주세요.",
       }),
       {
         status: 400,
@@ -250,6 +250,7 @@ async function handleRegister(
   const cleanedNumber = businessNumber.replace(/\D/g, "");
   const accessToken = await getAccessToken();
   const publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
+  const cleanedBirthDate = birthDate.replace(/\D/g, ""); // YYYYMMDD or YYMMDD
 
   const requestBody = {
     accountList: [
@@ -261,15 +262,19 @@ async function handleRegister(
         loginType: "5", // 간편인증
         loginTypeLevel, // 인증 수단 (1~5)
         identity: cleanedNumber, // 사업자번호
+        id: "", // 간편인증 시 빈 문자열
+        password: "", // 간편인증 시 빈 문자열
         userName: userName, // 사용자 이름
         phoneNo: cleanedPhone, // 전화번호
+        birthDate: cleanedBirthDate, // 생년월일
       },
     ],
   };
 
   console.log(
-    `Registering hometax account with simple auth (${authMethod}, level=${loginTypeLevel})...`
+    `Registering hometax account with simple auth (${authMethod}, level=${loginTypeLevel}), userName=${userName}, phoneNo=${cleanedPhone}, birthDate=${cleanedBirthDate}, identity=${cleanedNumber}`
   );
+  console.log("Request body:", JSON.stringify(requestBody));
 
   const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
     method: "POST",
