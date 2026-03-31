@@ -212,8 +212,8 @@ export function ConnectionHub({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto flex items-center justify-center">
-          <div className="max-w-md w-full mx-auto px-4 py-5">
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-md w-full mx-auto px-4 py-6">
             <AnimatePresence mode="wait">
               {view.screen === "hub" && (
                 <motion.div
