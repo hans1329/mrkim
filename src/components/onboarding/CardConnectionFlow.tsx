@@ -232,8 +232,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                       </button>
                     </div>
                   </div>
-                </div>
-              )}
+              </div>
 
               {/* 보안 안내 */}
               <div className="flex items-start gap-2 bg-primary/5 rounded-lg p-3 text-xs">
