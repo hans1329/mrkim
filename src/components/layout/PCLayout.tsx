@@ -43,7 +43,7 @@ interface PCLayoutProps {
   headerRight?: ReactNode;
 }
 
-export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutProps) {
+export function PCLayout({ children, title = "김비서", subtitle, showBackButton, onBack, headerRight }: PCLayoutProps) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const { profile } = useProfileQuery();
