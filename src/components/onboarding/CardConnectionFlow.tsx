@@ -29,6 +29,7 @@ type FlowStep = "auth" | "signup" | "loading" | "select-cards" | "complete";
 interface CardConnectionFlowProps {
   onComplete: () => void;
   onBack: () => void;
+  onStepChange?: (title: string) => void;
 }
 
 interface CardInfo {
