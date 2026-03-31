@@ -55,6 +55,7 @@ export function OnboardingWizard({
   const [showAccountFlow, setShowAccountFlow] = useState(false);
   const [successModalType, setSuccessModalType] = useState<"hometax" | "card" | "account" | null>(null);
   const [cardFlowTitle, setCardFlowTitle] = useState("카드 연결");
+  const handleCardStepChange = useCallback((title: string) => setCardFlowTitle(title), []);
   const currentIdx = stepIndex(currentStep);
   const progress = ((currentIdx + 1) / steps.length) * 100;
 
