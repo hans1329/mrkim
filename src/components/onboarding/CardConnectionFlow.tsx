@@ -434,10 +434,10 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
 
               <div className="rounded-xl border overflow-hidden bg-background" style={{ height: "60vh" }}>
                 <iframe
-                  src={CREDIT_FINANCE_ASSOCIATION.signupUrl}
+                  src="https://m.cardsales.or.kr/member/join"
                   className="w-full h-full border-0"
                   title="여신금융협회 회원가입"
-                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation"
+                  referrerPolicy="no-referrer"
                 />
               </div>
 
