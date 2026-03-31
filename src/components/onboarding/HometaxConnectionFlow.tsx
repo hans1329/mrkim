@@ -1,12 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Building2, Loader2, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
+import {
+  Building2,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  ArrowLeft,
+  Smartphone,
+  ShieldCheck,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useConnection } from "@/contexts/ConnectionContext";
-// ... keep existing code
 
 // 사업자등록번호 포맷팅
 const formatBusinessNumber = (value: string) => {
@@ -15,6 +22,14 @@ const formatBusinessNumber = (value: string) => {
   if (cleaned.length <= 5) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
   return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 5)}-${cleaned.slice(5)}`;
 };
+
+// 간편인증 수단 정의
+const AUTH_METHODS = [
+  { id: "kakao", label: "카카오", icon: "💬", color: "bg-yellow-100 text-yellow-800" },
+  { id: "naver", label: "네이버", icon: "🟢", color: "bg-green-100 text-green-800" },
+  { id: "pass", label: "PASS", icon: "📱", color: "bg-blue-100 text-blue-800" },
+  { id: "toss", label: "토스", icon: "💙", color: "bg-sky-100 text-sky-800" },
+];
 
 interface HometaxConnectionFlowProps {
   onComplete: () => void;
@@ -30,20 +45,60 @@ interface BusinessInfo {
   businessType?: string;
 }
 
-export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionFlowProps) {
-  const { refetch: refetchProfile, connectService, hometaxConnected, profile } = useConnection();
-  
-  // 이미 연동된 경우 "already" 상태로 시작
-  const [step, setStep] = useState<"already" | "input" | "verifying" | "confirmed">(
+interface TwoWayInfo {
+  jobId: string;
+  threadId: string;
+  jti: string;
+  twoWayTimestamp: string;
+}
+
+type Step =
+  | "already"
+  | "input"
+  | "verifying"
+  | "confirmed"
+  | "auth_select"
+  | "auth_waiting"
+  | "auth_complete";
+
+export function HometaxConnectionFlow({
+  onComplete,
+  onBack,
+}: HometaxConnectionFlowProps) {
+  const {
+    refetch: refetchProfile,
+    connectService,
+    hometaxConnected,
+    profile,
+  } = useConnection();
+
+  const [step, setStep] = useState<Step>(
     hometaxConnected ? "already" : "input"
   );
   const [businessNumber, setBusinessNumber] = useState("");
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedAuth, setSelectedAuth] = useState<string | null>(null);
+  const [twoWayInfo, setTwoWayInfo] = useState<TwoWayInfo | null>(null);
+  const [authTimer, setAuthTimer] = useState(120); // 2분 타이머
+  const [connectedId, setConnectedId] = useState<string | null>(null);
 
   const isValidNumber = businessNumber.replace(/\D/g, "").length === 10;
 
+  // 간편인증 타이머
+  useEffect(() => {
+    if (step !== "auth_waiting") return;
+    if (authTimer <= 0) {
+      setError("인증 시간이 초과되었습니다. 다시 시도해주세요.");
+      setStep("auth_select");
+      return;
+    }
+    const timer = setTimeout(() => setAuthTimer((t) => t - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [step, authTimer]);
+
+  // Step 1: 사업자번호 조회
   const handleVerify = async () => {
     if (!isValidNumber) {
       toast.error("사업자등록번호 10자리를 입력해주세요.");
@@ -55,11 +110,10 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
 
     try {
       const cleanedNumber = businessNumber.replace(/\D/g, "");
-      
-      // CODEF API 호출
-      const { data, error: funcError } = await supabase.functions.invoke("codef-hometax", {
-        body: { businessNumber: cleanedNumber },
-      });
+      const { data, error: funcError } = await supabase.functions.invoke(
+        "codef-hometax",
+        { body: { businessNumber: cleanedNumber } }
+      );
 
       if (funcError) throw funcError;
 
@@ -69,7 +123,6 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
         return;
       }
 
-      // 사업자 정보 저장
       setBusinessInfo({
         businessNumber: data.data.businessNumber,
         businessStatus: data.data.businessStatus,
@@ -79,7 +132,6 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
         businessType: data.data.businessType,
       });
       setStep("confirmed");
-
     } catch (err) {
       console.error("Hometax verification error:", err);
       setError("사업자 조회 중 오류가 발생했습니다.");
@@ -87,12 +139,97 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
     }
   };
 
+  // Step 2: 간편인증 요청
+  const handleStartAuth = async () => {
+    if (!selectedAuth || !businessInfo) return;
+
+    setStep("auth_waiting");
+    setAuthTimer(120);
+    setError(null);
+
+    try {
+      const { data, error: funcError } = await supabase.functions.invoke(
+        "codef-hometax",
+        {
+          body: {
+            action: "register",
+            businessNumber: businessInfo.businessNumber,
+            authMethod: selectedAuth,
+          },
+        }
+      );
+
+      if (funcError) throw funcError;
+
+      if (data.status === "2way_required") {
+        setTwoWayInfo(data.twoWayInfo);
+        // 자동 확인 폴링 시작은 하지 않음 - 사용자가 "인증 완료" 버튼 누르면 확인
+        return;
+      }
+
+      if (data.status === "completed") {
+        setConnectedId(data.connectedId);
+        setStep("auth_complete");
+        return;
+      }
+
+      setError(data.error || "인증 요청에 실패했습니다.");
+      setStep("auth_select");
+    } catch (err) {
+      console.error("Auth request error:", err);
+      setError("간편인증 요청 중 오류가 발생했습니다.");
+      setStep("auth_select");
+    }
+  };
+
+  // Step 3: 2-way 인증 확인
+  const handleConfirm2Way = useCallback(async () => {
+    if (!twoWayInfo || !selectedAuth || !businessInfo) return;
+
+    try {
+      const { data, error: funcError } = await supabase.functions.invoke(
+        "codef-hometax",
+        {
+          body: {
+            action: "confirm2Way",
+            businessNumber: businessInfo.businessNumber,
+            authMethod: selectedAuth,
+            twoWayInfo,
+          },
+        }
+      );
+
+      if (funcError) throw funcError;
+
+      if (data.status === "completed") {
+        setConnectedId(data.connectedId);
+        setStep("auth_complete");
+        return;
+      }
+
+      if (data.status === "2way_required") {
+        toast.info("아직 인증이 완료되지 않았습니다. 휴대폰을 확인해주세요.");
+        return;
+      }
+
+      setError(data.error || "인증 확인에 실패했습니다.");
+      setStep("auth_select");
+    } catch (err) {
+      console.error("2-way confirm error:", err);
+      setError("인증 확인 중 오류가 발생했습니다.");
+      setStep("auth_select");
+    }
+  }, [twoWayInfo, selectedAuth, businessInfo]);
+
+  // 최종 완료: connectedId 저장
   const handleComplete = async () => {
     if (!businessInfo) return;
 
     setIsSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         toast.error("로그인이 필요합니다.");
         return;
@@ -108,13 +245,16 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
         })
         .eq("user_id", user.id);
 
-      // connector_instances에 연동 상태 저장 (profiles 플래그도 자동 동기화)
-      await connectService("codef_hometax_tax_invoice");
+      // connector_instances에 연동 상태 저장
+      await connectService("codef_hometax_tax_invoice", connectedId || undefined);
 
-      toast.success("홈택스가 연결되었습니다.");
+      toast.success(
+        connectedId
+          ? "홈택스가 연결되었습니다. 세금계산서를 자동으로 동기화합니다."
+          : "홈택스가 연결되었습니다."
+      );
       refetchProfile();
       onComplete();
-
     } catch (err) {
       console.error("Failed to save hometax connection:", err);
       toast.error("저장에 실패했습니다.");
@@ -127,12 +267,27 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={
+            step === "auth_select"
+              ? () => setStep("confirmed")
+              : step === "auth_waiting"
+              ? () => setStep("auth_select")
+              : onBack
+          }
+          className="shrink-0"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
           <h2 className="text-lg font-bold">국세청 연결</h2>
-          <p className="text-sm text-muted-foreground">사업자등록번호로 연동합니다</p>
+          <p className="text-sm text-muted-foreground">
+            {step === "auth_select" || step === "auth_waiting"
+              ? "간편인증으로 세금계산서를 연동합니다"
+              : "사업자등록번호로 연동합니다"}
+          </p>
         </div>
       </div>
 
@@ -151,17 +306,25 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
 
           <div className="text-center mb-2">
             <p className="text-lg font-bold">이미 연동되어 있습니다</p>
-            <p className="text-sm text-muted-foreground">국세청 연동이 완료된 상태입니다</p>
+            <p className="text-sm text-muted-foreground">
+              국세청 연동이 완료된 상태입니다
+            </p>
           </div>
 
           {profile?.business_registration_number && (
             <div className="bg-muted/50 rounded-xl p-4 space-y-3">
               {profile.business_name && (
-                <InfoRow label="사업장명" value={profile.business_name} highlight />
+                <InfoRow
+                  label="사업장명"
+                  value={profile.business_name}
+                  highlight
+                />
               )}
-              <InfoRow 
-                label="사업자등록번호" 
-                value={formatBusinessNumber(profile.business_registration_number)} 
+              <InfoRow
+                label="사업자등록번호"
+                value={formatBusinessNumber(
+                  profile.business_registration_number
+                )}
               />
               {profile.business_type && (
                 <InfoRow label="업종" value={profile.business_type} />
@@ -204,7 +367,9 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
               type="text"
               placeholder="000-00-00000"
               value={formatBusinessNumber(businessNumber)}
-              onChange={(e) => setBusinessNumber(e.target.value.replace(/\D/g, ""))}
+              onChange={(e) =>
+                setBusinessNumber(e.target.value.replace(/\D/g, ""))
+              }
               className="w-full px-4 py-3 rounded-xl border bg-background text-center font-mono text-lg tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               maxLength={12}
               autoFocus
@@ -247,7 +412,7 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
         </motion.div>
       )}
 
-      {/* Step: Confirmed */}
+      {/* Step: Confirmed - 사업자 정보 확인 + 간편인증 선택 */}
       {step === "confirmed" && businessInfo && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -262,16 +427,22 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
 
           <div className="text-center mb-4">
             <p className="text-lg font-bold">사업자 정보 확인</p>
-            <p className="text-sm text-muted-foreground">아래 정보가 맞는지 확인해주세요</p>
+            <p className="text-sm text-muted-foreground">
+              아래 정보가 맞는지 확인해주세요
+            </p>
           </div>
 
           <div className="bg-muted/50 rounded-xl p-4 space-y-3">
             {businessInfo.businessName && (
-              <InfoRow label="사업장명" value={businessInfo.businessName} highlight />
+              <InfoRow
+                label="사업장명"
+                value={businessInfo.businessName}
+                highlight
+              />
             )}
-            <InfoRow 
-              label="사업자등록번호" 
-              value={formatBusinessNumber(businessInfo.businessNumber)} 
+            <InfoRow
+              label="사업자등록번호"
+              value={formatBusinessNumber(businessInfo.businessNumber)}
             />
             <InfoRow label="사업자 상태" value={businessInfo.businessStatus} />
             {businessInfo.businessType && (
@@ -282,7 +453,16 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
 
           <div className="flex flex-col gap-2 pt-2">
             <Button
+              onClick={() => setStep("auth_select")}
+              size="lg"
+              className="w-full gap-2"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              간편인증으로 세금계산서 연동
+            </Button>
+            <Button
               onClick={handleComplete}
+              variant="outline"
               size="lg"
               className="w-full"
               disabled={isSaving}
@@ -290,10 +470,10 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
               {isSaving ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  연결 중...
+                  저장 중...
                 </>
               ) : (
-                "연결 완료"
+                "사업자 정보만 저장 (세금계산서 연동 건너뛰기)"
               )}
             </Button>
             <Button
@@ -311,26 +491,177 @@ export function HometaxConnectionFlow({ onComplete, onBack }: HometaxConnectionF
           </div>
         </motion.div>
       )}
+
+      {/* Step: Auth Select - 간편인증 수단 선택 */}
+      {step === "auth_select" && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          <div className="flex justify-center mb-2">
+            <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Smartphone className="h-7 w-7 text-primary" />
+            </div>
+          </div>
+
+          <div className="text-center mb-4">
+            <p className="text-lg font-bold">간편인증 수단 선택</p>
+            <p className="text-sm text-muted-foreground">
+              세금계산서 조회를 위해 본인인증이 필요합니다
+            </p>
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            {AUTH_METHODS.map((method) => (
+              <button
+                key={method.id}
+                onClick={() => setSelectedAuth(method.id)}
+                className={cn(
+                  "p-4 rounded-xl border-2 text-center transition-all",
+                  selectedAuth === method.id
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/30"
+                )}
+              >
+                <span className="text-2xl block mb-1">{method.icon}</span>
+                <span className="text-sm font-medium">{method.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <Button
+            onClick={handleStartAuth}
+            size="lg"
+            className="w-full"
+            disabled={!selectedAuth}
+          >
+            인증 요청
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Step: Auth Waiting - 간편인증 대기 */}
+      {step === "auth_waiting" && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          <div className="flex justify-center">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center relative">
+              <Smartphone className="h-8 w-8 text-primary" />
+              <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary animate-pulse" />
+            </div>
+          </div>
+
+          <div className="text-center space-y-2">
+            <p className="text-lg font-bold">휴대폰에서 인증해주세요</p>
+            <p className="text-sm text-muted-foreground">
+              {AUTH_METHODS.find((m) => m.id === selectedAuth)?.label} 앱에서
+              인증 요청을 확인해주세요
+            </p>
+          </div>
+
+          {/* 타이머 */}
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50">
+              <div
+                className={cn(
+                  "text-2xl font-mono font-bold",
+                  authTimer <= 30 ? "text-destructive" : "text-foreground"
+                )}
+              >
+                {Math.floor(authTimer / 60)}:
+                {String(authTimer % 60).padStart(2, "0")}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={handleConfirm2Way}
+              size="lg"
+              className="w-full"
+            >
+              인증 완료 확인
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setStep("auth_select");
+                setTwoWayInfo(null);
+              }}
+              className="text-muted-foreground"
+            >
+              다시 시도
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Step: Auth Complete */}
+      {step === "auth_complete" && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="space-y-4"
+        >
+          <div className="flex justify-center mb-2">
+            <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
+              <CheckCircle2 className="h-10 w-10 text-green-500" />
+            </div>
+          </div>
+
+          <div className="text-center mb-4">
+            <p className="text-lg font-bold">인증 완료!</p>
+            <p className="text-sm text-muted-foreground">
+              홈택스 세금계산서 연동이 준비되었습니다
+            </p>
+          </div>
+
+          <Button
+            onClick={handleComplete}
+            size="lg"
+            className="w-full"
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                연결 중...
+              </>
+            ) : (
+              "연결 완료"
+            )}
+          </Button>
+        </motion.div>
+      )}
     </div>
   );
 }
 
-function InfoRow({ 
-  label, 
-  value, 
-  highlight = false 
-}: { 
-  label: string; 
-  value: string; 
+function InfoRow({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
   highlight?: boolean;
 }) {
   return (
     <div className="flex justify-between items-center text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <span className={cn(
-        "font-medium",
-        highlight && "text-primary"
-      )}>
+      <span className={cn("font-medium", highlight && "text-primary")}>
         {value}
       </span>
     </div>
