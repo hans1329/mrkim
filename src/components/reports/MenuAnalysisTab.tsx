@@ -210,7 +210,9 @@ export function MenuAnalysisTab() {
       {!hasData ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <UtensilsCrossed className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+            <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center mb-3">
+              <span className="text-muted-foreground/50 text-lg">📋</span>
+            </div>
             <p className="text-sm text-muted-foreground">
               배달앱을 연동하면 메뉴별 매출을 분석할 수 있어요
             </p>
