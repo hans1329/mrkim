@@ -176,7 +176,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   }, [step, onStepChange]);
 
   const handleBack = () => {
-    if (step === "signup") {
+    if (step === "signup" || step === "find-account") {
       setStep("auth");
     } else {
       onBack();
