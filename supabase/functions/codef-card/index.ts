@@ -136,7 +136,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { action, cardCompanyId, loginId, loginType, certFile, certPassword, password, connectedId, startDate, endDate, cardNo } = body;
+    const { action, cardCompanyId, loginId, loginType, certFile, certPassword: rawCertPassword, password, connectedId, startDate, endDate, cardNo } = body;
 
     // 1. 토큰 발급
     console.log("Getting access token...");
@@ -160,8 +160,8 @@ serve(async (req) => {
 
     // 액션에 따른 분기
     if (action === "register") {
-      if (loginType === "2") {
-        return await handleRegisterWithCert(accessToken, publicKey, cardCompanyId, certFile, certPassword);
+      if (loginType === "0") {
+        return await handleRegisterWithCert(accessToken, publicKey, cardCompanyId, certFile, rawCertPassword);
       }
       return await handleRegister(accessToken, publicKey, cardCompanyId, loginId, password);
     } else if (action === "addAccount") {
@@ -189,7 +189,7 @@ serve(async (req) => {
   }
 });
 
-// 계정 등록 - 공동인증서 방식 (loginType "2")
+// 계정 등록 - 공동인증서 방식 (loginType "0", PFX 파일)
 async function handleRegisterWithCert(
   accessToken: string,
   publicKey: string,
@@ -212,10 +212,12 @@ async function handleRegisterWithCert(
     );
   }
 
+  // Codef 스펙: 인증서 비밀번호도 RSA 암호화 필수 (password 필드로 전송)
   console.log("Encrypting cert password with RSA PKCS1 v1.5...");
-  const encryptedCertPassword = encryptRSAPKCS1v15(certPassword, publicKey);
+  const encryptedPassword = encryptRSAPKCS1v15(certPassword, publicKey);
   console.log("Cert password encrypted successfully");
 
+  // Codef 스펙: loginType "0" = 인증서, certFile = PFX Base64, password = RSA 암호화된 인증서 비밀번호
   const requestBody = {
     accountList: [
       {
@@ -223,10 +225,9 @@ async function handleRegisterWithCert(
         businessType: "CD",
         clientType: "P",
         organization: organizationCode,
-        loginType: "2",
-        certType: "0",
+        loginType: "0",
         certFile: certFile,
-        certPassword: encryptedCertPassword,
+        password: encryptedPassword,
       }
     ]
   };

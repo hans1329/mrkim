@@ -43,8 +43,8 @@ interface CardInfo {
 }
 
 interface CertOptions {
-  loginType: "2";
-  certFile: string; // Base64
+  loginType: "0";
+  certFile: string; // PFX Base64
   certPassword: string;
 }
 
@@ -84,7 +84,7 @@ export function useCardConnection(): UseCardConnectionReturn {
       };
 
       if (certOptions) {
-        requestBody.loginType = "2";
+        requestBody.loginType = "0";
         requestBody.certFile = certOptions.certFile;
         requestBody.certPassword = certOptions.certPassword;
       } else {
