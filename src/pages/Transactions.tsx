@@ -155,8 +155,6 @@ export default function Transactions() {
   };
 
   const isEmpty = !isLoading && (!transactions || transactions.length === 0);
-  const isCardConnected = cardConnected;
-  const isAccountConnected = accountConnected;
 
   const visibleTransactions = useMemo(() => 
     transactions?.slice(0, visibleCount) ?? [], 
