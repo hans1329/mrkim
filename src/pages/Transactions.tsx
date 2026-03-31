@@ -495,8 +495,8 @@ export default function Transactions() {
             </Card>
           ) : (
             <>
-              <Card className="overflow-hidden">
-                <CardContent className="divide-y p-0">
+              <div className="overflow-hidden">
+                <div className="p-0">
                   {visibleTransactions.map((transaction) => (
                     <div key={transaction.id} className="flex items-center justify-between px-3 py-2.5 active:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -547,8 +547,8 @@ export default function Transactions() {
                       </div>
                     </div>
                   ))}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* 더 보기 / 건수 표시 */}
               <div className="flex flex-col items-center gap-1.5 py-2">
