@@ -422,6 +422,40 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
             </div>
           )}
 
+          {/* 여신금융협회 회원가입 (iframe) */}
+          {step === "signup" && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <h3 className="text-lg font-bold">여신금융협회 회원가입</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  아래에서 회원가입을 완료한 후 돌아와주세요
+                </p>
+              </div>
+
+              <div className="rounded-xl border overflow-hidden bg-background" style={{ height: "60vh" }}>
+                <iframe
+                  src={CREDIT_FINANCE_ASSOCIATION.signupUrl}
+                  className="w-full h-full border-0"
+                  title="여신금융협회 회원가입"
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation"
+                />
+              </div>
+
+              <Button
+                onClick={() => setStep("auth")}
+                className="w-full h-12 text-base"
+              >
+                가입 완료, 로그인하기
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+
+              <Button variant="ghost" onClick={() => setStep("auth")} className="w-full text-muted-foreground">
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                이전으로
+              </Button>
+            </div>
+          )}
+
           {/* Step 2: 로딩 화면 */}
           {step === "loading" && (
             <div className="space-y-4 text-center py-8">
