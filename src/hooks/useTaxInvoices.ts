@@ -70,6 +70,16 @@ export function useTaxInvoices(): UseTaxInvoicesReturn {
       if (!statusError && statusData) {
         setSyncStatus(statusData as SyncStatus);
       }
+
+      // connectedId 존재 여부 확인
+      const { data: instanceData } = await supabase
+        .from("connector_instances")
+        .select("connected_id")
+        .eq("connector_id", "codef_hometax_tax_invoice")
+        .eq("status", "connected")
+        .maybeSingle();
+
+      setHasConnectedId(!!instanceData?.connected_id);
     } catch (error) {
       console.error("Error fetching tax invoices:", error);
     } finally {
