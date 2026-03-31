@@ -495,8 +495,8 @@ export default function Transactions() {
             </Card>
           ) : (
             <>
-              <Card className="overflow-hidden">
-                <CardContent className="divide-y p-0">
+              <div className="overflow-hidden">
+                <div className="p-0">
                   {visibleTransactions.map((transaction) => (
                     <div key={transaction.id} className="flex items-center justify-between px-3 py-2.5 active:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
