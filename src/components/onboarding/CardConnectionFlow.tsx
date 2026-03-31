@@ -415,10 +415,11 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
               </div>
 
               {/* 이전 버튼 */}
-              <Button variant="ghost" onClick={onBack} className="w-full text-muted-foreground">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                이전으로
-              </Button>
+              <div className="flex justify-start">
+                <Button variant="ghost" size="icon" onClick={onBack} className="text-muted-foreground">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           )}
 
@@ -449,10 +450,11 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
 
-              <Button variant="ghost" onClick={() => setStep("auth")} className="w-full text-muted-foreground">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                이전으로
-              </Button>
+              <div className="flex justify-start">
+                <Button variant="ghost" size="icon" onClick={() => setStep("auth")} className="text-muted-foreground">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           )}
 
