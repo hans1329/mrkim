@@ -56,8 +56,8 @@ const CATEGORIES: CategoryItem[] = [
   },
   {
     key: "card",
-    label: "카드 매출 (여신금융협회)",
-    description: "모든 카드사 매출 통합 조회",
+    label: "카드 매출",
+    description: "공동인증서로 카드사별 매출 조회",
     icon: CreditCard,
     connectedKeys: ["card"],
   },
