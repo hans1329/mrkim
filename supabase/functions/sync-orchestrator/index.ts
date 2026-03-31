@@ -1368,4 +1368,6 @@ async function syncBaemin(
   // 부가 데이터(통계, 리뷰, 주문상세, 계좌, 광고, 내가게, NOW, 인근매출, 메뉴, PG매출)는
   // 핵심 동기화 완료 후 별도 호출로 처리 (타임아웃 방지)
   // TODO: 2차 동기화 job으로 분리
+
+  return { recordsFetched: totalFetched, recordsSaved: totalSaved };
 }
