@@ -186,16 +186,18 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   return (
     <div className="space-y-4">
 
-      {/* 진행 상태 */}
-      <div className="space-y-2">
-        <Progress value={stepProgress[step]} className="h-1.5" />
-        <div className="flex justify-between text-[10px] text-muted-foreground">
-          <span>로그인</span>
-          <span>연결 중</span>
-          <span>카드 선택</span>
-          <span>완료</span>
+      {/* 진행 상태 - signup 뎁스에서는 숨김 */}
+      {step !== "signup" && (
+        <div className="space-y-2">
+          <Progress value={stepProgress[step]} className="h-1.5" />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>로그인</span>
+            <span>연결 중</span>
+            <span>카드 선택</span>
+            <span>완료</span>
+          </div>
         </div>
-      </div>
+      )}
 
       <AnimatePresence mode="wait">
         <motion.div
