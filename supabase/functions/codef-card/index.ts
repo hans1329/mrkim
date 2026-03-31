@@ -583,8 +583,7 @@ async function handleGetTransactions(
     return { rawTransactions, period: { startDate: requestBody.startDate, endDate: requestBody.endDate } };
   };
 
-    const cardNoFromRequest = (cardNo || "").trim();
-    
+  const fetchCardNosIfNeeded = async (): Promise<string[]> => {
     const cardNoFromRequest = (cardNo || "").trim();
     if (cardNoFromRequest) return [cardNoFromRequest];
 
