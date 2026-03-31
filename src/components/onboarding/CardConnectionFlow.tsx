@@ -206,8 +206,8 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
 
               {/* 아이디/비밀번호 입력 */}
               <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs">여신금융협회 아이디</Label>
+                  <div>
+
                     <Input
                       placeholder="여신금융협회 아이디"
                       value={credentials.id}
