@@ -667,6 +667,7 @@ export function HometaxConnectionFlow({
             </p>
           </div>
 
+          {error && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
