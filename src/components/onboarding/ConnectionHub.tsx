@@ -5,8 +5,7 @@ import {
   Building2,
   CreditCard,
   Landmark,
-  Bike,
-  Store,
+  Truck,
   CheckCircle2,
   ChevronRight,
   ArrowLeft,
@@ -21,73 +20,72 @@ import { AccountConnectionFlow } from "./AccountConnectionFlow";
 import { BaeminConnectionFlow } from "./BaeminConnectionFlow";
 import { CoupangeatsConnectionFlow } from "./CoupangeatsConnectionFlow";
 import { BusinessNumberModal } from "./BusinessNumberModal";
-import { supabase } from "@/integrations/supabase/client";
 import { useConnection } from "@/contexts/ConnectionContext";
-import { toast } from "sonner";
 
 export type ServiceType = "hometax" | "card" | "account" | "baemin" | "coupangeats";
+
+/** 메인 허브에서 보이는 카테고리 */
+type HubCategory = "hometax" | "card" | "account" | "delivery";
+
+/** 배달앱 서브 선택 */
+type DeliveryApp = "baemin" | "coupangeats";
 
 interface ConnectionHubProps {
   open: boolean;
   onClose: () => void;
   onComplete?: () => void;
-  /** 특정 서비스로 바로 진입 */
   initialService?: ServiceType | null;
-  /** 외부에서 주입하는 연결 상태 */
   connectionStatus?: Partial<Record<ServiceType, boolean>>;
 }
 
-interface ServiceItem {
-  key: ServiceType;
+interface CategoryItem {
+  key: HubCategory;
   label: string;
   description: string;
   icon: typeof Building2;
-  connectorId: string;
-  category: "essential" | "delivery";
+  connectedKeys: ServiceType[];
 }
 
-const SERVICES: ServiceItem[] = [
+const CATEGORIES: CategoryItem[] = [
   {
     key: "hometax",
     label: "국세청 (홈택스)",
-    description: "세금계산서, 부가세 현황",
+    description: "세금계산서, 부가세 현황 자동 수집",
     icon: Building2,
-    connectorId: "codef_hometax_tax_invoice",
-    category: "essential",
+    connectedKeys: ["hometax"],
   },
   {
     key: "card",
-    label: "카드 매출",
-    description: "여신금융협회 통합 카드매출",
+    label: "카드 매출 (여신금융협회)",
+    description: "모든 카드사 매출 통합 조회",
     icon: CreditCard,
-    connectorId: "codef_card_usage",
-    category: "essential",
+    connectedKeys: ["card"],
   },
   {
     key: "account",
     label: "은행 계좌",
-    description: "입출금 내역, 잔액 조회",
+    description: "입출금 내역, 잔액 실시간 조회",
     icon: Landmark,
-    connectorId: "codef_bank_account",
-    category: "essential",
+    connectedKeys: ["account"],
   },
   {
-    key: "baemin",
-    label: "배달의민족",
-    description: "매출, 정산, 리뷰 데이터",
-    icon: Bike,
-    connectorId: "hyphen_baemin",
-    category: "delivery",
-  },
-  {
-    key: "coupangeats",
-    label: "쿠팡이츠",
-    description: "매출, 정산, 리뷰 데이터",
-    icon: Store,
-    connectorId: "hyphen_coupangeats",
-    category: "delivery",
+    key: "delivery",
+    label: "배달앱",
+    description: "배달의민족, 쿠팡이츠 매출·정산",
+    icon: Truck,
+    connectedKeys: ["baemin", "coupangeats"],
   },
 ];
+
+const DELIVERY_APPS: { key: DeliveryApp; label: string; emoji: string }[] = [
+  { key: "baemin", label: "배달의민족", emoji: "🏍️" },
+  { key: "coupangeats", label: "쿠팡이츠", emoji: "🛵" },
+];
+
+type ViewState =
+  | { screen: "hub" }
+  | { screen: "flow"; service: ServiceType }
+  | { screen: "delivery-select" };
 
 export function ConnectionHub({
   open,
@@ -96,158 +94,209 @@ export function ConnectionHub({
   initialService = null,
   connectionStatus = {},
 }: ConnectionHubProps) {
-  const [activeService, setActiveService] = useState<ServiceType | null>(null);
+  const [view, setView] = useState<ViewState>({ screen: "hub" });
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const { profile } = useConnection();
 
-  // When hub opens with a specific service, navigate there
+  // Sync with open/initialService
   useEffect(() => {
     if (open && initialService) {
-      setActiveService(initialService);
+      if (initialService === "baemin" || initialService === "coupangeats") {
+        setView({ screen: "flow", service: initialService });
+      } else {
+        setView({ screen: "flow", service: initialService });
+      }
     }
     if (!open) {
-      setActiveService(null);
+      setView({ screen: "hub" });
     }
   }, [open, initialService]);
 
-  // Reset active service when closed
   const handleClose = () => {
-    setActiveService(null);
+    setView({ screen: "hub" });
     onClose();
   };
 
-  const handleServiceClick = (service: ServiceType) => {
-    if (service === "hometax") {
-      // 홈택스는 사업자등록번호 필요
+  const handleCategoryClick = (category: HubCategory) => {
+    if (category === "hometax") {
       const bn = profile?.business_registration_number;
       if (!bn || bn.replace(/\D/g, "").length !== 10) {
         setShowBusinessModal(true);
         return;
       }
+      setView({ screen: "flow", service: "hometax" });
+    } else if (category === "card") {
+      setView({ screen: "flow", service: "card" });
+    } else if (category === "account") {
+      setView({ screen: "flow", service: "account" });
+    } else if (category === "delivery") {
+      setView({ screen: "delivery-select" });
     }
-    setActiveService(service);
   };
 
   const handleFlowComplete = () => {
-    setActiveService(null);
+    setView({ screen: "hub" });
     onComplete?.();
   };
 
-  const handleFlowBack = () => {
-    setActiveService(null);
+  const handleBack = () => {
+    if (view.screen === "flow" && (view.service === "baemin" || view.service === "coupangeats")) {
+      setView({ screen: "delivery-select" });
+    } else {
+      setView({ screen: "hub" });
+    }
   };
 
-  const handleBusinessNumberSaved = (savedNumber: string) => {
+  const handleBusinessNumberSaved = () => {
     setShowBusinessModal(false);
-    setActiveService("hometax");
+    setView({ screen: "flow", service: "hometax" });
   };
 
-  const isConnected = (service: ServiceType) => connectionStatus[service] === true;
-  const connectedCount = SERVICES.filter(s => isConnected(s.key)).length;
+  const isConnected = (key: ServiceType) => connectionStatus[key] === true;
+  const connectedCount = Object.values(connectionStatus).filter(Boolean).length;
+
+  const getHeaderTitle = () => {
+    if (view.screen === "hub") return "데이터 연동";
+    if (view.screen === "delivery-select") return "배달앱 연동";
+    const labels: Record<ServiceType, string> = {
+      hometax: "국세청 연동",
+      card: "카드 매출 연동",
+      account: "은행 계좌 연동",
+      baemin: "배달의민족 연동",
+      coupangeats: "쿠팡이츠 연동",
+    };
+    return view.screen === "flow" ? labels[view.service] : "데이터 연동";
+  };
 
   if (!open) return null;
 
   return (
     <>
-      {/* Overlay */}
-      <div
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-        onClick={handleClose}
-      />
-
-      {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <motion.div
-          initial={{ y: "100%", opacity: 0.5 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: "100%", opacity: 0 }}
-          transition={{ type: "spring", damping: 28, stiffness: 300 }}
-          className={cn(
-            "bg-background w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl",
-            "max-h-[92dvh] sm:max-h-[85vh] flex flex-col",
-            "border shadow-2xl"
-          )}
-          onClick={(e) => e.stopPropagation()}
+      {/* Full-screen drawer overlay */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-background flex flex-col"
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-4 h-14 border-b shrink-0"
+          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 pt-5 pb-3">
-            {activeService ? (
+          <div className="flex items-center gap-2">
+            {view.screen !== "hub" ? (
               <Button
                 variant="ghost"
-                size="sm"
-                className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground"
-                onClick={handleFlowBack}
+                size="icon"
+                className="h-8 w-8 -ml-1"
+                onClick={handleBack}
               >
                 <ArrowLeft className="h-4 w-4" />
-                뒤로
               </Button>
             ) : (
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-base font-semibold text-foreground">데이터 연동</h2>
-                  <p className="text-[11px] text-muted-foreground">
-                    {connectedCount > 0
-                      ? `${connectedCount}/${SERVICES.length}개 연결됨`
-                      : "사업 데이터를 연결해보세요"}
-                  </p>
-                </div>
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Sparkles className="h-4 w-4 text-primary" />
               </div>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground -mr-1"
-              onClick={handleClose}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <h1 className="text-base font-semibold">{getHeaderTitle()}</h1>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto px-5 pb-5">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-md mx-auto px-4 py-6">
             <AnimatePresence mode="wait">
-              {!activeService ? (
+              {view.screen === "hub" && (
                 <motion.div
                   key="hub"
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
+                  exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-5"
+                  className="space-y-6"
                 >
-                  {/* Essential services */}
-                  <div className="space-y-1.5">
-                    <h3 className="text-xs font-medium text-muted-foreground px-1 mb-2">
-                      필수 연동
-                    </h3>
-                    {SERVICES.filter(s => s.category === "essential").map((service, idx) => (
-                      <ServiceRow
-                        key={service.key}
-                        service={service}
-                        connected={isConnected(service.key)}
-                        onClick={() => handleServiceClick(service.key)}
-                        index={idx}
-                      />
-                    ))}
+                  {/* Status summary */}
+                  <div className="text-center space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      {connectedCount > 0
+                        ? `${connectedCount}개 서비스 연결됨`
+                        : "사업 데이터를 연결해보세요"}
+                    </p>
                   </div>
 
-                  {/* Delivery services */}
-                  <div className="space-y-1.5">
-                    <h3 className="text-xs font-medium text-muted-foreground px-1 mb-2">
-                      배달앱 연동
-                    </h3>
-                    {SERVICES.filter(s => s.category === "delivery").map((service, idx) => (
-                      <ServiceRow
-                        key={service.key}
-                        service={service}
-                        connected={isConnected(service.key)}
-                        onClick={() => handleServiceClick(service.key)}
-                        index={idx + 3}
-                      />
-                    ))}
+                  {/* Category list */}
+                  <div className="space-y-2">
+                    {CATEGORIES.map((cat, idx) => {
+                      const anyConnected = cat.connectedKeys.some(k => isConnected(k));
+                      const allConnected = cat.connectedKeys.every(k => isConnected(k));
+                      const connectedSub = cat.connectedKeys.filter(k => isConnected(k)).length;
+                      const totalSub = cat.connectedKeys.length;
+
+                      return (
+                        <motion.button
+                          key={cat.key}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.06, duration: 0.25 }}
+                          onClick={() => handleCategoryClick(cat.key)}
+                          className={cn(
+                            "w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left",
+                            "active:scale-[0.98]",
+                            allConnected
+                              ? "bg-green-500/5 border border-green-500/20"
+                              : anyConnected
+                                ? "bg-primary/5 border border-primary/15"
+                                : "bg-muted/40 border border-transparent hover:bg-muted/70"
+                          )}
+                        >
+                          {/* Icon */}
+                          <div className={cn(
+                            "h-12 w-12 rounded-xl flex items-center justify-center shrink-0",
+                            allConnected ? "bg-green-500/10" : "bg-primary/10"
+                          )}>
+                            {allConnected ? (
+                              <CheckCircle2 className="h-6 w-6 text-green-500" />
+                            ) : (
+                              <cat.icon className="h-6 w-6 text-primary" />
+                            )}
+                          </div>
+
+                          {/* Text */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-foreground">
+                                {cat.label}
+                              </span>
+                              {allConnected && (
+                                <span className="text-[10px] font-medium text-green-600 bg-green-500/10 px-1.5 py-0.5 rounded-full">
+                                  연결됨
+                                </span>
+                              )}
+                              {anyConnected && !allConnected && totalSub > 1 && (
+                                <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                  {connectedSub}/{totalSub}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {cat.description}
+                            </p>
+                          </div>
+
+                          {/* Arrow */}
+                          <ChevronRight className="h-5 w-5 text-muted-foreground/40 shrink-0" />
+                        </motion.button>
+                      );
+                    })}
                   </div>
 
                   {/* Security note */}
@@ -256,51 +305,107 @@ export function ConnectionHub({
                     <span>모든 데이터는 256bit SSL 암호화로 안전하게 전송됩니다</span>
                   </div>
                 </motion.div>
-              ) : (
+              )}
+
+              {view.screen === "delivery-select" && (
                 <motion.div
-                  key={activeService}
-                  initial={{ opacity: 0, x: 10 }}
+                  key="delivery"
+                  initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  <p className="text-sm text-muted-foreground text-center">
+                    연동할 배달앱을 선택해주세요
+                  </p>
+                  <div className="space-y-2">
+                    {DELIVERY_APPS.map((app, idx) => {
+                      const connected = isConnected(app.key);
+                      return (
+                        <motion.button
+                          key={app.key}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.08 }}
+                          onClick={() => setView({ screen: "flow", service: app.key })}
+                          className={cn(
+                            "w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left",
+                            "active:scale-[0.98]",
+                            connected
+                              ? "bg-green-500/5 border border-green-500/20"
+                              : "bg-muted/40 border border-transparent hover:bg-muted/70"
+                          )}
+                        >
+                          <div className={cn(
+                            "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 text-2xl",
+                            connected ? "bg-green-500/10" : "bg-muted"
+                          )}>
+                            {connected ? (
+                              <CheckCircle2 className="h-6 w-6 text-green-500" />
+                            ) : (
+                              <span>{app.emoji}</span>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <span className="text-sm font-semibold text-foreground">{app.label}</span>
+                            {connected && (
+                              <p className="text-xs text-green-600 mt-0.5">연결됨</p>
+                            )}
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground/40 shrink-0" />
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+
+              {view.screen === "flow" && (
+                <motion.div
+                  key={`flow-${view.service}`}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {activeService === "hometax" && (
+                  {view.service === "hometax" && (
                     <HometaxConnectionFlow
                       onComplete={handleFlowComplete}
-                      onBack={handleFlowBack}
+                      onBack={handleBack}
                       isOpen={open}
                     />
                   )}
-                  {activeService === "card" && (
+                  {view.service === "card" && (
                     <CardConnectionFlow
                       onComplete={handleFlowComplete}
-                      onBack={handleFlowBack}
+                      onBack={handleBack}
                     />
                   )}
-                  {activeService === "account" && (
+                  {view.service === "account" && (
                     <AccountConnectionFlow
                       onComplete={handleFlowComplete}
-                      onBack={handleFlowBack}
+                      onBack={handleBack}
                     />
                   )}
-                  {activeService === "baemin" && (
+                  {view.service === "baemin" && (
                     <BaeminConnectionFlow
                       onComplete={handleFlowComplete}
-                      onBack={handleFlowBack}
+                      onBack={handleBack}
                     />
                   )}
-                  {activeService === "coupangeats" && (
+                  {view.service === "coupangeats" && (
                     <CoupangeatsConnectionFlow
                       onComplete={handleFlowComplete}
-                      onBack={handleFlowBack}
+                      onBack={handleBack}
                     />
                   )}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
 
       {/* Business Number Modal */}
       <BusinessNumberModal
@@ -309,66 +414,5 @@ export function ConnectionHub({
         onSaved={handleBusinessNumberSaved}
       />
     </>
-  );
-}
-
-function ServiceRow({
-  service,
-  connected,
-  onClick,
-  index,
-}: {
-  service: ServiceItem;
-  connected: boolean;
-  onClick: () => void;
-  index: number;
-}) {
-  const Icon = service.icon;
-
-  return (
-    <motion.button
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.25 }}
-      onClick={onClick}
-      className={cn(
-        "w-full flex items-center gap-3 p-3.5 rounded-xl transition-all text-left",
-        "hover:bg-muted/70 active:scale-[0.98]",
-        connected
-          ? "bg-green-500/5 border border-green-500/20"
-          : "bg-muted/30 border border-transparent hover:border-border"
-      )}
-    >
-      {/* Icon */}
-      <div className={cn(
-        "h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
-        connected ? "bg-green-500/10" : "bg-primary/10"
-      )}>
-        {connected ? (
-          <CheckCircle2 className="h-5 w-5 text-green-500" />
-        ) : (
-          <Icon className="h-5 w-5 text-primary" />
-        )}
-      </div>
-
-      {/* Text */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">{service.label}</span>
-          {connected && (
-            <span className="text-[10px] font-medium text-green-600 bg-green-500/10 px-1.5 py-0.5 rounded-full">
-              연결됨
-            </span>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground mt-0.5">{service.description}</p>
-      </div>
-
-      {/* Arrow */}
-      <ChevronRight className={cn(
-        "h-4 w-4 shrink-0",
-        connected ? "text-green-500/50" : "text-muted-foreground/40"
-      )} />
-    </motion.button>
   );
 }
