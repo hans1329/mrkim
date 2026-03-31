@@ -92,7 +92,7 @@ serve(async (req) => {
       );
     }
 
-    const { action, businessNumber, startDate, endDate } = await req.json();
+    const { action, businessNumber, startDate, endDate, connectedId } = await req.json();
 
     if (!businessNumber) {
       return new Response(
@@ -111,6 +111,20 @@ serve(async (req) => {
 
     const queryStartDate = startDate?.replace(/-/g, "") || defaultStartDate;
     const queryEndDate = endDate?.replace(/-/g, "") || defaultEndDate;
+
+    // connectedId가 없으면 connector_instances에서 조회
+    let effectiveConnectedId = connectedId;
+    if (!effectiveConnectedId) {
+      const { data: instanceData } = await supabase
+        .from("connector_instances")
+        .select("connected_id")
+        .eq("user_id", user.id)
+        .eq("connector_id", "codef_hometax_tax_invoice")
+        .eq("status", "connected")
+        .not("connected_id", "is", null)
+        .single();
+      effectiveConnectedId = instanceData?.connected_id || null;
+    }
 
     console.log("Getting access token...");
     const accessToken = await getAccessToken();
