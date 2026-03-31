@@ -319,9 +319,9 @@ export function ConnectionHub({
                   transition={{ duration: 0.2 }}
                   className="space-y-3"
                 >
-                  <p className="text-sm text-muted-foreground text-center">
+                  <h2 className="text-lg font-bold text-foreground text-center -mt-1">
                     연동할 배달앱을 선택해주세요
-                  </p>
+                  </h2>
                   <div className="space-y-2.5">
                     {DELIVERY_APPS.map((app, idx) => {
                       const connected = isConnected(app.key);
