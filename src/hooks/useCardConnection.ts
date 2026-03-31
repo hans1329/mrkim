@@ -14,6 +14,7 @@ const CARD_ORGANIZATION_CODES: Record<string, string> = {
   hana: "0313",
   woori: "0309",
   nh: "0304",
+  crefia: "0090",
 };
 
 const CARD_COMPANY_NAMES: Record<string, string> = {
@@ -26,6 +27,7 @@ const CARD_COMPANY_NAMES: Record<string, string> = {
   hana: "하나카드",
   woori: "우리카드",
   nh: "NH농협카드",
+  crefia: "여신금융협회",
 };
 
 function getOrganizationCode(cardCompanyId: string): string {

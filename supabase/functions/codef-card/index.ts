@@ -21,7 +21,13 @@ const CARD_ORGANIZATION_CODES: Record<string, string> = {
   "hana": "0313",      // 하나카드
   "woori": "0309",     // 우리카드
   "nh": "0304",        // NH농협카드
+  "crefia": "0090",    // 여신금융협회(가맹점매출)
 };
+
+// 여신금융협회 여부 판별
+function isCrefia(cardCompanyId: string): boolean {
+  return cardCompanyId === "crefia";
+}
 
 /**
  * RSA PKCS#1 v1.5 암호화 - node-forge (npm: specifier, Deno 호환)
@@ -221,7 +227,7 @@ async function handleRegisterWithCert(
       {
         countryCode: "KR",
         businessType: "CD",
-        clientType: "P",
+        clientType: isCrefia(cardCompanyId) ? "B" : "P",
         organization: organizationCode,
         loginType: "2",
         certType: "0",
@@ -299,8 +305,8 @@ async function handleRegister(
     accountList: [
       {
         countryCode: "KR",
-        businessType: "CD",  // 카드
-        clientType: "P",     // 개인
+        businessType: "CD",
+        clientType: isCrefia(cardCompanyId) ? "B" : "P",  // 여신금융협회는 사업자(B)
         organization: organizationCode,
         loginType: "1",      // ID/PW 로그인
         id: loginId,
@@ -377,7 +383,7 @@ async function handleAddAccount(
       {
         countryCode: "KR",
         businessType: "CD",
-        clientType: "P",
+        clientType: isCrefia(cardCompanyId) ? "B" : "P",
         organization: organizationCode,
         loginType: "1",
         id: loginId,
@@ -424,6 +430,13 @@ async function handleGetCards(
   connectedId: string,
   cardCompanyId: string
 ): Promise<Response> {
+  // 여신금융협회는 카드 목록 조회 불필요 (가맹점 매출 서비스)
+  if (isCrefia(cardCompanyId)) {
+    return new Response(
+      JSON.stringify({ success: true, message: "여신금융협회 연동 완료", cards: [] }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
   const organizationCode = CARD_ORGANIZATION_CODES[cardCompanyId];
   if (!organizationCode) {
     return new Response(
@@ -542,6 +555,11 @@ async function handleGetTransactions(
   const normalizedStart = startDate?.replace(/-/g, "") || defaultStartDate;
   const normalizedEnd = endDate?.replace(/-/g, "") || defaultEndDate;
 
+  // 여신금융협회: 가맹점 승인내역 API, 개인카드: 개인 승인내역 API
+  const approvalApiPath = isCrefia(cardCompanyId)
+    ? `${CODEF_API_URL}/v1/kr/card/b/account/approval-list`
+    : `${CODEF_API_URL}/v1/kr/card/p/account/approval-list`;
+
   const buildApprovalRequestBody = (cardNoValue: string) => ({
     connectedId,
     organization: organizationCode,
@@ -549,14 +567,14 @@ async function handleGetTransactions(
     endDate: normalizedEnd,
     orderBy: "0",
     inquiryType: "0",
-    cardNo: cardNoValue,
+    ...(isCrefia(cardCompanyId) ? {} : { cardNo: cardNoValue }),
     memberStoreInfoType: "0",
   });
 
   const fetchApprovalList = async (cardNoValue: string) => {
     const requestBody = buildApprovalRequestBody(cardNoValue);
 
-    const response = await fetch(`${CODEF_API_URL}/v1/kr/card/p/account/approval-list`, {
+    const response = await fetch(approvalApiPath, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -582,6 +600,9 @@ async function handleGetTransactions(
   };
 
   const fetchCardNosIfNeeded = async (): Promise<string[]> => {
+    // 여신금융협회는 카드번호 불필요 - 가맹점 매출 전체 조회
+    if (isCrefia(cardCompanyId)) return [""];
+    
     const cardNoFromRequest = (cardNo || "").trim();
     if (cardNoFromRequest) return [cardNoFromRequest];
 
