@@ -30,6 +30,15 @@ const CATEGORY_TO_STEP: Record<string, string> = {
   card: "card",
 };
 
+// connector_id → ConnectionDrawer type 매핑
+const CONNECTOR_TO_DRAWER_TYPE: Record<string, "hometax" | "card" | "account" | "coupangeats" | "baemin"> = {
+  codef_hometax: "hometax",
+  codef_bank: "account",
+  codef_card: "card",
+  hyphen_baemin: "baemin",
+  hyphen_coupangeats: "coupangeats",
+};
+
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   hometax: FileText,
   bank: Landmark,
@@ -174,8 +183,8 @@ export function ConnectorStatusCard() {
                         size="icon"
                         className="h-6 w-6 text-muted-foreground"
                         onClick={() => {
-                          const type = connector.category === "bank" ? "account" : connector.category as "hometax" | "card";
-                          openDrawer(type);
+                          const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
+                          if (drawerType) openDrawer(drawerType);
                         }}
                       >
                         <RefreshCw className="h-3 w-3" />
@@ -186,8 +195,8 @@ export function ConnectorStatusCard() {
                           size="sm"
                           className="h-6 px-1.5 gap-0.5 text-[10px] text-muted-foreground hover:text-primary"
                           onClick={() => {
-                            const type = connector.category === "bank" ? "account" : "card";
-                            openDrawer(type);
+                            const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
+                            if (drawerType) openDrawer(drawerType);
                           }}
                         >
                           <PlusCircle className="h-3 w-3" />
@@ -202,8 +211,8 @@ export function ConnectorStatusCard() {
                       size="sm"
                       className="h-6 px-2 text-[10px]"
                       onClick={() => {
-                        const type = connector.category === "bank" ? "account" : connector.category as "hometax" | "card";
-                        openDrawer(type);
+                        const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
+                        if (drawerType) openDrawer(drawerType);
                       }}
                     >
                       연동하기
