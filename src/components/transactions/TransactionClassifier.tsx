@@ -15,6 +15,7 @@ import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 
 export function TransactionClassifier() {
   const [classifyingIds, setClassifyingIds] = useState<Set<string>>(new Set());
+  const { openDrawer } = useConnectionDrawer();
 
   const { data: transactions, isLoading } = useTransactions({ type: "expense" });
   const { data: stats, isLoading: isStatsLoading } = useTransactionStats();
