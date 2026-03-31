@@ -44,6 +44,7 @@ export function useTaxInvoices(): UseTaxInvoicesReturn {
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [hasConnectedId, setHasConnectedId] = useState(false);
   const { profile } = useProfile();
 
   const fetchInvoices = useCallback(async () => {
