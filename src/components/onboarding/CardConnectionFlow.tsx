@@ -342,11 +342,11 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
               {useCertLogin ? (
                 <div className="space-y-3">
                   <div className="space-y-2">
-                    <Label className="text-xs">공동인증서 파일 (.pfx, .p12)</Label>
+                    <Label className="text-xs">공동인증서 (구 공인인증서)</Label>
                     <input
                       ref={certFileInputRef}
                       type="file"
-                      accept=".pfx,.p12"
+                      accept=".pfx,.p12,.der,.key"
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0] || null;
@@ -367,7 +367,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium truncate">{certFile.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {(certFile.size / 1024).toFixed(1)} KB
+                              인증서 등록 완료 · {(certFile.size / 1024).toFixed(1)} KB
                             </p>
                           </div>
                           <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
@@ -376,8 +376,8 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                         <>
                           <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
                           <div>
-                            <p className="text-sm text-muted-foreground">인증서 파일 선택</p>
-                            <p className="text-xs text-muted-foreground">.pfx 또는 .p12 파일</p>
+                            <p className="text-sm text-muted-foreground">내 PC에서 인증서 불러오기</p>
+                            <p className="text-xs text-muted-foreground">USB 또는 하드디스크에 저장된 인증서</p>
                           </div>
                         </>
                       )}
