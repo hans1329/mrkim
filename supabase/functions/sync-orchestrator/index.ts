@@ -7,6 +7,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const HYPHEN_API_URL = "https://api.hyphen.im";
+
 /**
  * sync-orchestrator
  *
