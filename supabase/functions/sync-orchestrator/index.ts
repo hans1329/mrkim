@@ -1131,9 +1131,17 @@ async function callHyphenBaemin(
     verify: "/in0022000062",
     sales: "/in0022000063",
     settlement: "/in0022000064",
+    statistics: "/in0022000065",
+    reviews: "/in0022000066",
     store_info: "/in0022000067",
     orders: "/in0022000083",
+    account_info: "/in0022000668",
+    ad_management: "/in0022000952",
     my_store: "/in0022000953",
+    store_now: "/in0022000972",
+    nearby_sales: "/in0022000973",
+    menu: "/in0022000974",
+    pg_sales: "/in0022000140",
   };
 
   const endpoint = endpoints[action];
