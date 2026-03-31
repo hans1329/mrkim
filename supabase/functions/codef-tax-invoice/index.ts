@@ -189,13 +189,15 @@ serve(async (req) => {
 
     // 매입 세금계산서 조회
     if (action === "all" || action === "purchase") {
-      const purchaseBody = {
+      const purchaseBody: Record<string, string> = {
         organization: "0004",
-        loginType: "3",
         identity: cleanedNumber,
         startDate: queryStartDate,
         endDate: queryEndDate,
       };
+      if (effectiveConnectedId) {
+        purchaseBody.connectedId = effectiveConnectedId;
+      }
 
       console.log("Fetching purchase invoices...", purchaseBody);
 
