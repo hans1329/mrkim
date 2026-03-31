@@ -1,0 +1,2 @@
+UPDATE sync_jobs SET status = 'completed', completed_at = now(), records_fetched = 839, records_saved = 839 WHERE instance_id = 'bd407890-f268-4a3c-b136-fc7043b38408' AND status = 'running';
+UPDATE connector_instances SET last_sync_at = now(), status_message = '839건 동기화 완료', next_sync_at = now() + interval '6 hours' WHERE id = 'bd407890-f268-4a3c-b136-fc7043b38408';
