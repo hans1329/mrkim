@@ -1013,8 +1013,13 @@ async function syncCoupangeats(
     for (const order of orderList) {
       if (!order.orderNo || !order.orderDt) continue;
       const txDate = formatDateStr(order.orderDt);
-      const amount = parseInt(order.settleAmt || order.totalAmt || "0", 10);
+      const totalAmt = parseInt(order.totalAmt || "0", 10);
+      const syncedAt = new Date().toISOString();
+      const txTime = order.orderTm
+        ? `${order.orderTm.slice(0, 2)}:${order.orderTm.slice(2, 4)}:00`
+        : null;
 
+      // 매출(총 주문금액) - income
       await supabase.from("transactions").upsert(
         {
           user_id: userId,
@@ -1022,19 +1027,49 @@ async function syncCoupangeats(
           source_name: "쿠팡이츠",
           external_tx_id: `ce_${order.orderNo}`,
           transaction_date: txDate,
-          transaction_time: order.orderTm
-            ? `${order.orderTm.slice(0, 2)}:${order.orderTm.slice(2, 4)}:00`
-            : null,
-          amount,
+          transaction_time: txTime,
+          amount: totalAmt,
           type: "income",
           description: `쿠팡이츠 주문 ${order.orderName || order.orderNo}`,
           category: "배달매출",
           category_icon: "🛵",
           merchant_name: "쿠팡이츠",
-          synced_at: new Date().toISOString(),
+          synced_at: syncedAt,
         },
         { onConflict: "user_id,external_tx_id" }
       );
+
+      // 수수료 분리 저장 - expense
+      const feeItems = [
+        { key: "orderFee", label: "주문중개수수료", icon: "📋", category: "지급수수료" },
+        { key: "cardFee", label: "카드결제수수료", icon: "💳", category: "지급수수료" },
+        { key: "adFee", label: "광고비", icon: "📢", category: "광고선전비" },
+        { key: "deliveryAmt", label: "배달대행료", icon: "🏍️", category: "운반비" },
+      ];
+
+      for (const fee of feeItems) {
+        const feeAmt = parseInt(order[fee.key] || "0", 10);
+        if (feeAmt <= 0) continue;
+
+        await supabase.from("transactions").upsert(
+          {
+            user_id: userId,
+            source_type: "delivery",
+            source_name: "쿠팡이츠",
+            external_tx_id: `ce_${order.orderNo}_${fee.key}`,
+            transaction_date: txDate,
+            transaction_time: txTime,
+            amount: feeAmt,
+            type: "expense",
+            description: `쿠팡이츠 ${fee.label} (${order.orderName || order.orderNo})`,
+            category: fee.category,
+            category_icon: fee.icon,
+            merchant_name: "쿠팡이츠",
+            synced_at: syncedAt,
+          },
+          { onConflict: "user_id,external_tx_id" }
+        );
+      }
     }
   } catch (e) {
     console.error("매출 동기화 실패:", e);
@@ -1225,8 +1260,13 @@ async function syncBaemin(
     for (const order of orderList) {
       if (!order.orderNo || !order.orderDt) continue;
       const txDate = formatDateStr(order.orderDt);
-      const amount = parseInt(order.settleAmt || order.salesAmt || order.orderAmt || "0", 10);
+      const totalAmt = parseInt(order.orderAmt || order.salesAmt || "0", 10);
+      const syncedAt = new Date().toISOString();
+      const txTime = order.orderTm
+        ? `${order.orderTm.slice(0, 2)}:${order.orderTm.slice(2, 4)}:00`
+        : null;
 
+      // 매출(총 주문금액) - income
       await supabase.from("transactions").upsert(
         {
           user_id: userId,
@@ -1234,19 +1274,49 @@ async function syncBaemin(
           source_name: "배달의민족",
           external_tx_id: `bm_${order.orderNo}`,
           transaction_date: txDate,
-          transaction_time: order.orderTm
-            ? `${order.orderTm.slice(0, 2)}:${order.orderTm.slice(2, 4)}:00`
-            : null,
-          amount,
+          transaction_time: txTime,
+          amount: totalAmt,
           type: "income",
           description: `배달의민족 주문 ${order.orderName || order.orderNo}`,
           category: "배달매출",
           category_icon: "🛵",
           merchant_name: "배달의민족",
-          synced_at: new Date().toISOString(),
+          synced_at: syncedAt,
         },
         { onConflict: "user_id,external_tx_id" }
       );
+
+      // 수수료 분리 저장 - expense
+      const feeItems = [
+        { key: "orderFee", label: "주문중개수수료", icon: "📋", category: "지급수수료" },
+        { key: "cardFee", label: "카드결제수수료", icon: "💳", category: "지급수수료" },
+        { key: "adFee", label: "광고비", icon: "📢", category: "광고선전비" },
+        { key: "deliveryAmt", label: "배달대행료", icon: "🏍️", category: "운반비" },
+      ];
+
+      for (const fee of feeItems) {
+        const feeAmt = parseInt(order[fee.key] || "0", 10);
+        if (feeAmt <= 0) continue;
+
+        await supabase.from("transactions").upsert(
+          {
+            user_id: userId,
+            source_type: "delivery",
+            source_name: "배달의민족",
+            external_tx_id: `bm_${order.orderNo}_${fee.key}`,
+            transaction_date: txDate,
+            transaction_time: txTime,
+            amount: feeAmt,
+            type: "expense",
+            description: `배달의민족 ${fee.label} (${order.orderName || order.orderNo})`,
+            category: fee.category,
+            category_icon: fee.icon,
+            merchant_name: "배달의민족",
+            synced_at: syncedAt,
+          },
+          { onConflict: "user_id,external_tx_id" }
+        );
+      }
     }
   } catch (e) {
     console.error("배민 매출 동기화 실패:", e);
