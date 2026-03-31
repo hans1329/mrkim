@@ -21,6 +21,7 @@ import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 type FilterType = "all" | "sales" | "purchase";
 
 export function TaxInvoiceTab() {
+  const { openDrawer } = useConnectionDrawer();
   const { profile, loading: profileLoading } = useProfile();
   const { 
     invoices,
