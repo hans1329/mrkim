@@ -9,7 +9,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
-import { UtensilsCrossed, TrendingUp, Star, Crown, ArrowUpRight, ArrowDownRight, Flame } from "lucide-react";
+import { Star } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
 
 const CHART_COLORS = [
