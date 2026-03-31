@@ -156,8 +156,32 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
     onComplete();
   };
 
+  const stepTitle: Record<FlowStep, string> = {
+    auth: "카드 연결",
+    signup: "여신금융 회원가입",
+    loading: "연결 중",
+    "select-cards": "카드 선택",
+    complete: "연결 완료",
+  };
+
+  const handleBack = () => {
+    if (step === "signup") {
+      setStep("auth");
+    } else {
+      onBack();
+    }
+  };
+
   return (
     <div className="space-y-4">
+      {/* 서브 헤더 */}
+      <div className="flex items-center gap-2 py-2.5">
+        <button onClick={handleBack} className="text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h3 className="text-base font-semibold">{stepTitle[step]}</h3>
+      </div>
+
       {/* 진행 상태 */}
       <div className="space-y-2">
         <Progress value={stepProgress[step]} className="h-1.5" />
