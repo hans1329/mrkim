@@ -34,6 +34,7 @@ const AUTH_METHODS = [
 interface HometaxConnectionFlowProps {
   onComplete: () => void;
   onBack: () => void;
+  isOpen?: boolean;
 }
 
 interface BusinessInfo {
