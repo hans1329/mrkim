@@ -160,8 +160,8 @@ serve(async (req) => {
 
     // 액션에 따른 분기
     if (action === "register") {
-      if (loginType === "2") {
-        return await handleRegisterWithCert(accessToken, publicKey, cardCompanyId, certFile, certPassword);
+      if (loginType === "0") {
+        return await handleRegisterWithCert(accessToken, publicKey, cardCompanyId, certFile, rawCertPassword);
       }
       return await handleRegister(accessToken, publicKey, cardCompanyId, loginId, password);
     } else if (action === "addAccount") {
