@@ -583,9 +583,7 @@ async function handleGetTransactions(
     return { rawTransactions, period: { startDate: requestBody.startDate, endDate: requestBody.endDate } };
   };
 
-  const fetchCardNosIfNeeded = async (): Promise<string[]> => {
-    // 여신금융협회는 카드번호 불필요 - 가맹점 매출 전체 조회
-    if (isCrefia(cardCompanyId)) return [""];
+    const cardNoFromRequest = (cardNo || "").trim();
     
     const cardNoFromRequest = (cardNo || "").trim();
     if (cardNoFromRequest) return [cardNoFromRequest];
