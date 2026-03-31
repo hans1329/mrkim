@@ -195,13 +195,14 @@ export function OnboardingWizard({
           {currentStep === "card" && showCardFlow && (
             <div className="w-full max-w-md">
               <div className="bg-card rounded-t-3xl px-4 py-2.5 flex items-center gap-2 shadow-xl">
-                <button onClick={handleCardFlowBack} className="text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={() => cardFlowRef.current?.handleBack()} className="text-muted-foreground hover:text-foreground transition-colors">
                   <ArrowLeft className="h-5 w-5" />
                 </button>
                 <h3 className="text-base font-semibold">{cardFlowTitle}</h3>
               </div>
               <div className="bg-card rounded-b-3xl p-6 shadow-xl">
                 <CardConnectionFlow 
+                  ref={cardFlowRef}
                   onComplete={handleCardFlowComplete}
                   onBack={handleCardFlowBack}
                   onStepChange={handleCardStepChange}
