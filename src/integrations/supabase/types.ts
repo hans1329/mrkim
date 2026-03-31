@@ -447,6 +447,186 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_ads: {
+        Row: {
+          ad_id: string | null
+          ad_name: string | null
+          ad_type: string | null
+          budget: number | null
+          clicks: number | null
+          created_at: string
+          end_date: string | null
+          id: string
+          impressions: number | null
+          orders_from_ad: number | null
+          platform: string
+          raw_data: Json | null
+          spent: number | null
+          start_date: string | null
+          status: string | null
+          store_id: string | null
+          synced_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ad_id?: string | null
+          ad_name?: string | null
+          ad_type?: string | null
+          budget?: number | null
+          clicks?: number | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          impressions?: number | null
+          orders_from_ad?: number | null
+          platform?: string
+          raw_data?: Json | null
+          spent?: number | null
+          start_date?: string | null
+          status?: string | null
+          store_id?: string | null
+          synced_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ad_id?: string | null
+          ad_name?: string | null
+          ad_type?: string | null
+          budget?: number | null
+          clicks?: number | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          impressions?: number | null
+          orders_from_ad?: number | null
+          platform?: string
+          raw_data?: Json | null
+          spent?: number | null
+          start_date?: string | null
+          status?: string | null
+          store_id?: string | null
+          synced_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      delivery_menus: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          menu_group: string | null
+          menu_id: string | null
+          menu_name: string
+          order_count: number | null
+          platform: string
+          price: number | null
+          raw_data: Json | null
+          status: string | null
+          store_id: string | null
+          synced_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          menu_group?: string | null
+          menu_id?: string | null
+          menu_name: string
+          order_count?: number | null
+          platform?: string
+          price?: number | null
+          raw_data?: Json | null
+          status?: string | null
+          store_id?: string | null
+          synced_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          menu_group?: string | null
+          menu_id?: string | null
+          menu_name?: string
+          order_count?: number | null
+          platform?: string
+          price?: number | null
+          raw_data?: Json | null
+          status?: string | null
+          store_id?: string | null
+          synced_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      delivery_nearby_sales: {
+        Row: {
+          avg_order_count: number | null
+          avg_sales: number | null
+          category: string | null
+          created_at: string
+          id: string
+          my_rank: number | null
+          platform: string
+          raw_data: Json | null
+          region1: string | null
+          region2: string | null
+          stat_date: string
+          store_id: string | null
+          synced_at: string
+          total_stores: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_order_count?: number | null
+          avg_sales?: number | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          my_rank?: number | null
+          platform?: string
+          raw_data?: Json | null
+          region1?: string | null
+          region2?: string | null
+          stat_date: string
+          store_id?: string | null
+          synced_at?: string
+          total_stores?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_order_count?: number | null
+          avg_sales?: number | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          my_rank?: number | null
+          platform?: string
+          raw_data?: Json | null
+          region1?: string | null
+          region2?: string | null
+          stat_date?: string
+          store_id?: string | null
+          synced_at?: string
+          total_stores?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       delivery_orders: {
         Row: {
           ad_fee: number | null
@@ -531,6 +711,120 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_pg_sales: {
+        Row: {
+          approval_no: string | null
+          card_company: string | null
+          created_at: string
+          fee_amount: number | null
+          id: string
+          net_amount: number | null
+          pg_date: string
+          pg_type: string | null
+          platform: string
+          raw_data: Json | null
+          sales_amount: number | null
+          store_id: string | null
+          synced_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approval_no?: string | null
+          card_company?: string | null
+          created_at?: string
+          fee_amount?: number | null
+          id?: string
+          net_amount?: number | null
+          pg_date: string
+          pg_type?: string | null
+          platform?: string
+          raw_data?: Json | null
+          sales_amount?: number | null
+          store_id?: string | null
+          synced_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approval_no?: string | null
+          card_company?: string | null
+          created_at?: string
+          fee_amount?: number | null
+          id?: string
+          net_amount?: number | null
+          pg_date?: string
+          pg_type?: string | null
+          platform?: string
+          raw_data?: Json | null
+          sales_amount?: number | null
+          store_id?: string | null
+          synced_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      delivery_reviews: {
+        Row: {
+          created_at: string
+          id: string
+          menu_names: string[] | null
+          order_no: string | null
+          platform: string
+          rating: number | null
+          raw_data: Json | null
+          reply_content: string | null
+          review_content: string | null
+          review_date: string | null
+          review_id: string | null
+          reviewer_name: string | null
+          store_id: string | null
+          synced_at: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          menu_names?: string[] | null
+          order_no?: string | null
+          platform?: string
+          rating?: number | null
+          raw_data?: Json | null
+          reply_content?: string | null
+          review_content?: string | null
+          review_date?: string | null
+          review_id?: string | null
+          reviewer_name?: string | null
+          store_id?: string | null
+          synced_at?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          menu_names?: string[] | null
+          order_no?: string | null
+          platform?: string
+          rating?: number | null
+          raw_data?: Json | null
+          reply_content?: string | null
+          review_content?: string | null
+          review_date?: string | null
+          review_id?: string | null
+          reviewer_name?: string | null
+          store_id?: string | null
+          synced_at?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       delivery_settlements: {
         Row: {
           balance: number | null
@@ -574,6 +868,63 @@ export type Database = {
           settlement_details?: Json | null
           store_id?: string | null
           synced_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      delivery_statistics: {
+        Row: {
+          avg_order_amount: number | null
+          cancel_count: number | null
+          created_at: string
+          id: string
+          new_customer_count: number | null
+          order_count: number | null
+          platform: string
+          raw_data: Json | null
+          revisit_customer_count: number | null
+          stat_date: string
+          stat_type: string
+          store_id: string | null
+          synced_at: string
+          total_sales: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_order_amount?: number | null
+          cancel_count?: number | null
+          created_at?: string
+          id?: string
+          new_customer_count?: number | null
+          order_count?: number | null
+          platform?: string
+          raw_data?: Json | null
+          revisit_customer_count?: number | null
+          stat_date: string
+          stat_type?: string
+          store_id?: string | null
+          synced_at?: string
+          total_sales?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_order_amount?: number | null
+          cancel_count?: number | null
+          created_at?: string
+          id?: string
+          new_customer_count?: number | null
+          order_count?: number | null
+          platform?: string
+          raw_data?: Json | null
+          revisit_customer_count?: number | null
+          stat_date?: string
+          stat_type?: string
+          store_id?: string | null
+          synced_at?: string
+          total_sales?: number | null
           updated_at?: string
           user_id?: string
         }
