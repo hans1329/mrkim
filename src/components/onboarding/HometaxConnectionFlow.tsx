@@ -307,11 +307,13 @@ export function HometaxConnectionFlow({
         return;
       }
 
-      setError(data.error || "인증 요청에 실패했습니다.");
+      const errorMsg = data.error || "인증 요청에 실패했습니다.";
+      const codeInfo = data.code ? ` (${data.code})` : "";
+      setError(`${errorMsg}${codeInfo}`);
       setStep("auth_select");
     } catch (err) {
       console.error("Auth request error:", err);
-      setError("간편인증 요청 중 오류가 발생했습니다.");
+      setError(`간편인증 요청 중 오류가 발생했습니다: ${err instanceof Error ? err.message : String(err)}`);
       setStep("auth_select");
     }
   };

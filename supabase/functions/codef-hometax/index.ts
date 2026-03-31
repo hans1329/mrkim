@@ -326,13 +326,18 @@ async function handleRegister(
   }
 
   // 에러
-  const errorMessage = getHometaxErrorMessage(result.code);
+  const errorList = data.data?.errorList || [];
+  const detailMessage = errorList.length > 0
+    ? errorList.map((e: any) => `[${e.code}] ${e.message}`).join(", ")
+    : null;
+  const errorMessage = detailMessage || getHometaxErrorMessage(result.code);
+  console.error("Account create failed:", result.code, result.message, JSON.stringify(errorList));
   return new Response(
     JSON.stringify({
       success: false,
       error: errorMessage,
       code: result.code,
-      details: data.data?.errorList || [],
+      details: errorList,
     }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
