@@ -377,7 +377,7 @@ async function handleAddAccount(
       {
         countryCode: "KR",
         businessType: "CD",
-        clientType: isCrefia(cardCompanyId) ? "B" : "P",
+        clientType: "P",
         organization: organizationCode,
         loginType: "1",
         id: loginId,
