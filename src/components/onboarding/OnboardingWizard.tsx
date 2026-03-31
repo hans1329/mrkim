@@ -203,7 +203,7 @@ export function OnboardingWizard({
                 <CardConnectionFlow 
                   onComplete={handleCardFlowComplete}
                   onBack={handleCardFlowBack}
-                  onStepChange={useCallback((title: string) => setCardFlowTitle(title), [])}
+                  onStepChange={handleCardStepChange}
                 />
               </div>
             </div>
