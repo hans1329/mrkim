@@ -20,6 +20,7 @@ import { ConnectionHub, ServiceType } from "@/components/onboarding/ConnectionHu
 import { supabase } from "@/integrations/supabase/client";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { useConnectorInstances } from "@/hooks/useConnectors";
+import { isCardCompanyConnected, isConnectorConnected } from "@/lib/connectionStatus";
 
 const characterImg = "/images/icc-5.webp";
 
@@ -50,15 +51,12 @@ export default function Onboarding() {
 
   // 연결 상태 계산
   const connectionStatus = useMemo(() => {
-    const isConnected = (id: string) =>
-      connectorInstances.some((i: any) => i.connector_id === id && i.status === "connected");
-
     return {
-      hometax: isConnected("codef_hometax_tax_invoice"),
-      card: isConnected("codef_card_usage") || isConnected("codef_card_sales"),
-      account: isConnected("codef_bank_account"),
-      baemin: isConnected("hyphen_baemin"),
-      coupangeats: isConnected("hyphen_coupangeats"),
+      hometax: isConnectorConnected(connectorInstances, "codef_hometax_tax_invoice"),
+      card: isCardCompanyConnected(connectorInstances, "crefia"),
+      account: isConnectorConnected(connectorInstances, "codef_bank_account"),
+      baemin: isConnectorConnected(connectorInstances, "hyphen_baemin"),
+      coupangeats: isConnectorConnected(connectorInstances, "hyphen_coupangeats"),
     };
   }, [connectorInstances]);
 
