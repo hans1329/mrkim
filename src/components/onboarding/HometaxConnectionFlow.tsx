@@ -41,6 +41,7 @@ interface HometaxConnectionFlowProps {
   onComplete: () => void;
   onBack: () => void;
   isOpen?: boolean;
+  showHeader?: boolean;
 }
 
 interface BusinessInfo {
@@ -72,6 +73,7 @@ export function HometaxConnectionFlow({
   onComplete,
   onBack,
   isOpen,
+  showHeader = true,
 }: HometaxConnectionFlowProps) {
   const {
     refetch: refetchProfile,
@@ -403,33 +405,34 @@ export function HometaxConnectionFlow({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={
-            step === "auth_select"
-              ? hasVerifiedBusinessInfo
-                ? () => setStep("confirmed")
+      {showHeader && (
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={
+              step === "auth_select"
+                ? hasVerifiedBusinessInfo
+                  ? () => setStep("confirmed")
+                  : onBack
+                : step === "auth_waiting"
+                ? () => setStep("auth_select")
                 : onBack
-              : step === "auth_waiting"
-              ? () => setStep("auth_select")
-              : onBack
-          }
-          className="shrink-0"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h2 className="text-lg font-bold">국세청 연결</h2>
-          <p className="text-sm text-muted-foreground">
-            {step === "auth_select" || step === "auth_waiting"
-              ? "간편인증으로 세금계산서를 연동합니다"
-              : "사업자등록번호로 연동합니다"}
-          </p>
+            }
+            className="shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h2 className="text-lg font-bold">국세청 연결</h2>
+            <p className="text-sm text-muted-foreground">
+              {step === "auth_select" || step === "auth_waiting"
+                ? "간편인증으로 세금계산서를 연동합니다"
+                : "사업자등록번호로 연동합니다"}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {isInitializing ? (
         <div className="space-y-4">
@@ -657,6 +660,12 @@ export function HometaxConnectionFlow({
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
+          <div className="text-center mb-4">
+            <p className="text-lg font-bold">간편인증 수단 선택</p>
+            <p className="text-sm text-muted-foreground">
+              세금계산서 조회를 위해 본인인증이 필요합니다
+            </p>
+          </div>
 
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
