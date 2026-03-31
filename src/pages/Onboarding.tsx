@@ -53,7 +53,9 @@ export default function Onboarding() {
   const connectionStatus = useMemo(() => {
     return {
       hometax: isConnectorConnected(connectorInstances, "codef_hometax_tax_invoice"),
-      card: isCardCompanyConnected(connectorInstances, "crefia"),
+      card: connectorInstances.some(
+        (i: any) => i.connector_id === "codef_card_usage" && i.status === "connected"
+      ),
       account: isConnectorConnected(connectorInstances, "codef_bank_account"),
       baemin: isConnectorConnected(connectorInstances, "hyphen_baemin"),
       coupangeats: isConnectorConnected(connectorInstances, "hyphen_coupangeats"),
