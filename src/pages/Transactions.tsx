@@ -159,6 +159,7 @@ export default function Transactions() {
   const resetPagination = useCallback(() => setVisibleCount(PAGE_SIZE), []);
 
   return (
+    <div className="bg-card min-h-full -mx-4 -mb-4 px-4 pb-4">
     <MainLayout 
       title="매출/매입" 
       subtitle="거래 내역을 관리하세요" 
