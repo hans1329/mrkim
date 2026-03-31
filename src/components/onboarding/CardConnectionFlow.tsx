@@ -165,6 +165,10 @@ export function CardConnectionFlow({ onComplete, onBack, onStepChange }: CardCon
     complete: "연결 완료",
   };
 
+  useEffect(() => {
+    onStepChange?.(stepTitle[step]);
+  }, [step, onStepChange]);
+
   const handleBack = () => {
     if (step === "signup") {
       setStep("auth");
@@ -175,13 +179,6 @@ export function CardConnectionFlow({ onComplete, onBack, onStepChange }: CardCon
 
   return (
     <div className="space-y-4">
-      {/* 서브 헤더 */}
-      <div className="flex items-center gap-2 py-2.5">
-        <button onClick={handleBack} className="text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h3 className="text-base font-semibold">{stepTitle[step]}</h3>
-      </div>
 
       {/* 진행 상태 */}
       <div className="space-y-2">
