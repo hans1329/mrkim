@@ -38,6 +38,9 @@ interface PCLayoutProps {
   children: ReactNode;
   title?: string;
   subtitle?: string;
+  showBackButton?: boolean;
+  onBack?: () => void;
+  headerRight?: ReactNode;
 }
 
 export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutProps) {
