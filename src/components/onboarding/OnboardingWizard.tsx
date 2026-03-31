@@ -8,6 +8,7 @@ import {
   CreditCard, 
   Landmark, 
   CheckCircle2, 
+  ArrowLeft,
   ArrowRight,
   Sparkles,
   Shield,
