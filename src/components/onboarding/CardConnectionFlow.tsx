@@ -92,19 +92,45 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
   };
 
 
+  // File → Base64 변환
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = reject;
+    });
+  };
+
   const handleAuth = async () => {
     if (!agreedTerms || !selectedCompany) return;
-    if (!credentials.id || !credentials.password) return;
+    if (useCertLogin && (!certFile || !certPassword)) return;
+    if (!useCertLogin && (!credentials.id || !credentials.password)) return;
     
     setError(null);
     setStep("loading");
     
     try {
-      const newConnectedId = await registerCardAccount(
-        selectedCompany,
-        credentials.id,
-        credentials.password
-      );
+      let newConnectedId: string | null = null;
+
+      if (useCertLogin && certFile) {
+        const certBase64 = await fileToBase64(certFile);
+        newConnectedId = await registerCardAccount(
+          selectedCompany,
+          "",
+          certPassword,
+          { loginType: "2", certFile: certBase64, certPassword }
+        );
+      } else {
+        newConnectedId = await registerCardAccount(
+          selectedCompany,
+          credentials.id,
+          credentials.password
+        );
+      }
       
       if (newConnectedId) {
         localStorage.setItem("codef_connected_id", newConnectedId);
