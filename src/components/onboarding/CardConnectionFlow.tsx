@@ -15,9 +15,6 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
-  Lock,
-  Upload,
-  FileKey,
   ExternalLink,
   Info,
 } from "lucide-react";
