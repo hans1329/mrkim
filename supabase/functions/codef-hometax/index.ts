@@ -1,42 +1,69 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import forge from "npm:node-forge@1.3.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
-// 정식(운영) 환경
 const CODEF_API_URL = "https://api.codef.io";
 const CODEF_TOKEN_URL = "https://oauth.codef.io/oauth/token";
 
-// 홈택스 사업자 상태 조회 API
-const HOMETAX_BUSINESS_STATUS_PATH = "/v1/kr/public/nt/business/status";
+// 홈택스 API 경로
+const BUSINESS_STATUS_PATH = "/v1/kr/public/nt/business/status";
+const ACCOUNT_CREATE_PATH = "/v1/account/create";
+
+// 간편인증 수단 매핑
+const SIMPLE_AUTH_METHODS: Record<string, string> = {
+  kakao: "1",     // 카카오
+  samsung: "2",   // 삼성패스
+  pass: "3",      // PASS (통신사)
+  naver: "4",     // 네이버
+  toss: "5",      // 토스
+};
+
+function encryptRSAPKCS1(plainText: string, base64PublicKey: string): string {
+  const pem = `-----BEGIN PUBLIC KEY-----\n${base64PublicKey
+    .match(/.{1,64}/g)!
+    .join("\n")}\n-----END PUBLIC KEY-----`;
+  const publicKey = forge.pki.publicKeyFromPem(pem);
+  // UTF-8 바이트 변환 후 암호화
+  const bytes = forge.util.encodeUtf8(plainText);
+  const encrypted = publicKey.encrypt(bytes, "RSAES-PKCS1-V1_5");
+  return forge.util.encode64(encrypted);
+}
+
+function parseCodefResponse(text: string): any {
+  try {
+    return JSON.parse(text);
+  } catch {
+    try {
+      const decoded = decodeURIComponent(text.replace(/\+/g, " "));
+      return JSON.parse(decoded);
+    } catch {
+      return { raw: text };
+    }
+  }
+}
 
 async function getAccessToken(): Promise<string> {
   const clientId = Deno.env.get("CODEF_CLIENT_ID");
   const clientSecret = Deno.env.get("CODEF_CLIENT_SECRET");
-
   if (!clientId || !clientSecret) {
     throw new Error("CODEF credentials not configured");
   }
-
   const credentials = btoa(`${clientId}:${clientSecret}`);
-  
   const response = await fetch(CODEF_TOKEN_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      "Authorization": `Basic ${credentials}`,
+      Authorization: `Basic ${credentials}`,
     },
     body: "grant_type=client_credentials&scope=read",
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Token request failed:", errorText);
-    throw new Error(`Token request failed: ${response.status}`);
-  }
-
+  if (!response.ok) throw new Error(`Token request failed: ${response.status}`);
   const data = await response.json();
   return data.access_token;
 }
@@ -47,162 +74,359 @@ serve(async (req) => {
   }
 
   try {
-    const { businessNumber } = await req.json();
+    const body = await req.json();
+    const { action } = body;
 
-    if (!businessNumber) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "사업자등록번호를 입력해주세요.",
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (action === "register") {
+      return await handleRegister(req, body);
+    } else if (action === "confirm2Way") {
+      return await handleConfirm2Way(req, body);
+    } else {
+      // 기본: 사업자 상태 조회 (기존 로직)
+      return await handleBusinessVerify(body);
     }
-
-    const cleanedNumber = businessNumber.replace(/\D/g, "");
-    if (cleanedNumber.length !== 10) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "사업자등록번호는 10자리여야 합니다.",
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // 1. 토큰 발급
-    console.log("Getting access token...");
-    const accessToken = await getAccessToken();
-    console.log("Access token obtained");
-
-    // 2. 사업자 상태 조회 - 올바른 파라미터 형식 사용
-    // reqIdentityList 배열 형태로 사업자번호 전달
-    const requestBody = {
-      organization: "0004", // 국세청
-      reqIdentityList: [
-        { reqIdentity: cleanedNumber }
-      ],
-    };
-
-    console.log("Calling Hometax API with:", JSON.stringify(requestBody));
-
-    const response = await fetch(`${CODEF_API_URL}${HOMETAX_BUSINESS_STATUS_PATH}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    const responseText = await response.text();
-    console.log("Hometax API response status:", response.status);
-    console.log("Hometax API response:", responseText);
-
-    const parseMaybeEncodedJson = (text: string) => {
-      // 1) Plain JSON
-      try {
-        return JSON.parse(text);
-      } catch {
-        // ignore
-      }
-
-      // 2) Sometimes CODEF responses arrive percent-encoded (e.g. %7B%22result%22...)
-      //    Also handle '+' as space (form-encoded style)
-      try {
-        const decoded = decodeURIComponent(text.replace(/\+/g, " "));
-        return JSON.parse(decoded);
-      } catch {
-        return { raw: text };
-      }
-    };
-
-    const data = parseMaybeEncodedJson(responseText);
-
-    // 응답 구조 로깅 (디버깅용)
-    console.log("Parsed response keys:", Object.keys(data));
-    if (data.data) {
-      console.log("data.data structure:", Array.isArray(data.data) ? "array" : typeof data.data);
-    }
-
-    // 응답 파싱 - data가 배열인 경우 처리
-    const result = data.result || {};
-    const businessDataArray = Array.isArray(data.data) ? data.data : [data.data];
-    
-    // 조회한 사업자번호와 일치하는 데이터 찾기
-    const matchingData = businessDataArray.find(
-      (item: any) => item?.resCompanyIdentityNo === cleanedNumber
-    ) || businessDataArray[0] || {};
-
-    // 사업장명 추출 시도 (다양한 필드명 체크)
-    const extractBusinessName = (item: any): string | null => {
-      if (!item) return null;
-      // CODEF에서 사용할 수 있는 다양한 필드명
-      return item.resCompanyNm || 
-             item.resCompanyName || 
-             item.resBusinessName ||
-             item.resTradeName ||
-             item.companyName ||
-             item.businessName ||
-             null;
-    };
-
-    // 업종 정보 추출 시도
-    const extractBusinessType = (item: any): string | null => {
-      if (!item) return null;
-      return item.resBusinessType ||
-             item.resBusinessCategory ||
-             item.resIndustryType ||
-             item.businessType ||
-             item.industryType ||
-             null;
-    };
-
-    const isSuccess = result.code === "CF-00000";
-    const businessName = extractBusinessName(matchingData);
-    const businessType = extractBusinessType(matchingData);
-
-    return new Response(
-      JSON.stringify({
-        success: isSuccess,
-        // 우리 서비스 기준의 사용자 친화적 메시지
-        message: isSuccess
-          ? "사업자 정보가 확인되었습니다."
-          : (typeof result.message === "string" && result.message.trim()
-              ? result.message
-              : "조회에 실패했습니다."),
-        code: result.code,
-        data: isSuccess
-          ? {
-              businessNumber: matchingData.resCompanyIdentityNo || cleanedNumber,
-              businessStatus: matchingData.resBusinessStatus || "조회 결과 없음",
-              taxationType: matchingData.resTaxationTypeCode || "-",
-              taxationTypeDesc: getTaxationTypeDesc(matchingData.resTaxationTypeCode),
-              businessName: businessName,
-              businessType: businessType,
-              closingDate: matchingData.resClosingDate || null,
-              transferDate: matchingData.resTransferTaxTypeDate || null,
-            }
-          : null,
-        // 디버깅용: 원본 응답 필드 (개발 환경에서만)
-        _debug: {
-          availableFields: Object.keys(matchingData || {}),
-        },
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
   } catch (error) {
     console.error("Hometax API error:", error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
+        error:
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다.",
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 });
+
+/**
+ * 사업자 상태 조회 (기존 로직 유지)
+ */
+async function handleBusinessVerify(body: any): Promise<Response> {
+  const { businessNumber } = body;
+
+  if (!businessNumber) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "사업자등록번호를 입력해주세요.",
+      }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  const cleanedNumber = businessNumber.replace(/\D/g, "");
+  if (cleanedNumber.length !== 10) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "사업자등록번호는 10자리여야 합니다.",
+      }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  const accessToken = await getAccessToken();
+
+  const requestBody = {
+    organization: "0004",
+    reqIdentityList: [{ reqIdentity: cleanedNumber }],
+  };
+
+  console.log("Calling Hometax business status API...");
+  const response = await fetch(
+    `${CODEF_API_URL}${BUSINESS_STATUS_PATH}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(requestBody),
+    }
+  );
+
+  const responseText = await response.text();
+  const data = parseCodefResponse(responseText);
+
+  const result = data.result || {};
+  const businessDataArray = Array.isArray(data.data)
+    ? data.data
+    : [data.data];
+  const matchingData =
+    businessDataArray.find(
+      (item: any) => item?.resCompanyIdentityNo === cleanedNumber
+    ) ||
+    businessDataArray[0] ||
+    {};
+
+  const businessName =
+    matchingData.resCompanyNm ||
+    matchingData.resCompanyName ||
+    matchingData.resBusinessName ||
+    null;
+  const businessType =
+    matchingData.resBusinessType ||
+    matchingData.resBusinessCategory ||
+    null;
+
+  const isSuccess = result.code === "CF-00000";
+
+  return new Response(
+    JSON.stringify({
+      success: isSuccess,
+      message: isSuccess
+        ? "사업자 정보가 확인되었습니다."
+        : result.message || "조회에 실패했습니다.",
+      code: result.code,
+      data: isSuccess
+        ? {
+            businessNumber:
+              matchingData.resCompanyIdentityNo || cleanedNumber,
+            businessStatus:
+              matchingData.resBusinessStatus || "조회 결과 없음",
+            taxationType: matchingData.resTaxationTypeCode || "-",
+            taxationTypeDesc: getTaxationTypeDesc(
+              matchingData.resTaxationTypeCode
+            ),
+            businessName,
+            businessType,
+          }
+        : null,
+    }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+/**
+ * 간편인증 계정 등록 (1단계: 2-way 인증 요청)
+ */
+async function handleRegister(
+  req: Request,
+  body: any
+): Promise<Response> {
+  const { businessNumber, authMethod } = body;
+
+  if (!businessNumber || !authMethod) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "사업자등록번호와 인증 수단을 입력해주세요.",
+      }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  const loginTypeLevel = SIMPLE_AUTH_METHODS[authMethod];
+  if (!loginTypeLevel) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "지원하지 않는 인증 수단입니다.",
+      }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  const cleanedNumber = businessNumber.replace(/\D/g, "");
+  const accessToken = await getAccessToken();
+  const publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
+
+  const requestBody = {
+    accountList: [
+      {
+        countryCode: "KR",
+        businessType: "NT", // 국세청
+        clientType: "B", // 사업자
+        organization: "0004", // 국세청
+        loginType: "5", // 간편인증
+        loginTypeLevel, // 인증 수단 (1~5)
+        identity: cleanedNumber, // 사업자번호
+      },
+    ],
+  };
+
+  console.log(
+    `Registering hometax account with simple auth (${authMethod}, level=${loginTypeLevel})...`
+  );
+
+  const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const responseText = await response.text();
+  console.log("Account create response:", responseText.substring(0, 1000));
+
+  const data = parseCodefResponse(responseText);
+  const result = data.result || {};
+
+  // 2-way 인증 필요한 경우 (CF-03002: 추가 인증 필요)
+  if (result.code === "CF-03002" && data.data) {
+    const twoWayInfo = data.data.twoWayInfo || data.data;
+    return new Response(
+      JSON.stringify({
+        success: true,
+        status: "2way_required",
+        message:
+          "간편인증 요청이 전송되었습니다. 휴대폰에서 인증을 완료해주세요.",
+        twoWayInfo: {
+          jobId: twoWayInfo.jobId,
+          threadId: twoWayInfo.threadId,
+          jti: twoWayInfo.jti,
+          twoWayTimestamp: twoWayInfo.twoWayTimestamp,
+        },
+        extraInfo: data.data.extraInfo || null,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // 즉시 성공 (connectedId 발급)
+  if (result.code === "CF-00000" && data.data?.connectedId) {
+    return new Response(
+      JSON.stringify({
+        success: true,
+        status: "completed",
+        message: "홈택스 계정이 등록되었습니다.",
+        connectedId: data.data.connectedId,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // 에러
+  const errorMessage = getHometaxErrorMessage(result.code);
+  return new Response(
+    JSON.stringify({
+      success: false,
+      error: errorMessage,
+      code: result.code,
+      details: data.data?.errorList || [],
+    }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+/**
+ * 2-way 인증 확인 (2단계: 사용자가 폰에서 인증 완료 후 호출)
+ */
+async function handleConfirm2Way(
+  req: Request,
+  body: any
+): Promise<Response> {
+  const { businessNumber, authMethod, twoWayInfo } = body;
+
+  if (!businessNumber || !authMethod || !twoWayInfo) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "필수 정보가 누락되었습니다.",
+      }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  const loginTypeLevel = SIMPLE_AUTH_METHODS[authMethod];
+  const cleanedNumber = businessNumber.replace(/\D/g, "");
+  const accessToken = await getAccessToken();
+
+  const requestBody = {
+    accountList: [
+      {
+        countryCode: "KR",
+        businessType: "NT",
+        clientType: "B",
+        organization: "0004",
+        loginType: "5",
+        loginTypeLevel,
+        identity: cleanedNumber,
+      },
+    ],
+    is2Way: true,
+    twoWayInfo: {
+      jobId: twoWayInfo.jobId,
+      threadId: twoWayInfo.threadId,
+      jti: twoWayInfo.jti,
+      twoWayTimestamp: twoWayInfo.twoWayTimestamp,
+    },
+  };
+
+  console.log("Confirming 2-way authentication...");
+
+  const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const responseText = await response.text();
+  console.log("2-way confirm response:", responseText.substring(0, 1000));
+
+  const data = parseCodefResponse(responseText);
+  const result = data.result || {};
+
+  if (result.code === "CF-00000" && data.data?.connectedId) {
+    return new Response(
+      JSON.stringify({
+        success: true,
+        status: "completed",
+        message: "홈택스 인증이 완료되었습니다.",
+        connectedId: data.data.connectedId,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // 아직 인증 중인 경우
+  if (result.code === "CF-03002") {
+    return new Response(
+      JSON.stringify({
+        success: true,
+        status: "2way_required",
+        message: "아직 인증이 완료되지 않았습니다. 휴대폰에서 인증을 완료해주세요.",
+        twoWayInfo,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const errorMessage = getHometaxErrorMessage(result.code);
+  return new Response(
+    JSON.stringify({
+      success: false,
+      error: errorMessage,
+      code: result.code,
+    }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
 
 function getTaxationTypeDesc(code: string | undefined): string {
   const types: Record<string, string> = {
@@ -215,4 +439,17 @@ function getTaxationTypeDesc(code: string | undefined): string {
     "99": "조회 불가",
   };
   return types[code || ""] || "알 수 없음";
+}
+
+function getHometaxErrorMessage(code: string): string {
+  const messages: Record<string, string> = {
+    "CF-03002": "간편인증 요청이 전송되었습니다.",
+    "CF-12100": "간편인증 시간이 초과되었습니다. 다시 시도해주세요.",
+    "CF-12101": "간편인증이 거부되었습니다. 다시 시도해주세요.",
+    "CF-12800": "인증 정보가 올바르지 않습니다.",
+    "CF-04000": "요청 처리 중 문제가 발생했습니다.",
+    "CF-09999": "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+    "CF-00401": "인증 세션이 만료되었습니다. 다시 시도해주세요.",
+  };
+  return messages[code] || "홈택스 연결 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
 }
