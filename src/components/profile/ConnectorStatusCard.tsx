@@ -30,6 +30,15 @@ const CATEGORY_TO_STEP: Record<string, string> = {
   card: "card",
 };
 
+// connector_id → ConnectionDrawer type 매핑
+const CONNECTOR_TO_DRAWER_TYPE: Record<string, "hometax" | "card" | "account" | "coupangeats" | "baemin"> = {
+  codef_hometax: "hometax",
+  codef_bank: "account",
+  codef_card: "card",
+  hyphen_baemin: "baemin",
+  hyphen_coupangeats: "coupangeats",
+};
+
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   hometax: FileText,
   bank: Landmark,
