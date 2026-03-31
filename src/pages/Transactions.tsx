@@ -48,7 +48,6 @@ import { CsvBulkUploadDialog } from "@/components/transactions/CsvBulkUploadDial
 import { useTransactions, useTransactionStats, useAddTransaction, useDeleteTransaction, type TransactionInsert } from "@/hooks/useTransactions";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { toast } from "sonner";
-import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { format, subMonths } from "date-fns";
 import { ko } from "date-fns/locale";
