@@ -363,7 +363,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                     <Button
                       variant="outline"
                       onClick={() => certFileInputRef.current?.click()}
-                      className="w-full justify-start gap-2 h-11"
+                      className={`w-full justify-center gap-2 h-11 ${certFile ? '' : 'border-dashed border-2'}`}
                     >
                       {certFile ? (
                         <>
@@ -372,8 +372,8 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                         </>
                       ) : (
                         <>
-                          <Upload className="h-4 w-4" />
-                          <span className="text-sm text-muted-foreground">공동인증서 파일 선택 (.pfx, .p12)</span>
+                          <Upload className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">공동인증서 파일 업로드 (.pfx, .p12)</span>
                         </>
                       )}
                     </Button>
@@ -384,11 +384,13 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                       placeholder="인증서 비밀번호"
                       value={certPassword}
                       onChange={(e) => setCertPassword(e.target.value)}
+                      disabled={!certFile}
                     />
                     <button
                       type="button"
                       onClick={() => setShowCertPassword(!showCertPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      disabled={!certFile}
                     >
                       {showCertPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
