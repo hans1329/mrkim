@@ -3,6 +3,7 @@ import { ConnectionHub, ServiceType } from "@/components/onboarding/ConnectionHu
 import { useQueryClient } from "@tanstack/react-query";
 import { useConnectorInstances } from "@/hooks/useConnectors";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { isCardCompanyConnected, isConnectorConnected } from "@/lib/connectionStatus";
 
 // Keep backward compatibility with old ConnectionType
 export type ConnectionType = ServiceType;
@@ -14,29 +15,29 @@ interface ConnectionDrawerContextValue {
   activeDrawerType: ConnectionType | null;
 }
 
-const ConnectionDrawerContext = createContext<ConnectionDrawerContextValue | null>(null);
+const ConnectionDrawerContext = createContext<ConnectionDrawerContextValue>({
+  openDrawer: () => {},
+  closeDrawer: () => {},
+  isDrawerOpen: false,
+  activeDrawerType: null,
+});
 
 export function ConnectionDrawerProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<ConnectionType | null>(null);
   const queryClient = useQueryClient();
   const { data: connectorInstances = [] } = useConnectorInstances();
-  const { profile, hometaxConnected, cardConnected, accountConnected } = useConnection();
+  const { hometaxConnected, accountConnected } = useConnection();
 
   const connectionStatus = useMemo(() => {
-    const isDeliveryConnected = (connectorId: string) =>
-      connectorInstances.some(
-        (i: any) => i.connector_id === connectorId && i.status === "connected"
-      );
-
     return {
       hometax: hometaxConnected,
-      card: cardConnected,
+      card: isCardCompanyConnected(connectorInstances, "crefia"),
       account: accountConnected,
-      baemin: isDeliveryConnected("hyphen_baemin"),
-      coupangeats: isDeliveryConnected("hyphen_coupangeats"),
+      baemin: isConnectorConnected(connectorInstances, "hyphen_baemin"),
+      coupangeats: isConnectorConnected(connectorInstances, "hyphen_coupangeats"),
     };
-  }, [connectorInstances, hometaxConnected, cardConnected, accountConnected]);
+  }, [connectorInstances, hometaxConnected, accountConnected]);
 
   const openDrawer = useCallback((t?: ConnectionType) => {
     setType(t || null);
@@ -75,7 +76,5 @@ export function ConnectionDrawerProvider({ children }: { children: ReactNode }) 
 }
 
 export function useConnectionDrawer() {
-  const ctx = useContext(ConnectionDrawerContext);
-  if (!ctx) throw new Error("useConnectionDrawer must be used within ConnectionDrawerProvider");
-  return ctx;
+  return useContext(ConnectionDrawerContext);
 }

@@ -123,8 +123,9 @@ export function useCardConnection(): UseCardConnectionReturn {
         // connector_instances + profiles 플래그 동기화 (카드사 코드도 함께 저장)
         await connectService("codef_card_usage", data.connectedId, {
           card_company_id: cardCompanyId,
-          card_company_name: CARD_COMPANY_NAMES[cardCompanyId] || cardCompanyId,
+          card_company_name: CARD_COMPANY_NAMES[cardCompanyId] || "여신금융협회",
           organization_code: getOrganizationCode(cardCompanyId),
+          connection_type: "credit_finance_association",
         });
         
         toast.success("카드사 연결이 완료되었습니다!");
