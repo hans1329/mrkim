@@ -102,19 +102,12 @@ export default function Transactions() {
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
   });
-  const { profile, cardConnected, accountConnected } = useConnection();
+  const { profile } = useConnection();
   const addTransaction = useAddTransaction();
   const deleteTransaction = useDeleteTransaction();
-  const cardSync = useCardSync();
-  const bankSync = useBankSync();
 
   const navigate = useNavigate();
   const { openDrawer } = useConnectionDrawer();
-  const cardInfo = useCardConnectionInfo();
-  const bankInfo = useBankConnectionInfo();
-
-  const isCardConnected = cardConnected;
-  const isAccountConnected = accountConnected;
 
   const handleAddTransaction = () => {
     if (!newTransaction.description || !newTransaction.amount) {
