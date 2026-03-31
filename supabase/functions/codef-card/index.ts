@@ -136,7 +136,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { action, cardCompanyId, loginId, loginType, certFile, certPassword, password, connectedId, startDate, endDate, cardNo } = body;
+    const { action, cardCompanyId, loginId, loginType, certFile, certPassword: rawCertPassword, password, connectedId, startDate, endDate, cardNo } = body;
 
     // 1. 토큰 발급
     console.log("Getting access token...");
