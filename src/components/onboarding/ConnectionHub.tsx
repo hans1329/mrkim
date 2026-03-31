@@ -96,7 +96,21 @@ export function ConnectionHub({
   initialService = null,
   connectionStatus = {},
 }: ConnectionHubProps) {
-  const [activeService, setActiveService] = useState<ServiceType | null>(initialService);
+  const [activeService, setActiveService] = useState<ServiceType | null>(null);
+
+  // Sync initialService when hub opens with a specific service
+  useState(() => {
+    if (initialService) setActiveService(initialService);
+  });
+
+  // When initialService changes externally (e.g. openDrawer("card")), update
+  const prevInitial = useState<ServiceType | null>(null);
+  if (initialService !== prevInitial[0]) {
+    prevInitial[1](initialService);
+    if (initialService && open) {
+      setActiveService(initialService);
+    }
+  }
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const { profile } = useConnection();
 
