@@ -224,8 +224,11 @@ export function ConnectionHub({
                   transition={{ duration: 0.2 }}
                   className="space-y-4"
                 >
-                  {/* Status summary */}
+                  {/* Title & Status summary */}
                   <div className="text-center space-y-1 pb-1">
+                    <h2 className="text-lg font-bold text-foreground">
+                      내 사업 데이터 연동
+                    </h2>
                     <p className="text-sm text-muted-foreground">
                       {connectedCount > 0
                         ? `${connectedCount}개 서비스 연결됨`
