@@ -542,10 +542,7 @@ async function handleGetTransactions(
   const normalizedStart = startDate?.replace(/-/g, "") || defaultStartDate;
   const normalizedEnd = endDate?.replace(/-/g, "") || defaultEndDate;
 
-  // 여신금융협회: 가맹점 승인내역 API, 개인카드: 개인 승인내역 API
-  const approvalApiPath = isCrefia(cardCompanyId)
-    ? `${CODEF_API_URL}/v1/kr/card/b/account/approval-list`
-    : `${CODEF_API_URL}/v1/kr/card/p/account/approval-list`;
+  const approvalApiPath = `${CODEF_API_URL}/v1/kr/card/p/account/approval-list`;
 
   const buildApprovalRequestBody = (cardNoValue: string) => ({
     connectedId,
