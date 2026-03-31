@@ -43,8 +43,8 @@ interface CardInfo {
 }
 
 interface CertOptions {
-  loginType: "2";
-  certFile: string; // Base64
+  loginType: "0";
+  certFile: string; // PFX Base64
   certPassword: string;
 }
 
