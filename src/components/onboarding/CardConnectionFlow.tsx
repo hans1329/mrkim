@@ -165,6 +165,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   const stepTitle: Record<FlowStep, string> = {
     auth: "카드 연결",
     signup: "여신금융 회원가입",
+    "find-account": "아이디/비밀번호 찾기",
     loading: "연결 중",
     "select-cards": "카드 선택",
     complete: "연결 완료",
