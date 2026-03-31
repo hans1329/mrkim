@@ -76,7 +76,5 @@ export function ConnectionDrawerProvider({ children }: { children: ReactNode }) 
 }
 
 export function useConnectionDrawer() {
-  const ctx = useContext(ConnectionDrawerContext);
-  if (!ctx) throw new Error("useConnectionDrawer must be used within ConnectionDrawerProvider");
-  return ctx;
+  return useContext(ConnectionDrawerContext);
 }
