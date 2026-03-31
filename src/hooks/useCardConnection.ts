@@ -14,7 +14,6 @@ const CARD_ORGANIZATION_CODES: Record<string, string> = {
   hana: "0313",
   woori: "0309",
   nh: "0304",
-  crefia: "0090",
 };
 
 const CARD_COMPANY_NAMES: Record<string, string> = {
