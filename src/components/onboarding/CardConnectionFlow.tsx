@@ -73,18 +73,6 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
     "complete": 100,
   };
 
-  // File → Base64 변환
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const result = reader.result as string;
-        resolve(result.split(",")[1]);
-      };
-      reader.onerror = reject;
-    });
-  };
 
   const handleAuth = async () => {
     if (!agreedTerms) return;
