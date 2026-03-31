@@ -245,6 +245,18 @@ export function HometaxConnectionFlow({
   const handleStartAuth = async () => {
     if (!selectedAuth || !businessInfo) return;
 
+    // 핸드폰 번호 확인
+    if (!profile?.phone) {
+      setError("간편인증을 위해 프로필에 휴대폰 번호를 먼저 등록해주세요.");
+      return;
+    }
+
+    // 이름 확인
+    if (!profile?.name) {
+      setError("간편인증을 위해 프로필에 이름을 먼저 등록해주세요.");
+      return;
+    }
+
     setStep("auth_waiting");
     setAuthTimer(120);
     setError(null);
@@ -257,6 +269,8 @@ export function HometaxConnectionFlow({
             action: "register",
             businessNumber: businessInfo.businessNumber,
             authMethod: selectedAuth,
+            userName: profile.name,
+            phoneNo: profile.phone,
           },
         }
       );
@@ -297,6 +311,8 @@ export function HometaxConnectionFlow({
             businessNumber: businessInfo.businessNumber,
             authMethod: selectedAuth,
             twoWayInfo,
+            userName: profile?.name || "",
+            phoneNo: profile?.phone || "",
           },
         }
       );
