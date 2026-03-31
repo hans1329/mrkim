@@ -321,8 +321,7 @@ export function MenuAnalysisTab() {
           {top10ByRevenue.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                  <Crown className="w-4 h-4 text-amber-500" />
+                <CardTitle className="text-sm font-semibold">
                   매출 TOP 10
                 </CardTitle>
               </CardHeader>
