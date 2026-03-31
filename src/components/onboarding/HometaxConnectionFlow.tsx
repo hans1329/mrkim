@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Building2,
   Loader2,
@@ -83,32 +84,102 @@ export function HometaxConnectionFlow({
   const [twoWayInfo, setTwoWayInfo] = useState<TwoWayInfo | null>(null);
   const [authTimer, setAuthTimer] = useState(120);
   const [connectedId, setConnectedId] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(false);
+
+  const hasVerifiedBusinessInfo = Boolean(
+    businessInfo?.businessStatus || businessInfo?.taxationTypeDesc
+  );
 
   // 드로워가 열릴 때마다 실제 connectedId 존재 여부 재확인
   useEffect(() => {
     if (!isOpen) return;
+
+    let cancelled = false;
+
     const checkConnectedId = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      setIsInitializing(true);
+      setError(null);
+      setSelectedAuth(null);
+      setTwoWayInfo(null);
+      setAuthTimer(120);
 
-      const { data } = await supabase
-        .from("connector_instances")
-        .select("connected_id")
-        .eq("connector_id", "codef_hometax_tax_invoice")
-        .eq("status", "connected")
-        .maybeSingle();
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (data?.connected_id) {
-        setStep("already");
-      } else if (profile?.business_registration_number) {
-        setBusinessNumber(formatBusinessNumber(profile.business_registration_number));
-        setStep("confirmed");
-      } else {
+        if (!user) {
+          if (!cancelled) {
+            setConnectedId(null);
+            setBusinessInfo(null);
+            setBusinessNumber("");
+            setStep("input");
+          }
+          return;
+        }
+
+        const { data } = await supabase
+          .from("connector_instances")
+          .select("connected_id")
+          .eq("user_id", user.id)
+          .eq("connector_id", "codef_hometax_tax_invoice")
+          .eq("status", "connected")
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (data?.connected_id) {
+          setConnectedId(data.connected_id);
+          setStep("already");
+          return;
+        }
+
+        setConnectedId(null);
+
+        if (profile?.business_registration_number) {
+          const normalizedBusinessNumber = profile.business_registration_number.replace(/\D/g, "");
+
+          setBusinessNumber(normalizedBusinessNumber);
+          setBusinessInfo({
+            businessNumber: normalizedBusinessNumber,
+            businessStatus: "",
+            taxationType: "",
+            taxationTypeDesc: "",
+            businessName: profile.business_name || undefined,
+            businessType: profile.business_type || undefined,
+          });
+          setStep("auth_select");
+          return;
+        }
+
+        setBusinessInfo(null);
+        setBusinessNumber("");
         setStep("input");
+      } catch (err) {
+        console.error("Failed to initialize hometax drawer:", err);
+        if (!cancelled) {
+          setBusinessInfo(null);
+          setConnectedId(null);
+          setStep("input");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsInitializing(false);
+        }
       }
     };
-    checkConnectedId();
-  }, [isOpen, profile?.business_registration_number]);
+
+    void checkConnectedId();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isOpen,
+    profile?.business_name,
+    profile?.business_registration_number,
+    profile?.business_type,
+  ]);
 
   const isValidNumber = businessNumber.replace(/\D/g, "").length === 10;
 
@@ -298,7 +369,9 @@ export function HometaxConnectionFlow({
           size="icon"
           onClick={
             step === "auth_select"
-              ? () => setStep("confirmed")
+              ? hasVerifiedBusinessInfo
+                ? () => setStep("confirmed")
+                : onBack
               : step === "auth_waiting"
               ? () => setStep("auth_select")
               : onBack
@@ -316,6 +389,24 @@ export function HometaxConnectionFlow({
           </p>
         </div>
       </div>
+
+      {isInitializing ? (
+        <div className="space-y-4">
+          <div className="flex justify-center mb-2">
+            <Skeleton className="h-14 w-14 rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-40 mx-auto" />
+            <Skeleton className="h-4 w-56 mx-auto" />
+          </div>
+          <div className="space-y-3">
+            <Skeleton className="h-16 w-full rounded-xl" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl" />
+          </div>
+        </div>
+      ) : (
+        <>
 
       {/* Step: Already connected */}
       {step === "already" && (
@@ -670,6 +761,8 @@ export function HometaxConnectionFlow({
             )}
           </Button>
         </motion.div>
+      )}
+        </>
       )}
     </div>
   );
