@@ -78,7 +78,7 @@ export function ConnectionDrawer({ open, type, onClose, onComplete }: Connection
         {/* Content - always mounted */}
         <div className="overflow-y-auto px-4 pb-6 flex-1">
           {type === "hometax" && (
-            <HometaxConnectionFlow onComplete={handleComplete} onBack={handleBack} />
+            <HometaxConnectionFlow onComplete={handleComplete} onBack={handleBack} isOpen={open} />
           )}
           {type === "card" && (
             <CardConnectionFlow onComplete={handleComplete} onBack={handleBack} />
