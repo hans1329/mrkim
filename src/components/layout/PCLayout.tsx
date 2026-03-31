@@ -13,7 +13,8 @@ import {
   PanelLeftClose,
   PanelLeft,
   User,
-  UserCheck
+  UserCheck,
+  ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

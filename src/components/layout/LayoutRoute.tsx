@@ -92,7 +92,7 @@ function LayoutShell() {
 
   if (!isMobile) {
     return (
-      <PCLayout title={config.title} subtitle={config.subtitle}>
+      <PCLayout title={config.title} subtitle={config.subtitle} showBackButton={config.showBackButton} onBack={config.onBack} headerRight={config.headerRight}>
         <AnimatedOutlet noWrapper />
       </PCLayout>
     );
