@@ -483,8 +483,8 @@ export default function Transactions() {
                   카드/계좌를 연동하면 자동 수집됩니다
                 </p>
                 <div className="flex gap-2">
-                  <Button asChild variant="outline" size="sm" className="h-8 text-xs">
-                    <Link to="/onboarding">연동하기</Link>
+                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => openDrawer()}>
+                    연동하기
                   </Button>
                   <Button size="sm" className="h-8 text-xs" onClick={() => setIsDialogOpen(true)}>
                     <Plus className="mr-1 h-3 w-3" />

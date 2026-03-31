@@ -169,9 +169,7 @@ export function TransactionClassifier() {
             <p className="mb-4 text-sm text-muted-foreground">
               카드를 연동하면 지출 내역이 자동으로 수집되고 분류됩니다
             </p>
-            <Button onClick={() => {
-                const { openDrawer } = require("@/contexts/ConnectionDrawerContext");
-              }}>데이터 연동하기</Button>
+            <Button onClick={() => openDrawer()}>데이터 연동하기</Button>
           </CardContent>
         </Card>
       ) : (

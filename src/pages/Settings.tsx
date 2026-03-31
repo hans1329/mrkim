@@ -498,7 +498,7 @@ export default function Settings() {
                       resetOnboarding();
                       await resetConnections();
                       toast.success("연동 상태가 초기화되었습니다");
-                      navigate("/onboarding");
+                      openDrawer();
                     }}
                   >
                     초기화 및 다시 시작
