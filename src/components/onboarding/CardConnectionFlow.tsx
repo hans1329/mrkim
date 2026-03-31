@@ -55,7 +55,7 @@ const CREDIT_FINANCE_ASSOCIATION = {
   findPwUrl: "https://www.cardsales.or.kr/member/findPw",
 };
 
-export function CardConnectionFlow({ onComplete, onBack, onStepChange }: CardConnectionFlowProps) {
+export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnectionFlowProps>(function CardConnectionFlow({ onComplete, onBack, onStepChange }, ref) {
   const [step, setStep] = useState<FlowStep>("auth");
   const [credentials, setCredentials] = useState({ id: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
