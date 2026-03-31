@@ -16,6 +16,11 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useConnection } from "@/contexts/ConnectionContext";
 
+import iconKakao from "@/assets/icon-kakao.png";
+import iconNaver from "@/assets/icon-naver.png";
+import iconPass from "@/assets/icon-pass.png";
+import iconToss from "@/assets/icon-toss.png";
+
 // 사업자등록번호 포맷팅
 const formatBusinessNumber = (value: string) => {
   const cleaned = value.replace(/\D/g, "").slice(0, 10);
@@ -26,10 +31,10 @@ const formatBusinessNumber = (value: string) => {
 
 // 간편인증 수단 정의
 const AUTH_METHODS = [
-  { id: "kakao", label: "카카오", icon: "💬", color: "bg-yellow-100 text-yellow-800" },
-  { id: "naver", label: "네이버", icon: "🟢", color: "bg-green-100 text-green-800" },
-  { id: "pass", label: "PASS", icon: "📱", color: "bg-blue-100 text-blue-800" },
-  { id: "toss", label: "토스", icon: "💙", color: "bg-sky-100 text-sky-800" },
+  { id: "kakao", label: "카카오", icon: iconKakao },
+  { id: "naver", label: "네이버", icon: iconNaver },
+  { id: "pass", label: "PASS", icon: iconPass },
+  { id: "toss", label: "토스", icon: iconToss },
 ];
 
 interface HometaxConnectionFlowProps {
@@ -648,7 +653,7 @@ export function HometaxConnectionFlow({
                     : "border-border hover:border-primary/30"
                 )}
               >
-                <span className="text-2xl block mb-1">{method.icon}</span>
+                <img src={method.icon} alt={method.label} className="w-8 h-8 mx-auto mb-1 rounded-lg" loading="lazy" width={32} height={32} />
                 <span className="text-sm font-medium">{method.label}</span>
               </button>
             ))}
