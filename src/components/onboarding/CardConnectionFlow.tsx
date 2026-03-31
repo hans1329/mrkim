@@ -260,7 +260,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 onClick={handleAuth}
                 disabled={
                   !agreedTerms || isLoading ||
-                  (useCertLogin ? (!certFile || !certPassword) : (!credentials.id || !credentials.password))
+                  !credentials.id || !credentials.password
                 }
                 className="w-full h-12 text-base"
               >
