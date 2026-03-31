@@ -547,8 +547,8 @@ export default function Transactions() {
                       </div>
                     </div>
                   ))}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* 더 보기 / 건수 표시 */}
               <div className="flex flex-col items-center gap-1.5 py-2">
