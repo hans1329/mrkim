@@ -495,6 +495,57 @@ async function callCodefTaxInvoice(
 /**
  * 카드 거래내역 동기화
  */
+/**
+ * 카드 목록 조회 → 카드번호 배열 반환
+ * card-list API 실패 시 빈 배열 반환 (에러로 처리)
+ */
+async function fetchCardNumbers(
+  accessToken: string,
+  connectedId: string,
+  organizationCode: string
+): Promise<string[]> {
+  const CODEF_API_URL = "https://api.codef.io";
+  try {
+    const resp = await fetch(`${CODEF_API_URL}/v1/kr/card/p/account/card-list`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        connectedId,
+        organization: organizationCode,
+        birthDate: "",
+        inquiryType: "0",
+      }),
+    });
+
+    const respText = await resp.text();
+    console.log("[Card Sync] card-list response (first 300):", respText.substring(0, 300));
+    
+    let parsed: any;
+    try {
+      parsed = JSON.parse(respText);
+    } catch {
+      parsed = JSON.parse(decodeURIComponent(respText.replace(/\+/g, "%20")));
+    }
+
+    if (parsed.result?.code !== "CF-00000") {
+      throw new Error(`card-list failed: ${parsed.result?.code} ${parsed.result?.message}`);
+    }
+
+    const cards = Array.isArray(parsed.data) ? parsed.data : [];
+    const cardNos = cards
+      .map((c: any) => c?.resCardNo ? String(c.resCardNo) : "")
+      .filter((no: string) => no.length > 0);
+
+    return Array.from(new Set(cardNos));
+  } catch (err) {
+    console.error("[Card Sync] fetchCardNumbers error:", err);
+    throw new Error(`카드 목록 조회 실패: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
 async function syncCardTransactions(
   supabase: ReturnType<typeof createClient>,
   instance: any,
