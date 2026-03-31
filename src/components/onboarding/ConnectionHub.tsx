@@ -287,7 +287,7 @@ export function ConnectionHub({
                                 </span>
                               )}
                             </div>
-                            <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+                            <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
                               {cat.description}
                             </p>
                           </div>
