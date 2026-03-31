@@ -41,6 +41,7 @@ interface HometaxConnectionFlowProps {
   onComplete: () => void;
   onBack: () => void;
   isOpen?: boolean;
+  showHeader?: boolean;
 }
 
 interface BusinessInfo {
