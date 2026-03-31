@@ -25,29 +25,53 @@ const menuItems = [
 ];
 
 export default function More() {
+  const { openDrawer } = useConnectionDrawer();
+
   return (
     <MainLayout title="더보기" showBackButton>
       <div className="space-y-4">
         <Card>
           <CardContent className="divide-y p-0">
-            {menuItems.map((item) => (
-              <NavLink
-                key={item.title}
-                to={item.url}
-                className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
-                    <item.icon className="h-5 w-5 text-muted-foreground" />
+            {menuItems.map((item) => {
+              if (item.url === "#connection-hub") {
+                return (
+                  <button
+                    key={item.title}
+                    onClick={() => openDrawer()}
+                    className="flex w-full items-center justify-between p-4 transition-colors hover:bg-muted/50 text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                        <item.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{item.title}</p>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                );
+              }
+              return (
+                <NavLink
+                  key={item.title}
+                  to={item.url}
+                  className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+                      <item.icon className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{item.title}</p>
+                      <p className="text-sm text-muted-foreground">{item.description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{item.title}</p>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </NavLink>
-            ))}
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </NavLink>
+              );
+            })}
           </CardContent>
         </Card>
 
