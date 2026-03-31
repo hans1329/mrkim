@@ -195,8 +195,8 @@ export function ConnectorStatusCard() {
                           size="sm"
                           className="h-6 px-1.5 gap-0.5 text-[10px] text-muted-foreground hover:text-primary"
                           onClick={() => {
-                            const type = connector.category === "bank" ? "account" : "card";
-                            openDrawer(type);
+                            const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
+                            if (drawerType) openDrawer(drawerType);
                           }}
                         >
                           <PlusCircle className="h-3 w-3" />
