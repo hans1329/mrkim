@@ -27,7 +27,7 @@ import { useCardSync } from "@/hooks/useCardSync";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { toast } from "sonner";
 
-type FlowStep = "auth" | "loading" | "select-cards" | "complete";
+type FlowStep = "auth" | "signup" | "loading" | "select-cards" | "complete";
 
 interface CardConnectionFlowProps {
   onComplete: () => void;
@@ -75,6 +75,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
 
   const stepProgress: Record<FlowStep, number> = {
     "auth": 25,
+    "signup": 25,
     "loading": 50,
     "select-cards": 75,
     "complete": 100,
@@ -397,11 +398,11 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
               <div className="flex flex-col items-center gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => window.open(CREDIT_FINANCE_ASSOCIATION.signupUrl, "_blank")}
+                  onClick={() => setStep("signup")}
                   className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   여신금융 회원가입
-                  <ExternalLink className="h-3 w-3" />
+                  <ArrowRight className="h-3 w-3" />
                 </button>
                 <button
                   type="button"
@@ -415,6 +416,40 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
 
               {/* 이전 버튼 */}
               <Button variant="ghost" onClick={onBack} className="w-full text-muted-foreground">
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                이전으로
+              </Button>
+            </div>
+          )}
+
+          {/* 여신금융협회 회원가입 (iframe) */}
+          {step === "signup" && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <h3 className="text-lg font-bold">여신금융협회 회원가입</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  아래에서 회원가입을 완료한 후 돌아와주세요
+                </p>
+              </div>
+
+              <div className="rounded-xl border overflow-hidden bg-background" style={{ height: "60vh" }}>
+                <iframe
+                  src={CREDIT_FINANCE_ASSOCIATION.signupUrl}
+                  className="w-full h-full border-0"
+                  title="여신금융협회 회원가입"
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation"
+                />
+              </div>
+
+              <Button
+                onClick={() => setStep("auth")}
+                className="w-full h-12 text-base"
+              >
+                가입 완료, 로그인하기
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+
+              <Button variant="ghost" onClick={() => setStep("auth")} className="w-full text-muted-foreground">
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 이전으로
               </Button>
