@@ -300,7 +300,7 @@ async function handleRegister(
       {
         countryCode: "KR",
         businessType: "CD",
-        clientType: isCrefia(cardCompanyId) ? "B" : "P",  // 여신금융협회는 사업자(B)
+        clientType: "P",
         organization: organizationCode,
         loginType: "1",      // ID/PW 로그인
         id: loginId,
