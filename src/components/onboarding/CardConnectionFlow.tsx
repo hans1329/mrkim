@@ -428,7 +428,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
               <div className="text-center">
                 <h3 className="text-lg font-bold">여신금융협회 회원가입</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  아래에서 회원가입을 완료한 후 돌아와주세요
+                  아래에서 회원가입을 완료해 주세요!
                 </p>
               </div>
 
