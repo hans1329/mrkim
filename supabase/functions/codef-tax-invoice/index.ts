@@ -144,13 +144,16 @@ serve(async (req) => {
 
     // 매출 세금계산서 조회
     if (action === "all" || action === "sales") {
-      const salesBody = {
+      const salesBody: Record<string, string> = {
         organization: "0004",
-        loginType: "3", // 사업자번호 조회
         identity: cleanedNumber,
         startDate: queryStartDate,
         endDate: queryEndDate,
       };
+      // connectedId가 있으면 인증된 조회, 없으면 공개 조회
+      if (effectiveConnectedId) {
+        salesBody.connectedId = effectiveConnectedId;
+      }
 
       console.log("Fetching sales invoices...", salesBody);
       
