@@ -1,22 +1,20 @@
-import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { 
   CreditCard, 
   ArrowRight, 
   ArrowLeft,
-  Shield, 
   Loader2,
   CheckCircle2,
   Eye,
   EyeOff,
   AlertCircle,
-  ExternalLink,
-  Info,
+  Upload,
+  FileKey,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCardConnection } from "@/hooks/useCardConnection";
@@ -24,7 +22,7 @@ import { useCardSync } from "@/hooks/useCardSync";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { toast } from "sonner";
 
-type FlowStep = "auth" | "signup" | "find-account" | "loading" | "select-cards" | "complete";
+type FlowStep = "select-card" | "auth" | "loading" | "select-cards" | "complete";
 
 interface CardConnectionFlowProps {
   onComplete: () => void;
@@ -46,17 +44,22 @@ interface CardInfo {
   sleepYN: string;
 }
 
-// 여신금융협회 카드매출 조회 서비스 관련 상수
-const CREDIT_FINANCE_ASSOCIATION = {
-  id: "crefia",
-  name: "여신금융협회",
-  signupUrl: "https://www.cardsales.or.kr/member/join",
-  findIdUrl: "https://www.cardsales.or.kr/member/findId",
-  findPwUrl: "https://www.cardsales.or.kr/member/findPw",
-};
+// 카드사 목록
+const CARD_COMPANIES = [
+  { id: "shinhan", name: "신한카드", color: "bg-blue-500" },
+  { id: "samsung", name: "삼성카드", color: "bg-blue-700" },
+  { id: "kb", name: "KB국민카드", color: "bg-yellow-500" },
+  { id: "hyundai", name: "현대카드", color: "bg-slate-700" },
+  { id: "lotte", name: "롯데카드", color: "bg-red-500" },
+  { id: "bc", name: "BC카드", color: "bg-red-600" },
+  { id: "hana", name: "하나카드", color: "bg-green-500" },
+  { id: "woori", name: "우리카드", color: "bg-blue-600" },
+  { id: "nh", name: "NH농협카드", color: "bg-green-600" },
+];
 
 export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnectionFlowProps>(function CardConnectionFlow({ onComplete, onBack, onStepChange }, ref) {
-  const [step, setStep] = useState<FlowStep>("auth");
+  const [step, setStep] = useState<FlowStep>("select-card");
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [credentials, setCredentials] = useState({ id: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
@@ -66,47 +69,94 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number } | null>(null);
 
+  // 인증서 로그인 관련
+  const [useCertLogin, setUseCertLogin] = useState(false);
+  const [certFile, setCertFile] = useState<File | null>(null);
+  const [certPassword, setCertPassword] = useState("");
+  const [showCertPassword, setShowCertPassword] = useState(false);
+  const certFileInputRef = useRef<HTMLInputElement>(null);
+
   const { isLoading, registerCardAccount, getCards } = useCardConnection();
   const cardSync = useCardSync();
   const { refetch: refetchProfile } = useConnection();
 
   const stepProgress: Record<FlowStep, number> = {
-    "auth": 25,
-    "signup": 25,
-    "find-account": 25,
-    "loading": 50,
-    "select-cards": 75,
+    "select-card": 20,
+    "auth": 40,
+    "loading": 60,
+    "select-cards": 80,
     "complete": 100,
   };
 
+  const selectedCompanyName = CARD_COMPANIES.find(c => c.id === selectedCompany)?.name || "";
+
+  const handleCertFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      if (ext === "pfx" || ext === "p12" || ext === "der") {
+        setCertFile(file);
+      } else {
+        toast.error("공동인증서 파일(.pfx, .p12, .der)만 업로드 가능합니다.");
+      }
+    }
+  };
 
   const handleAuth = async () => {
-    if (!agreedTerms) return;
-    if (!credentials.id || !credentials.password) return;
-    
+    if (!agreedTerms || !selectedCompany) return;
+
+    if (useCertLogin) {
+      if (!certFile || !certPassword) return;
+    } else {
+      if (!credentials.id || !credentials.password) return;
+    }
+
     setError(null);
     setStep("loading");
-    
+
     try {
       let newConnectedId: string | null = null;
-      const cardCompanyId = CREDIT_FINANCE_ASSOCIATION.id;
 
-      newConnectedId = await registerCardAccount(
-        cardCompanyId,
-        credentials.id,
-        credentials.password
-      );
-      
+      if (useCertLogin && certFile) {
+        // 인증서 파일을 Base64로 변환
+        const certBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            resolve(result.split(",")[1]); // data:...;base64, 부분 제거
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(certFile);
+        });
+
+        newConnectedId = await registerCardAccount(
+          selectedCompany,
+          "", // 인증서 로그인시 ID 불필요
+          "", // 인증서 로그인시 PW 불필요
+          {
+            loginType: "2",
+            certFile: certBase64,
+            certPassword: certPassword,
+          }
+        );
+      } else {
+        newConnectedId = await registerCardAccount(
+          selectedCompany,
+          credentials.id,
+          credentials.password
+        );
+      }
+
       if (newConnectedId) {
         localStorage.setItem("codef_connected_id", newConnectedId);
-        localStorage.setItem("codef_card_company", cardCompanyId);
-        localStorage.setItem("codef_card_company_name", CREDIT_FINANCE_ASSOCIATION.name);
-        
-        const cards = await getCards(cardCompanyId, newConnectedId);
+        localStorage.setItem("codef_card_company", selectedCompany);
+        localStorage.setItem("codef_card_company_name", selectedCompanyName);
+
+        const cards = await getCards(selectedCompany, newConnectedId);
         setFetchedCards(cards);
         setStep("select-cards");
       } else {
-        setError("여신금융협회 연결에 실패했습니다. 로그인 정보를 확인해주세요.");
+        setError("카드사 연결에 실패했습니다. 로그인 정보를 확인해주세요.");
         setStep("auth");
       }
     } catch (err) {
@@ -118,23 +168,23 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
 
   const handleSelectCards = async () => {
     if (fetchedCards.length > 0 && selectedCards.length === 0) return;
-    
+
     setIsSyncing(true);
     setStep("complete");
-    
+
     try {
       const storedConnectedId = localStorage.getItem("codef_connected_id");
       const storedCardCompany = localStorage.getItem("codef_card_company");
       const storedCardCompanyName = localStorage.getItem("codef_card_company_name");
-      
+
       if (storedConnectedId && storedCardCompany) {
         const today = new Date();
         const threeMonthsAgo = new Date(today);
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-        
+
         const startDate = threeMonthsAgo.toISOString().split("T")[0].replace(/-/g, "");
         const endDate = today.toISOString().split("T")[0].replace(/-/g, "");
-        
+
         const result = await cardSync.mutateAsync({
           connectedId: storedConnectedId,
           cardCompanyId: storedCardCompany,
@@ -142,9 +192,9 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
           startDate,
           endDate,
         });
-        
+
         setSyncResult({ synced: result.synced, skipped: result.skipped });
-        
+
         if (result.synced > 0) {
           toast.success(`${result.synced}건의 거래 내역을 동기화했습니다`);
         }
@@ -163,9 +213,8 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   };
 
   const stepTitle: Record<FlowStep, string> = {
-    auth: "카드 연결",
-    signup: "여신금융 회원가입",
-    "find-account": "아이디/비밀번호 찾기",
+    "select-card": "카드사 선택",
+    auth: "카드사 로그인",
     loading: "연결 중",
     "select-cards": "카드 선택",
     complete: "연결 완료",
@@ -176,8 +225,14 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   }, [step, onStepChange]);
 
   const handleBack = () => {
-    if (step === "signup" || step === "find-account") {
-      setStep("auth");
+    if (step === "auth") {
+      setStep("select-card");
+      setError(null);
+      setCredentials({ id: "", password: "" });
+      setCertFile(null);
+      setCertPassword("");
+      setUseCertLogin(false);
+      setAgreedTerms(false);
     } else {
       onBack();
     }
@@ -187,14 +242,13 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
 
   return (
     <div className="space-y-4">
-
-      {/* 진행 상태 - signup 뎁스에서는 숨김 */}
-      {step !== "auth" && step !== "signup" && step !== "find-account" && (
+      {/* 진행 상태 */}
+      {step !== "select-card" && step !== "auth" && (
         <div className="space-y-2">
           <Progress value={stepProgress[step]} className="h-1.5" />
           <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>카드사 선택</span>
             <span>로그인</span>
-            <span>연결 중</span>
             <span>카드 선택</span>
             <span>완료</span>
           </div>
@@ -209,23 +263,56 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
         >
-          {/* Step 1: 여신금융협회 로그인 */}
-          {step === "auth" && (
+          {/* Step 1: 카드사 선택 */}
+          {step === "select-card" && (
             <div className="space-y-4">
               <div className="text-center">
                 <div className="w-14 h-14 rounded-xl mx-auto flex items-center justify-center bg-primary/10 mb-2">
                   <CreditCard className="h-7 w-7 text-primary" />
                 </div>
-                <h3 className="text-lg font-bold">카드매출 분석을 위해</h3>
-                <h3 className="text-lg font-bold">여신금융 로그인이 필요해요</h3>
-                <button
-                  type="button"
-                  onClick={() => window.open("https://www.cardsales.or.kr", "_blank")}
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-2 hover:text-primary transition-colors"
-                >
-                  <Info className="h-3 w-3" />
-                  여신금융협회가 무엇인가요?
-                </button>
+                <h3 className="text-lg font-bold">연결할 카드사를 선택하세요</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  공동인증서 또는 아이디/비밀번호로 연결합니다
+                </p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {CARD_COMPANIES.map((company) => (
+                  <button
+                    key={company.id}
+                    onClick={() => {
+                      setSelectedCompany(company.id);
+                      setStep("auth");
+                    }}
+                    className={cn(
+                      "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all",
+                      "border-border hover:border-primary/50 hover:bg-primary/5"
+                    )}
+                  >
+                    <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-white", company.color)}>
+                      <CreditCard className="h-5 w-5" />
+                    </div>
+                    <span className="text-xs font-medium">{company.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: 로그인 */}
+          {step === "auth" && selectedCompany && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className={cn(
+                  "w-14 h-14 rounded-xl mx-auto flex items-center justify-center text-white mb-2",
+                  CARD_COMPANIES.find(c => c.id === selectedCompany)?.color || "bg-primary"
+                )}>
+                  <CreditCard className="h-7 w-7" />
+                </div>
+                <h3 className="text-lg font-bold">{selectedCompanyName} 로그인</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {useCertLogin ? "공동인증서로 로그인합니다" : "아이디와 비밀번호를 입력하세요"}
+                </p>
               </div>
 
               {/* 에러 메시지 */}
@@ -236,34 +323,101 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                 </div>
               )}
 
-              {/* 아이디/비밀번호 입력 */}
-              <div className="space-y-3">
-                  <div>
-
-                    <Input
-                      placeholder="여신금융협회 아이디"
-                      value={credentials.id}
-                      onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="여신금융협회 비밀번호"
-                        value={credentials.password}
-                        onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
+              {/* 로그인 방식 토글 */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setUseCertLogin(false)}
+                  className={cn(
+                    "flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border",
+                    !useCertLogin
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                  )}
+                >
+                  아이디/비밀번호
+                </button>
+                <button
+                  onClick={() => setUseCertLogin(true)}
+                  className={cn(
+                    "flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border",
+                    useCertLogin
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                  )}
+                >
+                  공동인증서
+                </button>
               </div>
+
+              {/* 입력 필드 */}
+              {useCertLogin ? (
+                <div className="space-y-3">
+                  <div>
+                    <input
+                      ref={certFileInputRef}
+                      type="file"
+                      accept=".pfx,.p12,.der"
+                      onChange={handleCertFileChange}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => certFileInputRef.current?.click()}
+                      className="w-full justify-start gap-2 h-11"
+                    >
+                      {certFile ? (
+                        <>
+                          <FileKey className="h-4 w-4 text-primary" />
+                          <span className="truncate text-sm">{certFile.name}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4" />
+                          <span className="text-sm text-muted-foreground">공동인증서 파일 선택 (.pfx, .p12)</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      type={showCertPassword ? "text" : "password"}
+                      placeholder="인증서 비밀번호"
+                      value={certPassword}
+                      onChange={(e) => setCertPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCertPassword(!showCertPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    >
+                      {showCertPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Input
+                    placeholder={`${selectedCompanyName} 아이디`}
+                    value={credentials.id}
+                    onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
+                  />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder={`${selectedCompanyName} 비밀번호`}
+                      value={credentials.password}
+                      onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* 보안 안내 */}
               <div className="bg-primary/5 rounded-lg p-3 text-xs">
@@ -275,12 +429,12 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
 
               {/* 동의 */}
               <div className="flex items-center gap-2">
-                <Checkbox 
-                  id="terms" 
+                <Checkbox
+                  id="card-terms"
                   checked={agreedTerms}
                   onCheckedChange={(checked) => setAgreedTerms(checked as boolean)}
                 />
-                <label htmlFor="terms" className="text-xs text-muted-foreground">
+                <label htmlFor="card-terms" className="text-xs text-muted-foreground">
                   개인정보 수집 및 이용에 동의합니다 <span className="text-primary">(필수)</span>
                 </label>
               </div>
@@ -290,7 +444,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                 onClick={handleAuth}
                 disabled={
                   !agreedTerms || isLoading ||
-                  !credentials.id || !credentials.password
+                  (useCertLogin ? (!certFile || !certPassword) : (!credentials.id || !credentials.password))
                 }
                 className="w-full h-12 text-base"
               >
@@ -300,99 +454,25 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                     연결 중...
                   </>
                 ) : (
-                  "로그인"
+                  <>
+                    {selectedCompanyName} 연결하기
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </>
                 )}
               </Button>
-
-              {/* 하단 링크 (회원가입, 아이디/비밀번호 찾기) */}
-              <div className="space-y-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setStep("signup")}
-                  className="w-full text-sm"
-                >
-                  여신금융 회원가입
-                </Button>
-                <div className="flex items-center justify-center gap-3 text-[11px] text-muted-foreground">
-                  <button
-                    type="button"
-                    onClick={() => setStep("find-account")}
-                    className="hover:text-foreground transition-colors"
-                  >
-                    아이디 찾기
-                  </button>
-                  <span className="text-border">|</span>
-                  <button
-                    type="button"
-                    onClick={() => setStep("find-account")}
-                    className="hover:text-foreground transition-colors"
-                  >
-                    비밀번호 찾기
-                  </button>
-                </div>
-              </div>
-
             </div>
           )}
 
-          {/* 여신금융협회 회원가입 (iframe) */}
-          {step === "signup" && (
-            <div className="space-y-4">
-
-              <div className="rounded-xl border overflow-hidden bg-background" style={{ height: "60vh" }}>
-                <iframe
-                  src="https://m.cardsales.or.kr/page/member/join/joinForm"
-                  className="w-full h-full border-0"
-                  title="여신금융협회 회원가입"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-
-              <Button
-                onClick={() => setStep("auth")}
-                className="w-full h-12 text-base"
-              >
-                가입 완료, 로그인하기
-                <ArrowRight className="h-4 w-4 ml-1" />
-              </Button>
-
-            </div>
-          )}
-
-          {/* 아이디/비밀번호 찾기 (iframe) */}
-          {step === "find-account" && (
-            <div className="space-y-4">
-
-              <div className="rounded-xl border overflow-hidden bg-background" style={{ height: "60vh" }}>
-                <iframe
-                  src="https://m.cardsales.or.kr/page/member/join/findMember"
-                  className="w-full h-full border-0"
-                  title="아이디/비밀번호 찾기"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-
-              <Button
-                onClick={() => setStep("auth")}
-                className="w-full h-12 text-base"
-              >
-                확인 완료, 로그인하기
-                <ArrowRight className="h-4 w-4 ml-1" />
-              </Button>
-
-            </div>
-          )}
-
-          {/* Step 2: 로딩 화면 */}
+          {/* Step 3: 로딩 화면 */}
           {step === "loading" && (
             <div className="space-y-4 text-center py-8">
               <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto flex items-center justify-center">
                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
               </div>
               <div>
-                <h3 className="text-lg font-bold">여신금융협회 연결 중</h3>
+                <h3 className="text-lg font-bold">{selectedCompanyName} 연결 중</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  카드 매출 정보를 가져오고 있습니다...
+                  카드 정보를 가져오고 있습니다...
                 </p>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -401,16 +481,16 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
             </div>
           )}
 
-          {/* Step 3: 카드 선택 */}
+          {/* Step 4: 카드 선택 */}
           {step === "select-cards" && (
             <div className="space-y-4">
               <div className="text-center">
                 <div className="w-12 h-12 rounded-full bg-green-500/10 mx-auto flex items-center justify-center mb-2">
                   <CheckCircle2 className="h-6 w-6 text-green-500" />
                 </div>
-                <h3 className="text-lg font-bold">카드 연결 완료</h3>
+                <h3 className="text-lg font-bold">{selectedCompanyName} 연결 완료</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {fetchedCards.length > 0 
+                  {fetchedCards.length > 0
                     ? "연결할 카드를 선택해주세요"
                     : "카드사 연결이 완료되었습니다"}
                 </p>
@@ -467,7 +547,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                     조회된 카드가 없습니다
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    여신금융협회에 등록된 카드가 있는지 확인해주세요
+                    {selectedCompanyName}에 등록된 카드가 있는지 확인해주세요
                   </p>
                 </div>
               )}
@@ -498,7 +578,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
             </div>
           )}
 
-          {/* Step 4: 완료 */}
+          {/* Step 5: 완료 */}
           {step === "complete" && (
             <div className="space-y-4 text-center">
               <div className="relative">
@@ -517,9 +597,9 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                   {isSyncing ? "거래 내역 동기화 중..." : "카드 연결 완료!"}
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {isSyncing 
+                  {isSyncing
                     ? "최근 3개월 거래 내역을 가져오고 있습니다"
-                    : "여신금융협회를 통해 카드매출이 연결되었습니다"}
+                    : `${selectedCompanyName} 카드매출이 연결되었습니다`}
                 </p>
               </div>
 
@@ -527,7 +607,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
               {!isSyncing && syncResult && (
                 <div className="bg-primary/5 rounded-xl p-4 text-sm">
                   <p className="font-medium text-primary">
-                    {syncResult.synced > 0 
+                    {syncResult.synced > 0
                       ? `✓ ${syncResult.synced}건의 거래 내역이 동기화되었습니다`
                       : "새로 동기화할 거래 내역이 없습니다"}
                   </p>
@@ -556,7 +636,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
               )}
 
               <p className="text-xs text-muted-foreground">
-                {isSyncing 
+                {isSyncing
                   ? "잠시만 기다려주세요..."
                   : "지출 내역이 자동으로 분류되어 관리됩니다"}
               </p>
