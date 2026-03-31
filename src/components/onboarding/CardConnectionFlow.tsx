@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,10 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  Smartphone,
+  Lock,
+  Upload,
+  FileKey,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCardConnection } from "@/hooks/useCardConnection";
