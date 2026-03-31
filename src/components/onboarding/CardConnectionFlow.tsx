@@ -85,21 +85,11 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
       let newConnectedId: string | null = null;
       const cardCompanyId = CREDIT_FINANCE_ASSOCIATION.id;
 
-      if (useCertLogin && certFile) {
-        const certBase64 = await fileToBase64(certFile);
-        newConnectedId = await registerCardAccount(
-          cardCompanyId,
-          "",
-          certPassword,
-          { loginType: "2", certFile: certBase64, certPassword }
-        );
-      } else {
-        newConnectedId = await registerCardAccount(
-          cardCompanyId,
-          credentials.id,
-          credentials.password
-        );
-      }
+      newConnectedId = await registerCardAccount(
+        cardCompanyId,
+        credentials.id,
+        credentials.password
+      );
       
       if (newConnectedId) {
         localStorage.setItem("codef_connected_id", newConnectedId);
