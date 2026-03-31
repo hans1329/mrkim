@@ -92,7 +92,7 @@ serve(async (req) => {
       );
     }
 
-    const { action, businessNumber, startDate, endDate } = await req.json();
+    const { action, businessNumber, startDate, endDate, connectedId } = await req.json();
 
     if (!businessNumber) {
       return new Response(
@@ -112,6 +112,20 @@ serve(async (req) => {
     const queryStartDate = startDate?.replace(/-/g, "") || defaultStartDate;
     const queryEndDate = endDate?.replace(/-/g, "") || defaultEndDate;
 
+    // connectedId가 없으면 connector_instances에서 조회
+    let effectiveConnectedId = connectedId;
+    if (!effectiveConnectedId) {
+      const { data: instanceData } = await supabase
+        .from("connector_instances")
+        .select("connected_id")
+        .eq("user_id", user.id)
+        .eq("connector_id", "codef_hometax_tax_invoice")
+        .eq("status", "connected")
+        .not("connected_id", "is", null)
+        .single();
+      effectiveConnectedId = instanceData?.connected_id || null;
+    }
+
     console.log("Getting access token...");
     const accessToken = await getAccessToken();
     console.log("Access token obtained");
@@ -130,13 +144,16 @@ serve(async (req) => {
 
     // 매출 세금계산서 조회
     if (action === "all" || action === "sales") {
-      const salesBody = {
+      const salesBody: Record<string, string> = {
         organization: "0004",
-        loginType: "3", // 사업자번호 조회
         identity: cleanedNumber,
         startDate: queryStartDate,
         endDate: queryEndDate,
       };
+      // connectedId가 있으면 인증된 조회, 없으면 공개 조회
+      if (effectiveConnectedId) {
+        salesBody.connectedId = effectiveConnectedId;
+      }
 
       console.log("Fetching sales invoices...", salesBody);
       
@@ -172,13 +189,15 @@ serve(async (req) => {
 
     // 매입 세금계산서 조회
     if (action === "all" || action === "purchase") {
-      const purchaseBody = {
+      const purchaseBody: Record<string, string> = {
         organization: "0004",
-        loginType: "3",
         identity: cleanedNumber,
         startDate: queryStartDate,
         endDate: queryEndDate,
       };
+      if (effectiveConnectedId) {
+        purchaseBody.connectedId = effectiveConnectedId;
+      }
 
       console.log("Fetching purchase invoices...", purchaseBody);
 
