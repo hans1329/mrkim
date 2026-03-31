@@ -15,7 +15,12 @@ interface ConnectionDrawerContextValue {
   activeDrawerType: ConnectionType | null;
 }
 
-const ConnectionDrawerContext = createContext<ConnectionDrawerContextValue | null>(null);
+const ConnectionDrawerContext = createContext<ConnectionDrawerContextValue>({
+  openDrawer: () => {},
+  closeDrawer: () => {},
+  isDrawerOpen: false,
+  activeDrawerType: null,
+});
 
 export function ConnectionDrawerProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
