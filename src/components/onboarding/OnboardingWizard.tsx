@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { OnboardingStep } from "@/hooks/useOnboarding";
-import { CardConnectionFlow } from "./CardConnectionFlow";
+import { CardConnectionFlow, type CardConnectionFlowRef } from "./CardConnectionFlow";
 import { AccountConnectionFlow } from "./AccountConnectionFlow";
 import { HometaxConnectionFlow } from "./HometaxConnectionFlow";
 import { ConnectionSuccessModal } from "./ConnectionSuccessModal";
