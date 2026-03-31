@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 
 interface HometaxSummaryCardProps {
   isLoggedOut?: boolean;
