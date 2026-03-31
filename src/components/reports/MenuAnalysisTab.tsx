@@ -9,7 +9,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
-import { UtensilsCrossed, TrendingUp, Star, Crown, ArrowUpRight, ArrowDownRight, Flame } from "lucide-react";
+import { Star } from "lucide-react";
 import { formatCurrency } from "@/data/mockData";
 
 const CHART_COLORS = [
@@ -192,8 +192,7 @@ export function MenuAnalysisTab() {
     <div className="space-y-4">
       {/* 플랫폼 필터 */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-          <UtensilsCrossed className="w-4 h-4" />
+        <h3 className="text-sm font-semibold text-muted-foreground">
           메뉴 분석
         </h3>
         <Select value={platform} onValueChange={setPlatform}>
@@ -211,7 +210,9 @@ export function MenuAnalysisTab() {
       {!hasData ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <UtensilsCrossed className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+            <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center mb-3">
+              <span className="text-muted-foreground/50 text-lg">📋</span>
+            </div>
             <p className="text-sm text-muted-foreground">
               배달앱을 연동하면 메뉴별 매출을 분석할 수 있어요
             </p>
@@ -224,7 +225,6 @@ export function MenuAnalysisTab() {
             <Card className="border-0 shadow-sm bg-gradient-to-br from-primary/5 to-primary/10">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <UtensilsCrossed className="w-4 h-4 text-primary" />
                   <span className="text-xs text-muted-foreground">등록 메뉴</span>
                 </div>
                 <p className="text-xl font-bold">{totalMenuCount}개</p>
@@ -233,7 +233,6 @@ export function MenuAnalysisTab() {
             <Card className="border-0 shadow-sm bg-gradient-to-br from-accent/5 to-accent/10">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="w-4 h-4 text-accent-foreground" />
                   <span className="text-xs text-muted-foreground">총 주문수</span>
                 </div>
                 <p className="text-xl font-bold">{totalOrderCount.toLocaleString()}건</p>
@@ -242,7 +241,6 @@ export function MenuAnalysisTab() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <Crown className="w-4 h-4 text-amber-500" />
                   <span className="text-xs text-muted-foreground">메뉴 매출</span>
                 </div>
                 <p className="text-lg font-bold">{formatCurrency(totalRevenue)}</p>
@@ -251,7 +249,6 @@ export function MenuAnalysisTab() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <Flame className="w-4 h-4 text-orange-500" />
                   <span className="text-xs text-muted-foreground">평균 객단가</span>
                 </div>
                 <p className="text-lg font-bold">{formatCurrency(avgOrderValue)}</p>
@@ -295,8 +292,7 @@ export function MenuAnalysisTab() {
           {top10ByCount.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                  <Flame className="w-4 h-4 text-orange-500" />
+                <CardTitle className="text-sm font-semibold">
                   인기 메뉴 TOP 10
                 </CardTitle>
               </CardHeader>
@@ -327,8 +323,7 @@ export function MenuAnalysisTab() {
           {top10ByRevenue.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                  <Crown className="w-4 h-4 text-amber-500" />
+                <CardTitle className="text-sm font-semibold">
                   매출 TOP 10
                 </CardTitle>
               </CardHeader>
