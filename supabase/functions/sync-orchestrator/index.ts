@@ -543,53 +543,58 @@ async function syncCardTransactions(
     throw new Error("카드사 기관코드가 없습니다. 카드를 재연동해주세요.");
   }
 
-  // 승인 내역 조회 (전체 카드)
-  const requestBody = {
-    connectedId: instance.connected_id,
-    organization: organizationCode,
-    startDate,
-    endDate,
-    orderBy: "0",
-    inquiryType: "0",
-    cardNo: "",
-    memberStoreInfoType: "0",
-  };
+  // 1단계: 카드 목록 조회 → 카드번호 확보
+  const cardNos = await fetchCardNumbers(accessToken, instance.connected_id, organizationCode);
+  console.log(`[Card Sync] Found ${cardNos.length} card(s):`, cardNos.map(n => n.slice(-4)));
 
-  const res = await fetch(
-    `${CODEF_API_URL}/v1/kr/card/p/account/approval-list`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(requestBody),
-    }
-  );
+  // 2단계: 각 카드번호별 승인 내역 조회
+  let transactions: any[] = [];
+  for (const cardNoValue of cardNos) {
+    const requestBody = {
+      connectedId: instance.connected_id,
+      organization: organizationCode,
+      startDate,
+      endDate,
+      orderBy: "0",
+      inquiryType: "0",
+      cardNo: cardNoValue,
+      memberStoreInfoType: "0",
+    };
 
-  const text = await res.text();
-  console.log("Card approval-list raw response (first 500):", text.substring(0, 500));
-  console.log("Card approval-list HTTP status:", res.status);
-  let data: any;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    try {
-      data = JSON.parse(decodeURIComponent(text.replace(/\+/g, "%20")));
-    } catch {
-      throw new Error("카드 거래내역 응답 파싱 실패");
-    }
-  }
-
-  console.log("Card API result code:", data.result?.code, "message:", data.result?.message);
-
-  if (data.result?.code !== "CF-00000") {
-    throw new Error(
-      `카드 거래내역 조회 실패: ${data.result?.message || "Unknown"}`
+    const res = await fetch(
+      `${CODEF_API_URL}/v1/kr/card/p/account/approval-list`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(requestBody),
+      }
     );
-  }
 
-  const transactions = Array.isArray(data.data) ? data.data : [];
+    const text = await res.text();
+    console.log(`Card approval-list for card ***${cardNoValue.slice(-4)} (first 300):`, text.substring(0, 300));
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      try {
+        data = JSON.parse(decodeURIComponent(text.replace(/\+/g, "%20")));
+      } catch {
+        console.error(`Card ${cardNoValue.slice(-4)} response parse failed, skipping`);
+        continue;
+      }
+    }
+
+    if (data.result?.code !== "CF-00000") {
+      console.warn(`Card ${cardNoValue.slice(-4)} approval-list failed: ${data.result?.message}`);
+      continue;
+    }
+
+    const txs = Array.isArray(data.data) ? data.data : [];
+    transactions = transactions.concat(txs);
+  }
   const totalFetched = transactions.length;
 
   // transactions 테이블에 저장
