@@ -11,7 +11,7 @@ import { CheckCircle2, AlertCircle, Sparkles, RefreshCw, LinkIcon } from "lucide
 import { cn } from "@/lib/utils";
 import { useTransactions, useTransactionStats, useClassifyTransactions, useUpdateTransaction } from "@/hooks/useTransactions";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 
 export function TransactionClassifier() {
   const [classifyingIds, setClassifyingIds] = useState<Set<string>>(new Set());
