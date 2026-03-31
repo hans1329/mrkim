@@ -239,7 +239,6 @@ export function MenuAnalysisTab() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <Crown className="w-4 h-4 text-amber-500" />
                   <span className="text-xs text-muted-foreground">메뉴 매출</span>
                 </div>
                 <p className="text-lg font-bold">{formatCurrency(totalRevenue)}</p>
