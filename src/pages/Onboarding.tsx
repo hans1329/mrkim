@@ -84,7 +84,12 @@ export default function Onboarding() {
 
         setConnections({
           hometax: connectedIds.has("codef_hometax_tax_invoice"),
-          card: connectedIds.has("codef_card_usage") || connectedIds.has("codef_card_sales"),
+          card: (instances || []).some(
+            (i: any) =>
+              i.connector_id === "codef_card_usage" &&
+              i.status === "connected" &&
+              i.credentials_meta?.card_company_id === "crefia"
+          ),
           account: connectedIds.has("codef_bank_account"),
         });
       } catch (err) {
