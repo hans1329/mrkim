@@ -180,12 +180,18 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
             </p>
             <Button 
               size="sm" 
-              onClick={syncTaxInvoices}
+              onClick={handleSync}
               disabled={syncing}
               className="gap-1.5 h-8 text-xs rounded-full"
             >
-              <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
-              지금 동기화하기
+              {hasConnectedId ? (
+                <>
+                  <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
+                  지금 동기화하기
+                </>
+              ) : (
+                "간편인증으로 연동하기"
+              )}
             </Button>
           </div>
         ) : (
