@@ -221,7 +221,7 @@ async function handleRegisterWithCert(
       {
         countryCode: "KR",
         businessType: "CD",
-        clientType: isCrefia(cardCompanyId) ? "B" : "P",
+        clientType: "P",
         organization: organizationCode,
         loginType: "2",
         certType: "0",
