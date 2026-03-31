@@ -247,7 +247,6 @@ export function MenuAnalysisTab() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <Flame className="w-4 h-4 text-orange-500" />
                   <span className="text-xs text-muted-foreground">평균 객단가</span>
                 </div>
                 <p className="text-lg font-bold">{formatCurrency(avgOrderValue)}</p>
