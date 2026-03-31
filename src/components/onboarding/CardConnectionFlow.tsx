@@ -32,6 +32,10 @@ interface CardConnectionFlowProps {
   onStepChange?: (title: string) => void;
 }
 
+export interface CardConnectionFlowRef {
+  handleBack: () => void;
+}
+
 interface CardInfo {
   cardNo: string;
   cardName: string;
