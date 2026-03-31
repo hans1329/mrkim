@@ -246,8 +246,9 @@ export function HometaxConnectionFlow({
     if (!selectedAuth || !businessInfo) return;
 
     // 핸드폰 번호 확인
-    if (!profile?.phone) {
-      setError("간편인증을 위해 프로필에 휴대폰 번호를 먼저 등록해주세요.");
+    const userPhone = profile?.phone || profile?.secretary_phone;
+    if (!userPhone) {
+      setError("간편인증을 위해 프로필에 휴대폰 번호를 먼저 등록해주세요. (설정 > 김비서 설정에서 등록 가능)");
       return;
     }
 
@@ -270,7 +271,7 @@ export function HometaxConnectionFlow({
             businessNumber: businessInfo.businessNumber,
             authMethod: selectedAuth,
             userName: profile.name,
-            phoneNo: profile.phone,
+            phoneNo: userPhone,
           },
         }
       );
@@ -312,7 +313,7 @@ export function HometaxConnectionFlow({
             authMethod: selectedAuth,
             twoWayInfo,
             userName: profile?.name || "",
-            phoneNo: profile?.phone || "",
+            phoneNo: profile?.phone || profile?.secretary_phone || "",
           },
         }
       );
