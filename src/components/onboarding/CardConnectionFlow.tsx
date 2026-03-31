@@ -550,4 +550,4 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
       </AnimatePresence>
     </div>
   );
-}
+});
