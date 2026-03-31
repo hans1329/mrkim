@@ -13,7 +13,8 @@ import {
   PanelLeftClose,
   PanelLeft,
   User,
-  UserCheck
+  UserCheck,
+  ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -38,9 +39,12 @@ interface PCLayoutProps {
   children: ReactNode;
   title?: string;
   subtitle?: string;
+  showBackButton?: boolean;
+  onBack?: () => void;
+  headerRight?: ReactNode;
 }
 
-export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutProps) {
+export function PCLayout({ children, title = "김비서", subtitle, showBackButton, onBack, headerRight }: PCLayoutProps) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const { profile } = useProfileQuery();
@@ -190,6 +194,36 @@ export function PCLayout({ children, title = "김비서", subtitle }: PCLayoutPr
       <main className="flex-1 overflow-auto relative">
         {/* 사이드바 그림자 오버레이 */}
         <div className="absolute inset-y-0 left-0 w-3 z-10 pointer-events-none bg-gradient-to-r from-black/5 to-transparent" />
+
+        {/* 서브페이지 헤더 */}
+        {showBackButton && (
+          <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border/50">
+            <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 -ml-2"
+                  onClick={() => {
+                    if (onBack) {
+                      onBack();
+                    } else {
+                      navigate(-1);
+                    }
+                  }}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <div>
+                  <h1 className="text-lg font-bold text-foreground">{title}</h1>
+                  {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+                </div>
+              </div>
+              {headerRight && <div className="flex items-center gap-2">{headerRight}</div>}
+            </div>
+          </div>
+        )}
+
         <div className="[&>.pc-full-width]:contents [&>:not(.pc-full-width)]:max-w-6xl [&>:not(.pc-full-width)]:mx-auto [&>:not(.pc-full-width)]:p-6">
           {children}
         </div>
