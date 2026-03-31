@@ -205,18 +205,6 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
 
   return (
     <div className="space-y-4">
-      {/* 진행 상태 */}
-      <div className="space-y-2">
-        <Progress value={stepProgress[step]} className="h-1.5" />
-        <div className="flex justify-between text-[10px] text-muted-foreground">
-          <span>은행</span>
-          <span>로그인</span>
-          <span>연결</span>
-          <span>계좌</span>
-          <span>동기화</span>
-          <span>완료</span>
-        </div>
-      </div>
 
       <AnimatePresence mode="wait">
         <motion.div
