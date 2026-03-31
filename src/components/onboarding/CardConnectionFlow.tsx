@@ -214,8 +214,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                       onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">여신금융협회 비밀번호</Label>
+                  <div>
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
