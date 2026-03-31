@@ -1189,14 +1189,15 @@ async function syncBaemin(
 
   const now = new Date();
   let startDate: string;
+  // 최초 동기화는 최근 1개월만 (타임아웃 방지), 이후 델타
   if (instance.last_sync_at) {
     const lastSync = new Date(instance.last_sync_at);
     lastSync.setDate(lastSync.getDate() - 1);
     startDate = lastSync.toISOString().slice(0, 10).replace(/-/g, "");
   } else {
-    const threeMonthsAgo = new Date(now);
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    startDate = threeMonthsAgo.toISOString().slice(0, 10).replace(/-/g, "");
+    const oneMonthAgo = new Date(now);
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    startDate = oneMonthAgo.toISOString().slice(0, 10).replace(/-/g, "");
   }
   const endDate = now.toISOString().slice(0, 10).replace(/-/g, "");
 
