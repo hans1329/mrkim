@@ -183,8 +183,8 @@ export function ConnectorStatusCard() {
                         size="icon"
                         className="h-6 w-6 text-muted-foreground"
                         onClick={() => {
-                          const type = connector.category === "bank" ? "account" : connector.category as "hometax" | "card";
-                          openDrawer(type);
+                          const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
+                          if (drawerType) openDrawer(drawerType);
                         }}
                       >
                         <RefreshCw className="h-3 w-3" />
