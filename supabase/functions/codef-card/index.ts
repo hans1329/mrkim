@@ -21,13 +21,7 @@ const CARD_ORGANIZATION_CODES: Record<string, string> = {
   "hana": "0313",      // 하나카드
   "woori": "0309",     // 우리카드
   "nh": "0304",        // NH농협카드
-  "crefia": "0090",    // 여신금융협회(가맹점매출)
 };
-
-// 여신금융협회 여부 판별
-function isCrefia(cardCompanyId: string): boolean {
-  return cardCompanyId === "crefia";
-}
 
 /**
  * RSA PKCS#1 v1.5 암호화 - node-forge (npm: specifier, Deno 호환)
