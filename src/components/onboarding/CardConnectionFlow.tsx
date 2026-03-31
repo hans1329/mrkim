@@ -76,8 +76,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
 
   const handleAuth = async () => {
     if (!agreedTerms) return;
-    if (useCertLogin && (!certFile || !certPassword)) return;
-    if (!useCertLogin && (!credentials.id || !credentials.password)) return;
+    if (!credentials.id || !credentials.password) return;
     
     setError(null);
     setStep("loading");
