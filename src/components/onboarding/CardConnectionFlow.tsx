@@ -24,7 +24,7 @@ import { useCardSync } from "@/hooks/useCardSync";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { toast } from "sonner";
 
-type FlowStep = "auth" | "signup" | "loading" | "select-cards" | "complete";
+type FlowStep = "auth" | "signup" | "find-account" | "loading" | "select-cards" | "complete";
 
 interface CardConnectionFlowProps {
   onComplete: () => void;
