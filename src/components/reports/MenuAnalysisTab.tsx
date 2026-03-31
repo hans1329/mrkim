@@ -223,7 +223,6 @@ export function MenuAnalysisTab() {
             <Card className="border-0 shadow-sm bg-gradient-to-br from-primary/5 to-primary/10">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <UtensilsCrossed className="w-4 h-4 text-primary" />
                   <span className="text-xs text-muted-foreground">등록 메뉴</span>
                 </div>
                 <p className="text-xl font-bold">{totalMenuCount}개</p>
