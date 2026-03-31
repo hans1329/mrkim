@@ -36,6 +36,7 @@ interface UseTaxInvoicesReturn {
   salesTotal: number;
   purchaseTotal: number;
   vatPayable: number;
+  hasConnectedId: boolean;
 }
 
 export function useTaxInvoices(): UseTaxInvoicesReturn {
