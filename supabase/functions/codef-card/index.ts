@@ -551,7 +551,7 @@ async function handleGetTransactions(
     endDate: normalizedEnd,
     orderBy: "0",
     inquiryType: "0",
-    ...(isCrefia(cardCompanyId) ? {} : { cardNo: cardNoValue }),
+    cardNo: cardNoValue,
     memberStoreInfoType: "0",
   });
 
