@@ -113,21 +113,12 @@ export default function Transactions() {
   const bankSync = useBankSync();
 
   const navigate = useNavigate();
-  const { openDrawer, isDrawerOpen, activeDrawerType } = useConnectionDrawer();
+  const { openDrawer } = useConnectionDrawer();
   const cardInfo = useCardConnectionInfo();
   const bankInfo = useBankConnectionInfo();
-  const { data: connectorInstances = [] } = useConnectorInstances();
 
-  const isCoupangeatsConnected = connectorInstances.some(i => i.connector_id === "hyphen_coupangeats" && i.status === "connected");
-  const isBaeminConnected = connectorInstances.some(i => i.connector_id === "hyphen_baemin" && i.status === "connected");
-
-  const handleCardSync = () => {
-    openDrawer("card");
-  };
-
-  const handleBankSync = () => {
-    openDrawer("account");
-  };
+  const isCardConnected = cardConnected;
+  const isAccountConnected = accountConnected;
 
   const handleAddTransaction = () => {
     if (!newTransaction.description || !newTransaction.amount) {
