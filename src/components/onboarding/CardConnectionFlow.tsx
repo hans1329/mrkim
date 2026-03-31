@@ -398,11 +398,11 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
               <div className="flex flex-col items-center gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => window.open(CREDIT_FINANCE_ASSOCIATION.signupUrl, "_blank")}
+                  onClick={() => setStep("signup")}
                   className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   여신금융 회원가입
-                  <ExternalLink className="h-3 w-3" />
+                  <ArrowRight className="h-3 w-3" />
                 </button>
                 <button
                   type="button"
