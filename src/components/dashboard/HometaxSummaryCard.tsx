@@ -24,6 +24,7 @@ interface HometaxSummaryCardProps {
 
 export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardProps) {
   const navigate = useNavigate();
+  const { openDrawer } = useConnectionDrawer();
   const { profile, loading: profileLoading } = useProfile();
   const { 
     syncStatus, 
@@ -33,7 +34,16 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
     salesTotal,
     purchaseTotal,
     vatPayable,
+    hasConnectedId,
   } = useTaxInvoices();
+
+  const handleSync = () => {
+    if (!hasConnectedId) {
+      openDrawer("hometax");
+      return;
+    }
+    syncTaxInvoices();
+  };
 
   // 로그아웃 상태: 목업 데이터 표시
   if (isLoggedOut) {
