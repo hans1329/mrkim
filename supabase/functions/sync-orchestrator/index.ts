@@ -316,7 +316,15 @@ async function syncHometaxInvoices(
   instance: any,
   _job: any
 ): Promise<{ recordsFetched: number; recordsSaved: number }> {
-  // 사용자 프로필에서 사업자번호 조회
+  // connectedId 확인 - 간편인증 완료된 인스턴스만 세금계산서 조회 가능
+  const connectedId = instance.connected_id;
+  if (!connectedId) {
+    // connectedId가 없으면 간편인증 미완료 → 사업자 확인만 된 상태
+    console.log(`[hometax] Instance ${instance.id}: connectedId 없음, 간편인증 필요`);
+    return { recordsFetched: 0, recordsSaved: 0 };
+  }
+
+  // 사업자번호 조회
   const { data: profile } = await supabase
     .from("profiles")
     .select("business_registration_number")
@@ -327,12 +335,11 @@ async function syncHometaxInvoices(
     throw new Error("사업자등록번호가 설정되지 않았습니다.");
   }
 
-  // 동기화 기간 결정 (델타: 마지막 동기화 이후, 풀: 최근 3개월)
+  // 동기화 기간 결정
   const now = new Date();
   let startDate: string;
 
   if (instance.last_sync_at) {
-    // 마지막 동기화 1일 전부터 (겹침 허용으로 누락 방지)
     const lastSync = new Date(instance.last_sync_at);
     lastSync.setDate(lastSync.getDate() - 1);
     startDate = lastSync.toISOString().slice(0, 10).replace(/-/g, "");
@@ -343,17 +350,11 @@ async function syncHometaxInvoices(
   }
   const endDate = now.toISOString().slice(0, 10).replace(/-/g, "");
 
-  // codef-tax-invoice Edge Function 호출 (service role로 내부 호출)
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-  // 해당 사용자의 JWT를 생성할 수 없으므로, service role key로 직접 호출
-  // codef-tax-invoice는 authHeader로 사용자 인증을 확인하므로,
-  // 오케스트레이터에서는 직접 CODEF API를 호출합니다.
   const codefResult = await callCodefTaxInvoice(
     supabase,
     instance.user_id,
     profile.business_registration_number,
+    connectedId,
     startDate,
     endDate
   );
@@ -362,12 +363,13 @@ async function syncHometaxInvoices(
 }
 
 /**
- * CODEF 세금계산서 직접 호출 (service role 컨텍스트)
+ * CODEF 세금계산서 직접 호출 (connectedId 기반)
  */
 async function callCodefTaxInvoice(
   supabase: ReturnType<typeof createClient>,
   userId: string,
   businessNumber: string,
+  connectedId: string,
   startDate: string,
   endDate: string
 ): Promise<{ recordsFetched: number; recordsSaved: number }> {
@@ -377,7 +379,6 @@ async function callCodefTaxInvoice(
   const clientId = Deno.env.get("CODEF_CLIENT_ID")!;
   const clientSecret = Deno.env.get("CODEF_CLIENT_SECRET")!;
 
-  // 토큰 발급
   const credentials = btoa(`${clientId}:${clientSecret}`);
   const tokenRes = await fetch(CODEF_TOKEN_URL, {
     method: "POST",
@@ -391,23 +392,26 @@ async function callCodefTaxInvoice(
   const { access_token: accessToken } = await tokenRes.json();
 
   const cleanedNumber = businessNumber.replace(/\D/g, "");
-  const queryBody = {
-    organization: "0004",
-    loginType: "3",
-    identity: cleanedNumber,
-    startDate,
-    endDate,
-  };
 
   let totalFetched = 0;
   let totalSaved = 0;
 
-  // 매출 + 매입 조회
+  // 매출 + 매입 조회 (connectedId 기반)
   for (const type of ["sales", "purchase"] as const) {
     const path =
       type === "sales"
         ? "/v1/kr/public/nt/tax-invoice/sales"
         : "/v1/kr/public/nt/tax-invoice/purchase";
+
+    const queryBody = {
+      connectedId,
+      organization: "0004",
+      identity: cleanedNumber,
+      startDate,
+      endDate,
+    };
+
+    console.log(`[hometax] Fetching ${type} invoices with connectedId...`);
 
     const res = await fetch(`${CODEF_API_URL}${path}`, {
       method: "POST",
@@ -426,10 +430,12 @@ async function callCodefTaxInvoice(
       try {
         data = JSON.parse(decodeURIComponent(text));
       } catch {
-        console.error(`Failed to parse ${type} response`);
+        console.error(`Failed to parse ${type} response:`, text.substring(0, 300));
         continue;
       }
     }
+
+    console.log(`[hometax] ${type} response code:`, data.result?.code, "data type:", Array.isArray(data.data) ? `array(${data.data.length})` : typeof data.data);
 
     if (data.result?.code !== "CF-00000" || !data.data) continue;
 
@@ -460,7 +466,6 @@ async function callCodefTaxInvoice(
     }));
 
     if (formatted.length > 0) {
-      // 기간 내 기존 데이터 삭제 후 삽입
       await supabase
         .from("tax_invoices")
         .delete()
@@ -483,6 +488,7 @@ async function callCodefTaxInvoice(
       user_id: userId,
       sync_status: "completed",
       last_sync_at: new Date().toISOString(),
+      sales_count: totalFetched,
       sync_error: null,
       updated_at: new Date().toISOString(),
     },
