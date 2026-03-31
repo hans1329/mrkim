@@ -189,7 +189,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
     <div className="space-y-4">
 
       {/* 진행 상태 - signup 뎁스에서는 숨김 */}
-      {step !== "signup" && (
+      {step !== "signup" && step !== "find-account" && (
         <div className="space-y-2">
           <Progress value={stepProgress[step]} className="h-1.5" />
           <div className="flex justify-between text-[10px] text-muted-foreground">
