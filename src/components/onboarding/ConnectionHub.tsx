@@ -374,6 +374,7 @@ export function ConnectionHub({
                       onComplete={handleFlowComplete}
                       onBack={handleBack}
                       isOpen={open}
+                      showHeader={false}
                     />
                   )}
                   {view.service === "card" && (

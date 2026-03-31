@@ -660,8 +660,13 @@ export function HometaxConnectionFlow({
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
+          <div className="text-center mb-4">
+            <p className="text-lg font-bold">간편인증 수단 선택</p>
+            <p className="text-sm text-muted-foreground">
+              세금계산서 조회를 위해 본인인증이 필요합니다
+            </p>
+          </div>
 
-          {error && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
