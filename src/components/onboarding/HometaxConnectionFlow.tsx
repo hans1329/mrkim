@@ -405,33 +405,34 @@ export function HometaxConnectionFlow({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={
-            step === "auth_select"
-              ? hasVerifiedBusinessInfo
-                ? () => setStep("confirmed")
+      {showHeader && (
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={
+              step === "auth_select"
+                ? hasVerifiedBusinessInfo
+                  ? () => setStep("confirmed")
+                  : onBack
+                : step === "auth_waiting"
+                ? () => setStep("auth_select")
                 : onBack
-              : step === "auth_waiting"
-              ? () => setStep("auth_select")
-              : onBack
-          }
-          className="shrink-0"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h2 className="text-lg font-bold">국세청 연결</h2>
-          <p className="text-sm text-muted-foreground">
-            {step === "auth_select" || step === "auth_waiting"
-              ? "간편인증으로 세금계산서를 연동합니다"
-              : "사업자등록번호로 연동합니다"}
-          </p>
+            }
+            className="shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h2 className="text-lg font-bold">국세청 연결</h2>
+            <p className="text-sm text-muted-foreground">
+              {step === "auth_select" || step === "auth_waiting"
+                ? "간편인증으로 세금계산서를 연동합니다"
+                : "사업자등록번호로 연동합니다"}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {isInitializing ? (
         <div className="space-y-4">
