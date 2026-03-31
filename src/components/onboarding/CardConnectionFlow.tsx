@@ -134,7 +134,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
           "", // 인증서 로그인시 ID 불필요
           "", // 인증서 로그인시 PW 불필요
           {
-            loginType: "2",
+            loginType: "0",
             certFile: certBase64,
             certPassword: certPassword,
           }

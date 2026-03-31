@@ -84,7 +84,7 @@ export function useCardConnection(): UseCardConnectionReturn {
       };
 
       if (certOptions) {
-        requestBody.loginType = "2";
+        requestBody.loginType = "0";
         requestBody.certFile = certOptions.certFile;
         requestBody.certPassword = certOptions.certPassword;
       } else {
