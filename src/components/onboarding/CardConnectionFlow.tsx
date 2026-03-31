@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +15,6 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
-  Lock,
-  Upload,
-  FileKey,
   ExternalLink,
   Info,
 } from "lucide-react";
@@ -63,11 +60,6 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
   const [error, setError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number } | null>(null);
-  const [useCertLogin, setUseCertLogin] = useState(false);
-  const [certFile, setCertFile] = useState<File | null>(null);
-  const [certPassword, setCertPassword] = useState("");
-  const [showCertPassword, setShowCertPassword] = useState(false);
-  const certFileInputRef = useRef<HTMLInputElement>(null);
 
   const { isLoading, registerCardAccount, getCards } = useCardConnection();
   const cardSync = useCardSync();
@@ -81,23 +73,10 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
     "complete": 100,
   };
 
-  // File → Base64 변환
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const result = reader.result as string;
-        resolve(result.split(",")[1]);
-      };
-      reader.onerror = reject;
-    });
-  };
 
   const handleAuth = async () => {
     if (!agreedTerms) return;
-    if (useCertLogin && (!certFile || !certPassword)) return;
-    if (!useCertLogin && (!credentials.id || !credentials.password)) return;
+    if (!credentials.id || !credentials.password) return;
     
     setError(null);
     setStep("loading");
@@ -106,21 +85,11 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
       let newConnectedId: string | null = null;
       const cardCompanyId = CREDIT_FINANCE_ASSOCIATION.id;
 
-      if (useCertLogin && certFile) {
-        const certBase64 = await fileToBase64(certFile);
-        newConnectedId = await registerCardAccount(
-          cardCompanyId,
-          "",
-          certPassword,
-          { loginType: "2", certFile: certBase64, certPassword }
-        );
-      } else {
-        newConnectedId = await registerCardAccount(
-          cardCompanyId,
-          credentials.id,
-          credentials.password
-        );
-      }
+      newConnectedId = await registerCardAccount(
+        cardCompanyId,
+        credentials.id,
+        credentials.password
+      );
       
       if (newConnectedId) {
         localStorage.setItem("codef_connected_id", newConnectedId);
@@ -235,96 +204,8 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 </div>
               )}
 
-              {/* 로그인 방식 전환 */}
-              <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  {useCertLogin ? (
-                    <Lock className="h-4 w-4 text-primary shrink-0" />
-                  ) : (
-                    <CreditCard className="h-4 w-4 text-primary shrink-0" />
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {useCertLogin ? "공동인증서" : "아이디/비밀번호"}
-                    </span> 로그인
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setUseCertLogin(!useCertLogin)}
-                  className="text-xs text-primary font-medium hover:underline"
-                >
-                  {useCertLogin ? "아이디/비번으로 전환" : "인증서로 전환"}
-                </button>
-              </div>
-
-              {/* 인증서 로그인 */}
-              {useCertLogin ? (
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs">공동인증서 (구 공인인증서)</Label>
-                    <input
-                      ref={certFileInputRef}
-                      type="file"
-                      accept=".pfx,.p12,.der,.key"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0] || null;
-                        setCertFile(file);
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => certFileInputRef.current?.click()}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed transition-all text-left",
-                        certFile ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                      )}
-                    >
-                      {certFile ? (
-                        <>
-                          <FileKey className="h-5 w-5 text-primary shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">{certFile.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              인증서 등록 완료 · {(certFile.size / 1024).toFixed(1)} KB
-                            </p>
-                          </div>
-                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
-                          <div>
-                            <p className="text-sm text-muted-foreground">내 PC에서 인증서 불러오기</p>
-                            <p className="text-xs text-muted-foreground">USB 또는 하드디스크에 저장된 인증서</p>
-                          </div>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">인증서 비밀번호</Label>
-                    <div className="relative">
-                      <Input
-                        type={showCertPassword ? "text" : "password"}
-                        placeholder="공동인증서 비밀번호"
-                        value={certPassword}
-                        onChange={(e) => setCertPassword(e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCertPassword(!showCertPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showCertPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* 아이디/비밀번호 입력 */
-                <div className="space-y-3">
+              {/* 아이디/비밀번호 입력 */}
+              <div className="space-y-3">
                   <div className="space-y-2">
                     <Label className="text-xs">여신금융협회 아이디</Label>
                     <Input
@@ -351,8 +232,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                       </button>
                     </div>
                   </div>
-                </div>
-              )}
+              </div>
 
               {/* 보안 안내 */}
               <div className="flex items-start gap-2 bg-primary/5 rounded-lg p-3 text-xs">
@@ -380,7 +260,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 onClick={handleAuth}
                 disabled={
                   !agreedTerms || isLoading ||
-                  (useCertLogin ? (!certFile || !certPassword) : (!credentials.id || !credentials.password))
+                  !credentials.id || !credentials.password
                 }
                 className="w-full h-12 text-base"
               >
