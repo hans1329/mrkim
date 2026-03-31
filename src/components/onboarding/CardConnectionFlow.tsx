@@ -15,10 +15,11 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
-  Smartphone,
   Lock,
   Upload,
   FileKey,
+  ExternalLink,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCardConnection } from "@/hooks/useCardConnection";
@@ -26,20 +27,7 @@ import { useCardSync } from "@/hooks/useCardSync";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { toast } from "sonner";
 
-// 카드사 목록 (실제 Codef 지원 카드사)
-const CARD_COMPANIES = [
-  { id: "shinhan", name: "신한카드", logo: "💳", color: "bg-blue-500" },
-  { id: "samsung", name: "삼성카드", logo: "💳", color: "bg-blue-600" },
-  { id: "kb", name: "KB국민카드", logo: "💳", color: "bg-yellow-500" },
-  { id: "hyundai", name: "현대카드", logo: "💳", color: "bg-black" },
-  { id: "lotte", name: "롯데카드", logo: "💳", color: "bg-red-500" },
-  { id: "bc", name: "BC카드", logo: "💳", color: "bg-red-600" },
-  { id: "hana", name: "하나카드", logo: "💳", color: "bg-green-500" },
-  { id: "woori", name: "우리카드", logo: "💳", color: "bg-blue-400" },
-  { id: "nh", name: "NH농협카드", logo: "💳", color: "bg-green-600" },
-];
-
-type FlowStep = "select-company" | "auth" | "loading" | "select-cards" | "complete";
+type FlowStep = "auth" | "loading" | "select-cards" | "complete";
 
 interface CardConnectionFlowProps {
   onComplete: () => void;
@@ -56,9 +44,17 @@ interface CardInfo {
   sleepYN: string;
 }
 
+// 여신금융협회 카드매출 조회 서비스 관련 상수
+const CREDIT_FINANCE_ASSOCIATION = {
+  id: "crefia",
+  name: "여신금융협회",
+  signupUrl: "https://www.cardsales.or.kr/member/join",
+  findIdUrl: "https://www.cardsales.or.kr/member/findId",
+  findPwUrl: "https://www.cardsales.or.kr/member/findPw",
+};
+
 export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowProps) {
-  const [step, setStep] = useState<FlowStep>("select-company");
-  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [step, setStep] = useState<FlowStep>("auth");
   const [credentials, setCredentials] = useState({ id: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
@@ -73,24 +69,16 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
   const [showCertPassword, setShowCertPassword] = useState(false);
   const certFileInputRef = useRef<HTMLInputElement>(null);
 
-
-  const { isLoading, registerCardAccount, getCards, connectedId } = useCardConnection();
+  const { isLoading, registerCardAccount, getCards } = useCardConnection();
   const cardSync = useCardSync();
   const { refetch: refetchProfile } = useConnection();
 
   const stepProgress: Record<FlowStep, number> = {
-    "select-company": 25,
-    "auth": 50,
-    "loading": 75,
-    "select-cards": 85,
+    "auth": 25,
+    "loading": 50,
+    "select-cards": 75,
     "complete": 100,
   };
-
-  const handleSelectCompany = (companyId: string) => {
-    setSelectedCompany(companyId);
-    setError(null);
-  };
-
 
   // File → Base64 변환
   const fileToBase64 = (file: File): Promise<string> => {
@@ -106,7 +94,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
   };
 
   const handleAuth = async () => {
-    if (!agreedTerms || !selectedCompany) return;
+    if (!agreedTerms) return;
     if (useCertLogin && (!certFile || !certPassword)) return;
     if (!useCertLogin && (!credentials.id || !credentials.password)) return;
     
@@ -115,18 +103,19 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
     
     try {
       let newConnectedId: string | null = null;
+      const cardCompanyId = CREDIT_FINANCE_ASSOCIATION.id;
 
       if (useCertLogin && certFile) {
         const certBase64 = await fileToBase64(certFile);
         newConnectedId = await registerCardAccount(
-          selectedCompany,
+          cardCompanyId,
           "",
           certPassword,
           { loginType: "2", certFile: certBase64, certPassword }
         );
       } else {
         newConnectedId = await registerCardAccount(
-          selectedCompany,
+          cardCompanyId,
           credentials.id,
           credentials.password
         );
@@ -134,14 +123,14 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
       
       if (newConnectedId) {
         localStorage.setItem("codef_connected_id", newConnectedId);
-        localStorage.setItem("codef_card_company", selectedCompany);
-        localStorage.setItem("codef_card_company_name", selectedCompanyData?.name || selectedCompany);
+        localStorage.setItem("codef_card_company", cardCompanyId);
+        localStorage.setItem("codef_card_company_name", CREDIT_FINANCE_ASSOCIATION.name);
         
-        const cards = await getCards(selectedCompany, newConnectedId);
+        const cards = await getCards(cardCompanyId, newConnectedId);
         setFetchedCards(cards);
         setStep("select-cards");
       } else {
-        setError("카드사 연결에 실패했습니다. 로그인 정보를 확인해주세요.");
+        setError("여신금융협회 연결에 실패했습니다. 로그인 정보를 확인해주세요.");
         setStep("auth");
       }
     } catch (err) {
@@ -151,11 +140,9 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
     }
   };
 
-
   const handleSelectCards = async () => {
     if (fetchedCards.length > 0 && selectedCards.length === 0) return;
     
-    // 거래 내역 동기화 시작
     setIsSyncing(true);
     setStep("complete");
     
@@ -165,7 +152,6 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
       const storedCardCompanyName = localStorage.getItem("codef_card_company_name");
       
       if (storedConnectedId && storedCardCompany) {
-        // 최근 3개월 거래 내역 동기화
         const today = new Date();
         const threeMonthsAgo = new Date(today);
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
@@ -196,12 +182,9 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
   };
 
   const handleComplete = () => {
-    // 프로필 캐시 즉시 갱신하여 대시보드에서 연동 상태 반영
     refetchProfile();
     onComplete();
   };
-
-  const selectedCompanyData = CARD_COMPANIES.find((c) => c.id === selectedCompany);
 
   return (
     <div className="space-y-4">
@@ -209,7 +192,6 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
       <div className="space-y-2">
         <Progress value={stepProgress[step]} className="h-1.5" />
         <div className="flex justify-between text-[10px] text-muted-foreground">
-          <span>카드사 선택</span>
           <span>로그인</span>
           <span>연결 중</span>
           <span>카드 선택</span>
@@ -225,72 +207,23 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
         >
-          {/* Step 1: 카드사 선택 */}
-          {step === "select-company" && (
+          {/* Step 1: 여신금융협회 로그인 */}
+          {step === "auth" && (
             <div className="space-y-4">
               <div className="text-center">
-                <h3 className="text-lg font-bold">카드사 선택</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  연결할 카드사를 선택해주세요
-                </p>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                {CARD_COMPANIES.map((company) => (
-                  <button
-                    key={company.id}
-                    onClick={() => handleSelectCompany(company.id)}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all",
-                      selectedCompany === company.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    )}
-                  >
-                    <div className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg",
-                      company.color
-                    )}>
-                      {company.logo}
-                    </div>
-                    <span className="text-[11px] font-medium text-center leading-tight">
-                      {company.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" onClick={onBack} className="flex-1">
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  이전
-                </Button>
-                <Button
-                  onClick={() => setStep("auth")}
-                  disabled={!selectedCompany}
-                  className="flex-1"
-                >
-                  다음
-                  <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: 인증 정보 입력 */}
-          {step === "auth" && selectedCompanyData && (
-            <div className="space-y-4">
-              <div className="text-center">
-                <div className={cn(
-                  "w-12 h-12 rounded-xl mx-auto flex items-center justify-center text-white text-xl mb-2",
-                  selectedCompanyData.color
-                )}>
-                  {selectedCompanyData.logo}
+                <div className="w-14 h-14 rounded-xl mx-auto flex items-center justify-center bg-primary/10 mb-2">
+                  <CreditCard className="h-7 w-7 text-primary" />
                 </div>
-                <h3 className="text-lg font-bold">{selectedCompanyData.name} 로그인</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  카드사 홈페이지 로그인 정보를 입력해주세요
-                </p>
+                <h3 className="text-lg font-bold">카드매출 분석을 위해</h3>
+                <h3 className="text-lg font-bold">여신금융 로그인이 필요해요</h3>
+                <button
+                  type="button"
+                  onClick={() => window.open("https://www.cardsales.or.kr", "_blank")}
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-2 hover:text-primary transition-colors"
+                >
+                  <Info className="h-3 w-3" />
+                  여신금융협회가 무엇인가요?
+                </button>
               </div>
 
               {/* 에러 메시지 */}
@@ -301,13 +234,13 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 </div>
               )}
 
-              {/* 로그인 방식 선택 */}
+              {/* 로그인 방식 전환 */}
               <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-2">
                   {useCertLogin ? (
                     <Lock className="h-4 w-4 text-primary shrink-0" />
                   ) : (
-                    <Smartphone className="h-4 w-4 text-primary shrink-0" />
+                    <CreditCard className="h-4 w-4 text-primary shrink-0" />
                   )}
                   <span className="text-xs text-muted-foreground">
                     <span className="font-medium text-foreground">
@@ -323,20 +256,6 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                   {useCertLogin ? "아이디/비번으로 전환" : "인증서로 전환"}
                 </button>
               </div>
-
-              {/* 하나카드 2차인증 안내 */}
-              {selectedCompany === "hana" && !useCertLogin && (
-                <div className="flex items-start gap-2 bg-warning/10 rounded-lg p-3 text-xs">
-                  <AlertCircle className="h-4 w-4 shrink-0 text-warning mt-0.5" />
-                  <div className="text-muted-foreground">
-                    <p className="font-medium text-warning">하나카드 연동 전 확인사항</p>
-                    <p className="mt-0.5">
-                      하나카드는 2차 인증(SMS/ARS)이 활성화되어 있으면 연동이 불가합니다. 
-                      <span className="font-medium text-foreground"> 하나카드 앱 또는 홈페이지에서 2차 인증을 해제</span>한 후 다시 시도해주세요.
-                    </p>
-                  </div>
-                </div>
-              )}
 
               {/* 인증서 로그인 */}
               {useCertLogin ? (
@@ -406,19 +325,19 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 /* 아이디/비밀번호 입력 */
                 <div className="space-y-3">
                   <div className="space-y-2">
-                    <Label className="text-xs">아이디</Label>
+                    <Label className="text-xs">여신금융협회 아이디</Label>
                     <Input
-                      placeholder="카드사 홈페이지 아이디"
+                      placeholder="여신금융협회 아이디"
                       value={credentials.id}
                       onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs">비밀번호</Label>
+                    <Label className="text-xs">여신금융협회 비밀번호</Label>
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
-                        placeholder="비밀번호"
+                        placeholder="여신금융협회 비밀번호"
                         value={credentials.password}
                         onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
                       />
@@ -455,46 +374,63 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 </label>
               </div>
 
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep("select-company")} className="flex-1">
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  이전
-                </Button>
-                <Button
-                  onClick={handleAuth}
-                  disabled={
-                    !agreedTerms || isLoading ||
-                    (useCertLogin ? (!certFile || !certPassword) : (!credentials.id || !credentials.password))
-                  }
-                  className="flex-1"
+              {/* 로그인 버튼 */}
+              <Button
+                onClick={handleAuth}
+                disabled={
+                  !agreedTerms || isLoading ||
+                  (useCertLogin ? (!certFile || !certPassword) : (!credentials.id || !credentials.password))
+                }
+                className="w-full h-12 text-base"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    연결 중...
+                  </>
+                ) : (
+                  "로그인"
+                )}
+              </Button>
+
+              {/* 하단 링크 (회원가입, 아이디/비밀번호 찾기) */}
+              <div className="flex flex-col items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => window.open(CREDIT_FINANCE_ASSOCIATION.signupUrl, "_blank")}
+                  className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                      연결 중...
-                    </>
-                  ) : (
-                    <>
-                      로그인
-                      <ArrowRight className="h-4 w-4 ml-1" />
-                    </>
-                  )}
-                </Button>
+                  여신금융 회원가입
+                  <ExternalLink className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.open(CREDIT_FINANCE_ASSOCIATION.findIdUrl, "_blank")}
+                  className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  아이디, 비밀번호 찾기
+                  <ExternalLink className="h-3 w-3" />
+                </button>
               </div>
+
+              {/* 이전 버튼 */}
+              <Button variant="ghost" onClick={onBack} className="w-full text-muted-foreground">
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                이전으로
+              </Button>
             </div>
           )}
 
-
-          {/* Step 3: 로딩 화면 */}
+          {/* Step 2: 로딩 화면 */}
           {step === "loading" && (
             <div className="space-y-4 text-center py-8">
               <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto flex items-center justify-center">
                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
               </div>
               <div>
-                <h3 className="text-lg font-bold">카드사 연결 중</h3>
+                <h3 className="text-lg font-bold">여신금융협회 연결 중</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {selectedCompanyData?.name}에 접속하고 있습니다...
+                  카드 매출 정보를 가져오고 있습니다...
                 </p>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -503,7 +439,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
             </div>
           )}
 
-          {/* Step 4: 카드 선택 */}
+          {/* Step 3: 카드 선택 */}
           {step === "select-cards" && (
             <div className="space-y-4">
               <div className="text-center">
@@ -537,11 +473,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                           : "border-border hover:border-primary/50"
                       )}
                     >
-                      <div className={cn(
-                        "w-10 h-10 rounded-lg flex items-center justify-center",
-                        selectedCompanyData?.color || "bg-gray-500",
-                        "text-white"
-                      )}>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-primary text-primary-foreground">
                         <CreditCard className="h-5 w-5" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -573,7 +505,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                     조회된 카드가 없습니다
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    카드사에 등록된 카드가 있는지 확인해주세요
+                    여신금융협회에 등록된 카드가 있는지 확인해주세요
                   </p>
                 </div>
               )}
@@ -604,7 +536,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
             </div>
           )}
 
-          {/* Step 5: 완료 */}
+          {/* Step 4: 완료 */}
           {step === "complete" && (
             <div className="space-y-4 text-center">
               <div className="relative">
@@ -625,7 +557,7 @@ export function CardConnectionFlow({ onComplete, onBack }: CardConnectionFlowPro
                 <p className="text-sm text-muted-foreground mt-1">
                   {isSyncing 
                     ? "최근 3개월 거래 내역을 가져오고 있습니다"
-                    : `${selectedCompanyData?.name}가 연결되었습니다`}
+                    : "여신금융협회를 통해 카드매출이 연결되었습니다"}
                 </p>
               </div>
 
