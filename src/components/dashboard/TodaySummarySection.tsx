@@ -3,7 +3,7 @@ import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, Link2, Sparkles } from "lucide-react";
+import { TrendingUp, TrendingDown, PiggyBank, Link2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { formatCurrency } from "@/data/mockData";
