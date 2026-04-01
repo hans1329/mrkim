@@ -88,11 +88,12 @@ export function useClassificationStats() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const { data, error } = await supabase.rpc("get_tax_classification_stats", {
+      const { data, error } = await supabase.rpc("get_tax_classification_stats" as any, {
         p_user_id: user.id,
       });
 
       if (error) throw error;
+      const result = data as any;
       if (!data) return null;
 
       return {
