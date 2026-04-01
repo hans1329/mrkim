@@ -244,8 +244,8 @@ async function handleRegister(
     );
   }
 
-  // 전화번호 정리 (010-xxxx-xxxx → 010xxxxxxxx)
-  const cleanedPhone = phoneNo.replace(/\D/g, "");
+  // 전화번호 정리: E.164(+82...) → 국내 형식(010...), 하이픈 제거
+  const cleanedPhone = phoneNo.replace(/^\+?82/, "0").replace(/\D/g, "");
 
   const cleanedNumber = businessNumber.replace(/\D/g, "");
   const accessToken = await getAccessToken();
