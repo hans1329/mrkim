@@ -26,7 +26,7 @@ import { BusinessNumberModal } from "./BusinessNumberModal";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import mrKimAvatar from "@/assets/mr-kim-avatar.webp";
+const icc5Image = "/images/icc-5.webp";
 
 export type ServiceType = "hometax" | "card" | "account" | "baemin" | "coupangeats";
 
@@ -277,7 +277,7 @@ export function ConnectionHub({
                   >
                     <div className="relative">
                       <div className="h-28 w-28 rounded-full overflow-hidden border-4 border-primary/20 shadow-lg">
-                        <img src={mrKimAvatar} alt="김비서" className="h-full w-full object-cover" />
+                        <img src={icc5Image} alt="김비서" className="h-full w-full object-cover" />
                       </div>
                       <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary flex items-center justify-center shadow-md">
                         <Smartphone className="h-4 w-4 text-primary-foreground" />
