@@ -106,36 +106,75 @@ export function ConnectionHub({
   const { profile, refetch: refetchProfile } = useConnection();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isSavingPhone, setIsSavingPhone] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
-  const formatPhone = (value: string) => {
-    const cleaned = value.replace(/\D/g, "").slice(0, 11);
-    if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 7) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7)}`;
-  };
-
-  const handleSavePhone = async () => {
+  const handleSendCode = async () => {
     const cleaned = phoneNumber.replace(/\D/g, "");
     if (cleaned.length < 10 || cleaned.length > 11) {
       toast.error("올바른 휴대폰 번호를 입력해주세요.");
       return;
     }
-    setIsSavingPhone(true);
+    setIsSendingCode(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error("로그인이 필요합니다."); return; }
-      const { error } = await supabase.from("profiles").update({ phone: cleaned }).eq("user_id", user.id);
+      const { data, error } = await supabase.functions.invoke("twilio-verify", {
+        body: { action: "send", phone: cleaned },
+      });
       if (error) throw error;
-      await refetchProfile();
-      toast.success("번호가 등록되었습니다!");
-      setView({ screen: "hub" });
-    } catch (err) {
-      console.error("Failed to save phone:", err);
-      toast.error("저장에 실패했습니다.");
+      if (data?.error) throw new Error(data.error);
+      setIsCodeSent(true);
+      toast.success("인증번호가 발송되었습니다");
+    } catch (error: any) {
+      console.error("SMS 발송 오류:", error);
+      toast.error(error?.message || "인증번호 발송에 실패했습니다");
     } finally {
-      setIsSavingPhone(false);
+      setIsSendingCode(false);
     }
   };
+
+  const handleVerifyAndSave = async () => {
+    if (verificationCode.length !== 6) {
+      toast.error("6자리 인증번호를 입력해주세요");
+      return;
+    }
+    const cleaned = phoneNumber.replace(/\D/g, "");
+    setIsVerifying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("twilio-verify", {
+        body: { action: "verify", phone: cleaned, code: verificationCode },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      await refetchProfile();
+      toast.success("번호가 인증·등록되었습니다!");
+      setIsCodeSent(false);
+      setVerificationCode("");
+      setView({ screen: "hub" });
+
+      // 환영 전화 (비동기, 실패 무시)
+      try {
+        const secretaryName = profile?.secretary_name || "김비서";
+        const ownerName = profile?.name || "사장";
+        const script = `안녕하세요, ${ownerName}님. 저는 ${ownerName}님의 AI 비서 ${secretaryName}입니다. 전화번호 인증이 완료되어 인사드립니다. 앞으로 중요한 경영 알림이 있을 때 이 번호로 전화드리겠습니다. 감사합니다.`;
+        await supabase.functions.invoke("twilio-outbound-call", {
+          body: { recipient_phone: cleaned, recipient_name: ownerName, script, call_type: "welcome" },
+        });
+        const lastChar = secretaryName.charAt(secretaryName.length - 1);
+        const hasBatchim = (lastChar.charCodeAt(0) - 0xAC00) % 28 !== 0;
+        toast("📞 환영 전화를 발신합니다", { description: `${secretaryName}${hasBatchim ? "이" : "가"} 잠시 후 전화드립니다` });
+      } catch { /* 무시 */ }
+    } catch (error: any) {
+      console.error("인증 확인 오류:", error);
+      toast.error(error?.message || "인증번호 확인에 실패했습니다");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Legacy — kept for compatibility but no longer primary
+  const handleSavePhone = handleVerifyAndSave;
 
   // Sync with open/initialService — check phone first
   useEffect(() => {
