@@ -346,32 +346,70 @@ export function ConnectionHub({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, duration: 0.3 }}
                     className="w-full max-w-xs space-y-3"
-                  >
-                    <div className="relative">
-                      <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="tel"
-                        placeholder="010-0000-0000"
-                        value={formatPhone(phoneNumber)}
-                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
-                        className="pl-10 h-12 text-center text-lg tracking-wider rounded-xl"
-                        maxLength={13}
-                      />
-                    </div>
-                    <Button
-                      onClick={handleSavePhone}
-                      disabled={phoneNumber.replace(/\D/g, "").length < 10 || isSavingPhone}
-                      className="w-full h-12 rounded-xl gap-2 text-base"
-                    >
-                      {isSavingPhone ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4" />
-                      )}
-                      등록하고 시작하기
-                    </Button>
+                   >
+                    {!isCodeSent ? (
+                      <>
+                        <div className="relative">
+                          <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type="tel"
+                            placeholder="010-0000-0000"
+                            value={formatPhone(phoneNumber)}
+                            onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                            className="pl-10 h-12 text-center text-lg tracking-wider rounded-xl"
+                            maxLength={13}
+                          />
+                        </div>
+                        <Button
+                          onClick={handleSendCode}
+                          disabled={phoneNumber.replace(/\D/g, "").length < 10 || isSendingCode}
+                          className="w-full h-12 rounded-xl gap-2 text-base"
+                        >
+                          {isSendingCode ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Shield className="h-4 w-4" />
+                          )}
+                          인증번호 받기
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">{formatPhone(phoneNumber)}</span>으로 발송된 인증번호를 입력하세요
+                        </p>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="인증번호 6자리"
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                          className="h-12 text-center text-xl tracking-[0.3em] rounded-xl"
+                          maxLength={6}
+                          autoFocus
+                        />
+                        <Button
+                          onClick={handleVerifyAndSave}
+                          disabled={verificationCode.length !== 6 || isVerifying}
+                          className="w-full h-12 rounded-xl gap-2 text-base"
+                        >
+                          {isVerifying ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4" />
+                          )}
+                          인증 완료
+                        </Button>
+                        <button
+                          onClick={() => { setIsCodeSent(false); setVerificationCode(""); }}
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          번호 다시 입력
+                        </button>
+                      </>
+                    )}
                     <button
-                      onClick={() => setView({ screen: "hub" })}
+                      onClick={() => { setView({ screen: "hub" }); setIsCodeSent(false); setVerificationCode(""); }}
                       className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
                       나중에 등록할게요
