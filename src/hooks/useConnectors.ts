@@ -57,6 +57,9 @@ export function useConnectors() {
       if (error) throw error;
       return data as Connector[];
     },
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -72,6 +75,9 @@ export function useConnectorInstances() {
       if (error) throw error;
       return data as ConnectorInstance[];
     },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
   });
 }
 

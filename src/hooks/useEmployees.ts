@@ -91,6 +91,9 @@ export function useEmployees(options?: { status?: "재직" | "퇴사" }) {
       if (error) throw error;
       return data as Employee[];
     },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -118,6 +121,9 @@ export function useEmployeeStats() {
 
       return { activeCount, totalSalary, insuredCount };
     },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
   });
 }
 
