@@ -363,6 +363,14 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
       )}
       {!isLoading && pendingItems.length > 0 && (
         <CardFooter className="flex-col gap-2 pt-0">
+          <button 
+            className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
+            onClick={() => openChat()}
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            {secretaryName}에게 더 물어보기
+            <ChevronRight className="h-3 w-3" />
+          </button>
           {pendingItems.map((item) => (
             <div key={`btn-${item.id}`} className={cn("w-full", item.actions.secondary ? "grid grid-cols-2 gap-2" : "")}>
               <Button
@@ -388,14 +396,6 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
               )}
             </div>
           ))}
-          <button 
-            className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
-            onClick={() => openChat()}
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-            {secretaryName}에게 더 물어보기
-            <ChevronRight className="h-3 w-3" />
-          </button>
         </CardFooter>
       )}
     </Card>
