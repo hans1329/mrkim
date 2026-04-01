@@ -190,10 +190,11 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
     return (
       <section>
         <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
-        <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
+        <div className="grid grid-cols-2 gap-3">
           <SkeletonStatCard />
           <SkeletonStatCard />
-          <SkeletonStatCard />
+        </div>
+        <div className="mt-3">
           <SkeletonStatCard />
         </div>
       </section>
