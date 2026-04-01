@@ -176,9 +176,9 @@ export default function Transactions() {
       }
     >
       <Tabs defaultValue="list" className="space-y-2.5 bg-card min-h-screen -mx-4 px-4 -mt-2 pt-2 pb-4">
-        <TabsList className="grid w-full grid-cols-2 h-10 bg-secondary">
-          <TabsTrigger value="list" className="text-sm">거래 목록</TabsTrigger>
-          <TabsTrigger value="classify" className="gap-1 text-sm">
+        <TabsList className="grid w-full grid-cols-2 h-9 bg-secondary">
+          <TabsTrigger value="list" className="text-xs">거래 목록</TabsTrigger>
+          <TabsTrigger value="classify" className="gap-1 text-xs">
             <Sparkles className="h-3 w-3" />
             AI 분류
           </TabsTrigger>
@@ -193,7 +193,7 @@ export default function Transactions() {
                 key={preset}
                 size="sm"
                 variant={periodPreset === preset ? "default" : "outline"}
-                className="h-7 px-2.5 text-xs rounded-full shrink-0"
+                className="h-7 px-2.5 text-[11px] rounded-full shrink-0"
                 onClick={() => setPeriodPreset(preset)}
               >
                 {preset === "1m" ? "1개월" : preset === "3m" ? "3개월" : preset === "6m" ? "6개월" : "전체"}
@@ -204,7 +204,7 @@ export default function Transactions() {
                 <Button
                   size="sm"
                   variant={periodPreset === "custom" ? "default" : "outline"}
-                  className="h-7 px-2.5 text-xs rounded-full gap-1 shrink-0"
+                  className="h-7 px-2.5 text-[11px] rounded-full gap-1 shrink-0"
                   onClick={() => {
                     if (periodPreset !== "custom") {
                       setPeriodPreset("custom");
