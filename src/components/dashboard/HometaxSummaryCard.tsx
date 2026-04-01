@@ -79,7 +79,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
                 </div>
                 <span className="text-[11px] text-muted-foreground">매입</span>
               </div>
-              <p className="text-base font-bold text-red-600">₩1.2억</p>
+              <p className="text-base font-bold text-foreground">₩1.2억</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">28건</p>
             </div>
           </div>
