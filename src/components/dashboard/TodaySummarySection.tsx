@@ -250,7 +250,7 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
                   한눈에 확인할 수 있어요
                 </p>
               </div>
-              <Button onClick={() => openDrawer("hometax")} className="gap-2 rounded-full shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <Button onClick={() => openDrawer("hub")} className="gap-2 rounded-full shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <Sparkles className="h-4 w-4" />
                 연동 시작하기
               </Button>
