@@ -269,7 +269,7 @@ export default function Transactions() {
 
           {/* 요약 카드 - 매출/지출 크게, 순이익 아래 */}
           <div className="grid grid-cols-2 gap-1.5">
-            <div className="rounded-lg bg-card border p-2 min-w-0">
+            <div className="rounded-md bg-card border p-2 min-w-0">
               <p className="text-[10px] text-muted-foreground mb-0.5">매출</p>
               {isStatsLoading ? (
                 <Skeleton className="h-5 w-full" />
@@ -277,7 +277,7 @@ export default function Transactions() {
                 <p className="text-sm font-bold text-green-600 break-all leading-tight">{formatCurrency(stats?.totalIncome || 0)}</p>
               )}
             </div>
-            <div className="rounded-lg bg-card border p-2 min-w-0">
+            <div className="rounded-md bg-card border p-2 min-w-0">
               <p className="text-[10px] text-muted-foreground mb-0.5">지출</p>
               {isStatsLoading ? (
                 <Skeleton className="h-5 w-full" />
@@ -286,7 +286,7 @@ export default function Transactions() {
               )}
             </div>
           </div>
-          <div className="rounded-lg bg-primary/5 border border-primary/20 p-2 min-w-0">
+          <div className="rounded-md bg-primary/5 border border-primary/20 p-2 min-w-0">
             <p className="text-[10px] text-muted-foreground mb-0.5">순이익</p>
             {isStatsLoading ? (
               <Skeleton className="h-5 w-full" />
