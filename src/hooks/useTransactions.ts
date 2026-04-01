@@ -113,6 +113,9 @@ export function useTransactions(filters?: TransactionFilters) {
 
       return allData;
     },
+    staleTime: 1000 * 60 * 3,
+    gcTime: 1000 * 60 * 15,
+    refetchOnWindowFocus: false,
   });
 }
 

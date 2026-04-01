@@ -44,6 +44,9 @@ export function useSavingsAccounts() {
       if (error) throw error;
       return (data || []) as SavingsAccount[];
     },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
   });
 
   const addAccount = useMutation({
