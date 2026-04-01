@@ -97,9 +97,9 @@ function AccountantCard({
       isAssigned && "ring-2 ring-primary",
       isRecommended && !isAssigned && "border-primary/30 bg-primary/[0.02]",
     )}>
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+      <CardContent className="p-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
             {accountant.profile_image_url ? (
               <img
                 src={accountant.profile_image_url}
@@ -107,81 +107,39 @@ function AccountantCard({
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
-              <UserCheck className="h-6 w-6 text-primary" />
+              <UserCheck className="h-5 w-5 text-primary" />
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-sm">{accountant.name}</h3>
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-semibold text-sm truncate">{accountant.name}</h3>
               {isAssigned && (
-                <Badge variant="default" className="text-[10px] px-1.5 py-0">
-                  담당
-                </Badge>
+                <Badge variant="default" className="text-[10px] px-1.5 py-0 shrink-0">담당</Badge>
               )}
               {isRecommended && !isAssigned && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 text-primary">
-                  추천
-                </Badge>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 text-primary shrink-0">추천</Badge>
+              )}
+              {accountant.firm_name && (
+                <span className="text-xs text-muted-foreground truncate">· {accountant.firm_name}</span>
               )}
             </div>
-            {accountant.firm_name && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                <Building2 className="h-3 w-3" />
-                {accountant.firm_name}
-              </p>
-            )}
-            {accountant.region && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                <MapPin className="h-3 w-3" />
-                {accountant.region}
-              </p>
-            )}
-            {accountant.specialties && accountant.specialties.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {accountant.specialties.slice(0, 3).map((s) => (
-                  <Badge key={s} variant="secondary" className="text-[10px] px-1.5 py-0">
-                    {s}
-                  </Badge>
-                ))}
-              </div>
-            )}
-            {accountant.industry_types && accountant.industry_types.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {accountant.industry_types.slice(0, 2).map((t) => (
-                  <Badge key={t} variant="outline" className="text-[10px] px-1.5 py-0">
-                    {t}
-                  </Badge>
-                ))}
-              </div>
-            )}
-            {accountant.pricing_info && Object.keys(accountant.pricing_info).length > 0 && (
-              <div className="mt-2 text-xs text-muted-foreground">
-                {(accountant.pricing_info as Record<string, unknown>).monthly_fee && (
-                  <span>
-                    월 기장료{" "}
-                    <span className="font-medium text-foreground">
-                      {Number((accountant.pricing_info as Record<string, unknown>).monthly_fee).toLocaleString()}원
-                    </span>
-                  </span>
-                )}
-              </div>
-            )}
-            {accountant.bio && (
-              <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                {accountant.bio}
-              </p>
-            )}
+            <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+              {accountant.region && (
+                <span className="flex items-center gap-0.5">
+                  <MapPin className="h-3 w-3" />{accountant.region}
+                </span>
+              )}
+              {accountant.specialties && accountant.specialties.length > 0 && (
+                <span className="truncate">{accountant.specialties.slice(0, 2).join(", ")}</span>
+              )}
+            </div>
           </div>
+          {!isAssigned && (
+            <Button size="sm" variant="outline" className="shrink-0 text-xs h-8" onClick={() => onSelect(accountant)}>
+              선택
+            </Button>
+          )}
         </div>
-        {!isAssigned && (
-          <Button
-            size="sm"
-            className="w-full mt-3"
-            onClick={() => onSelect(accountant)}
-          >
-            이 세무사 선택
-          </Button>
-        )}
       </CardContent>
     </Card>
   );
