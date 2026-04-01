@@ -100,12 +100,12 @@ function RealStatCard({
           </div>
           <p className={cn(
             "text-xs font-medium truncate",
-            isHero ? "text-white/80" : (variant === "default" ? "text-muted-foreground" : "opacity-80")
+            isHero ? "text-white/80" : "text-muted-foreground"
           )}>
             {title}
           </p>
         </div>
-        <p className="text-sm md:text-lg font-bold leading-tight text-right">{value}</p>
+        <p className={cn("text-sm md:text-lg font-bold leading-tight text-right", isHero ? "" : "text-foreground")}>{value}</p>
         {(subtitle || trend) && (
           <div className="flex items-center gap-1 mt-0.5 pl-0.5">
             {trend && (
