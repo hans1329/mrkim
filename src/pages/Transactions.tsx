@@ -274,7 +274,7 @@ export default function Transactions() {
               {isStatsLoading ? (
                 <Skeleton className="h-6 w-full" />
               ) : (
-                <p className="text-base font-bold text-green-600 break-all leading-tight">{formatCurrency(stats?.totalIncome || 0)}</p>
+                <p className="text-base font-bold text-foreground break-all leading-tight">{formatCurrency(stats?.totalIncome || 0)}</p>
               )}
             </div>
             <div className="rounded-md bg-card border p-3 min-w-0">
@@ -282,7 +282,7 @@ export default function Transactions() {
               {isStatsLoading ? (
                 <Skeleton className="h-6 w-full" />
               ) : (
-                <p className="text-base font-bold text-red-600 break-all leading-tight">{formatCurrency(stats?.totalExpense || 0)}</p>
+                <p className="text-base font-bold text-foreground break-all leading-tight">{formatCurrency(stats?.totalExpense || 0)}</p>
               )}
             </div>
           </div>
@@ -291,7 +291,7 @@ export default function Transactions() {
             {isStatsLoading ? (
               <Skeleton className="h-6 w-full" />
             ) : (
-              <p className="text-base font-bold text-primary break-all leading-tight">{formatCurrency(stats?.netProfit || 0)}</p>
+              <p className="text-base font-bold text-foreground break-all leading-tight">{formatCurrency(stats?.netProfit || 0)}</p>
             )}
           </div>
 
