@@ -140,7 +140,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
     : null;
 
   return (
-    <Card>
+    <Card className="cursor-pointer" onClick={() => navigate("/reports?tab=tax")}>
       <CardHeader className="pb-2 relative">
         <div className="flex items-center pr-10">
           <CardTitle className="text-base flex items-center gap-2">
@@ -152,7 +152,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
           variant="ghost"
           size="icon"
           className="h-8 w-8 absolute top-2 right-2"
-          onClick={handleSync}
+          onClick={(e) => { e.stopPropagation(); handleSync(); }}
           disabled={syncing}
         >
           <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
