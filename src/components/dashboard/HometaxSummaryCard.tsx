@@ -142,7 +142,8 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between pr-10">
+      <CardHeader className="pb-2 relative">
+        <div className="flex items-center justify-between pr-16">
           <CardTitle className="text-base flex items-center gap-2">
             <Building2 className="h-4 w-4 text-primary" />
             홈택스 현황
