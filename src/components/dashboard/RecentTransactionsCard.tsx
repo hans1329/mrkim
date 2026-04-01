@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +25,7 @@ const getMockTransactions = () =>
   }));
 
 export function RecentTransactionsCard() {
+  const navigate = useNavigate();
   const { data: result, isLoading: loading } = useRecentTransactions();
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
