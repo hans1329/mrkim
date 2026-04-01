@@ -54,17 +54,21 @@ export default function Reports() {
 
   return (
     <MainLayout title="리포트" subtitle="경영 현황 분석" showBackButton>
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="w-full mb-2 h-11 bg-transparent p-0 overflow-x-auto flex justify-start gap-0">
-          <TabsTrigger value="sales" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none shrink-0">매출</TabsTrigger>
-          <TabsTrigger value="expense" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none shrink-0">지출</TabsTrigger>
-          <TabsTrigger value="menu" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none shrink-0">메뉴 분석</TabsTrigger>
-          <TabsTrigger value="classify" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none shrink-0">비용분류</TabsTrigger>
-          <TabsTrigger value="tax" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none shrink-0">세금계산서</TabsTrigger>
-          <TabsTrigger value="employee" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none shrink-0">직원</TabsTrigger>
-          <TabsTrigger value="insights" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none shrink-0">AI분석</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="overflow-x-auto flex justify-start gap-0 mb-1">
+        {(["sales", "expense", "menu", "classify", "tax", "employee", "insights"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => handleTabChange(tab)}
+            className={`px-3 py-1.5 text-xs font-medium shrink-0 transition-colors ${
+              activeTab === tab
+                ? "text-foreground text-sm font-bold"
+                : "text-muted-foreground/50"
+            }`}
+          >
+            {{ sales: "매출", expense: "지출", menu: "메뉴 분석", classify: "비용분류", tax: "세금계산서", employee: "직원", insights: "AI분석" }[tab]}
+          </button>
+        ))}
+      </div>
       <ActiveComponent />
     </MainLayout>
   );
