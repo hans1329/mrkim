@@ -27,7 +27,7 @@ type FilterStatus = "all" | "ai_suggested" | "manual";
 
 const STATUS_LABELS: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   unclassified: { label: "미분류", color: "bg-muted text-muted-foreground", icon: <AlertTriangle className="h-3 w-3" /> },
-  ai_suggested: { label: "AI 분류", color: "bg-chart-4/10 text-chart-4", icon: <Bot className="h-3 w-3" /> },
+  ai_suggested: { label: "자동 분류", color: "bg-chart-4/10 text-chart-4", icon: <Bot className="h-3 w-3" /> },
   confirmed: { label: "확인 완료", color: "bg-chart-2/10 text-chart-2", icon: <Check className="h-3 w-3" /> },
   manual: { label: "수동 분류", color: "bg-primary/10 text-primary", icon: <Edit3 className="h-3 w-3" /> },
 };
