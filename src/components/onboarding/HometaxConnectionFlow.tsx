@@ -512,13 +512,20 @@ export function HometaxConnectionFlow({
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-4"
+              className="space-y-5"
             >
-              <div className="text-center mb-4">
-                <p className="text-lg font-bold">공동인증서 등록</p>
-                <p className="text-sm text-muted-foreground">
-                  세금계산서 조회를 위해 공동인증서(구 공인인증서)가 필요합니다
-                </p>
+              {/* 아이콘 + 타이틀 */}
+              <div className="flex flex-col items-center gap-3 pt-2">
+                <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <ShieldCheck className="h-7 w-7 text-primary" />
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-lg font-bold">공동인증서 등록</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    세금계산서 자동 수집을 위해<br />
+                    공동인증서(구 공인인증서)를 등록해주세요
+                  </p>
+                </div>
               </div>
 
               {error && (
@@ -529,7 +536,7 @@ export function HometaxConnectionFlow({
               )}
 
               {/* 인증서 파일 업로드 영역 */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-sm font-medium">인증서 파일</label>
                 <input
                   ref={fileInputRef}
@@ -554,20 +561,22 @@ export function HometaxConnectionFlow({
                   </div>
                 ) : (
                   <div
-                    className="flex flex-col items-center gap-2 p-6 rounded-xl border-2 border-dashed border-border hover:border-muted-foreground/40 cursor-pointer transition-colors"
+                    className="flex flex-col items-center gap-3 py-8 rounded-xl border-2 border-dashed border-border hover:border-muted-foreground/40 cursor-pointer transition-colors"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                      <Upload className="h-5 w-5 text-muted-foreground" />
+                    </div>
                     <div className="text-center">
                       <p className="text-sm font-medium">내 PC에서 인증서 불러오기</p>
-                      <p className="text-xs text-muted-foreground">.pfx, .p12 파일 지원</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">.pfx, .p12 파일 지원</p>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* 인증서 비밀번호 */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-sm font-medium">인증서 비밀번호</label>
                 <div className="relative">
                   <input
