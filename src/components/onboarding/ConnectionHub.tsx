@@ -285,10 +285,10 @@ export function ConnectionHub({
                     transition={{ delay: 0.2, duration: 0.3 }}
                     className="space-y-1.5"
                   >
-                    <h2 className="text-base font-bold text-foreground leading-snug">
-                      먼저,<br />
-                      비서에게 연락받을 번호를 알려주세요
-                    </h2>
+                     <h2 className="text-base font-bold text-foreground leading-snug">
+                       비서에게<br />
+                       연락받을 번호를 알려주세요
+                     </h2>
                     <p className="text-xs text-muted-foreground max-w-xs mx-auto">
                       간편인증 및 중요 알림 수신에 사용됩니다.<br />
                       언제든 설정에서 변경할 수 있어요.
