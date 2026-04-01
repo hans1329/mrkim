@@ -154,7 +154,7 @@ export function TaxClassificationTab() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">전체</SelectItem>
-            <SelectItem value="ai_suggested">AI 분류</SelectItem>
+            <SelectItem value="ai_suggested">자동 분류</SelectItem>
             <SelectItem value="manual">수동 분류</SelectItem>
           </SelectContent>
         </Select>
