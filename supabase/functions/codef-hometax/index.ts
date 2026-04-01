@@ -376,21 +376,31 @@ async function handleConfirm2Way(
 
   const loginTypeLevel = SIMPLE_AUTH_METHODS[authMethod];
   const cleanedNumber = businessNumber.replace(/\D/g, "");
-  const cleanedPhone = phoneNo.replace(/\D/g, "");
+  const cleanedPhone = phoneNo.replace(/^\+?82/, "0").replace(/\D/g, "");
+  const cleanedBirthDate = (body.birthDate || "").replace(/\D/g, "");
+  const shortBirthDate = cleanedBirthDate.slice(-6);
   const accessToken = await getAccessToken();
+  const publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
+  const encryptedId = publicKey ? encryptRSAPKCS1("", publicKey) : "";
+  const encryptedPassword = publicKey ? encryptRSAPKCS1("", publicKey) : "";
 
   const requestBody = {
     accountList: [
       {
         countryCode: "KR",
         businessType: "NT",
-        clientType: "B",
-        organization: "0004",
+        clientType: "P",
+        organization: "0002",
         loginType: "5",
         loginTypeLevel,
         identity: cleanedNumber,
-        userName: userName,
+        loginIdentity: shortBirthDate,
+        id: encryptedId,
+        password: encryptedPassword,
+        userName,
         phoneNo: cleanedPhone,
+        birthDate: "",
+        type: "0",
       },
     ],
     is2Way: true,
