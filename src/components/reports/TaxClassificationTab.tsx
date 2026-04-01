@@ -27,7 +27,7 @@ type FilterStatus = "all" | "ai_suggested" | "manual";
 
 const STATUS_LABELS: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   unclassified: { label: "미분류", color: "bg-muted text-muted-foreground", icon: <AlertTriangle className="h-3 w-3" /> },
-  ai_suggested: { label: "AI 분류", color: "bg-chart-4/10 text-chart-4", icon: <Bot className="h-3 w-3" /> },
+  ai_suggested: { label: "자동 분류", color: "bg-chart-4/10 text-chart-4", icon: <Bot className="h-3 w-3" /> },
   confirmed: { label: "확인 완료", color: "bg-chart-2/10 text-chart-2", icon: <Check className="h-3 w-3" /> },
   manual: { label: "수동 분류", color: "bg-primary/10 text-primary", icon: <Edit3 className="h-3 w-3" /> },
 };
@@ -49,9 +49,9 @@ export function TaxClassificationTab() {
       const result = await autoAI.mutateAsync((info) => {
         setBatchProgress(info);
       });
-      toast.success(`총 ${result.totalProcessed}건의 거래를 AI가 분류했습니다`);
+      toast.success(`총 ${result.totalProcessed}건의 거래를 김비서가 분류했습니다`);
     } catch (e: any) {
-      toast.error(e.message || "AI 분류 실패");
+      toast.error(e.message || "자동 분류 실패");
     } finally {
       setBatchProgress(null);
     }
@@ -88,7 +88,7 @@ export function TaxClassificationTab() {
         </Card>
         <Card>
           <CardContent className="p-3">
-            <span className="text-xs text-muted-foreground">AI 분류 대상</span>
+            <span className="text-xs text-muted-foreground">자동 분류 대상</span>
             <p className="mt-1 text-lg font-bold text-chart-4">{stats?.ai_suggested || 0}건</p>
           </CardContent>
         </Card>
@@ -140,8 +140,8 @@ export function TaxClassificationTab() {
               <Sparkles className="h-4 w-4 mr-1" />
             )}
             {isRunning
-              ? "AI 분류 진행 중..."
-              : `AI 자동 분류 (${stats?.unclassified || 0}건)`}
+              ? "김비서 자동분류 진행 중..."
+              : `김비서 자동분류 (${stats?.unclassified || 0}건)`}
           </Button>
         </CardContent>
       </Card>
@@ -154,7 +154,7 @@ export function TaxClassificationTab() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">전체</SelectItem>
-            <SelectItem value="ai_suggested">AI 분류</SelectItem>
+            <SelectItem value="ai_suggested">자동 분류</SelectItem>
             <SelectItem value="manual">수동 분류</SelectItem>
           </SelectContent>
         </Select>
