@@ -20,7 +20,18 @@ import { cn } from "@/lib/utils";
 import { useCardConnection } from "@/hooks/useCardConnection";
 import { useCardSync } from "@/hooks/useCardSync";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { useCardConnectionInfo } from "@/hooks/useCardConnectionInfo";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type FlowStep = "select-card" | "auth" | "loading" | "select-cards" | "complete";
 
