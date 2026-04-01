@@ -269,29 +269,29 @@ export default function Transactions() {
 
           {/* 요약 카드 - 매출/지출 크게, 순이익 아래 */}
           <div className="grid grid-cols-2 gap-1.5">
-            <div className="rounded-md bg-card border p-2 min-w-0">
-              <p className="text-[10px] text-muted-foreground mb-0.5">매출</p>
+            <div className="rounded-md bg-card border p-3 min-w-0">
+              <p className="text-xs text-muted-foreground mb-1">매출</p>
               {isStatsLoading ? (
-                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-6 w-full" />
               ) : (
-                <p className="text-sm font-bold text-green-600 break-all leading-tight">{formatCurrency(stats?.totalIncome || 0)}</p>
+                <p className="text-base font-bold text-green-600 break-all leading-tight">{formatCurrency(stats?.totalIncome || 0)}</p>
               )}
             </div>
-            <div className="rounded-md bg-card border p-2 min-w-0">
-              <p className="text-[10px] text-muted-foreground mb-0.5">지출</p>
+            <div className="rounded-md bg-card border p-3 min-w-0">
+              <p className="text-xs text-muted-foreground mb-1">지출</p>
               {isStatsLoading ? (
-                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-6 w-full" />
               ) : (
-                <p className="text-sm font-bold text-red-600 break-all leading-tight">{formatCurrency(stats?.totalExpense || 0)}</p>
+                <p className="text-base font-bold text-red-600 break-all leading-tight">{formatCurrency(stats?.totalExpense || 0)}</p>
               )}
             </div>
           </div>
-          <div className="rounded-md bg-primary/5 border border-primary/20 p-2 min-w-0">
-            <p className="text-[10px] text-muted-foreground mb-0.5">순이익</p>
+          <div className="rounded-md bg-primary/5 border border-primary/20 p-3 min-w-0">
+            <p className="text-xs text-muted-foreground mb-1">순이익</p>
             {isStatsLoading ? (
-              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-6 w-full" />
             ) : (
-              <p className="text-sm font-bold text-primary break-all leading-tight">{formatCurrency(stats?.netProfit || 0)}</p>
+              <p className="text-base font-bold text-primary break-all leading-tight">{formatCurrency(stats?.netProfit || 0)}</p>
             )}
           </div>
 
