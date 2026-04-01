@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Building2,
   CreditCard,
@@ -12,6 +13,8 @@ import {
   Shield,
   X,
   Sparkles,
+  Smartphone,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HometaxConnectionFlow } from "./HometaxConnectionFlow";
@@ -21,6 +24,9 @@ import { BaeminConnectionFlow } from "./BaeminConnectionFlow";
 import { CoupangeatsConnectionFlow } from "./CoupangeatsConnectionFlow";
 import { BusinessNumberModal } from "./BusinessNumberModal";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import mrKimAvatar from "@/assets/mr-kim-avatar.webp";
 
 export type ServiceType = "hometax" | "card" | "account" | "baemin" | "coupangeats";
 
@@ -83,6 +89,7 @@ const DELIVERY_APPS: { key: DeliveryApp; label: string; emoji: string }[] = [
 ];
 
 type ViewState =
+  | { screen: "phone-register" }
   | { screen: "hub" }
   | { screen: "flow"; service: ServiceType }
   | { screen: "delivery-select" };
@@ -97,13 +104,47 @@ export function ConnectionHub({
   const [view, setView] = useState<ViewState>({ screen: "hub" });
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const { profile, refetch: refetchProfile } = useConnection();
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
 
-  // Sync with open/initialService
+  const formatPhone = (value: string) => {
+    const cleaned = value.replace(/\D/g, "").slice(0, 11);
+    if (cleaned.length <= 3) return cleaned;
+    if (cleaned.length <= 7) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7)}`;
+  };
+
+  const handleSavePhone = async () => {
+    const cleaned = phoneNumber.replace(/\D/g, "");
+    if (cleaned.length < 10 || cleaned.length > 11) {
+      toast.error("올바른 휴대폰 번호를 입력해주세요.");
+      return;
+    }
+    setIsSavingPhone(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error("로그인이 필요합니다."); return; }
+      const { error } = await supabase.from("profiles").update({ phone: cleaned }).eq("user_id", user.id);
+      if (error) throw error;
+      await refetchProfile();
+      toast.success("번호가 등록되었습니다!");
+      setView({ screen: "hub" });
+    } catch (err) {
+      console.error("Failed to save phone:", err);
+      toast.error("저장에 실패했습니다.");
+    } finally {
+      setIsSavingPhone(false);
+    }
+  };
+
+  // Sync with open/initialService — check phone first
   useEffect(() => {
-    if (open && initialService) {
-      if (initialService === "baemin" || initialService === "coupangeats") {
-        setView({ screen: "flow", service: initialService });
-      } else {
+    if (open) {
+      const hasPhone = !!profile?.phone;
+      if (!hasPhone && !initialService) {
+        setPhoneNumber("");
+        setView({ screen: "phone-register" });
+      } else if (initialService) {
         setView({ screen: "flow", service: initialService });
       }
     }
@@ -140,7 +181,9 @@ export function ConnectionHub({
   };
 
   const handleBack = () => {
-    if (view.screen === "flow" && (view.service === "baemin" || view.service === "coupangeats")) {
+    if (view.screen === "phone-register") {
+      handleClose();
+    } else if (view.screen === "flow" && (view.service === "baemin" || view.service === "coupangeats")) {
       setView({ screen: "delivery-select" });
     } else {
       setView({ screen: "hub" });
@@ -157,6 +200,7 @@ export function ConnectionHub({
   const connectedCount = Object.values(connectionStatus).filter(Boolean).length;
 
   const getHeaderTitle = () => {
+    if (view.screen === "phone-register") return "연락처 등록";
     if (view.screen === "hub") return "데이터 연동";
     if (view.screen === "delivery-select") return "배달앱 연동";
     const labels: Record<ServiceType, string> = {
@@ -216,6 +260,87 @@ export function ConnectionHub({
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-md w-full mx-auto px-4 py-6">
             <AnimatePresence mode="wait">
+              {view.screen === "phone-register" && (
+                <motion.div
+                  key="phone-register"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex flex-col items-center text-center space-y-6 pt-4"
+                >
+                  {/* Avatar */}
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.1, duration: 0.4, type: "spring" }}
+                  >
+                    <div className="relative">
+                      <div className="h-28 w-28 rounded-full overflow-hidden border-4 border-primary/20 shadow-lg">
+                        <img src={mrKimAvatar} alt="김비서" className="h-full w-full object-cover" />
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary flex items-center justify-center shadow-md">
+                        <Smartphone className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Text */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.3 }}
+                    className="space-y-2"
+                  >
+                    <h2 className="text-xl font-bold text-foreground">
+                      비서에게 연락받을 번호를 알려주세요
+                    </h2>
+                    <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                      간편인증 및 중요 알림 수신에 사용됩니다.<br />
+                      언제든 설정에서 변경할 수 있어요.
+                    </p>
+                  </motion.div>
+
+                  {/* Phone input */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.3 }}
+                    className="w-full max-w-xs space-y-3"
+                  >
+                    <div className="relative">
+                      <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="tel"
+                        placeholder="010-0000-0000"
+                        value={formatPhone(phoneNumber)}
+                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                        className="pl-10 h-12 text-center text-lg tracking-wider rounded-xl"
+                        maxLength={13}
+                      />
+                    </div>
+                    <Button
+                      onClick={handleSavePhone}
+                      disabled={phoneNumber.replace(/\D/g, "").length < 10 || isSavingPhone}
+                      className="w-full h-12 rounded-xl gap-2 text-base"
+                    >
+                      {isSavingPhone ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4" />
+                      )}
+                      등록하고 시작하기
+                    </Button>
+                    <button
+                      onClick={() => setView({ screen: "hub" })}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      나중에 등록할게요
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )}
+
               {view.screen === "hub" && (
                 <motion.div
                   key="hub"
