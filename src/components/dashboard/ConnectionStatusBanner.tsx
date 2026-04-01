@@ -100,7 +100,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
   const handleStartConnection = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      openDrawer("hometax");
+      openDrawer();
     } else {
       setShowLoginDialog(true);
     }
