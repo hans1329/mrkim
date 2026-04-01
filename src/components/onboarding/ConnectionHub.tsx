@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Building2,
   CreditCard,
@@ -12,6 +13,8 @@ import {
   Shield,
   X,
   Sparkles,
+  Smartphone,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HometaxConnectionFlow } from "./HometaxConnectionFlow";
@@ -21,6 +24,9 @@ import { BaeminConnectionFlow } from "./BaeminConnectionFlow";
 import { CoupangeatsConnectionFlow } from "./CoupangeatsConnectionFlow";
 import { BusinessNumberModal } from "./BusinessNumberModal";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import mrKimAvatar from "@/assets/mr-kim-avatar.webp";
 
 export type ServiceType = "hometax" | "card" | "account" | "baemin" | "coupangeats";
 
