@@ -253,10 +253,11 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
   return (
     <section>
       <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
-      <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
-        <RealStatCard title="오늘 매출" value={stats!.todayIncome > 0 ? formatCurrency(stats!.todayIncome) : "₩0"} icon={TrendingUp} variant="primary" isHero={isHero} />
-        <RealStatCard title="오늘 지출" value={stats!.todayExpense > 0 ? formatCurrency(stats!.todayExpense) : "₩0"} icon={TrendingDown} isHero={isHero} />
-        <RealStatCard title="이번 달 지출" value={stats!.monthlyExpense > 0 ? formatCurrency(stats!.monthlyExpense) : "₩0"} icon={Wallet} isHero={isHero} />
+      <div className="grid grid-cols-2 gap-3">
+        <RealStatCard title="이번 달 매출" value={stats!.monthlyIncome > 0 ? formatCurrency(stats!.monthlyIncome) : "₩0"} subtitle={stats!.todayIncome > 0 ? `오늘 ${formatCurrency(stats!.todayIncome)}` : "오늘 ₩0"} icon={TrendingUp} variant="primary" isHero={isHero} />
+        <RealStatCard title="이번 달 지출" value={stats!.monthlyExpense > 0 ? formatCurrency(stats!.monthlyExpense) : "₩0"} subtitle={stats!.todayExpense > 0 ? `오늘 ${formatCurrency(stats!.todayExpense)}` : "오늘 ₩0"} icon={TrendingDown} isHero={isHero} />
+      </div>
+      <div className="mt-3">
         <RealStatCard title="이번 달 순이익" value={formatCurrency(monthlyProfit)} icon={PiggyBank} variant="success" isHero={isHero} />
       </div>
     </section>
