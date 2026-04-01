@@ -683,5 +683,30 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
         </motion.div>
       </AnimatePresence>
     </div>
+
+    <AlertDialog open={showReconnectDialog} onOpenChange={setShowReconnectDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>이미 연동한 카드입니다</AlertDialogTitle>
+          <AlertDialogDescription>
+            {CARD_COMPANIES.find(c => c.id === pendingCompanyId)?.name}은(는) 이미 연동되어 있습니다. 다시 연동할까요?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setPendingCompanyId(null)}>취소</AlertDialogCancel>
+          <AlertDialogAction onClick={() => {
+            if (pendingCompanyId) {
+              setSelectedCompany(pendingCompanyId);
+              setStep("auth");
+              setPendingCompanyId(null);
+              setShowReconnectDialog(false);
+            }
+          }}>
+            다시 연동하기
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 });
