@@ -151,11 +151,11 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 absolute top-2 right-2"
+          className="h-8 w-8 absolute top-2 right-2 text-muted-foreground/60 hover:text-muted-foreground/80"
           onClick={(e) => { e.stopPropagation(); handleSync(); }}
           disabled={syncing}
         >
-          <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
+          <RefreshCw className={cn("h-4 w-4 text-current", syncing && "animate-spin")} />
         </Button>
         {lastSyncText && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">

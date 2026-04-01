@@ -101,8 +101,8 @@ export function WeeklyChart() {
           )}
         </div>
         {isLoggedIn && (
-          <Button variant="ghost" size="icon" className="h-7 w-7 absolute top-1.5 right-1.5 text-muted-foreground" onClick={handleSync} disabled={isSyncing}>
-            <RefreshCw className={cn("h-4 w-4", isSyncing && "animate-spin")} />
+          <Button variant="ghost" size="icon" className="h-7 w-7 absolute top-1.5 right-1.5 text-muted-foreground/60 hover:text-muted-foreground/80" onClick={handleSync} disabled={isSyncing}>
+            <RefreshCw className={cn("h-4 w-4 text-current", isSyncing && "animate-spin")} />
           </Button>
         )}
       </CardHeader>
