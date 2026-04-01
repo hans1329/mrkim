@@ -97,7 +97,7 @@ export function RecentTransactionsCard() {
   }
 
   return (
-    <Card>
+    <Card className="cursor-pointer" onClick={() => navigate("/transactions")}>
       <CardHeader className="pb-3 relative">
         <div className="pr-10">
           <CardTitle className="text-base">최근 거래 내역</CardTitle>
@@ -109,7 +109,7 @@ export function RecentTransactionsCard() {
           )}
         </div>
         {isLoggedIn && (
-          <Button variant="ghost" size="icon" className="h-8 w-8 absolute top-2 right-2 text-muted-foreground/60 hover:text-muted-foreground/80" onClick={handleSync} disabled={isSyncing}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 absolute top-2 right-2 text-muted-foreground/60 hover:text-muted-foreground/80" onClick={(e) => { e.stopPropagation(); handleSync(); }} disabled={isSyncing}>
             <RefreshCw className={cn("h-4 w-4 text-current", isSyncing && "animate-spin")} />
           </Button>
         )}
