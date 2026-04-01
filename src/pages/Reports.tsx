@@ -55,7 +55,7 @@ export default function Reports() {
   return (
     <MainLayout title="리포트" subtitle="경영 현황 분석" showBackButton>
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="w-full mb-4 h-11 bg-transparent p-0 overflow-x-auto flex justify-start gap-0">
+        <TabsList className="w-full mb-2 h-11 bg-transparent p-0 overflow-x-auto flex justify-start gap-0">
           <TabsTrigger value="sales" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none shrink-0">매출</TabsTrigger>
           <TabsTrigger value="expense" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none shrink-0">지출</TabsTrigger>
           <TabsTrigger value="menu" className="text-xs font-medium text-muted-foreground/50 data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:text-sm data-[state=active]:font-bold data-[state=active]:shadow-none shrink-0">메뉴 분석</TabsTrigger>
