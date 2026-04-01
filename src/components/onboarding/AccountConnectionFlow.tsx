@@ -217,6 +217,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   };
 
   return (
+    <>
     <div className="space-y-4">
 
       <AnimatePresence mode="wait">
