@@ -91,7 +91,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
                 </div>
                 <div>
                   <p className="text-[11px] text-muted-foreground">부가세 예상 납부액</p>
-                  <p className="text-lg font-bold text-amber-600">₩1,300만</p>
+                  <p className="text-lg font-bold text-foreground">₩1,300만</p>
                 </div>
               </div>
             </div>
