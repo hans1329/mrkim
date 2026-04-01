@@ -80,7 +80,7 @@ export function useClassifiableTransactions(status?: string) {
   });
 }
 
-/** 분류 현황 통계 */
+/** 분류 현황 통계 (DB 서버사이드 집계 - 1000건 제한 없음) */
 export function useClassificationStats() {
   return useQuery({
     queryKey: ["tax-classification-stats"],
@@ -88,40 +88,24 @@ export function useClassificationStats() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const { data: all } = await supabase
-        .from("transactions")
-        .select("tax_classification_status, amount, vat_deductible, vat_amount")
-        .eq("user_id", user.id)
-        .eq("type", "expense");
+      const { data, error } = await supabase.rpc("get_tax_classification_stats" as any, {
+        p_user_id: user.id,
+      });
 
-      if (!all) return null;
+      if (error) throw error;
+      const result = data as any;
+      if (!result) return null;
 
-      const stats = {
-        total: all.length,
-        unclassified: 0,
-        ai_suggested: 0,
-        confirmed: 0,
-        manual: 0,
-        totalExpense: 0,
-        vatDeductibleAmount: 0,
-        vatAmount: 0,
+      return {
+        total: Number(result.total) || 0,
+        unclassified: Number(result.unclassified) || 0,
+        ai_suggested: Number(result.ai_suggested) || 0,
+        confirmed: Number(result.confirmed) || 0,
+        manual: Number(result.manual) || 0,
+        totalExpense: Number(result.totalExpense) || 0,
+        vatDeductibleAmount: Number(result.vatDeductibleAmount) || 0,
+        vatAmount: Number(result.vatAmount) || 0,
       };
-
-      for (const tx of all) {
-        stats.totalExpense += tx.amount;
-        if (tx.vat_deductible) {
-          stats.vatDeductibleAmount += tx.amount;
-          stats.vatAmount += (tx.vat_amount || 0);
-        }
-        switch (tx.tax_classification_status) {
-          case "ai_suggested": stats.ai_suggested++; break;
-          case "confirmed": stats.confirmed++; break;
-          case "manual": stats.manual++; break;
-          default: stats.unclassified++; break;
-        }
-      }
-
-      return stats;
     },
   });
 }
