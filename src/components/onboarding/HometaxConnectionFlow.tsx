@@ -565,8 +565,8 @@ export function HometaxConnectionFlow({
                       <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                     </>
                   ) : (
-                    <div className="flex flex-col items-center justify-center w-full py-4 gap-2">
-                      <Upload className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex items-center justify-center w-full py-4 gap-2">
+                      <Upload className="h-4 w-4 text-muted-foreground" />
                       <p className="text-sm text-muted-foreground">공동인증서 파일 업로드 (.pfx, .p12)</p>
                     </div>
                   )}
