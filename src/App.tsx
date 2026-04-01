@@ -71,6 +71,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <ConnectionProvider>
+              <ScrollToTop />
               <ConnectionDrawerProvider>
                 <ChatProvider>
                   <VoiceProvider>
