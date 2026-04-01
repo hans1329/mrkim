@@ -208,6 +208,9 @@ export function useAutoTransfers() {
       if (error) throw error;
       return (data || []) as AutoTransfer[];
     },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
   });
 
   const addTransfer = useMutation({
