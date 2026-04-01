@@ -268,8 +268,8 @@ export default function Transactions() {
           </div>
 
           {/* 요약 카드 - 매출/지출 크게, 순이익 아래 */}
-          <div className="grid grid-cols-2 gap-1.5">
-            <div className="rounded-md bg-card border p-3 min-w-0">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-2xl bg-card/60 backdrop-blur-xl border border-white/30 p-3 min-w-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_12px_rgba(0,0,0,0.04)]">
               <p className="text-xs text-muted-foreground mb-1">매출</p>
               {isStatsLoading ? (
                 <Skeleton className="h-6 w-full" />
@@ -277,7 +277,7 @@ export default function Transactions() {
                 <p className="text-base font-bold text-foreground break-all leading-tight">{formatCurrency(stats?.totalIncome || 0)}</p>
               )}
             </div>
-            <div className="rounded-md bg-card border p-3 min-w-0">
+            <div className="rounded-2xl bg-card/60 backdrop-blur-xl border border-white/30 p-3 min-w-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_12px_rgba(0,0,0,0.04)]">
               <p className="text-xs text-muted-foreground mb-1">지출</p>
               {isStatsLoading ? (
                 <Skeleton className="h-6 w-full" />
@@ -286,7 +286,7 @@ export default function Transactions() {
               )}
             </div>
           </div>
-          <div className="rounded-md bg-primary/5 border border-primary/20 p-3 min-w-0">
+          <div className="rounded-2xl bg-primary/5 backdrop-blur-xl border border-primary/15 p-3 min-w-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_12px_rgba(0,0,0,0.04)]">
             <p className="text-xs text-muted-foreground mb-1">순이익</p>
             {isStatsLoading ? (
               <Skeleton className="h-6 w-full" />
