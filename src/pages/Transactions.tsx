@@ -499,51 +499,53 @@ export default function Transactions() {
                 <div className="p-0">
                   {visibleTransactions.map((transaction) => (
                     <div key={transaction.id} className="px-3 py-2.5 active:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <div className={cn(
-                            "flex h-8 w-8 items-center justify-center rounded-full shrink-0",
-                            (transaction.type === "income" || transaction.type === "transfer_in") ? "bg-green-500/10" : "bg-red-500/10"
-                          )}>
-                            {transaction.category_icon ? (
-                              <span className="text-sm">{transaction.category_icon}</span>
-                            ) : (transaction.type === "income" || transaction.type === "transfer_in") ? (
-                              <TrendingUp className="h-3.5 w-3.5 text-green-600" />
-                            ) : (
-                              <TrendingDown className="h-3.5 w-3.5 text-red-600" />
-                            )}
+                      <div className="flex items-start gap-2">
+                        <div className={cn(
+                          "flex h-8 w-8 items-center justify-center rounded-full shrink-0 mt-0.5",
+                          (transaction.type === "income" || transaction.type === "transfer_in") ? "bg-green-500/10" : "bg-red-500/10"
+                        )}>
+                          {transaction.category_icon ? (
+                            <span className="text-sm">{transaction.category_icon}</span>
+                          ) : (transaction.type === "income" || transaction.type === "transfer_in") ? (
+                            <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                          ) : (
+                            <TrendingDown className="h-3.5 w-3.5 text-red-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium text-[13px] leading-snug">{transaction.description}</p>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTargetId(transaction.id);
+                                setDeleteTargetLabel(`${transaction.description} (${formatCurrency(transaction.amount)})`);
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
                           </div>
-                          <p className="font-medium text-[13px] leading-tight min-w-0 flex-1">{transaction.description}</p>
+                          <div className="flex items-center justify-between mt-1">
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-muted-foreground">{transaction.category || "미분류"}</span>
+                              <span className="text-[10px] text-muted-foreground/50">·</span>
+                              <span className="text-[10px] text-muted-foreground shrink-0">{transaction.transaction_date?.slice(5)}</span>
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 shrink-0 ml-0.5">
+                                {transaction.source_type === "card" ? "카드" : "계좌"}
+                              </Badge>
+                            </div>
+                            <p className={cn(
+                              "font-semibold text-[13px] tabular-nums shrink-0",
+                              (transaction.type === "income" || transaction.type === "transfer_in") ? "text-green-600" : "text-red-600"
+                            )}>
+                              {(transaction.type === "income" || transaction.type === "transfer_in") ? "+" : "-"}
+                              {formatCurrency(transaction.amount)}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                          <p className={cn(
-                            "font-semibold text-[13px] tabular-nums",
-                            (transaction.type === "income" || transaction.type === "transfer_in") ? "text-green-600" : "text-red-600"
-                          )}>
-                            {(transaction.type === "income" || transaction.type === "transfer_in") ? "+" : "-"}
-                            {formatCurrency(transaction.amount)}
-                          </p>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteTargetId(transaction.id);
-                              setDeleteTargetLabel(`${transaction.description} (${formatCurrency(transaction.amount)})`);
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 mt-1 pl-10">
-                        <span className="text-[10px] text-muted-foreground truncate">{transaction.category || "미분류"}</span>
-                        <span className="text-[10px] text-muted-foreground/50">·</span>
-                        <span className="text-[10px] text-muted-foreground shrink-0">{transaction.transaction_date?.slice(5)}</span>
-                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 shrink-0 ml-0.5">
-                          {transaction.source_type === "card" ? "카드" : "계좌"}
-                        </Badge>
                       </div>
                     </div>
                   ))}
