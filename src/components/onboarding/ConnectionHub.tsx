@@ -104,13 +104,47 @@ export function ConnectionHub({
   const [view, setView] = useState<ViewState>({ screen: "hub" });
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const { profile, refetch: refetchProfile } = useConnection();
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
 
-  // Sync with open/initialService
+  const formatPhone = (value: string) => {
+    const cleaned = value.replace(/\D/g, "").slice(0, 11);
+    if (cleaned.length <= 3) return cleaned;
+    if (cleaned.length <= 7) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7)}`;
+  };
+
+  const handleSavePhone = async () => {
+    const cleaned = phoneNumber.replace(/\D/g, "");
+    if (cleaned.length < 10 || cleaned.length > 11) {
+      toast.error("올바른 휴대폰 번호를 입력해주세요.");
+      return;
+    }
+    setIsSavingPhone(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error("로그인이 필요합니다."); return; }
+      const { error } = await supabase.from("profiles").update({ phone: cleaned }).eq("user_id", user.id);
+      if (error) throw error;
+      await refetchProfile();
+      toast.success("번호가 등록되었습니다!");
+      setView({ screen: "hub" });
+    } catch (err) {
+      console.error("Failed to save phone:", err);
+      toast.error("저장에 실패했습니다.");
+    } finally {
+      setIsSavingPhone(false);
+    }
+  };
+
+  // Sync with open/initialService — check phone first
   useEffect(() => {
-    if (open && initialService) {
-      if (initialService === "baemin" || initialService === "coupangeats") {
-        setView({ screen: "flow", service: initialService });
-      } else {
+    if (open) {
+      const hasPhone = !!profile?.phone;
+      if (!hasPhone && !initialService) {
+        setPhoneNumber("");
+        setView({ screen: "phone-register" });
+      } else if (initialService) {
         setView({ screen: "flow", service: initialService });
       }
     }
