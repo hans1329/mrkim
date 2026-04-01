@@ -17,7 +17,7 @@ export function EmployeeSummaryCard({ isLoggedOut = false }: EmployeeSummaryCard
   // 로그아웃 상태: 목업 직원 현황 표시
   if (isLoggedOut) {
     return (
-      <Card>
+      <Card className="cursor-pointer" onClick={() => navigate("/employees")}>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Users className="h-4 w-4 text-primary" />
