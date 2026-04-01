@@ -160,6 +160,10 @@ export function RecentTransactionsCard() {
           onClick={(e) => {
             e.stopPropagation();
             navigate("/reports?tab=classify");
+            setTimeout(() => {
+              window.scrollTo(0, 0);
+              document.getElementById("app-scroll-container")?.scrollTo(0, 0);
+            }, 50);
           }}
         >
           <Sparkles className="h-4 w-4 mr-1.5" />
