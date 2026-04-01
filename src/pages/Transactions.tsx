@@ -192,8 +192,8 @@ export default function Transactions() {
               <Button
                 key={preset}
                 size="sm"
-                variant={periodPreset === preset ? "default" : "outline"}
-                className="h-7 px-2.5 text-[11px] rounded-full shrink-0"
+                variant={periodPreset === preset ? "default" : "ghost"}
+                className="h-7 px-2.5 text-[10px] rounded-full shrink-0"
                 onClick={() => setPeriodPreset(preset)}
               >
                 {preset === "1m" ? "1개월" : preset === "3m" ? "3개월" : preset === "6m" ? "6개월" : "전체"}
