@@ -447,7 +447,7 @@ export function ConnectionHub({
                   {/* Title & Status summary */}
                   <div className="text-center space-y-1 pb-1">
                     <h2 className="text-lg font-bold text-foreground">
-                      데이터 연동 센터
+                      내 사업 데이터 연결하기
                     </h2>
                     <p className="text-sm text-muted-foreground">
                       {connectedCount > 0
