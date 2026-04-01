@@ -117,7 +117,7 @@ export function ConnectionHub({
     return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7)}`;
   };
 
-
+  const handleSendCode = async () => {
     const cleaned = phoneNumber.replace(/\D/g, "");
     if (cleaned.length < 10 || cleaned.length > 11) {
       toast.error("올바른 휴대폰 번호를 입력해주세요.");
