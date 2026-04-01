@@ -30,8 +30,8 @@ const navItems = [
   { title: "홈", url: "/", icon: LayoutDashboard },
   { title: "매출/매입", url: "/transactions", icon: Receipt },
   { title: "직원", url: "/employees", icon: Users },
-  { title: "자금", url: "/funds", icon: Wallet },
   { title: "리포트", url: "/reports", icon: TrendingUp },
+  { title: "자금", url: "/funds", icon: Wallet },
   { title: "세무사", url: "/tax-accountant", icon: UserCheck },
 ];
 

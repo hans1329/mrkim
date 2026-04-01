@@ -15,12 +15,12 @@ preloadIcon.src = DEFAULT_ICON;
 
 const leftNav = [
 { title: "홈", url: "/", icon: LayoutDashboard },
-{ title: "매출/매입", url: "/transactions", icon: Receipt }];
+{ title: "리포트", url: "/reports", icon: TrendingUp }];
 
 
 const rightNav = [
 { title: "자금", url: "/funds", icon: Wallet },
-{ title: "리포트", url: "/reports", icon: TrendingUp }];
+{ title: "매출/매입", url: "/transactions", icon: Receipt }];
 
 
 export function BottomNav() {

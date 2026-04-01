@@ -101,6 +101,15 @@
     overflow: hidden;
   }
 
+  /* 페이지 스크롤바 숨김 */
+  *::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   /* PWA standalone: body padding 없이, 레이아웃 내부에서 safe area 처리 */
 }
 
