@@ -218,10 +218,29 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
     return (
       <section>
         <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
-        <Card className={cn("border-dashed border-2", isHero ? "border-white/30 bg-white/10 backdrop-blur-md" : "border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10")}>
-          <CardContent className="p-6">
+        <Card className={cn(
+          "relative overflow-hidden rounded-2xl border border-dashed border-2 animate-fade-in",
+          "backdrop-blur-xl",
+          "shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_8px_32px_rgba(0,0,0,0.06)]",
+          "transition-all duration-500 hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),0_12px_40px_rgba(0,0,0,0.1)]",
+          "hover:scale-[1.01]",
+          isHero
+            ? "border-white/20 bg-white/10"
+            : "border-primary/20 bg-card/50"
+        )}>
+          {/* Animated gradient overlay */}
+          <div className={cn(
+            "absolute inset-0 opacity-30 pointer-events-none",
+            "bg-[radial-gradient(ellipse_at_top_left,hsl(var(--primary)/0.15),transparent_50%),radial-gradient(ellipse_at_bottom_right,hsl(var(--primary)/0.1),transparent_50%)]"
+          )} />
+          <CardContent className="relative p-6">
             <div className="flex flex-col items-center text-center space-y-4">
-              <div className={cn("h-14 w-14 rounded-full flex items-center justify-center", isHero ? "bg-white/20" : "bg-primary/20")}>
+              <div className={cn(
+                "h-14 w-14 rounded-full flex items-center justify-center",
+                "backdrop-blur-md transition-transform duration-300 hover:scale-110",
+                "shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.08)]",
+                isHero ? "bg-white/20" : "bg-primary/10 border border-primary/20"
+              )}>
                 <Link2 className={cn("h-7 w-7", isHero ? "text-white" : "text-primary")} />
               </div>
               <div className="space-y-2">
@@ -231,7 +250,7 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
                   한눈에 확인할 수 있어요
                 </p>
               </div>
-              <Button onClick={() => openDrawer("hometax")} className="gap-2 rounded-full">
+              <Button onClick={() => openDrawer("hometax")} className="gap-2 rounded-full shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <Sparkles className="h-4 w-4" />
                 연동 시작하기
               </Button>
