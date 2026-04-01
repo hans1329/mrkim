@@ -55,15 +55,15 @@ export default function Reports() {
   return (
     <MainLayout title="리포트" subtitle="경영 현황 분석" showBackButton>
       <div>
-        <div className="overflow-x-auto scrollbar-hide flex justify-start gap-0 mb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div className="overflow-x-auto flex gap-2 mb-3 pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {(["sales", "expense", "menu", "classify", "tax", "employee", "insights"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`px-3 py-1.5 text-xs font-medium shrink-0 transition-colors ${
+              className={`px-3.5 py-1.5 text-xs font-medium shrink-0 rounded-full border transition-all ${
                 activeTab === tab
-                  ? "text-foreground text-sm font-bold"
-                  : "text-muted-foreground/50"
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground"
               }`}
             >
               {{ sales: "매출", expense: "지출", menu: "메뉴 분석", classify: "비용분류", tax: "세금계산서", employee: "직원", insights: "AI분석" }[tab]}
