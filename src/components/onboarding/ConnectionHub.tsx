@@ -110,8 +110,14 @@ export function ConnectionHub({
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const formatPhone = (value: string) => {
+    const cleaned = value.replace(/\D/g, "").slice(0, 11);
+    if (cleaned.length <= 3) return cleaned;
+    if (cleaned.length <= 7) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7)}`;
+  };
 
-  const handleSendCode = async () => {
+
     const cleaned = phoneNumber.replace(/\D/g, "");
     if (cleaned.length < 10 || cleaned.length > 11) {
       toast.error("올바른 휴대폰 번호를 입력해주세요.");
