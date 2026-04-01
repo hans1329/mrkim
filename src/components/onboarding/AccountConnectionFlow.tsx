@@ -25,6 +25,17 @@ import { cn } from "@/lib/utils";
 import { useAccountConnection } from "@/hooks/useAccountConnection";
 import { useBankSync } from "@/hooks/useBankSync";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { useBankConnectionInfo } from "@/hooks/useCardConnectionInfo";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // 모든 은행에서 아이디/비밀번호 로그인을 기본 지원하며, 인증서 로그인은 선택 옵션
 
@@ -72,6 +83,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const [error, setError] = useState<string | null>(null);
   const [syncProgress, setSyncProgress] = useState<{ synced: number; total: number }>({ synced: 0, total: 0 });
   const [currentConnectedId, setCurrentConnectedId] = useState<string | null>(null);
+  const [showReconnectDialog, setShowReconnectDialog] = useState(false);
   const certFileInputRef = useRef<HTMLInputElement>(null);
 
   // 로그인 방식: 기본 아이디/비번, 인증서는 사용자 선택
@@ -81,6 +93,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const { isLoading, registerBankAccount, getAccounts } = useAccountConnection();
   const bankSync = useBankSync();
   const { refetch: refetchProfile } = useConnection();
+  const { connections: existingBankConnections } = useBankConnectionInfo();
 
   const stepProgress: Record<FlowStep, number> = {
     "select-bank": 20,
@@ -204,6 +217,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   };
 
   return (
+    <>
     <div className="space-y-4">
 
       <AnimatePresence mode="wait">
@@ -255,7 +269,16 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
                   이전
                 </Button>
                 <Button
-                  onClick={() => setStep("auth")}
+                  onClick={() => {
+                    const alreadyConnected = existingBankConnections.some(
+                      (c) => c.bankCode === selectedBank || c.bankName === BANKS.find(b => b.id === selectedBank)?.name
+                    );
+                    if (alreadyConnected) {
+                      setShowReconnectDialog(true);
+                    } else {
+                      setStep("auth");
+                    }
+                  }}
                   disabled={!selectedBank}
                   className="flex-1"
                 >
@@ -654,5 +677,26 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
         </motion.div>
       </AnimatePresence>
     </div>
+
+    <AlertDialog open={showReconnectDialog} onOpenChange={setShowReconnectDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>이미 연동한 은행입니다</AlertDialogTitle>
+          <AlertDialogDescription>
+            {BANKS.find(b => b.id === selectedBank)?.name}은(는) 이미 연동되어 있습니다. 다시 연동할까요?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>취소</AlertDialogCancel>
+          <AlertDialogAction onClick={() => {
+            setShowReconnectDialog(false);
+            setStep("auth");
+          }}>
+            다시 연동하기
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

@@ -20,7 +20,18 @@ import { cn } from "@/lib/utils";
 import { useCardConnection } from "@/hooks/useCardConnection";
 import { useCardSync } from "@/hooks/useCardSync";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { useCardConnectionInfo } from "@/hooks/useCardConnectionInfo";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type FlowStep = "select-card" | "auth" | "loading" | "select-cards" | "complete";
 
@@ -68,6 +79,8 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   const [error, setError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number } | null>(null);
+  const [showReconnectDialog, setShowReconnectDialog] = useState(false);
+  const [pendingCompanyId, setPendingCompanyId] = useState<string | null>(null);
 
   // 인증서 로그인 관련
   const [useCertLogin, setUseCertLogin] = useState(false);
@@ -79,6 +92,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   const { isLoading, registerCardAccount, getCards } = useCardConnection();
   const cardSync = useCardSync();
   const { refetch: refetchProfile } = useConnection();
+  const { connections: existingCardConnections } = useCardConnectionInfo();
 
   const stepProgress: Record<FlowStep, number> = {
     "select-card": 20,
@@ -241,6 +255,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   useImperativeHandle(ref, () => ({ handleBack }), [step]);
 
   return (
+    <>
     <div className="space-y-4">
       {/* 진행 상태 */}
       {step !== "select-card" && step !== "auth" && (
@@ -281,8 +296,16 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                   <button
                     key={company.id}
                     onClick={() => {
-                      setSelectedCompany(company.id);
-                      setStep("auth");
+                      const alreadyConnected = existingCardConnections.some(
+                        (c) => c.cardCompanyId === company.id
+                      );
+                      if (alreadyConnected) {
+                        setPendingCompanyId(company.id);
+                        setShowReconnectDialog(true);
+                      } else {
+                        setSelectedCompany(company.id);
+                        setStep("auth");
+                      }
                     }}
                     className={cn(
                       "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all",
@@ -661,5 +684,30 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
         </motion.div>
       </AnimatePresence>
     </div>
+
+    <AlertDialog open={showReconnectDialog} onOpenChange={setShowReconnectDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>이미 연동한 카드입니다</AlertDialogTitle>
+          <AlertDialogDescription>
+            {CARD_COMPANIES.find(c => c.id === pendingCompanyId)?.name}은(는) 이미 연동되어 있습니다. 다시 연동할까요?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setPendingCompanyId(null)}>취소</AlertDialogCancel>
+          <AlertDialogAction onClick={() => {
+            if (pendingCompanyId) {
+              setSelectedCompany(pendingCompanyId);
+              setStep("auth");
+              setPendingCompanyId(null);
+              setShowReconnectDialog(false);
+            }
+          }}>
+            다시 연동하기
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 });
