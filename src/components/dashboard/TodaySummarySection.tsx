@@ -23,9 +23,9 @@ function EmptyStatCard({
   isHero?: boolean;
 }) {
   const variantStyles = {
-    default: isHero ? "bg-white/10 backdrop-blur-md border border-white/15 text-white" : "bg-muted/30 border border-border/50",
-    primary: isHero ? "bg-white/15 backdrop-blur-md border border-white/20 text-white" : "bg-primary/10 border border-primary/30",
-    success: isHero ? "bg-white/15 backdrop-blur-md border border-white/20 text-white" : "bg-success/10 border border-success/30",
+    default: isHero ? "bg-white/10 backdrop-blur-md border border-white/15 text-white" : "bg-muted/50 border border-border/50",
+    primary: isHero ? "bg-white/15 backdrop-blur-md border border-white/20 text-white" : "bg-muted/50 border border-border/50",
+    success: isHero ? "bg-white/15 backdrop-blur-md border border-white/20 text-white" : "bg-muted/50 border border-border/50",
   };
 
   const iconStyles = {
