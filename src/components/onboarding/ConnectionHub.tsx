@@ -181,7 +181,9 @@ export function ConnectionHub({
   };
 
   const handleBack = () => {
-    if (view.screen === "flow" && (view.service === "baemin" || view.service === "coupangeats")) {
+    if (view.screen === "phone-register") {
+      handleClose();
+    } else if (view.screen === "flow" && (view.service === "baemin" || view.service === "coupangeats")) {
       setView({ screen: "delivery-select" });
     } else {
       setView({ screen: "hub" });
