@@ -147,8 +147,9 @@ export function ConnectionHub({
     }
   };
 
-  const handleBusinessNumberSaved = () => {
+  const handleBusinessNumberSaved = async () => {
     setShowBusinessModal(false);
+    await refetchProfile();
     setView({ screen: "flow", service: "hometax" });
   };
 
