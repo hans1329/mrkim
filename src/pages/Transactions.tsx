@@ -177,8 +177,8 @@ export default function Transactions() {
     >
       <Tabs defaultValue="list" className="space-y-2.5 bg-card min-h-screen -mx-4 px-4 -mt-2 pt-2 pb-4">
         <TabsList className="grid w-full grid-cols-2 h-9 bg-secondary">
-          <TabsTrigger value="list" className="text-xs">거래 목록</TabsTrigger>
-          <TabsTrigger value="classify" className="gap-1 text-xs">
+          <TabsTrigger value="list" className="text-xs md:text-sm">거래 목록</TabsTrigger>
+          <TabsTrigger value="classify" className="gap-1 text-xs md:text-sm">
             <Sparkles className="h-3 w-3" />
             AI 분류
           </TabsTrigger>
