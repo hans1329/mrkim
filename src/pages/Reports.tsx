@@ -1,7 +1,7 @@
 import { useState, lazy, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { SalesAnalysisTab } from "@/components/reports/SalesAnalysisTab";
 import { ExpenseAnalysisTab } from "@/components/reports/ExpenseAnalysisTab";
