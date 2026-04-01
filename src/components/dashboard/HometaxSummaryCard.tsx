@@ -152,7 +152,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
           variant="ghost"
           size="icon"
           className="h-8 w-8 absolute top-2 right-2"
-          onClick={handleSync}
+          onClick={(e) => { e.stopPropagation(); handleSync(); }}
           disabled={syncing}
         >
           <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
