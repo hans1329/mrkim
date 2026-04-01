@@ -15,13 +15,13 @@ const CODEF_TOKEN_URL = "https://oauth.codef.io/oauth/token";
 const BUSINESS_STATUS_PATH = "/v1/kr/public/nt/business/status";
 const ACCOUNT_CREATE_PATH = "/v1/account/create";
 
-// 간편인증 수단 매핑
+// 홈택스 전자세금계산서 간편인증 수단 매핑 (CODEF 문서 기준)
 const SIMPLE_AUTH_METHODS: Record<string, string> = {
-  kakao: "1",     // 카카오
-  samsung: "2",   // 삼성패스
-  pass: "3",      // PASS (통신사)
-  naver: "4",     // 네이버
-  toss: "5",      // 토스
+  kakao: "1",     // 카카오톡
+  samsung: "3",   // 삼성패스
+  pass: "5",      // PASS (통신사)
+  naver: "6",     // 네이버
+  toss: "8",      // 토스
 };
 
 function encryptRSAPKCS1(plainText: string, base64PublicKey: string): string {
@@ -250,7 +250,8 @@ async function handleRegister(
   const cleanedNumber = businessNumber.replace(/\D/g, "");
   const accessToken = await getAccessToken();
   const publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
-  const cleanedBirthDate = birthDate.replace(/\D/g, ""); // YYYYMMDD or YYMMDD
+  const cleanedBirthDate = birthDate.replace(/\D/g, ""); // YYYYMMDD
+  const shortBirthDate = cleanedBirthDate.slice(-6); // yymmdd
 
   // CODEF requires id and password to be RSA-encrypted even if empty
   const encryptedId = publicKey ? encryptRSAPKCS1("", publicKey) : "";
@@ -260,23 +261,25 @@ async function handleRegister(
     accountList: [
       {
         countryCode: "KR",
-        businessType: "NT", // 국세청
-        clientType: "P", // 간편인증은 개인(P) 기반
-        organization: "0004", // 국세청
-        loginType: "5", // 간편인증
-        loginTypeLevel, // 인증 수단 (1~5)
-        identity: cleanedBirthDate, // 생년월일 (간편인증 시 개인 identity)
-        id: encryptedId, // RSA 암호화된 빈 문자열
-        password: encryptedPassword, // RSA 암호화된 빈 문자열
-        userName: userName, // 사용자 이름
-        phoneNo: cleanedPhone, // 전화번호 (국내 형식)
-        birthDate: cleanedBirthDate, // 생년월일
+        businessType: "NT",
+        clientType: "P",
+        organization: "0002", // 홈택스 전자세금계산서 계열
+        loginType: "5",
+        loginTypeLevel,
+        identity: cleanedNumber, // 사업자번호
+        loginIdentity: shortBirthDate, // CODEF 샘플 기준 간편인증 식별값
+        id: encryptedId,
+        password: encryptedPassword,
+        userName,
+        phoneNo: cleanedPhone,
+        birthDate: "", // 샘플 기준 loginIdentity 사용 시 비움
+        type: "0",
       },
     ],
   };
 
   console.log(
-    `Registering hometax account with simple auth (${authMethod}, level=${loginTypeLevel}), userName=${userName}, phoneNo=${cleanedPhone}, birthDate=${cleanedBirthDate}, identity=${cleanedNumber}`
+    `Registering hometax account with simple auth (${authMethod}, level=${loginTypeLevel}), userName=${userName}, phoneNo=${cleanedPhone}, birthDate=${cleanedBirthDate}, loginIdentity=${shortBirthDate}, identity=${cleanedNumber}`
   );
   console.log("Request body:", JSON.stringify(requestBody));
 
@@ -373,21 +376,31 @@ async function handleConfirm2Way(
 
   const loginTypeLevel = SIMPLE_AUTH_METHODS[authMethod];
   const cleanedNumber = businessNumber.replace(/\D/g, "");
-  const cleanedPhone = phoneNo.replace(/\D/g, "");
+  const cleanedPhone = phoneNo.replace(/^\+?82/, "0").replace(/\D/g, "");
+  const cleanedBirthDate = (body.birthDate || "").replace(/\D/g, "");
+  const shortBirthDate = cleanedBirthDate.slice(-6);
   const accessToken = await getAccessToken();
+  const publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
+  const encryptedId = publicKey ? encryptRSAPKCS1("", publicKey) : "";
+  const encryptedPassword = publicKey ? encryptRSAPKCS1("", publicKey) : "";
 
   const requestBody = {
     accountList: [
       {
         countryCode: "KR",
         businessType: "NT",
-        clientType: "B",
-        organization: "0004",
+        clientType: "P",
+        organization: "0002",
         loginType: "5",
         loginTypeLevel,
         identity: cleanedNumber,
-        userName: userName,
+        loginIdentity: shortBirthDate,
+        id: encryptedId,
+        password: encryptedPassword,
+        userName,
         phoneNo: cleanedPhone,
+        birthDate: "",
+        type: "0",
       },
     ],
     is2Way: true,
