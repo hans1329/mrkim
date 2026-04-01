@@ -513,10 +513,10 @@ export default function Transactions() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-[13px] leading-snug break-words">{transaction.description}</p>
+                          <p className="font-medium leading-snug break-words text-sm">{transaction.description}</p>
                           <div className="flex items-center justify-between mt-1">
                             <div className="flex items-center gap-1 min-w-0">
-                              <span className="text-[10px] text-muted-foreground">{transaction.category || "미분류"}</span>
+                              <span className="text-muted-foreground text-xs">{transaction.category || "미분류"}</span>
                               <span className="text-[10px] text-muted-foreground/50">·</span>
                               <span className="text-[10px] text-muted-foreground shrink-0">{transaction.transaction_date?.slice(5)}</span>
                               <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 shrink-0 ml-0.5">
