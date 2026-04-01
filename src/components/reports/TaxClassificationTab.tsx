@@ -49,9 +49,9 @@ export function TaxClassificationTab() {
       const result = await autoAI.mutateAsync((info) => {
         setBatchProgress(info);
       });
-      toast.success(`총 ${result.totalProcessed}건의 거래를 AI가 분류했습니다`);
+      toast.success(`총 ${result.totalProcessed}건의 거래를 김비서가 분류했습니다`);
     } catch (e: any) {
-      toast.error(e.message || "AI 분류 실패");
+      toast.error(e.message || "자동 분류 실패");
     } finally {
       setBatchProgress(null);
     }
