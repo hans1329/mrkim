@@ -57,6 +57,9 @@ export function useConnectors() {
       if (error) throw error;
       return data as Connector[];
     },
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
   });
 }
 
