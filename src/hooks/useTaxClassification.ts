@@ -80,7 +80,7 @@ export function useClassifiableTransactions(status?: string) {
   });
 }
 
-/** 분류 현황 통계 */
+/** 분류 현황 통계 (DB 서버사이드 집계 - 1000건 제한 없음) */
 export function useClassificationStats() {
   return useQuery({
     queryKey: ["tax-classification-stats"],
@@ -88,40 +88,23 @@ export function useClassificationStats() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const { data: all } = await supabase
-        .from("transactions")
-        .select("tax_classification_status, amount, vat_deductible, vat_amount")
-        .eq("user_id", user.id)
-        .eq("type", "expense");
+      const { data, error } = await supabase.rpc("get_tax_classification_stats", {
+        p_user_id: user.id,
+      });
 
-      if (!all) return null;
+      if (error) throw error;
+      if (!data) return null;
 
-      const stats = {
-        total: all.length,
-        unclassified: 0,
-        ai_suggested: 0,
-        confirmed: 0,
-        manual: 0,
-        totalExpense: 0,
-        vatDeductibleAmount: 0,
-        vatAmount: 0,
+      return {
+        total: Number(data.total) || 0,
+        unclassified: Number(data.unclassified) || 0,
+        ai_suggested: Number(data.ai_suggested) || 0,
+        confirmed: Number(data.confirmed) || 0,
+        manual: Number(data.manual) || 0,
+        totalExpense: Number(data.totalExpense) || 0,
+        vatDeductibleAmount: Number(data.vatDeductibleAmount) || 0,
+        vatAmount: Number(data.vatAmount) || 0,
       };
-
-      for (const tx of all) {
-        stats.totalExpense += tx.amount;
-        if (tx.vat_deductible) {
-          stats.vatDeductibleAmount += tx.amount;
-          stats.vatAmount += (tx.vat_amount || 0);
-        }
-        switch (tx.tax_classification_status) {
-          case "ai_suggested": stats.ai_suggested++; break;
-          case "confirmed": stats.confirmed++; break;
-          case "manual": stats.manual++; break;
-          default: stats.unclassified++; break;
-        }
-      }
-
-      return stats;
     },
   });
 }
