@@ -175,7 +175,7 @@ export default function Transactions() {
         </Button>
       }
     >
-      <Tabs defaultValue="list" className="space-y-2.5 bg-card min-h-screen -mx-4 px-4 -mt-2 pb-4">
+      <Tabs defaultValue="list" className="space-y-2.5 bg-card min-h-screen -mx-4 px-4 -mt-2 pt-2 pb-4">
         <TabsList className="grid w-full grid-cols-2 h-10 bg-secondary">
           <TabsTrigger value="list" className="text-sm">거래 목록</TabsTrigger>
           <TabsTrigger value="classify" className="gap-1 text-sm">
