@@ -275,14 +275,7 @@ export function ConnectionHub({
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.1, duration: 0.4, type: "spring" }}
                   >
-                    <div className="relative">
-                      <div className="h-28 w-28 rounded-full overflow-hidden border-4 border-primary/20 shadow-lg">
-                        <img src={icc5Image} alt="김비서" className="h-full w-full object-cover" />
-                      </div>
-                      <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary flex items-center justify-center shadow-md">
-                        <Smartphone className="h-4 w-4 text-primary-foreground" />
-                      </div>
-                    </div>
+                    <img src={icc5Image} alt="김비서" className="h-16 w-16 object-cover rounded-full" />
                   </motion.div>
 
                   {/* Text */}
@@ -290,12 +283,13 @@ export function ConnectionHub({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2, duration: 0.3 }}
-                    className="space-y-2"
+                    className="space-y-1.5"
                   >
-                    <h2 className="text-xl font-bold text-foreground">
+                    <h2 className="text-base font-bold text-foreground leading-snug">
+                      먼저,<br />
                       비서에게 연락받을 번호를 알려주세요
                     </h2>
-                    <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                    <p className="text-xs text-muted-foreground max-w-xs mx-auto">
                       간편인증 및 중요 알림 수신에 사용됩니다.<br />
                       언제든 설정에서 변경할 수 있어요.
                     </p>
