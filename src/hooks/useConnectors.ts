@@ -148,6 +148,15 @@ export function useUpsertConnectorInstance() {
           if (error) throw error;
           return data;
         }
+
+        // 같은 connector_id의 다른 connected_id를 가진 기존 인스턴스를 disconnected로 변경
+        await supabase
+          .from("connector_instances")
+          .update({ status: "disconnected" as any, status_message: "새 연동으로 대체됨" })
+          .eq("user_id", user.id)
+          .eq("connector_id", params.connector_id)
+          .eq("status", "connected")
+          .neq("connected_id", params.connected_id);
       }
 
       // 연결 해제 시: connected_id 없이 connector_id로 매칭되는 인스턴스 업데이트
