@@ -129,12 +129,12 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
 
   // 로그아웃 상태 — 연동 안내는 TodaySummarySection에서 처리
   if (isLoggedOut) {
-    return null;
+    return <SecretaryInsightCard isHero={isHero} />;
   }
 
   // 연동 0건 — TodaySummarySection의 연동 안내 카드로 대체
   if (connectedCount === 0) {
-    return null;
+    return <SecretaryInsightCard isHero={isHero} />;
   }
 
   if (loading) {
