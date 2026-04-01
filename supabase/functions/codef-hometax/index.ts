@@ -279,7 +279,7 @@ async function handleRegister(
   };
 
   console.log(
-    `Registering hometax account with simple auth (${authMethod}, level=${loginTypeLevel}), userName=${userName}, phoneNo=${cleanedPhone}, birthDate=${cleanedBirthDate}, identity=${cleanedNumber}`
+    `Registering hometax account with simple auth (${authMethod}, level=${loginTypeLevel}), userName=${userName}, phoneNo=${cleanedPhone}, birthDate=${cleanedBirthDate}, loginIdentity=${shortBirthDate}, identity=${cleanedNumber}`
   );
   console.log("Request body:", JSON.stringify(requestBody));
 
