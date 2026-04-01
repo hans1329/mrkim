@@ -664,7 +664,7 @@ async function syncCardTransactions(
         .sort((a, b) => b.length - a.length)[0] ||
       "카드 결제";
 
-    return ({
+    return {
       user_id: instance.user_id,
       type: "expense",
       source_type: "card",
@@ -674,10 +674,11 @@ async function syncCardTransactions(
       transaction_time: tx.resUsedTime || null,
       merchant_name: fullStoreName,
       source_name: decodeField(tx.resCardName) || null,
-    source_account: tx.resCardNo || null,
-    external_tx_id: tx.resApprovalNo || null,
-    synced_at: new Date().toISOString(),
-  }));
+      source_account: tx.resCardNo || null,
+      external_tx_id: tx.resApprovalNo || null,
+      synced_at: new Date().toISOString(),
+    };
+  });
 
   let totalSaved = 0;
   if (formatted.length > 0) {
