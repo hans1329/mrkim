@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { PiggyBank, TrendingUp } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useQuery } from "@tanstack/react-query";
@@ -117,14 +117,16 @@ export function DepositCard({ isLoggedOut = false }: DepositCardProps) {
             <p className="text-sm font-medium text-muted-foreground">
               등록된 예치금이 없어요
             </p>
-            <p className="text-xs text-muted-foreground mt-1 mb-3">
+            <p className="text-xs text-muted-foreground mt-1">
               자금관리에서 예치금을 추가하세요
             </p>
-            <Button size="sm" variant="outline" className="rounded-full" onClick={() => navigate("/funds")}>
-              예치금 추가하기
-            </Button>
           </div>
         </CardContent>
+        <CardFooter className="pt-0">
+          <Button size="sm" variant="outline" className="rounded-full w-full" onClick={() => navigate("/funds")}>
+            예치금 추가하기
+          </Button>
+        </CardFooter>
       </Card>
     );
   }
