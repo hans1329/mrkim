@@ -256,12 +256,14 @@ export function HometaxConnectionFlow({
   const handleStartAuth = async () => {
     if (!selectedAuth || !businessInfo) return;
 
-    // 핸드폰 번호 확인
-    const userPhone = profile?.phone || profile?.secretary_phone;
+    // 핸드폰 번호 확인 & E.164 → 국내 형식 변환
+    let userPhone = profile?.phone || profile?.secretary_phone;
     if (!userPhone) {
       setError("간편인증을 위해 프로필에 휴대폰 번호를 먼저 등록해주세요. (설정 > 김비서 설정에서 등록 가능)");
       return;
     }
+    // +82 또는 82 접두사 → 0 으로 변환 (CODEF는 국내 형식 요구)
+    userPhone = userPhone.replace(/^\+?82/, "0").replace(/\D/g, "");
 
     // 이름 확인
     if (!profile?.name) {
