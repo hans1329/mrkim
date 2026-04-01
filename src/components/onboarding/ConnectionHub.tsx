@@ -200,6 +200,7 @@ export function ConnectionHub({
   const connectedCount = Object.values(connectionStatus).filter(Boolean).length;
 
   const getHeaderTitle = () => {
+    if (view.screen === "phone-register") return "연락처 등록";
     if (view.screen === "hub") return "데이터 연동";
     if (view.screen === "delivery-select") return "배달앱 연동";
     const labels: Record<ServiceType, string> = {
