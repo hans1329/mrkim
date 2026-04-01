@@ -260,6 +260,87 @@ export function ConnectionHub({
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-md w-full mx-auto px-4 py-6">
             <AnimatePresence mode="wait">
+              {view.screen === "phone-register" && (
+                <motion.div
+                  key="phone-register"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex flex-col items-center text-center space-y-6 pt-4"
+                >
+                  {/* Avatar */}
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.1, duration: 0.4, type: "spring" }}
+                  >
+                    <div className="relative">
+                      <div className="h-28 w-28 rounded-full overflow-hidden border-4 border-primary/20 shadow-lg">
+                        <img src={mrKimAvatar} alt="김비서" className="h-full w-full object-cover" />
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary flex items-center justify-center shadow-md">
+                        <Smartphone className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Text */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.3 }}
+                    className="space-y-2"
+                  >
+                    <h2 className="text-xl font-bold text-foreground">
+                      비서에게 연락받을 번호를 알려주세요
+                    </h2>
+                    <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                      간편인증 및 중요 알림 수신에 사용됩니다.<br />
+                      언제든 설정에서 변경할 수 있어요.
+                    </p>
+                  </motion.div>
+
+                  {/* Phone input */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.3 }}
+                    className="w-full max-w-xs space-y-3"
+                  >
+                    <div className="relative">
+                      <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="tel"
+                        placeholder="010-0000-0000"
+                        value={formatPhone(phoneNumber)}
+                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                        className="pl-10 h-12 text-center text-lg tracking-wider rounded-xl"
+                        maxLength={13}
+                      />
+                    </div>
+                    <Button
+                      onClick={handleSavePhone}
+                      disabled={phoneNumber.replace(/\D/g, "").length < 10 || isSavingPhone}
+                      className="w-full h-12 rounded-xl gap-2 text-base"
+                    >
+                      {isSavingPhone ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4" />
+                      )}
+                      등록하고 시작하기
+                    </Button>
+                    <button
+                      onClick={() => setView({ screen: "hub" })}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      나중에 등록할게요
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )}
+
               {view.screen === "hub" && (
                 <motion.div
                   key="hub"
