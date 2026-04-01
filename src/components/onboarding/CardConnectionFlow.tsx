@@ -255,6 +255,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   useImperativeHandle(ref, () => ({ handleBack }), [step]);
 
   return (
+    <>
     <div className="space-y-4">
       {/* 진행 상태 */}
       {step !== "select-card" && step !== "auth" && (
