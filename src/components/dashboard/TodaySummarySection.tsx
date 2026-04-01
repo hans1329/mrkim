@@ -83,9 +83,15 @@ function RealStatCard({
   isHero?: boolean;
 }) {
   const variantStyles = {
-    default: isHero ? "bg-white/10 backdrop-blur-md border border-white/15 text-white" : "bg-muted/50 border border-border/50",
-    primary: isHero ? "bg-white/15 backdrop-blur-md border border-white/20 text-white" : "bg-muted/50 border border-border/50",
-    success: isHero ? "bg-white/15 backdrop-blur-md border border-white/20 text-white" : "bg-muted/50 border border-border/50",
+    default: isHero
+      ? "bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.08)]"
+      : "bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.06)]",
+    primary: isHero
+      ? "bg-white/15 backdrop-blur-xl border border-white/25 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_16px_rgba(0,0,0,0.08)]"
+      : "bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.06)]",
+    success: isHero
+      ? "bg-white/15 backdrop-blur-xl border border-white/25 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_16px_rgba(0,0,0,0.08)]"
+      : "bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.06)]",
   };
 
   const iconVariantStyles = {
@@ -95,7 +101,7 @@ function RealStatCard({
   };
 
   return (
-    <Card className={cn("overflow-hidden transition-shadow", variantStyles[variant])}>
+    <Card className={cn("overflow-hidden transition-all duration-300 rounded-2xl hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_8px_24px_rgba(0,0,0,0.1)]", variantStyles[variant])}>
       <CardContent className="p-3">
         <div className="flex items-center gap-2 mb-1.5">
           <div className={cn(
