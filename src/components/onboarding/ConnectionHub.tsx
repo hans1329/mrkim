@@ -153,6 +153,23 @@ export function ConnectionHub({
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+
+      // 인증 성공 → 프로필에 번호 저장
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const e164Phone = cleaned.startsWith("0")
+          ? "+82" + cleaned.slice(1)
+          : cleaned;
+        await supabase
+          .from("profiles")
+          .update({
+            phone: e164Phone,
+            secretary_phone: e164Phone,
+            secretary_phone_verified: true,
+          })
+          .eq("user_id", user.id);
+      }
+
       await refetchProfile();
       toast.success("번호가 인증·등록되었습니다!");
       setIsCodeSent(false);
