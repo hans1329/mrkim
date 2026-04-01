@@ -261,15 +261,15 @@ async function handleRegister(
       {
         countryCode: "KR",
         businessType: "NT", // 국세청
-        clientType: "B", // 사업자
+        clientType: "P", // 간편인증은 개인(P) 기반
         organization: "0004", // 국세청
         loginType: "5", // 간편인증
         loginTypeLevel, // 인증 수단 (1~5)
-        identity: cleanedNumber, // 사업자번호
+        identity: cleanedBirthDate, // 생년월일 (간편인증 시 개인 identity)
         id: encryptedId, // RSA 암호화된 빈 문자열
         password: encryptedPassword, // RSA 암호화된 빈 문자열
         userName: userName, // 사용자 이름
-        phoneNo: cleanedPhone, // 전화번호
+        phoneNo: cleanedPhone, // 전화번호 (국내 형식)
         birthDate: cleanedBirthDate, // 생년월일
       },
     ],
