@@ -48,14 +48,14 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
   // 로그아웃 상태: 목업 데이터 표시
   if (isLoggedOut) {
     return (
-      <Card>
+      <Card className="cursor-pointer" onClick={() => navigate("/reports?tab=tax")}>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Building2 className="h-4 w-4 text-primary" />
               홈택스 현황
             </CardTitle>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/reports?tab=tax")}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); navigate("/reports?tab=tax"); }}>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
@@ -175,7 +175,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
             </p>
             <Button 
               size="sm" 
-              onClick={handleSync}
+              onClick={(e) => { e.stopPropagation(); handleSync(); }}
               disabled={syncing}
               className="gap-1.5 h-9 text-xs rounded-full w-full"
             >
