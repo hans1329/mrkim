@@ -156,7 +156,7 @@ export function RecentTransactionsCard() {
       <CardFooter className="px-4 pb-4 pt-0">
         <Button
           variant="outline"
-          className="w-full text-sm"
+          className="w-full text-sm rounded-full"
           onClick={(e) => {
             e.stopPropagation();
             navigate("/reports?tab=classify");
