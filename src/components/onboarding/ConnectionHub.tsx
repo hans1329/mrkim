@@ -106,7 +106,10 @@ export function ConnectionHub({
   const { profile, refetch: refetchProfile } = useConnection();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isSavingPhone, setIsSavingPhone] = useState(false);
-
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const formatPhone = (value: string) => {
     const cleaned = value.replace(/\D/g, "").slice(0, 11);
     if (cleaned.length <= 3) return cleaned;
@@ -114,28 +117,70 @@ export function ConnectionHub({
     return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7)}`;
   };
 
-  const handleSavePhone = async () => {
+
     const cleaned = phoneNumber.replace(/\D/g, "");
     if (cleaned.length < 10 || cleaned.length > 11) {
       toast.error("올바른 휴대폰 번호를 입력해주세요.");
       return;
     }
-    setIsSavingPhone(true);
+    setIsSendingCode(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error("로그인이 필요합니다."); return; }
-      const { error } = await supabase.from("profiles").update({ phone: cleaned }).eq("user_id", user.id);
+      const { data, error } = await supabase.functions.invoke("twilio-verify", {
+        body: { action: "send", phone: cleaned },
+      });
       if (error) throw error;
-      await refetchProfile();
-      toast.success("번호가 등록되었습니다!");
-      setView({ screen: "hub" });
-    } catch (err) {
-      console.error("Failed to save phone:", err);
-      toast.error("저장에 실패했습니다.");
+      if (data?.error) throw new Error(data.error);
+      setIsCodeSent(true);
+      toast.success("인증번호가 발송되었습니다");
+    } catch (error: any) {
+      console.error("SMS 발송 오류:", error);
+      toast.error(error?.message || "인증번호 발송에 실패했습니다");
     } finally {
-      setIsSavingPhone(false);
+      setIsSendingCode(false);
     }
   };
+
+  const handleVerifyAndSave = async () => {
+    if (verificationCode.length !== 6) {
+      toast.error("6자리 인증번호를 입력해주세요");
+      return;
+    }
+    const cleaned = phoneNumber.replace(/\D/g, "");
+    setIsVerifying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("twilio-verify", {
+        body: { action: "verify", phone: cleaned, code: verificationCode },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      await refetchProfile();
+      toast.success("번호가 인증·등록되었습니다!");
+      setIsCodeSent(false);
+      setVerificationCode("");
+      setView({ screen: "hub" });
+
+      // 환영 전화 (비동기, 실패 무시)
+      try {
+        const secretaryName = profile?.secretary_name || "김비서";
+        const ownerName = profile?.name || "사장";
+        const script = `안녕하세요, ${ownerName}님. 저는 ${ownerName}님의 AI 비서 ${secretaryName}입니다. 전화번호 인증이 완료되어 인사드립니다. 앞으로 중요한 경영 알림이 있을 때 이 번호로 전화드리겠습니다. 감사합니다.`;
+        await supabase.functions.invoke("twilio-outbound-call", {
+          body: { recipient_phone: cleaned, recipient_name: ownerName, script, call_type: "welcome" },
+        });
+        const lastChar = secretaryName.charAt(secretaryName.length - 1);
+        const hasBatchim = (lastChar.charCodeAt(0) - 0xAC00) % 28 !== 0;
+        toast("📞 환영 전화를 발신합니다", { description: `${secretaryName}${hasBatchim ? "이" : "가"} 잠시 후 전화드립니다` });
+      } catch { /* 무시 */ }
+    } catch (error: any) {
+      console.error("인증 확인 오류:", error);
+      toast.error(error?.message || "인증번호 확인에 실패했습니다");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Legacy — kept for compatibility but no longer primary
+  const handleSavePhone = handleVerifyAndSave;
 
   // Sync with open/initialService — check phone first
   useEffect(() => {
@@ -301,32 +346,70 @@ export function ConnectionHub({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, duration: 0.3 }}
                     className="w-full max-w-xs space-y-3"
-                  >
-                    <div className="relative">
-                      <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="tel"
-                        placeholder="010-0000-0000"
-                        value={formatPhone(phoneNumber)}
-                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
-                        className="pl-10 h-12 text-center text-lg tracking-wider rounded-xl"
-                        maxLength={13}
-                      />
-                    </div>
-                    <Button
-                      onClick={handleSavePhone}
-                      disabled={phoneNumber.replace(/\D/g, "").length < 10 || isSavingPhone}
-                      className="w-full h-12 rounded-xl gap-2 text-base"
-                    >
-                      {isSavingPhone ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4" />
-                      )}
-                      등록하고 시작하기
-                    </Button>
+                   >
+                    {!isCodeSent ? (
+                      <>
+                        <div className="relative">
+                          <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type="tel"
+                            placeholder="010-0000-0000"
+                            value={formatPhone(phoneNumber)}
+                            onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                            className="pl-10 h-12 text-center text-lg tracking-wider rounded-xl"
+                            maxLength={13}
+                          />
+                        </div>
+                        <Button
+                          onClick={handleSendCode}
+                          disabled={phoneNumber.replace(/\D/g, "").length < 10 || isSendingCode}
+                          className="w-full h-12 rounded-xl gap-2 text-base"
+                        >
+                          {isSendingCode ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Shield className="h-4 w-4" />
+                          )}
+                          인증번호 받기
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">{formatPhone(phoneNumber)}</span>으로 발송된 인증번호를 입력하세요
+                        </p>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="인증번호 6자리"
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                          className="h-12 text-center text-xl tracking-[0.3em] rounded-xl"
+                          maxLength={6}
+                          autoFocus
+                        />
+                        <Button
+                          onClick={handleVerifyAndSave}
+                          disabled={verificationCode.length !== 6 || isVerifying}
+                          className="w-full h-12 rounded-xl gap-2 text-base"
+                        >
+                          {isVerifying ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4" />
+                          )}
+                          인증 완료
+                        </Button>
+                        <button
+                          onClick={() => { setIsCodeSent(false); setVerificationCode(""); }}
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          번호 다시 입력
+                        </button>
+                      </>
+                    )}
                     <button
-                      onClick={() => setView({ screen: "hub" })}
+                      onClick={() => { setView({ screen: "hub" }); setIsCodeSent(false); setVerificationCode(""); }}
                       className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
                       나중에 등록할게요
