@@ -90,8 +90,8 @@ export function WeeklyChart() {
 
   return (
     <Card className="col-span-full">
-      <CardHeader className="pb-3 flex flex-row items-center justify-between">
-        <div>
+      <CardHeader className="pb-3 relative">
+        <div className="pr-10">
           <CardTitle className="text-base">주간 매출/지출 현황</CardTitle>
           {weeklyResult?.startDate && weeklyResult?.endDate && (
             <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
@@ -101,7 +101,7 @@ export function WeeklyChart() {
           )}
         </div>
         {isLoggedIn && (
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSync} disabled={isSyncing}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 absolute top-2 right-2" onClick={handleSync} disabled={isSyncing}>
             <RefreshCw className={cn("h-4 w-4", isSyncing && "animate-spin")} />
           </Button>
         )}
