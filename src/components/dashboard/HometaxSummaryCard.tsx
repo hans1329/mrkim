@@ -142,14 +142,11 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
   return (
     <Card>
       <CardHeader className="pb-2 relative">
-        <div className="flex items-center justify-between pr-16">
+        <div className="flex items-center pr-10">
           <CardTitle className="text-base flex items-center gap-2">
             <Building2 className="h-4 w-4 text-primary" />
             홈택스 현황
           </CardTitle>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/reports?tab=tax")}>
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          </Button>
         </div>
         <Button
           variant="ghost"
@@ -180,7 +177,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
               size="sm" 
               onClick={handleSync}
               disabled={syncing}
-              className="gap-1.5 h-8 text-xs rounded-full"
+              className="gap-1.5 h-9 text-xs rounded-full w-full"
             >
               {hasConnectedId ? (
                 <>
