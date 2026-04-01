@@ -655,20 +655,25 @@ async function syncCardTransactions(
   const totalFetched = transactions.length;
 
   // transactions 테이블에 저장
-  const formatted = transactions.map((tx: any) => ({
-    user_id: instance.user_id,
-    type: "expense",
-    source_type: "card",
-    description:
-      decodeField(tx.resMemberStoreName) ||
-      decodeField(tx.resUsedStore) ||
-      "카드 결제",
-    amount: parseInt(tx.resUsedAmount || "0", 10),
-    transaction_date: formatDateStr(tx.resUsedDate),
-    transaction_time: tx.resUsedTime || null,
-    merchant_name:
-      decodeField(tx.resMemberStoreName) || decodeField(tx.resUsedStore) || null,
-    source_name: decodeField(tx.resCardName) || null,
+  const formatted = transactions.map((tx: any) => {
+    const memberStoreName = decodeField(tx.resMemberStoreName);
+    const usedStoreName = decodeField(tx.resUsedStore);
+    const fullStoreName =
+      [memberStoreName, usedStoreName]
+        .filter((value): value is string => Boolean(value))
+        .sort((a, b) => b.length - a.length)[0] ||
+      "카드 결제";
+
+    return ({
+      user_id: instance.user_id,
+      type: "expense",
+      source_type: "card",
+      description: fullStoreName,
+      amount: parseInt(tx.resUsedAmount || "0", 10),
+      transaction_date: formatDateStr(tx.resUsedDate),
+      transaction_time: tx.resUsedTime || null,
+      merchant_name: fullStoreName,
+      source_name: decodeField(tx.resCardName) || null,
     source_account: tx.resCardNo || null,
     external_tx_id: tx.resApprovalNo || null,
     synced_at: new Date().toISOString(),
