@@ -252,6 +252,10 @@ async function handleRegister(
   const publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
   const cleanedBirthDate = birthDate.replace(/\D/g, ""); // YYYYMMDD or YYMMDD
 
+  // CODEF requires id and password to be RSA-encrypted even if empty
+  const encryptedId = publicKey ? encryptRSAPKCS1("", publicKey) : "";
+  const encryptedPassword = publicKey ? encryptRSAPKCS1("", publicKey) : "";
+
   const requestBody = {
     accountList: [
       {
@@ -262,8 +266,8 @@ async function handleRegister(
         loginType: "5", // 간편인증
         loginTypeLevel, // 인증 수단 (1~5)
         identity: cleanedNumber, // 사업자번호
-        id: "", // 간편인증 시 빈 문자열
-        password: "", // 간편인증 시 빈 문자열
+        id: encryptedId, // RSA 암호화된 빈 문자열
+        password: encryptedPassword, // RSA 암호화된 빈 문자열
         userName: userName, // 사용자 이름
         phoneNo: cleanedPhone, // 전화번호
         birthDate: cleanedBirthDate, // 생년월일
