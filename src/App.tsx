@@ -10,6 +10,7 @@ import { ConnectionProvider } from "@/contexts/ConnectionContext";
 import { ConnectionDrawerProvider } from "@/contexts/ConnectionDrawerContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LayoutRoute } from "@/components/layout/LayoutRoute";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import Index from "./pages/Index";
 import PreLoginLanding from "./pages/PreLoginLanding";
 import Login from "./pages/Login";
