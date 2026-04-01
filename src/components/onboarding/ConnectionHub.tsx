@@ -275,7 +275,7 @@ export function ConnectionHub({
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.1, duration: 0.4, type: "spring" }}
                   >
-                    <img src={icc5Image} alt="김비서" className="h-16 w-16 object-cover rounded-full" />
+                    <img src={icc5Image} alt="김비서" className="h-16 w-auto object-contain" />
                   </motion.div>
 
                   {/* Text */}
