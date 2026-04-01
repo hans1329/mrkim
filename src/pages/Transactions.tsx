@@ -203,8 +203,8 @@ export default function Transactions() {
               <PopoverTrigger asChild>
                 <Button
                   size="sm"
-                  variant={periodPreset === "custom" ? "default" : "outline"}
-                  className="h-7 px-2.5 text-[11px] rounded-full gap-1 shrink-0"
+                  variant={periodPreset === "custom" ? "default" : "ghost"}
+                  className="h-7 px-2.5 text-[10px] rounded-full gap-1 shrink-0"
                   onClick={() => {
                     if (periodPreset !== "custom") {
                       setPeriodPreset("custom");
