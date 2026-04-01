@@ -127,77 +127,14 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
     setDismissedAlerts(prev => [...prev, id]);
   };
 
-  // 로그아웃 상태
+  // 로그아웃 상태 — 연동 안내는 TodaySummarySection에서 처리
   if (isLoggedOut) {
-    return (
-      <div className={cn(
-        "rounded-xl p-4 h-full flex flex-col",
-        !isHero && "mb-4",
-        isHero 
-          ? "bg-white/15 backdrop-blur-md border border-white/20" 
-          : "bg-card border border-border shadow-sm"
-      )}>
-        <div className="flex items-center gap-2 mb-1">
-          <h4 className={cn("font-semibold text-sm", isHero && "text-white")}>
-            데이터 연동을 완료해주세요
-          </h4>
-          <span className={cn("text-xs", isHero ? "text-white/70" : "text-muted-foreground")}>
-            0/{totalConnections}
-          </span>
-        </div>
-          
-        <p className={cn("text-xs font-normal mb-3", isHero ? "text-white/70" : "text-muted-foreground")}>
-          연동하면 {josa(secretaryName, "이/가")} 실시간으로 사업 현황을 분석해드려요
-        </p>
+    return null;
+  }
 
-        <div className="flex items-center gap-2 mb-3">
-          {connections.map((conn) => (
-            <div
-              key={conn.key}
-              className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
-                isHero ? "bg-white/20 text-white/80" : "bg-muted text-muted-foreground"
-              )}
-            >
-              <Clock className="h-3 w-3" />
-              {conn.label}
-            </div>
-          ))}
-        </div>
-
-        <div className="mb-3">
-          <Progress value={0} className={cn("h-1.5", isHero && "[&]:bg-white/20 [&>div]:bg-white/60")} />
-        </div>
-
-        <Button
-          size="sm"
-          className={cn("h-10 gap-1 rounded-full", isHero && "bg-white text-primary hover:bg-white/90")}
-          onClick={handleStartConnection}
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          연동 시작하기
-          <ChevronRight className="h-3 w-3" />
-        </Button>
-
-        <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
-              <AlertDialogDescription>
-                데이터 연동을 위해 먼저 로그인해주세요.
-                로그인 후 연동 화면으로 이동합니다.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>취소</AlertDialogCancel>
-              <AlertDialogAction onClick={handleLoginConfirm}>
-                로그인하기
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    );
+  // 연동 0건 — TodaySummarySection의 연동 안내 카드로 대체
+  if (connectedCount === 0) {
+    return null;
   }
 
   if (loading) {
@@ -219,7 +156,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
     );
   }
 
-  if (!isFullyConnected) {
+  if (!isFullyConnected && connectedCount > 0) {
     return (
       <div className={cn(
         "rounded-xl p-4 h-full flex flex-col",
