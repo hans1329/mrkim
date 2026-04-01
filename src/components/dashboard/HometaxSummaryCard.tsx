@@ -175,6 +175,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
             </p>
             <Button 
               size="sm" 
+              variant="outline"
               onClick={(e) => { e.stopPropagation(); handleSync(); }}
               disabled={syncing}
               className="gap-1.5 h-9 text-xs rounded-full w-full"
