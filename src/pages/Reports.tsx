@@ -55,7 +55,7 @@ export default function Reports() {
   return (
     <MainLayout title="리포트" subtitle="경영 현황 분석" showBackButton>
       <div>
-        <div className="overflow-x-auto flex justify-start gap-0 mb-1">
+        <div className="overflow-x-auto scrollbar-hide flex justify-start gap-0 mb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {(["sales", "expense", "menu", "classify", "tax", "employee", "insights"] as const).map((tab) => (
             <button
               key={tab}
