@@ -676,5 +676,26 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
         </motion.div>
       </AnimatePresence>
     </div>
+
+    <AlertDialog open={showReconnectDialog} onOpenChange={setShowReconnectDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>이미 연동한 은행입니다</AlertDialogTitle>
+          <AlertDialogDescription>
+            {BANKS.find(b => b.id === selectedBank)?.name}은(는) 이미 연동되어 있습니다. 다시 연동할까요?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>취소</AlertDialogCancel>
+          <AlertDialogAction onClick={() => {
+            setShowReconnectDialog(false);
+            setStep("auth");
+          }}>
+            다시 연동하기
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
