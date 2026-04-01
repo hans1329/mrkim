@@ -295,8 +295,16 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                   <button
                     key={company.id}
                     onClick={() => {
-                      setSelectedCompany(company.id);
-                      setStep("auth");
+                      const alreadyConnected = existingCardConnections.some(
+                        (c) => c.cardCompanyId === company.id
+                      );
+                      if (alreadyConnected) {
+                        setPendingCompanyId(company.id);
+                        setShowReconnectDialog(true);
+                      } else {
+                        setSelectedCompany(company.id);
+                        setStep("auth");
+                      }
                     }}
                     className={cn(
                       "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all",
