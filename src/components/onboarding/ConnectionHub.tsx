@@ -89,6 +89,7 @@ const DELIVERY_APPS: { key: DeliveryApp; label: string; emoji: string }[] = [
 ];
 
 type ViewState =
+  | { screen: "phone-register" }
   | { screen: "hub" }
   | { screen: "flow"; service: ServiceType }
   | { screen: "delivery-select" };
