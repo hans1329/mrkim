@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, mockTransactions } from "@/data/mockData";
-import { TrendingUp, TrendingDown, RefreshCw, Calendar } from "lucide-react";
+import { TrendingUp, TrendingDown, RefreshCw, Calendar, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCardSync } from "@/hooks/useCardSync";
 import { useRecentTransactions } from "@/hooks/useDashboardStats";
