@@ -110,19 +110,49 @@ export function useClassificationStats() {
   });
 }
 
-/** AI 일괄 분류 실행 */
-export function useRunAIClassification() {
+/** AI 단일 배치 분류 실행 (내부용) */
+async function runSingleBatch(): Promise<{ classified: number; total: number; remaining: number }> {
+  const { data, error } = await supabase.functions.invoke("classify-transactions", {
+    body: { mode: "batch" },
+  });
+
+  if (error) throw error;
+  if (!data?.success) throw new Error(data?.error || "분류 실패");
+
+  return {
+    classified: data.classified || 0,
+    total: data.total || 0,
+    remaining: data.remaining ?? 0,
+  };
+}
+
+/** AI 자동 반복 배치 분류 */
+export function useAutoAIClassification() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (transactionIds?: string[]) => {
-      const { data, error } = await supabase.functions.invoke("classify-transactions", {
-        body: { transactionIds, mode: "batch" },
-      });
+    mutationFn: async (onProgress?: (info: { processed: number; remaining: number }) => void) => {
+      let totalProcessed = 0;
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || "분류 실패");
-      return data;
+      while (true) {
+        const result = await runSingleBatch();
+
+        if (result.classified === 0) break;
+
+        totalProcessed += result.classified;
+
+        // 중간 진행상황 갱신
+        await queryClient.invalidateQueries({ queryKey: ["tax-classification-stats"] });
+        onProgress?.({ processed: totalProcessed, remaining: result.remaining });
+
+        // 남은 게 없으면 종료
+        if (result.remaining === 0) break;
+
+        // 다음 배치 전 짧은 딜레이 (rate limit 방지)
+        await new Promise((r) => setTimeout(r, 500));
+      }
+
+      return { totalProcessed };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tax-classifiable-transactions"] });
@@ -159,33 +189,6 @@ export function useUpdateTaxClassification() {
           updated_at: new Date().toISOString(),
         })
         .eq("id", transactionId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tax-classifiable-transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["tax-classification-stats"] });
-    },
-  });
-}
-
-/** 일괄 확인 처리 */
-export function useConfirmAllClassifications() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("로그인 필요");
-
-      const { error } = await supabase
-        .from("transactions")
-        .update({
-          tax_classification_status: "confirmed",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", user.id)
-        .eq("tax_classification_status", "ai_suggested");
 
       if (error) throw error;
     },

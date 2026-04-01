@@ -216,10 +216,19 @@ JSON 배열로 응답 (각 항목):
       metadata: { transaction_count: transactions.length, classified },
     });
 
+    // 남은 미분류 건수 조회
+    const { count: remainingCount } = await supabaseClient
+      .from("transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("type", "expense")
+      .eq("tax_classification_status", "unclassified");
+
     return new Response(JSON.stringify({
       success: true,
       classified,
       total: transactions.length,
+      remaining: remainingCount ?? 0,
       results,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

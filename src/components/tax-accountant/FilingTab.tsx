@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import IrregularFilingSection from "./IrregularFilingSection";
 import { toast } from "sonner";
-import { useClassificationStats, useRunAIClassification } from "@/hooks/useTaxClassification";
+import { useClassificationStats, useAutoAIClassification } from "@/hooks/useTaxClassification";
 import {
   FileText,
   AlertCircle,
@@ -455,7 +455,7 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
   const deadlineInfo = getDeadlineInfo(isCorporate);
 
   const { data: classificationStats } = useClassificationStats();
-  const runClassification = useRunAIClassification();
+  const runClassification = useAutoAIClassification();
 
   // 자동/수동 구분 통계
   const autoItems = basicItems.filter((i) => i.autoSource);
@@ -466,8 +466,8 @@ export default function FilingTab({ filingTasks, assignment, businessType, loadi
 
   const handleRunClassification = async () => {
     try {
-      const result = await runClassification.mutateAsync(undefined);
-      toast.success(`${result.classified}건 거래가 AI 분류되었습니다`);
+      const result = await runClassification.mutateAsync(() => {});
+      toast.success(`${result.totalProcessed}건 거래가 AI 분류되었습니다`);
     } catch (err: any) {
       toast.error(err.message || "AI 분류 실행 중 오류가 발생했습니다");
     }

@@ -13,22 +13,21 @@ import { Progress } from "@/components/ui/progress";
 import {
   useClassifiableTransactions,
   useClassificationStats,
-  useRunAIClassification,
+  useAutoAIClassification,
   useUpdateTaxClassification,
-  useConfirmAllClassifications,
   useTaxAccountCodes,
   type ClassifiedTransaction,
 } from "@/hooks/useTaxClassification";
 import { formatCurrency } from "@/data/mockData";
 import { toast } from "sonner";
-import { Bot, Check, CheckCheck, Edit3, Loader2, Sparkles, AlertTriangle, FileCheck } from "lucide-react";
+import { Bot, Check, Edit3, Loader2, Sparkles, AlertTriangle, FileCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type FilterStatus = "all" | "unclassified" | "ai_suggested" | "confirmed" | "manual";
+type FilterStatus = "all" | "ai_suggested" | "manual";
 
 const STATUS_LABELS: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   unclassified: { label: "미분류", color: "bg-muted text-muted-foreground", icon: <AlertTriangle className="h-3 w-3" /> },
-  ai_suggested: { label: "AI 추천", color: "bg-chart-4/10 text-chart-4", icon: <Bot className="h-3 w-3" /> },
+  ai_suggested: { label: "AI 분류", color: "bg-chart-4/10 text-chart-4", icon: <Bot className="h-3 w-3" /> },
   confirmed: { label: "확인 완료", color: "bg-chart-2/10 text-chart-2", icon: <Check className="h-3 w-3" /> },
   manual: { label: "수동 분류", color: "bg-primary/10 text-primary", icon: <Edit3 className="h-3 w-3" /> },
 };
@@ -36,29 +35,25 @@ const STATUS_LABELS: Record<string, { label: string; color: string; icon: React.
 export function TaxClassificationTab() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [editingTx, setEditingTx] = useState<ClassifiedTransaction | null>(null);
+  const [batchProgress, setBatchProgress] = useState<{ processed: number; remaining: number } | null>(null);
 
   const { data: stats, isLoading: statsLoading } = useClassificationStats();
   const { data: transactions, isLoading: txLoading } = useClassifiableTransactions(filterStatus);
   const { data: accountCodes } = useTaxAccountCodes();
-  const runAI = useRunAIClassification();
+  const autoAI = useAutoAIClassification();
   const updateTax = useUpdateTaxClassification();
-  const confirmAll = useConfirmAllClassifications();
 
   const handleRunAI = async () => {
+    setBatchProgress({ processed: 0, remaining: stats?.unclassified || 0 });
     try {
-      const result = await runAI.mutateAsync(undefined);
-      toast.success(`${result.classified}건의 거래를 AI가 분류했습니다`);
+      const result = await autoAI.mutateAsync((info) => {
+        setBatchProgress(info);
+      });
+      toast.success(`총 ${result.totalProcessed}건의 거래를 AI가 분류했습니다`);
     } catch (e: any) {
       toast.error(e.message || "AI 분류 실패");
-    }
-  };
-
-  const handleConfirmAll = async () => {
-    try {
-      await confirmAll.mutateAsync();
-      toast.success("모든 AI 추천 분류를 확인했습니다");
-    } catch {
-      toast.error("일괄 확인 실패");
+    } finally {
+      setBatchProgress(null);
     }
   };
 
@@ -74,9 +69,12 @@ export function TaxClassificationTab() {
     );
   }
 
+  const classifiedCount = (stats?.confirmed || 0) + (stats?.manual || 0) + (stats?.ai_suggested || 0);
   const progressPercent = stats && stats.total > 0
-    ? Math.round(((stats.confirmed + stats.manual + stats.ai_suggested) / stats.total) * 100)
+    ? Math.round((classifiedCount / stats.total) * 100)
     : 0;
+
+  const isRunning = autoAI.isPending;
 
   return (
     <div className="space-y-4">
@@ -90,14 +88,14 @@ export function TaxClassificationTab() {
         </Card>
         <Card>
           <CardContent className="p-3">
-            <span className="text-xs text-muted-foreground">AI 추천</span>
+            <span className="text-xs text-muted-foreground">AI 분류</span>
             <p className="mt-1 text-lg font-bold text-chart-4">{stats?.ai_suggested || 0}건</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
-            <span className="text-xs text-muted-foreground">확인 완료</span>
-            <p className="mt-1 text-lg font-bold text-chart-2">{(stats?.confirmed || 0) + (stats?.manual || 0)}건</p>
+            <span className="text-xs text-muted-foreground">수동 분류</span>
+            <p className="mt-1 text-lg font-bold text-chart-2">{stats?.manual || 0}건</p>
           </CardContent>
         </Card>
         <Card>
@@ -108,50 +106,45 @@ export function TaxClassificationTab() {
         </Card>
       </div>
 
-      {/* 분류 진행률 */}
+      {/* 분류 진행률 + 자동분류 버튼 */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
             <span className="text-sm font-medium">분류 완료율</span>
             <span className="text-sm font-bold text-primary">{progressPercent}%</span>
           </div>
           <Progress value={progressPercent} className="h-2" />
-          <p className="text-xs text-muted-foreground mt-1">
-            총 {stats?.total || 0}건 중 {(stats?.confirmed || 0) + (stats?.manual || 0) + (stats?.ai_suggested || 0)}건 분류 완료
-          </p>
+          
+          {isRunning && batchProgress ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+              <span>
+                {batchProgress.processed}건 완료 · 남은 {batchProgress.remaining}건 처리 중...
+              </span>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              총 {stats?.total || 0}건 중 {classifiedCount}건 분류 완료
+            </p>
+          )}
+
+          <Button
+            onClick={handleRunAI}
+            disabled={isRunning || (stats?.unclassified || 0) === 0}
+            className="w-full"
+            size="sm"
+          >
+            {isRunning ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4 mr-1" />
+            )}
+            {isRunning
+              ? "AI 분류 진행 중..."
+              : `AI 자동 분류 (${stats?.unclassified || 0}건)`}
+          </Button>
         </CardContent>
       </Card>
-
-      {/* 액션 버튼 */}
-      <div className="flex gap-2">
-        <Button
-          onClick={handleRunAI}
-          disabled={runAI.isPending || (stats?.unclassified || 0) === 0}
-          className="flex-1"
-          size="sm"
-        >
-          {runAI.isPending ? (
-            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-          ) : (
-            <Sparkles className="h-4 w-4 mr-1" />
-          )}
-          AI 자동 분류 ({stats?.unclassified || 0}건)
-        </Button>
-        <Button
-          onClick={handleConfirmAll}
-          disabled={confirmAll.isPending || (stats?.ai_suggested || 0) === 0}
-          variant="outline"
-          size="sm"
-          className="flex-1"
-        >
-          {confirmAll.isPending ? (
-            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-          ) : (
-            <CheckCheck className="h-4 w-4 mr-1" />
-          )}
-          전체 확인 ({stats?.ai_suggested || 0}건)
-        </Button>
-      </div>
 
       {/* 필터 */}
       <div className="flex items-center gap-2">
@@ -161,9 +154,7 @@ export function TaxClassificationTab() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">전체</SelectItem>
-            <SelectItem value="unclassified">미분류</SelectItem>
-            <SelectItem value="ai_suggested">AI 추천</SelectItem>
-            <SelectItem value="confirmed">확인 완료</SelectItem>
+            <SelectItem value="ai_suggested">AI 분류</SelectItem>
             <SelectItem value="manual">수동 분류</SelectItem>
           </SelectContent>
         </Select>
@@ -184,25 +175,6 @@ export function TaxClassificationTab() {
               key={tx.id}
               tx={tx}
               onEdit={() => setEditingTx(tx)}
-              onConfirm={async () => {
-                if (!tx.tax_account_code) return;
-                try {
-                  await updateTax.mutateAsync({
-                    transactionId: tx.id,
-                    updates: {
-                      tax_account_code: tx.tax_account_code,
-                      tax_account_name: tx.tax_account_name || "",
-                      vat_deductible: tx.vat_deductible ?? true,
-                      is_fixed_asset: tx.is_fixed_asset,
-                      business_use_ratio: tx.business_use_ratio ?? 100,
-                      tax_classification_status: "confirmed",
-                    },
-                  });
-                  toast.success("확인 완료");
-                } catch {
-                  toast.error("확인 실패");
-                }
-              }}
             />
           ))}
           {!transactions?.length && (
@@ -245,22 +217,14 @@ export function TaxClassificationTab() {
 function TransactionClassificationCard({
   tx,
   onEdit,
-  onConfirm,
 }: {
   tx: ClassifiedTransaction;
   onEdit: () => void;
-  onConfirm: () => void;
 }) {
   const statusInfo = STATUS_LABELS[tx.tax_classification_status] || STATUS_LABELS.unclassified;
-  const isAISuggested = tx.tax_classification_status === "ai_suggested";
-  const isConfirmed = tx.tax_classification_status === "confirmed" || tx.tax_classification_status === "manual";
 
   return (
-    <Card className={cn(
-      "transition-all",
-      isAISuggested && "border-chart-4/30 bg-chart-4/5",
-      isConfirmed && "opacity-75"
-    )}>
+    <Card>
       <CardContent className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -301,16 +265,9 @@ function TransactionClassificationCard({
               <p className="text-[11px] text-muted-foreground mt-1 italic">{tx.tax_notes}</p>
             )}
           </div>
-          <div className="flex flex-col gap-1">
-            {isAISuggested && (
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onConfirm}>
-                <Check className="h-3.5 w-3.5 text-chart-2" />
-              </Button>
-            )}
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
-              <Edit3 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
+            <Edit3 className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -354,7 +311,6 @@ function EditClassificationDialog({
     });
   };
 
-  // 계정과목 변경 시 기본값 세팅
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
     const ac = accountCodes.find((c) => c.id === newCode);
@@ -364,7 +320,6 @@ function EditClassificationDialog({
     }
   };
 
-  // 카테고리별 그룹핑
   const groupedCodes = accountCodes.reduce<Record<string, any[]>>((acc, c) => {
     (acc[c.category] = acc[c.category] || []).push(c);
     return acc;
@@ -378,7 +333,6 @@ function EditClassificationDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* 거래 정보 */}
           <div className="rounded-lg bg-muted/50 p-3">
             <p className="text-sm font-medium">{tx.description}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -386,7 +340,6 @@ function EditClassificationDialog({
             </p>
           </div>
 
-          {/* 계정과목 선택 */}
           <div>
             <Label className="text-xs">계정과목</Label>
             <Select value={code} onValueChange={handleCodeChange}>
@@ -417,7 +370,6 @@ function EditClassificationDialog({
             )}
           </div>
 
-          {/* 부가세 공제 */}
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-xs">부가세 매입세액 공제</Label>
@@ -428,7 +380,6 @@ function EditClassificationDialog({
             <Switch checked={vatDeductible} onCheckedChange={setVatDeductible} />
           </div>
 
-          {/* 고정자산 */}
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-xs">고정자산 여부</Label>
@@ -437,7 +388,6 @@ function EditClassificationDialog({
             <Switch checked={isFixedAsset} onCheckedChange={setIsFixedAsset} />
           </div>
 
-          {/* 업무 사용 비율 */}
           <div>
             <Label className="text-xs">사업 사용 비율 (%)</Label>
             <Input
@@ -455,23 +405,23 @@ function EditClassificationDialog({
             )}
           </div>
 
-          {/* 메모 */}
           <div>
             <Label className="text-xs">세무 메모</Label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="분류 사유나 참고사항"
-              rows={2}
-              className="mt-1 text-sm"
+              placeholder="세무 관련 메모..."
+              className="mt-1 h-16 text-sm"
             />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} size="sm">취소</Button>
-          <Button onClick={handleSave} disabled={isSaving} size="sm">
-            {isSaving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
+          <Button variant="outline" onClick={onClose}>
+            취소
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
             저장
           </Button>
         </DialogFooter>
