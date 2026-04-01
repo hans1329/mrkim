@@ -88,7 +88,7 @@ export function TaxClassificationTab() {
         </Card>
         <Card>
           <CardContent className="p-3">
-            <span className="text-xs text-muted-foreground">AI 분류 대상</span>
+            <span className="text-xs text-muted-foreground">자동 분류 대상</span>
             <p className="mt-1 text-lg font-bold text-chart-4">{stats?.ai_suggested || 0}건</p>
           </CardContent>
         </Card>
