@@ -96,7 +96,7 @@ export function ConnectionHub({
 }: ConnectionHubProps) {
   const [view, setView] = useState<ViewState>({ screen: "hub" });
   const [showBusinessModal, setShowBusinessModal] = useState(false);
-  const { profile } = useConnection();
+  const { profile, refetch: refetchProfile } = useConnection();
 
   // Sync with open/initialService
   useEffect(() => {
