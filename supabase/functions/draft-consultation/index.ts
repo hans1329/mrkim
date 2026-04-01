@@ -17,7 +17,17 @@ serve(async (req) => {
   }
 
   try {
-    const { briefDescription, businessContext } = await req.json();
+    let body: any = {};
+    try {
+      const text = await req.text();
+      if (text) body = JSON.parse(text);
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { briefDescription, businessContext } = body;
     if (!briefDescription || typeof briefDescription !== "string") {
       return new Response(JSON.stringify({ error: "briefDescription is required" }), {
         status: 400,
