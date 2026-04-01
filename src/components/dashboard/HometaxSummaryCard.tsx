@@ -240,10 +240,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
                     <p className="text-[11px] text-muted-foreground">
                       부가세 예상 {vatPayable >= 0 ? "납부액" : "환급액"}
                     </p>
-                    <p className={cn(
-                      "text-lg font-bold",
-                      vatPayable >= 0 ? "text-amber-600" : "text-blue-600"
-                    )}>
+                    <p className="text-lg font-bold text-foreground">
                       ₩{formatAmount(Math.abs(vatPayable))}
                     </p>
                   </div>
