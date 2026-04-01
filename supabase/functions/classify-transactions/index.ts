@@ -165,11 +165,8 @@ JSON 배열로 응답 (각 항목):
       throw new Error("AI 응답 파싱 실패");
     }
 
-    // DB 업데이트
-    let classified = 0;
-    const results: any[] = [];
-
-    for (const cls of classifications) {
+    // DB 업데이트 (병렬 처리로 타임아웃 방지)
+    const updatePromises = classifications.map((cls: any) => {
       const matchedCode = accountCodes?.find((c: any) => c.id === cls.tax_account_code);
       
       const updateData: any = {
@@ -184,29 +181,30 @@ JSON 배열로 응답 (각 항목):
         updated_at: new Date().toISOString(),
       };
 
-      // 고정자산인 경우 감가상각 정보
       if (cls.is_fixed_asset && matchedCode) {
         updateData.depreciation_method = "정액법";
         updateData.useful_life_years = matchedCode.default_useful_life || 5;
       }
 
-      // VAT 금액 계산 (공급가액의 10%)
       const tx = transactions.find((t: any) => t.id === cls.id);
       if (tx && cls.vat_deductible) {
         updateData.vat_amount = Math.round(tx.amount / 11);
       }
 
-      const { error: updateError } = await supabaseClient
+      return supabaseClient
         .from("transactions")
         .update(updateData)
         .eq("id", cls.id)
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .then(({ error: updateError }) => {
+          if (!updateError) return { success: true, id: cls.id, ...updateData };
+          return { success: false, id: cls.id };
+        });
+    });
 
-      if (!updateError) {
-        classified++;
-        results.push({ id: cls.id, ...updateData });
-      }
-    }
+    const updateResults = await Promise.all(updatePromises);
+    const results = updateResults.filter((r) => r.success);
+    const classified = results.length;
 
     // API 사용 로그
     await supabaseClient.from("api_usage_logs").insert({
