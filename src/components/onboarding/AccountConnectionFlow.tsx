@@ -268,7 +268,16 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
                   이전
                 </Button>
                 <Button
-                  onClick={() => setStep("auth")}
+                  onClick={() => {
+                    const alreadyConnected = existingBankConnections.some(
+                      (c) => c.bankCode === selectedBank || c.bankName === BANKS.find(b => b.id === selectedBank)?.name
+                    );
+                    if (alreadyConnected) {
+                      setShowReconnectDialog(true);
+                    } else {
+                      setStep("auth");
+                    }
+                  }}
                   disabled={!selectedBank}
                   className="flex-1"
                 >
