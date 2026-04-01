@@ -27,6 +27,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
     const { briefDescription, businessContext } = body;
     if (!briefDescription || typeof briefDescription !== "string") {
       return new Response(JSON.stringify({ error: "briefDescription is required" }), {
@@ -35,144 +36,52 @@ serve(async (req) => {
       });
     }
 
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not configured");
+    }
+
     const ctx = (businessContext || {}) as BusinessContext;
     const prompt = buildPrompt(briefDescription, ctx);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-      if (!GEMINI_API_KEY) {
-        throw new Error("No API key configured");
-      }
-
-      const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [{ text: prompt }],
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                subject: { type: "STRING" },
+                question: { type: "STRING" },
               },
-            ],
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: "OBJECT",
-                properties: {
-                  subject: { type: "STRING" },
-                  question: { type: "STRING" },
-                },
-                required: ["subject", "question"],
-              },
-            },
-          }),
-        }
-      );
-
-      if (!geminiRes.ok) {
-        const errText = await geminiRes.text();
-        console.error("Gemini error:", errText);
-        throw new Error("AI generation failed");
-      }
-
-      const geminiData = await geminiRes.json();
-      const text = geminiData.candidates?.[0]?.content?.parts
-        ?.filter((p: any) => !p.thought && p.text)
-        ?.map((p: any) => p.text)
-        ?.join("") || "";
-
-      const parsed = JSON.parse(text);
-      return new Response(JSON.stringify(parsed), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Use Lovable AI Gateway
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: buildSystemPrompt(ctx),
-          },
-          {
-            role: "user",
-            content: briefDescription,
-          },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "draft_consultation",
-              description: "사용자의 간단한 설명을 바탕으로 세무 상담 요청서의 제목과 질문 본문을 작성합니다.",
-              parameters: {
-                type: "object",
-                properties: {
-                  subject: {
-                    type: "string",
-                    description: "상담 제목 (20자 내외, 핵심 키워드 포함)",
-                  },
-                  question: {
-                    type: "string",
-                    description: "세무사에게 보낼 상세 질문 (200~400자, 구체적 상황 설명 포함)",
-                  },
-                },
-                required: ["subject", "question"],
-                additionalProperties: false,
-              },
+              required: ["subject", "question"],
             },
           },
-        ],
-        tool_choice: { type: "function", function: { name: "draft_consultation" } },
-      }),
-    });
+        }),
+      }
+    );
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI 크레딧이 부족합니다." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errText = await response.text();
-      console.error("Gateway error:", response.status, errText);
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      console.error("Gemini error:", errText);
       throw new Error("AI generation failed");
     }
 
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall?.function?.arguments) {
-      const args = JSON.parse(toolCall.function.arguments);
-      return new Response(JSON.stringify(args), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const geminiData = await geminiRes.json();
+    const text = geminiData.candidates?.[0]?.content?.parts
+      ?.filter((p: any) => !p.thought && p.text)
+      ?.map((p: any) => p.text)
+      ?.join("") || "";
 
-    const content = data.choices?.[0]?.message?.content || "";
-    try {
-      const parsed = JSON.parse(content);
-      return new Response(JSON.stringify(parsed), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    } catch {
-      throw new Error("Failed to parse AI response");
-    }
+    const parsed = JSON.parse(text);
+    return new Response(JSON.stringify(parsed), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
     console.error("draft-consultation error:", e);
     return new Response(
@@ -198,7 +107,7 @@ function buildBusinessInfo(ctx: BusinessContext): string {
   return `\n사용자의 실제 사업 정보:\n${parts.join("\n")}\n\n위 정보만 사용하세요. 매출액, 투자 금액 등 제공되지 않은 수치는 절대 지어내지 말고, "(구체적 금액 기입)" 같은 빈칸으로 남기세요.`;
 }
 
-function buildSystemPrompt(ctx: BusinessContext): string {
+function buildPrompt(desc: string, ctx: BusinessContext): string {
   const greeting = ctx.businessName
     ? `인사말은 "안녕하세요, ${ctx.businessName}입니다." 로 시작하세요.`
     : `인사말은 "안녕하세요," 로 시작하고, 사용자가 직접 상호명을 넣을 수 있도록 "(상호명)" 으로 남겨두세요.`;
@@ -215,11 +124,7 @@ ${buildBusinessInfo(ctx)}
   - 궁금한 점이나 부탁하는 내용을 자연스럽게 전달
   - 마무리는 "확인 부탁드립니다", "답변 부탁드리겠습니다" 등 간결하게
 - **절대로 제공되지 않은 정보(매출액, 업종, 금액 등)를 임의로 만들어내지 마세요**
-- 사용자가 언급하지 않았고 위 사업 정보에도 없는 내용은 반드시 "___" 또는 "(구체적 금액 기입)" 같은 빈칸으로 표시하여 사용자가 채울 수 있게 할 것`;
-}
-
-function buildPrompt(desc: string, ctx: BusinessContext): string {
-  return `${buildSystemPrompt(ctx)}
+- 사용자가 언급하지 않았고 위 사업 정보에도 없는 내용은 반드시 "___" 또는 "(구체적 금액 기입)" 같은 빈칸으로 표시하여 사용자가 채울 수 있게 할 것
 
 사용자 설명: ${desc}
 
