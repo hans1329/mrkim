@@ -75,7 +75,7 @@ export function TaxClassificationTab() {
   }
 
   const progressPercent = stats && stats.total > 0
-    ? Math.round(((stats.confirmed + stats.manual) / stats.total) * 100)
+    ? Math.round(((stats.confirmed + stats.manual + stats.ai_suggested) / stats.total) * 100)
     : 0;
 
   return (
@@ -117,7 +117,7 @@ export function TaxClassificationTab() {
           </div>
           <Progress value={progressPercent} className="h-2" />
           <p className="text-xs text-muted-foreground mt-1">
-            총 {stats?.total || 0}건 중 {(stats?.confirmed || 0) + (stats?.manual || 0)}건 확인 완료
+            총 {stats?.total || 0}건 중 {(stats?.confirmed || 0) + (stats?.manual || 0) + (stats?.ai_suggested || 0)}건 분류 완료
           </p>
         </CardContent>
       </Card>
