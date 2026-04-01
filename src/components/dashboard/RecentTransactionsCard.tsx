@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, mockTransactions } from "@/data/mockData";
-import { TrendingUp, TrendingDown, RefreshCw, Calendar } from "lucide-react";
+import { TrendingUp, TrendingDown, RefreshCw, Calendar, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCardSync } from "@/hooks/useCardSync";
 import { useRecentTransactions } from "@/hooks/useDashboardStats";
@@ -153,6 +153,19 @@ export function RecentTransactionsCard() {
           ))}
         </div>
       </CardContent>
+      <CardFooter className="px-4 pb-4 pt-0">
+        <Button
+          variant="outline"
+          className="w-full text-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate("/reports?tab=classify");
+          }}
+        >
+          <Sparkles className="h-4 w-4 mr-1.5" />
+          자동 비용 분석
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
