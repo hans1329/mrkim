@@ -146,7 +146,7 @@ export function AppLayout({
             }
 
             {/* Main Content */}
-            <main className={showBackButton ? "p-4 pb-24 overflow-x-hidden" : stickyHeader ? "overflow-x-hidden relative -mt-[calc(env(safe-area-inset-top,0px)+60px)] pb-24" : "pb-24 overflow-x-hidden"}>
+            <main className={showBackButton ? "px-4 pt-2 pb-24 overflow-x-hidden" : stickyHeader ? "overflow-x-hidden relative -mt-[calc(env(safe-area-inset-top,0px)+60px)] pb-24" : "pb-24 overflow-x-hidden"}>
               {children}
             </main>
           </div>
