@@ -140,7 +140,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
     : null;
 
   return (
-    <Card>
+    <Card className="cursor-pointer" onClick={() => navigate("/reports?tab=tax")}>
       <CardHeader className="pb-2 relative">
         <div className="flex items-center pr-10">
           <CardTitle className="text-base flex items-center gap-2">
