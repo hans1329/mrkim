@@ -69,7 +69,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
                 </div>
                 <span className="text-[11px] text-muted-foreground">매출</span>
               </div>
-              <p className="text-base font-bold text-green-600">₩2.5억</p>
+              <p className="text-base font-bold text-foreground">₩2.5억</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">42건</p>
             </div>
             <div className="rounded-lg p-2.5 bg-muted/50">
@@ -79,7 +79,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
                 </div>
                 <span className="text-[11px] text-muted-foreground">매입</span>
               </div>
-              <p className="text-base font-bold text-red-600">₩1.2억</p>
+              <p className="text-base font-bold text-foreground">₩1.2억</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">28건</p>
             </div>
           </div>
@@ -91,7 +91,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
                 </div>
                 <div>
                   <p className="text-[11px] text-muted-foreground">부가세 예상 납부액</p>
-                  <p className="text-lg font-bold text-amber-600">₩1,300만</p>
+                  <p className="text-lg font-bold text-foreground">₩1,300만</p>
                 </div>
               </div>
             </div>
@@ -200,7 +200,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
                   </div>
                   <span className="text-[11px] text-muted-foreground">매출</span>
                 </div>
-                <p className="text-base font-bold text-green-600">
+                <p className="text-base font-bold text-foreground">
                   ₩{formatAmount(salesTotal)}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -214,7 +214,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
                   </div>
                   <span className="text-[11px] text-muted-foreground">매입</span>
                 </div>
-                <p className="text-base font-bold text-red-600">
+                <p className="text-base font-bold text-foreground">
                   ₩{formatAmount(purchaseTotal)}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -240,10 +240,7 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
                     <p className="text-[11px] text-muted-foreground">
                       부가세 예상 {vatPayable >= 0 ? "납부액" : "환급액"}
                     </p>
-                    <p className={cn(
-                      "text-lg font-bold",
-                      vatPayable >= 0 ? "text-amber-600" : "text-blue-600"
-                    )}>
+                    <p className="text-lg font-bold text-foreground">
                       ₩{formatAmount(Math.abs(vatPayable))}
                     </p>
                   </div>
