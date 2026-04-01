@@ -24,6 +24,7 @@ const getMockTransactions = () =>
   }));
 
 export function RecentTransactionsCard() {
+  const navigate = useNavigate();
   const { data: result, isLoading: loading } = useRecentTransactions();
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
