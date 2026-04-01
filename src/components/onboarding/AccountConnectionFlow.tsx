@@ -83,6 +83,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const [error, setError] = useState<string | null>(null);
   const [syncProgress, setSyncProgress] = useState<{ synced: number; total: number }>({ synced: 0, total: 0 });
   const [currentConnectedId, setCurrentConnectedId] = useState<string | null>(null);
+  const [showReconnectDialog, setShowReconnectDialog] = useState(false);
   const certFileInputRef = useRef<HTMLInputElement>(null);
 
   // 로그인 방식: 기본 아이디/비번, 인증서는 사용자 선택
@@ -92,6 +93,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const { isLoading, registerBankAccount, getAccounts } = useAccountConnection();
   const bankSync = useBankSync();
   const { refetch: refetchProfile } = useConnection();
+  const { connections: existingBankConnections } = useBankConnectionInfo();
 
   const stepProgress: Record<FlowStep, number> = {
     "select-bank": 20,
