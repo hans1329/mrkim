@@ -142,26 +142,24 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pr-10">
           <CardTitle className="text-base flex items-center gap-2">
             <Building2 className="h-4 w-4 text-primary" />
             홈택스 현황
           </CardTitle>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={handleSync}
-              disabled={syncing}
-            >
-              <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/reports?tab=tax")}>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/reports?tab=tax")}>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </Button>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 absolute top-2 right-2"
+          onClick={handleSync}
+          disabled={syncing}
+        >
+          <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
+        </Button>
         {lastSyncText && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
             <Clock className="h-3 w-3" />
