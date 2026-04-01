@@ -204,7 +204,7 @@ export default function Transactions() {
                 <Button
                   size="sm"
                   variant={periodPreset === "custom" ? "default" : "outline"}
-                  className="h-7 px-2.5 text-xs rounded-full gap-1 shrink-0"
+                  className="h-7 px-2.5 text-[11px] rounded-full gap-1 shrink-0"
                   onClick={() => {
                     if (periodPreset !== "custom") {
                       setPeriodPreset("custom");
