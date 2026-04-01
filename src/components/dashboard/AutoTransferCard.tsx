@@ -121,14 +121,16 @@ export function AutoTransferCard({ isLoggedOut = false }: AutoTransferCardProps)
             <p className="text-sm font-medium text-muted-foreground">
               등록된 자동이체가 없어요
             </p>
-            <p className="text-xs text-muted-foreground mt-1 mb-3">
+            <p className="text-xs text-muted-foreground mt-1">
               자금관리에서 자동이체 규칙을 추가하세요
             </p>
-            <Button size="sm" variant="outline" className="rounded-full" onClick={() => navigate("/funds")}>
-              자동이체 추가하기
-            </Button>
           </div>
         </CardContent>
+        <CardFooter className="pt-0">
+          <Button size="sm" variant="outline" className="rounded-full w-full" onClick={() => navigate("/funds")}>
+            자동이체 추가하기
+          </Button>
+        </CardFooter>
       </Card>
     );
   }

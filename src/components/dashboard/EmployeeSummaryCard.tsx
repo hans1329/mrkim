@@ -79,14 +79,16 @@ export function EmployeeSummaryCard({ isLoggedOut = false }: EmployeeSummaryCard
             <p className="text-sm font-medium text-muted-foreground">
               등록된 직원이 없어요
             </p>
-            <p className="text-xs text-muted-foreground mt-1 mb-3">
+            <p className="text-xs text-muted-foreground mt-1">
               직원 관리 메뉴에서 직원을 추가하세요
             </p>
-            <Button size="sm" variant="outline" className="rounded-full" onClick={() => navigate("/employees")}>
-              직원 추가하기
-            </Button>
           </div>
         </CardContent>
+        <CardFooter className="pt-0">
+          <Button size="sm" variant="outline" className="rounded-full w-full" onClick={() => navigate("/employees")}>
+            직원 추가하기
+          </Button>
+        </CardFooter>
       </Card>
     );
   }
