@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
@@ -170,25 +170,9 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mx-auto mb-2.5">
               <Receipt className="h-5 w-5 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground mb-3">
+            <p className="text-sm text-muted-foreground">
               세금계산서 데이터가 없습니다
             </p>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={(e) => { e.stopPropagation(); handleSync(); }}
-              disabled={syncing}
-              className="gap-1.5 h-9 text-xs rounded-full w-full"
-            >
-              {hasConnectedId ? (
-                <>
-                  <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
-                  지금 동기화하기
-                </>
-              ) : (
-                "간편인증으로 연동하기"
-              )}
-            </Button>
           </div>
         ) : (
           <>
@@ -251,6 +235,26 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
           </>
         )}
       </CardContent>
+      {!hasData && (
+        <CardFooter className="pt-0">
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={(e) => { e.stopPropagation(); handleSync(); }}
+            disabled={syncing}
+            className="gap-1.5 h-9 text-xs rounded-full w-full"
+          >
+            {hasConnectedId ? (
+              <>
+                <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
+                지금 동기화하기
+              </>
+            ) : (
+              "간편인증으로 연동하기"
+            )}
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }

@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { useProfile } from "@/hooks/useProfile";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Clock, AlertTriangle, ChevronRight, MessageCircle, CalendarClock, Link2, TrendingUp, TrendingDown, FileText, Tags, Wallet, ArrowLeftRight, Banknote } from "lucide-react";
@@ -355,34 +355,39 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
                       <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
                     </div>
                   </div>
-                  <div className={cn(item.actions.secondary ? "grid grid-cols-2 gap-2" : "")}>
-                    <Button
-                      size="sm"
-                      variant={item.priority === "urgent" ? "default" : "outline"}
-                      className="h-9 rounded-full w-full"
-                      onClick={() => {
-                        item.actions.primary.action();
-                        if (item.id !== "connection") handleComplete(item.id);
-                      }}
-                    >
-                      {item.actions.primary.label}
-                    </Button>
-                    {item.actions.secondary && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-9 rounded-full w-full border border-border/50"
-                        onClick={() => handlePostpone(item.id)}
-                      >
-                        {item.actions.secondary.label}
-                      </Button>
-                    )}
-                  </div>
                 </div>
               );
             })
           )}
-
+        </CardContent>
+      )}
+      {!isLoading && pendingItems.length > 0 && (
+        <CardFooter className="flex-col gap-2 pt-0">
+          {pendingItems.map((item) => (
+            <div key={`btn-${item.id}`} className={cn("w-full", item.actions.secondary ? "grid grid-cols-2 gap-2" : "")}>
+              <Button
+                size="sm"
+                variant={item.priority === "urgent" ? "default" : "outline"}
+                className="h-9 rounded-full w-full"
+                onClick={() => {
+                  item.actions.primary.action();
+                  if (item.id !== "connection") handleComplete(item.id);
+                }}
+              >
+                {item.actions.primary.label}
+              </Button>
+              {item.actions.secondary && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-9 rounded-full w-full border border-border/50"
+                  onClick={() => handlePostpone(item.id)}
+                >
+                  {item.actions.secondary.label}
+                </Button>
+              )}
+            </div>
+          ))}
           <button 
             className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-2"
             onClick={() => openChat()}
@@ -391,7 +396,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
             {secretaryName}에게 더 물어보기
             <ChevronRight className="h-3 w-3" />
           </button>
-        </CardContent>
+        </CardFooter>
       )}
     </Card>
   );
