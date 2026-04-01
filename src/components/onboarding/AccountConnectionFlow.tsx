@@ -25,6 +25,17 @@ import { cn } from "@/lib/utils";
 import { useAccountConnection } from "@/hooks/useAccountConnection";
 import { useBankSync } from "@/hooks/useBankSync";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { useBankConnectionInfo } from "@/hooks/useCardConnectionInfo";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // 모든 은행에서 아이디/비밀번호 로그인을 기본 지원하며, 인증서 로그인은 선택 옵션
 
