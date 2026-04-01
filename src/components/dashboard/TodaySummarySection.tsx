@@ -235,10 +235,11 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
     return (
       <section>
         <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
-        <div className={isMobile ? "grid grid-cols-2 gap-3" : "grid grid-cols-4 gap-3"}>
-          <EmptyStatCard title="오늘 매출" icon={TrendingUp} variant="primary" isHero={isHero} />
-          <EmptyStatCard title="오늘 지출" icon={TrendingDown} isHero={isHero} />
-          <EmptyStatCard title="이번 달 지출" icon={Wallet} isHero={isHero} />
+        <div className="grid grid-cols-2 gap-3">
+          <EmptyStatCard title="이번 달 매출" icon={TrendingUp} variant="primary" isHero={isHero} />
+          <EmptyStatCard title="이번 달 지출" icon={TrendingDown} isHero={isHero} />
+        </div>
+        <div className="mt-3">
           <EmptyStatCard title="이번 달 순이익" icon={PiggyBank} variant="success" isHero={isHero} />
         </div>
         <p className={cn("text-xs text-center mt-3", isHero ? "text-white/70" : "text-muted-foreground")}>
