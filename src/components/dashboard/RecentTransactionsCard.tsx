@@ -153,6 +153,19 @@ export function RecentTransactionsCard() {
           ))}
         </div>
       </CardContent>
+      <CardFooter className="px-4 pb-4 pt-0">
+        <Button
+          variant="outline"
+          className="w-full text-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate("/reports?tab=classify");
+          }}
+        >
+          <Sparkles className="h-4 w-4 mr-1.5" />
+          자동 비용 분석
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
