@@ -96,7 +96,7 @@ export function ConnectionHub({
 }: ConnectionHubProps) {
   const [view, setView] = useState<ViewState>({ screen: "hub" });
   const [showBusinessModal, setShowBusinessModal] = useState(false);
-  const { profile } = useConnection();
+  const { profile, refetch: refetchProfile } = useConnection();
 
   // Sync with open/initialService
   useEffect(() => {
@@ -147,8 +147,9 @@ export function ConnectionHub({
     }
   };
 
-  const handleBusinessNumberSaved = () => {
+  const handleBusinessNumberSaved = async () => {
     setShowBusinessModal(false);
+    await refetchProfile();
     setView({ screen: "flow", service: "hometax" });
   };
 
