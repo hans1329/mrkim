@@ -545,34 +545,35 @@ export function HometaxConnectionFlow({
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                {certFile ? (
-                  <div
-                    className="flex items-center gap-3 p-4 rounded-xl border-2 border-primary bg-primary/5 cursor-pointer"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <FileCheck className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{certFile.name}</p>
-                      <p className="text-xs text-muted-foreground">{formatFileSize(certFile.size)}</p>
-                    </div>
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-                  </div>
-                ) : (
-                  <div
-                    className="flex flex-col items-center gap-3 py-8 rounded-xl border-2 border-dashed border-border hover:border-muted-foreground/40 cursor-pointer transition-colors"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                      <Upload className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-medium">내 PC에서 인증서 불러오기</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">.pfx, .p12 파일 지원</p>
-                    </div>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    "w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed transition-all text-left",
+                    certFile ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                  )}
+                >
+                  {certFile ? (
+                    <>
+                      <FileCheck className="h-5 w-5 text-primary shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{certFile.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          인증서 등록 완료 · {formatFileSize(certFile.size)}
+                        </p>
+                      </div>
+                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">내 PC에서 인증서 불러오기</p>
+                        <p className="text-xs text-muted-foreground">.pfx, .p12 파일 지원</p>
+                      </div>
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* 인증서 비밀번호 */}
