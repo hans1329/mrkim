@@ -235,6 +235,26 @@ export function HometaxSummaryCard({ isLoggedOut = false }: HometaxSummaryCardPr
           </>
         )}
       </CardContent>
+      {!hasData && (
+        <CardFooter className="pt-0">
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={(e) => { e.stopPropagation(); handleSync(); }}
+            disabled={syncing}
+            className="gap-1.5 h-9 text-xs rounded-full w-full"
+          >
+            {hasConnectedId ? (
+              <>
+                <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
+                지금 동기화하기
+              </>
+            ) : (
+              "간편인증으로 연동하기"
+            )}
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }
