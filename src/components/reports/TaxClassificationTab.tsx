@@ -140,8 +140,8 @@ export function TaxClassificationTab() {
               <Sparkles className="h-4 w-4 mr-1" />
             )}
             {isRunning
-              ? "AI 분류 진행 중..."
-              : `AI 자동 분류 (${stats?.unclassified || 0}건)`}
+              ? "김비서 자동분류 진행 중..."
+              : `김비서 자동분류 (${stats?.unclassified || 0}건)`}
           </Button>
         </CardContent>
       </Card>
