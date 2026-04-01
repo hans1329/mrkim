@@ -79,6 +79,8 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   const [error, setError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ synced: number; skipped: number } | null>(null);
+  const [showReconnectDialog, setShowReconnectDialog] = useState(false);
+  const [pendingCompanyId, setPendingCompanyId] = useState<string | null>(null);
 
   // 인증서 로그인 관련
   const [useCertLogin, setUseCertLogin] = useState(false);
@@ -90,6 +92,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   const { isLoading, registerCardAccount, getCards } = useCardConnection();
   const cardSync = useCardSync();
   const { refetch: refetchProfile } = useConnection();
+  const { connections: existingCardConnections } = useCardConnectionInfo();
 
   const stepProgress: Record<FlowStep, number> = {
     "select-card": 20,
