@@ -338,7 +338,7 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
               const Icon = item.icon || config.icon;
 
               return (
-                <div key={item.id} className="py-3 first:pt-0 last:pb-0 border-b border-border/30 last:border-b-0">
+                <div key={item.id} className="py-3 first:pt-0 last:pb-0 border-b border-border/30 last:border-b-0 space-y-2">
                   <div className="flex items-start gap-3">
                     <div className={cn("mt-0.5 shrink-0", item.id === "connection" ? "text-primary" : config.color)}>
                       <Icon className="h-4 w-4" />
@@ -353,30 +353,30 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
-                      <div className={cn("pt-0.5", item.actions.secondary ? "grid grid-cols-2 gap-2" : "")}>
-                        <Button
-                          size="sm"
-                          variant={item.priority === "urgent" ? "default" : "outline"}
-                          className="h-9 rounded-full w-full"
-                          onClick={() => {
-                            item.actions.primary.action();
-                            if (item.id !== "connection") handleComplete(item.id);
-                          }}
-                        >
-                          {item.actions.primary.label}
-                        </Button>
-                        {item.actions.secondary && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-9 rounded-full w-full border border-border/50"
-                            onClick={() => handlePostpone(item.id)}
-                          >
-                            {item.actions.secondary.label}
-                          </Button>
-                        )}
-                      </div>
                     </div>
+                  </div>
+                  <div className={cn(item.actions.secondary ? "grid grid-cols-2 gap-2" : "")}>
+                    <Button
+                      size="sm"
+                      variant={item.priority === "urgent" ? "default" : "outline"}
+                      className="h-9 rounded-full w-full"
+                      onClick={() => {
+                        item.actions.primary.action();
+                        if (item.id !== "connection") handleComplete(item.id);
+                      }}
+                    >
+                      {item.actions.primary.label}
+                    </Button>
+                    {item.actions.secondary && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-9 rounded-full w-full border border-border/50"
+                        onClick={() => handlePostpone(item.id)}
+                      >
+                        {item.actions.secondary.label}
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
