@@ -77,15 +77,15 @@ function RealStatCard({
   isHero?: boolean;
 }) {
   const variantStyles = {
-    default: isHero ? "bg-white/10 backdrop-blur-md border border-white/15 text-white" : "bg-card border border-red-400/50",
-    primary: isHero ? "bg-white/15 backdrop-blur-md border border-white/20 text-white" : "bg-primary text-primary-foreground border border-green-400/60",
-    success: isHero ? "bg-white/15 backdrop-blur-md border border-white/20 text-white" : "bg-success text-success-foreground border border-green-400/60",
+    default: isHero ? "bg-white/10 backdrop-blur-md border border-white/15 text-white" : "bg-muted/50 border border-border/50",
+    primary: isHero ? "bg-white/15 backdrop-blur-md border border-white/20 text-white" : "bg-muted/50 border border-border/50",
+    success: isHero ? "bg-white/15 backdrop-blur-md border border-white/20 text-white" : "bg-muted/50 border border-border/50",
   };
 
   const iconVariantStyles = {
     default: isHero ? "bg-white/20 text-white" : "bg-muted text-muted-foreground",
-    primary: isHero ? "bg-white/30 text-white" : "bg-primary-foreground/20 text-primary-foreground",
-    success: isHero ? "bg-white/30 text-white" : "bg-success-foreground/20 text-success-foreground",
+    primary: isHero ? "bg-white/30 text-white" : "bg-primary/20 text-primary",
+    success: isHero ? "bg-white/30 text-white" : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   };
 
   return (
