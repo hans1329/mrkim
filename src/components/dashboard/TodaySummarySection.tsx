@@ -219,7 +219,7 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
       <section>
         <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
         <Card className={cn(
-          "relative overflow-hidden rounded-2xl border border-dashed border-2 animate-fade-in",
+          "relative overflow-hidden rounded-2xl border animate-fade-in",
           "backdrop-blur-xl",
           "shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_8px_32px_rgba(0,0,0,0.06)]",
           "transition-all duration-500 hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),0_12px_40px_rgba(0,0,0,0.1)]",
