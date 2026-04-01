@@ -219,7 +219,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
     );
   }
 
-  if (!isFullyConnected) {
+  if (!isFullyConnected && connectedCount > 0) {
     return (
       <div className={cn(
         "rounded-xl p-4 h-full flex flex-col",
