@@ -243,7 +243,7 @@ export function TodaySummarySection({ isLoggedOut = false, isHero = false }: Tod
           <EmptyStatCard title="이번 달 순이익" icon={PiggyBank} variant="success" isHero={isHero} />
         </div>
         <p className={cn("text-xs text-center mt-3", isHero ? "text-white/70" : "text-muted-foreground")}>
-          아직 이번 달 거래 내역이 없어요. 거래가 발생하면 자동으로 업데이트돼요!
+          아직 이번 달 거래 내역이 없어요.<br />거래가 발생하면 자동으로 업데이트돼요!
         </p>
       </section>
     );
