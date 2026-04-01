@@ -15,13 +15,13 @@ const CODEF_TOKEN_URL = "https://oauth.codef.io/oauth/token";
 const BUSINESS_STATUS_PATH = "/v1/kr/public/nt/business/status";
 const ACCOUNT_CREATE_PATH = "/v1/account/create";
 
-// 간편인증 수단 매핑
+// 홈택스 전자세금계산서 간편인증 수단 매핑 (CODEF 문서 기준)
 const SIMPLE_AUTH_METHODS: Record<string, string> = {
-  kakao: "1",     // 카카오
-  samsung: "2",   // 삼성패스
-  pass: "3",      // PASS (통신사)
-  naver: "4",     // 네이버
-  toss: "5",      // 토스
+  kakao: "1",     // 카카오톡
+  samsung: "3",   // 삼성패스
+  pass: "5",      // PASS (통신사)
+  naver: "6",     // 네이버
+  toss: "8",      // 토스
 };
 
 function encryptRSAPKCS1(plainText: string, base64PublicKey: string): string {
