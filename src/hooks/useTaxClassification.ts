@@ -94,17 +94,17 @@ export function useClassificationStats() {
 
       if (error) throw error;
       const result = data as any;
-      if (!data) return null;
+      if (!result) return null;
 
       return {
-        total: Number(data.total) || 0,
-        unclassified: Number(data.unclassified) || 0,
-        ai_suggested: Number(data.ai_suggested) || 0,
-        confirmed: Number(data.confirmed) || 0,
-        manual: Number(data.manual) || 0,
-        totalExpense: Number(data.totalExpense) || 0,
-        vatDeductibleAmount: Number(data.vatDeductibleAmount) || 0,
-        vatAmount: Number(data.vatAmount) || 0,
+        total: Number(result.total) || 0,
+        unclassified: Number(result.unclassified) || 0,
+        ai_suggested: Number(result.ai_suggested) || 0,
+        confirmed: Number(result.confirmed) || 0,
+        manual: Number(result.manual) || 0,
+        totalExpense: Number(result.totalExpense) || 0,
+        vatDeductibleAmount: Number(result.vatDeductibleAmount) || 0,
+        vatAmount: Number(result.vatAmount) || 0,
       };
     },
   });
