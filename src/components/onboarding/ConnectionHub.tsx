@@ -26,7 +26,7 @@ import { BusinessNumberModal } from "./BusinessNumberModal";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import mrKimAvatar from "@/assets/mr-kim-avatar.webp";
+const icc5Image = "/images/icc-5.webp";
 
 export type ServiceType = "hometax" | "card" | "account" | "baemin" | "coupangeats";
 
