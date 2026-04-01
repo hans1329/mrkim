@@ -189,6 +189,9 @@ export function useTransactionStats(filters?: { startDate?: string; endDate?: st
           .sort((a, b) => b.amount - a.amount),
       };
     },
+    staleTime: 1000 * 60 * 3,
+    gcTime: 1000 * 60 * 15,
+    refetchOnWindowFocus: false,
   });
 }
 
