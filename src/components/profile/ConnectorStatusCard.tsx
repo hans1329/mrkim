@@ -81,6 +81,47 @@ export function ConnectorStatusCard() {
   const { hometaxConnected, cardConnected, accountConnected, profile, connectorInstances } = useConnection();
   const navigate = useNavigate();
   const { openDrawer } = useConnectionDrawer();
+  const queryClient = useQueryClient();
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [confirmDisconnect, setConfirmDisconnect] = useState<{ id: string; name: string } | null>(null);
+
+  const handleDisconnect = async (connectorId: string) => {
+    setDisconnecting(connectorId);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      // connector_instances에서 해당 connector의 인스턴스들을 disconnected로 변경
+      const { error } = await supabase
+        .from("connector_instances")
+        .update({ status: "disconnected" as any })
+        .eq("connector_id", connectorId)
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+
+      // profiles 플래그도 업데이트
+      const category = connectors?.find(c => c.id === connectorId)?.category;
+      if (category === "hometax") {
+        await supabase.from("profiles").update({ hometax_connected: false, hometax_connected_at: null }).eq("user_id", user.id);
+      } else if (category === "card") {
+        await supabase.from("profiles").update({ card_connected: false, card_connected_at: null }).eq("user_id", user.id);
+      } else if (category === "bank") {
+        await supabase.from("profiles").update({ account_connected: false, account_connected_at: null }).eq("user_id", user.id);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
+      queryClient.invalidateQueries({ queryKey: ["connector-status"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast.success("연동이 해제되었습니다");
+    } catch (error) {
+      console.error("Disconnect error:", error);
+      toast.error("연동 해제에 실패했습니다");
+    } finally {
+      setDisconnecting(null);
+      setConfirmDisconnect(null);
+    }
+  };
 
   // profiles fallback: connector_instances가 없을 때 카테고리별 연동 상태
   const profileFallback: Record<string, boolean> = {
