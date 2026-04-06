@@ -179,7 +179,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
             <div
               key={conn.key}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all",
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap shrink-0",
                 conn.connected 
                   ? (isHero 
                       ? "bg-emerald-400/30 text-white ring-1 ring-emerald-300/40" 
