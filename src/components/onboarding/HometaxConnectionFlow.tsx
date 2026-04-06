@@ -74,9 +74,13 @@ export function HometaxConnectionFlow({
 
   // 공동인증서 관련
   const [certFile, setCertFile] = useState<File | null>(null);
+  const [keyFile, setKeyFile] = useState<File | null>(null);
   const [certPassword, setCertPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const keyFileInputRef = useRef<HTMLInputElement>(null);
+
+  const isDerMode = certFile?.name.toLowerCase().endsWith(".der");
 
   const hasVerifiedBusinessInfo = Boolean(
     businessInfo?.businessStatus || businessInfo?.taxationTypeDesc
