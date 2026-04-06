@@ -1,8 +1,19 @@
-import { useConnectorStatus } from "@/hooks/useConnectors";
+import { useState } from "react";
+import { useConnectorStatus, useConnectorInstances } from "@/hooks/useConnectors";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   FileText,
   Receipt,
@@ -17,12 +28,17 @@ import {
   Link2,
   RefreshCw,
   PlusCircle,
+  Unlink,
+  Loader2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const CATEGORY_TO_STEP: Record<string, string> = {
   hometax: "hometax",
@@ -32,9 +48,11 @@ const CATEGORY_TO_STEP: Record<string, string> = {
 
 // connector_id → ConnectionDrawer type 매핑
 const CONNECTOR_TO_DRAWER_TYPE: Record<string, "hometax" | "card" | "account" | "coupangeats" | "baemin"> = {
-  codef_hometax: "hometax",
-  codef_bank: "account",
-  codef_card: "card",
+  codef_hometax_tax_invoice: "hometax",
+  codef_hometax_cash_receipt: "hometax",
+  codef_bank_account: "account",
+  codef_card_sales: "card",
+  codef_card_usage: "card",
   hyphen_baemin: "baemin",
   hyphen_coupangeats: "coupangeats",
 };
@@ -63,6 +81,47 @@ export function ConnectorStatusCard() {
   const { hometaxConnected, cardConnected, accountConnected, profile, connectorInstances } = useConnection();
   const navigate = useNavigate();
   const { openDrawer } = useConnectionDrawer();
+  const queryClient = useQueryClient();
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [confirmDisconnect, setConfirmDisconnect] = useState<{ id: string; name: string } | null>(null);
+
+  const handleDisconnect = async (connectorId: string) => {
+    setDisconnecting(connectorId);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      // connector_instances에서 해당 connector의 인스턴스들을 disconnected로 변경
+      const { error } = await supabase
+        .from("connector_instances")
+        .update({ status: "disconnected" as any })
+        .eq("connector_id", connectorId)
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+
+      // profiles 플래그도 업데이트
+      const category = connectors?.find(c => c.id === connectorId)?.category;
+      if (category === "hometax") {
+        await supabase.from("profiles").update({ hometax_connected: false, hometax_connected_at: null }).eq("user_id", user.id);
+      } else if (category === "card") {
+        await supabase.from("profiles").update({ card_connected: false, card_connected_at: null }).eq("user_id", user.id);
+      } else if (category === "bank") {
+        await supabase.from("profiles").update({ account_connected: false, account_connected_at: null }).eq("user_id", user.id);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
+      queryClient.invalidateQueries({ queryKey: ["connector-status"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast.success("연동이 해제되었습니다");
+    } catch (error) {
+      console.error("Disconnect error:", error);
+      toast.error("연동 해제에 실패했습니다");
+    } finally {
+      setDisconnecting(null);
+      setConfirmDisconnect(null);
+    }
+  };
 
   // profiles fallback: connector_instances가 없을 때 카테고리별 연동 상태
   const profileFallback: Record<string, boolean> = {
@@ -203,6 +262,21 @@ export function ConnectorStatusCard() {
                           추가
                         </Button>
                       )}
+                      {isConnected && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                          disabled={disconnecting === connector.id}
+                          onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
+                        >
+                          {disconnecting === connector.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Unlink className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
                     </>
                   )}
                   {!isConnected && !instance && (
@@ -224,6 +298,28 @@ export function ConnectorStatusCard() {
           );
         })}
       </CardContent>
+
+      {/* 연동 해제 확인 다이얼로그 */}
+      <AlertDialog open={!!confirmDisconnect} onOpenChange={(open) => !open && setConfirmDisconnect(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>연동을 해제하시겠습니까?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDisconnect?.name} 연동을 해제하면 더 이상 데이터가 동기화되지 않습니다.
+              기존 데이터는 유지됩니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => confirmDisconnect && handleDisconnect(confirmDisconnect.id)}
+            >
+              해제하기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
