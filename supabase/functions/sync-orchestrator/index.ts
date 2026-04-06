@@ -74,6 +74,9 @@ serve(async (req) => {
 
     if (targetInstanceId) {
       query = query.eq("id", targetInstanceId);
+    } else if (targetConnectorId) {
+      // connectorId로 호출 시 해당 커넥터의 모든 connected 인스턴스 동기화
+      query = query.eq("connector_id", targetConnectorId);
     } else {
       // next_sync_at이 현재 이전이거나 null인 인스턴스만
       query = query.or(
