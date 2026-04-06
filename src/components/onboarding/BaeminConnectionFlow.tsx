@@ -76,43 +76,20 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
       );
 
       if (verifyError || hasHyphenError(verifyData)) {
-        throw new Error(getHyphenErrorMessage(verifyData, "계정 검증에 실패했습니다."));
+        throw new Error(getHyphenErrorMessage(verifyData, "계정 검증에 실패했습니다. 아이디/비밀번호를 확인해주세요."));
       }
 
-      const [storeResponse, myStoreResponse, accountResponse] = await Promise.all([
-        supabase.functions.invoke("hyphen-baemin", {
-          body: {
-            action: "store_info",
-            userId: bmUserId,
-            userPw: bmUserPw,
-          },
-        }),
-        supabase.functions.invoke("hyphen-baemin", {
-          body: {
-            action: "my_store",
-            userId: bmUserId,
-            userPw: bmUserPw,
-          },
-        }),
-        supabase.functions.invoke("hyphen-baemin", {
-          body: {
-            action: "account_info",
-            userId: bmUserId,
-            userPw: bmUserPw,
-          },
-        }),
-      ]);
-
-      const stores = Array.isArray(storeResponse.data?.data?.data?.storeList)
-        ? storeResponse.data.data.data.storeList
-        : [];
-
-      const hasValidProbe = [storeResponse, myStoreResponse, accountResponse].some(
-        ({ data, error }) => !error && !hasHyphenError(data) && hasMeaningfulProbeData(data)
-      );
-
-      if (!hasValidProbe) {
-        throw new Error("배달의민족 계정을 확인할 수 없습니다. 아이디/비밀번호를 다시 확인해주세요.");
+      // 매장 수 확인 (실패해도 연동은 진행)
+      let stores: any[] = [];
+      try {
+        const storeResponse = await supabase.functions.invoke("hyphen-baemin", {
+          body: { action: "store_info", userId: bmUserId, userPw: bmUserPw },
+        });
+        stores = Array.isArray(storeResponse.data?.data?.data?.storeList)
+          ? storeResponse.data.data.data.storeList
+          : [];
+      } catch {
+        // 매장 조회 실패해도 연동 진행
       }
 
       setStoreCount(stores.length);
