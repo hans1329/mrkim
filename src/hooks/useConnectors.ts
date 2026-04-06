@@ -94,11 +94,16 @@ export function useConnectorStatus() {
     instancesMap.set(inst.connector_id, list);
   });
 
-  const combined = connectors.data?.map((connector) => ({
-    ...connector,
-    instance: instancesMap.get(connector.id)?.[0] || null, // 하위호환: 첫 번째 인스턴스
-    instances: instancesMap.get(connector.id) || [], // 전체 인스턴스 목록
-  }));
+  const combined = connectors.data?.map((connector) => {
+    const allInstances = instancesMap.get(connector.id) || [];
+    // connected 상태 인스턴스를 우선 표시
+    const primaryInstance = allInstances.find(i => i.status === "connected") || allInstances[allInstances.length - 1] || null;
+    return {
+      ...connector,
+      instance: primaryInstance, // 하위호환: 대표 인스턴스
+      instances: allInstances,  // 전체 인스턴스 목록
+    };
+  });
 
   return {
     data: combined,
