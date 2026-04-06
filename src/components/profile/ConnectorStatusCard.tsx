@@ -225,7 +225,7 @@ export function ConnectorStatusCard() {
                 ) : null}
               </div>
               {/* 2행: 액션 버튼 */}
-              <div className="flex items-center justify-center pl-[42px]">
+              <div className="flex items-center justify-center">
                 {isConnected && (
                   <div className="flex items-center gap-0.5">
                     <Button
