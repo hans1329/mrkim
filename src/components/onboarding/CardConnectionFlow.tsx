@@ -428,11 +428,40 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                       ) : (
                         <>
                           <Upload className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">공동인증서 파일 업로드 (.pfx, .p12)</span>
+                          <span className="text-sm text-muted-foreground">인증서 파일 (.pfx, .p12 또는 signCert.der)</span>
                         </>
                       )}
                     </Button>
                   </div>
+                  {/* DER 모드일 때 key 파일 업로드 */}
+                  {isDerMode && (
+                    <div>
+                      <input
+                        ref={keyFileInputRef}
+                        type="file"
+                        accept=".key"
+                        onChange={handleKeyFileChange}
+                        className="hidden"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => keyFileInputRef.current?.click()}
+                        className={`w-full justify-center gap-2 h-11 hover:bg-muted hover:text-foreground ${keyFile ? '' : 'border-dashed border-2'}`}
+                      >
+                        {keyFile ? (
+                          <>
+                            <FileKey className="h-4 w-4 text-primary" />
+                            <span className="truncate text-sm">{keyFile.name}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">개인키 파일 (signPri.key)</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
                   <div className="relative">
                     <Input
                       type={showCertPassword ? "text" : "password"}
