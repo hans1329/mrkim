@@ -262,6 +262,21 @@ export function ConnectorStatusCard() {
                           추가
                         </Button>
                       )}
+                      {isConnected && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                          disabled={disconnecting === connector.id}
+                          onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
+                        >
+                          {disconnecting === connector.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Unlink className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
                     </>
                   )}
                   {!isConnected && !instance && (
@@ -283,6 +298,28 @@ export function ConnectorStatusCard() {
           );
         })}
       </CardContent>
+
+      {/* 연동 해제 확인 다이얼로그 */}
+      <AlertDialog open={!!confirmDisconnect} onOpenChange={(open) => !open && setConfirmDisconnect(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>연동을 해제하시겠습니까?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDisconnect?.name} 연동을 해제하면 더 이상 데이터가 동기화되지 않습니다.
+              기존 데이터는 유지됩니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => confirmDisconnect && handleDisconnect(confirmDisconnect.id)}
+            >
+              해제하기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
