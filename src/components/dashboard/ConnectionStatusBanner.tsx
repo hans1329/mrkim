@@ -174,21 +174,25 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           연동하면 {josa(secretaryName, "이/가")} 실시간으로 사업 현황을 분석해드려요
         </p>
 
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
           {connections.map((conn) => (
             <div
               key={conn.key}
               className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all",
                 conn.connected 
-                  ? (isHero ? "bg-white/30 text-white" : "bg-success text-success-foreground")
-                  : (isHero ? "bg-white/20 text-white/80" : "bg-muted text-muted-foreground")
+                  ? (isHero 
+                      ? "bg-emerald-400/30 text-white ring-1 ring-emerald-300/40" 
+                      : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 ring-1 ring-emerald-200 dark:ring-emerald-700/50")
+                  : (isHero 
+                      ? "bg-white/10 text-white/60" 
+                      : "bg-muted/60 text-muted-foreground/60")
               )}
             >
               {conn.connected ? (
-                <CheckCircle2 className="h-3 w-3" />
+                <CheckCircle2 className="h-3.5 w-3.5" />
               ) : (
-                <Clock className="h-3 w-3" />
+                <Clock className="h-3 w-3 opacity-60" />
               )}
               {conn.label}
             </div>
