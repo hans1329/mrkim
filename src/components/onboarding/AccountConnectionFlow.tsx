@@ -22,6 +22,7 @@ import {
   FileKey
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import { useAccountConnection } from "@/hooks/useAccountConnection";
 import { useBankSync } from "@/hooks/useBankSync";
 import { useConnection } from "@/contexts/ConnectionContext";
@@ -38,6 +39,14 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // 모든 은행에서 아이디/비밀번호 로그인을 기본 지원하며, 인증서 로그인은 선택 옵션
+
+// 은행 기관코드 매핑 (codef-bank 엣지 함수와 동일)
+const BANK_CODES: Record<string, string> = {
+  kb: "0004", shinhan: "0088", woori: "0020", hana: "0081", nh: "0011",
+  ibk: "0003", sc: "0023", citi: "0027", kakao: "0090", toss: "0092",
+  kbank: "0089", busan: "0032", daegu: "0031", kwangju: "0034",
+  jeonbuk: "0037", jeju: "0035", postbank: "0071", saemaul: "0045", shinhyup: "0048",
+};
 
 // 은행 목록
 const BANKS = [
