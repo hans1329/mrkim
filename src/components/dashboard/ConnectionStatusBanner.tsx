@@ -83,7 +83,7 @@ interface ConnectionStatusBannerProps {
 export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: ConnectionStatusBannerProps) {
   const navigate = useNavigate();
   const { openDrawer } = useConnectionDrawer();
-  const { profile, profileLoading: loading, isLoggedIn, hometaxConnected, cardConnected, accountConnected } = useConnection();
+  const { profile, profileLoading: loading, isLoggedIn, hometaxConnected, cardConnected, accountConnected, deliveryConnected } = useConnection();
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const secretaryName = profile?.secretary_name || "김비서";
@@ -109,6 +109,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
     { key: "hometax", label: "국세청", connected: hometaxConnected },
     { key: "card", label: "카드", connected: cardConnected },
     { key: "account", label: "계좌", connected: accountConnected },
+    { key: "delivery", label: "배달", connected: deliveryConnected },
   ];
   
   const connectedCount = connections.filter(c => c.connected).length;
