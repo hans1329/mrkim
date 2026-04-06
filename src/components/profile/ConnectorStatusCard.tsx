@@ -1,8 +1,19 @@
-import { useConnectorStatus } from "@/hooks/useConnectors";
+import { useState } from "react";
+import { useConnectorStatus, useConnectorInstances } from "@/hooks/useConnectors";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   FileText,
   Receipt,
@@ -17,12 +28,17 @@ import {
   Link2,
   RefreshCw,
   PlusCircle,
+  Unlink,
+  Loader2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const CATEGORY_TO_STEP: Record<string, string> = {
   hometax: "hometax",
