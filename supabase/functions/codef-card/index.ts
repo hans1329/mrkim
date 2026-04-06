@@ -231,7 +231,8 @@ async function handleRegisterWithCert(
 
   if (keyFile) {
     accountEntry.keyFile = keyFile;
-    console.log("Using DER+KEY separate cert files");
+    accountEntry.certType = "1";
+    console.log("Using DER+KEY separate cert files (certType: 1)");
   } else {
     accountEntry.certType = "pfx";
     console.log("Using PFX/P12 combined cert file");
