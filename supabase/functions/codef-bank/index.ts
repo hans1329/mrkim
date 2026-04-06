@@ -97,7 +97,7 @@ serve(async (req) => {
     }
 
     if (action === "register") {
-      if (loginType === "2") {
+      if (loginType === "2" || loginType === "0" || Boolean(certFile)) {
         // 인증서 로그인
         return await handleRegisterWithCert(accessToken, publicKey, bankId, certFile, certPassword, keyFile);
       } else {
@@ -129,7 +129,7 @@ serve(async (req) => {
   }
 });
 
-// 계정 등록 - 인증서 방식 (loginType "2")
+// 계정 등록 - 인증서 방식 (CODEF 은행 cert loginType "0")
 async function handleRegisterWithCert(
   accessToken: string,
   publicKey: string,
@@ -163,7 +163,7 @@ async function handleRegisterWithCert(
     businessType: "BK",
     clientType: "P",
     organization: organizationCode,
-    loginType: "2",
+    loginType: "0",
     certFile: certFile,
     password: encryptedCertPassword,
   };
