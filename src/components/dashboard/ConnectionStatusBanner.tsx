@@ -97,13 +97,8 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
     return generateRealAlerts(unclassifiedCount);
   }, [isLoggedOut, loading, unclassifiedCount]);
 
-  const handleStartConnection = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      openDrawer();
-    } else {
-      setShowLoginDialog(true);
-    }
+  const handleStartConnection = () => {
+    openDrawer();
   };
 
   const handleLoginConfirm = () => {
