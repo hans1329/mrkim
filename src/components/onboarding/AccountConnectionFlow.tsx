@@ -214,8 +214,8 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
           .from("connected_accounts")
           .insert(accountRows);
         
-        if (upsertError) {
-          console.error("Failed to save connected accounts:", upsertError);
+        if (insertError) {
+          console.error("Failed to save connected accounts:", insertError);
         }
       }
     } catch (err) {
