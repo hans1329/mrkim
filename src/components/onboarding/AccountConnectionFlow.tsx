@@ -210,9 +210,9 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
           };
         });
         
-        const { error: upsertError } = await supabase
+        const { error: insertError } = await supabase
           .from("connected_accounts")
-          .upsert(accountRows, { onConflict: "user_id,account_number" });
+          .insert(accountRows);
         
         if (upsertError) {
           console.error("Failed to save connected accounts:", upsertError);
