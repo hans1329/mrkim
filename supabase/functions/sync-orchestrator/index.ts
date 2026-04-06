@@ -281,6 +281,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
+        version: FUNCTION_VERSION,
         message: `${successCount}/${results.length}건 동기화 완료`,
         synced: successCount,
         total: results.length,
