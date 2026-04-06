@@ -64,10 +64,11 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { action } = body;
+    const { action, clientType: rawClientType } = body;
+    const clientType = (rawClientType === "B") ? "B" : "P";
 
     if (action === "register") {
-      return await handleRegister(req, body);
+      return await handleRegister(req, body, clientType);
     } else {
       return await handleBusinessVerify(body);
     }
@@ -164,7 +165,7 @@ async function handleBusinessVerify(body: any): Promise<Response> {
 /**
  * 공동인증서 방식 계정 등록 (loginType: "0")
  */
-async function handleRegister(_req: Request, body: any): Promise<Response> {
+async function handleRegister(_req: Request, body: any, clientType: string = "P"): Promise<Response> {
   const { businessNumber, certFileBase64, certPassword, keyFileBase64 } = body;
 
   if (!businessNumber || !certFileBase64 || !certPassword) {
@@ -188,7 +189,7 @@ async function handleRegister(_req: Request, body: any): Promise<Response> {
   const accountEntry: Record<string, unknown> = {
     countryCode: "KR",
     businessType: "NT",
-    clientType: "P",
+    clientType,
     organization: "0002",
     loginType: "0",
     password: encryptedPassword,
