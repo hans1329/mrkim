@@ -85,9 +85,11 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   // 인증서 로그인 관련
   const [useCertLogin, setUseCertLogin] = useState(false);
   const [certFile, setCertFile] = useState<File | null>(null);
+  const [keyFile, setKeyFile] = useState<File | null>(null); // signPri.key (DER+KEY 분리)
   const [certPassword, setCertPassword] = useState("");
   const [showCertPassword, setShowCertPassword] = useState(false);
   const certFileInputRef = useRef<HTMLInputElement>(null);
+  const keyFileInputRef = useRef<HTMLInputElement>(null);
 
   const { isLoading, registerCardAccount, getCards } = useCardConnection();
   const cardSync = useCardSync();
@@ -108,13 +110,32 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
     const file = e.target.files?.[0];
     if (file) {
       const ext = file.name.split(".").pop()?.toLowerCase();
-      if (ext === "pfx" || ext === "p12" || ext === "der") {
+      if (ext === "pfx" || ext === "p12") {
         setCertFile(file);
+        setKeyFile(null); // PFX 선택 시 key 파일 초기화
+      } else if (ext === "der") {
+        setCertFile(file);
+      } else if (ext === "key") {
+        setKeyFile(file);
       } else {
-        toast.error("공동인증서 파일(.pfx, .p12, .der)만 업로드 가능합니다.");
+        toast.error("공동인증서 파일(.pfx, .p12, .der, .key)만 업로드 가능합니다.");
       }
     }
   };
+
+  const handleKeyFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      if (ext === "key") {
+        setKeyFile(file);
+      } else {
+        toast.error("signPri.key 파일만 업로드 가능합니다.");
+      }
+    }
+  };
+
+  const isDerMode = certFile?.name.toLowerCase().endsWith(".der");
 
   const handleAuth = async () => {
     if (!agreedTerms || !selectedCompany) return;
