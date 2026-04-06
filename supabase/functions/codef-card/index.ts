@@ -136,7 +136,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { action, cardCompanyId, loginId, loginType, certFile, certPassword: rawCertPassword, password, connectedId, startDate, endDate, cardNo } = body;
+    const { action, cardCompanyId, loginId, loginType, certFile, certPassword: rawCertPassword, password, connectedId, startDate, endDate, cardNo, keyFile } = body;
 
     // 1. 토큰 발급
     console.log("Getting access token...");
@@ -161,7 +161,7 @@ serve(async (req) => {
     // 액션에 따른 분기
     if (action === "register") {
       if (loginType === "0") {
-        return await handleRegisterWithCert(accessToken, publicKey, cardCompanyId, certFile, rawCertPassword);
+        return await handleRegisterWithCert(accessToken, publicKey, cardCompanyId, certFile, rawCertPassword, keyFile);
       }
       return await handleRegister(accessToken, publicKey, cardCompanyId, loginId, password);
     } else if (action === "addAccount") {
@@ -189,13 +189,14 @@ serve(async (req) => {
   }
 });
 
-// 계정 등록 - 공동인증서 방식 (loginType "0", PFX 파일)
+// 계정 등록 - 공동인증서 방식 (loginType "0")
 async function handleRegisterWithCert(
   accessToken: string,
   publicKey: string,
   cardCompanyId: string,
   certFile: string,
   certPassword: string,
+  keyFile?: string,
 ): Promise<Response> {
   const organizationCode = CARD_ORGANIZATION_CODES[cardCompanyId];
   if (!organizationCode) {
@@ -217,20 +218,27 @@ async function handleRegisterWithCert(
   const encryptedPassword = encryptRSAPKCS1v15(certPassword, publicKey);
   console.log("Cert password encrypted successfully");
 
-  // Codef 스펙: loginType "0" = 인증서, certType "pfx" = PFX/P12 통합파일
+  // DER+KEY 분리 방식 vs PFX 통합 방식
+  const accountEntry: Record<string, unknown> = {
+    countryCode: "KR",
+    businessType: "CD",
+    clientType: "P",
+    organization: organizationCode,
+    loginType: "0",
+    certFile: certFile,
+    password: encryptedPassword,
+  };
+
+  if (keyFile) {
+    accountEntry.keyFile = keyFile;
+    console.log("Using DER+KEY separate cert files");
+  } else {
+    accountEntry.certType = "pfx";
+    console.log("Using PFX/P12 combined cert file");
+  }
+
   const requestBody = {
-    accountList: [
-      {
-        countryCode: "KR",
-        businessType: "CD",
-        clientType: "P",
-        organization: organizationCode,
-        loginType: "0",
-        certType: "pfx",
-        certFile: certFile,
-        password: encryptedPassword,
-      }
-    ]
+    accountList: [accountEntry]
   };
 
   console.log("Registering card account with cert for organization:", organizationCode);
