@@ -225,15 +225,16 @@ async function handleRegisterWithCert(
     clientType: "P",
     organization: organizationCode,
     loginType: "0",
-    certFile: certFile,
     password: encryptedPassword,
   };
 
   if (keyFile) {
-    accountEntry.keyFile = keyFile;
+    accountEntry.reqCertFile = certFile;
+    accountEntry.reqKeyFile = keyFile;
     accountEntry.certType = "1";
     console.log("Using DER+KEY separate cert files (certType: 1)");
   } else {
+    accountEntry.certFile = certFile;
     accountEntry.certType = "pfx";
     console.log("Using PFX/P12 combined cert file");
   }

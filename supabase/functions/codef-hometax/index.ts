@@ -191,16 +191,17 @@ async function handleRegister(_req: Request, body: any): Promise<Response> {
     clientType: "P",
     organization: "0002",
     loginType: "0",
-    certFile: certFileBase64,
     password: encryptedPassword,
     identity: cleanedNumber,
   };
 
   if (keyFileBase64) {
-    accountEntry.keyFile = keyFileBase64;
+    accountEntry.reqCertFile = certFileBase64;
+    accountEntry.reqKeyFile = keyFileBase64;
     accountEntry.certType = "1";
     console.log("Using DER+KEY separate cert files for hometax (certType: 1)");
   } else {
+    accountEntry.certFile = certFileBase64;
     accountEntry.certType = "pfx";
     console.log("Using PFX/P12 combined cert file for hometax");
   }

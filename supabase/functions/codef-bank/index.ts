@@ -164,17 +164,18 @@ async function handleRegisterWithCert(
     clientType: "P",
     organization: organizationCode,
     loginType: "0",
-    certFile: certFile,
     password: encryptedCertPassword,
   };
 
   if (keyFile) {
     // signCert.der + signPri.key 분리 파일
-    accountEntry.keyFile = keyFile;
+    accountEntry.reqCertFile = certFile;
+    accountEntry.reqKeyFile = keyFile;
     accountEntry.certType = "1";
     console.log("Using DER+KEY separate cert files (certType: 1)");
   } else {
     // PFX/P12 통합 파일
+    accountEntry.certFile = certFile;
     accountEntry.certType = "pfx";
     console.log("Using PFX/P12 combined cert file");
   }
