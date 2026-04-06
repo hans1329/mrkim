@@ -217,7 +217,7 @@ async function handleRegisterWithCert(
   const encryptedPassword = encryptRSAPKCS1v15(certPassword, publicKey);
   console.log("Cert password encrypted successfully");
 
-  // Codef 스펙: loginType "0" = 인증서, certFile = PFX Base64, password = RSA 암호화된 인증서 비밀번호
+  // Codef 스펙: loginType "0" = 인증서, certType "pfx" = PFX/P12 통합파일
   const requestBody = {
     accountList: [
       {
@@ -226,6 +226,7 @@ async function handleRegisterWithCert(
         clientType: "P",
         organization: organizationCode,
         loginType: "0",
+        certType: "pfx",
         certFile: certFile,
         password: encryptedPassword,
       }

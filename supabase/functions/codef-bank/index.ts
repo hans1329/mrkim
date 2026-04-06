@@ -164,9 +164,9 @@ async function handleRegisterWithCert(
         clientType: "P",
         organization: organizationCode,
         loginType: "2",           // 공동인증서 로그인
-        certType: "0",            // 공동인증서 (구 공인인증서)
+        certType: "pfx",          // PFX/P12 통합 인증서 파일
         certFile: certFile,       // Base64 인증서 파일
-        certPassword: encryptedCertPassword,
+        password: encryptedCertPassword,
       }
     ]
   };
