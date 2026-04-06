@@ -45,11 +45,12 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
         }
       );
 
-      if (verifyError || !verifyData?.success) {
-        throw new Error(verifyData?.error || "계정 검증에 실패했습니다.");
+      const verifyResult = verifyData?.data?.data;
+      if (verifyError || !verifyData?.success || verifyResult?.errYn === "Y") {
+        throw new Error(verifyResult?.errMsg || verifyData?.error || "계정 검증에 실패했습니다.");
       }
 
-      const { data: storeData } = await supabase.functions.invoke(
+      const { data: storeData, error: storeError } = await supabase.functions.invoke(
         "hyphen-baemin",
         {
           body: {
@@ -60,13 +61,26 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
         }
       );
 
-      const stores = storeData?.data?.data?.storeList || [];
+      const storeResult = storeData?.data?.data;
+      if (storeError || !storeData?.success || storeResult?.errYn === "Y") {
+        throw new Error(storeResult?.errMsg || storeData?.error || "매장 정보를 확인하지 못했습니다.");
+      }
+
+      const stores = Array.isArray(storeResult?.storeList) ? storeResult.storeList : [];
+      if (stores.length === 0) {
+        throw new Error("배달의민족 계정을 확인할 수 없습니다. 아이디/비밀번호를 다시 확인해주세요.");
+      }
+
       setStoreCount(stores.length);
 
-      await connectService("hyphen_baemin", `bm_${bmUserId}`, {
+      const connected = await connectService("hyphen_baemin", `bm_${bmUserId}`, {
         bm_user_id: bmUserId,
         bm_user_pw: bmUserPw,
       });
+
+      if (!connected) {
+        throw new Error("연동 정보를 저장하지 못했습니다. 다시 시도해주세요.");
+      }
 
       // 초기 데이터 동기화 트리거 (백그라운드)
       supabase.functions.invoke("sync-orchestrator", {

@@ -54,10 +54,13 @@ async function callHyphenAPI(
 
   const data = await response.json();
 
-  if (data.common?.errYn === "Y") {
-    throw new Error(
-      `Hyphen API 오류 [${data.common.errCd}]: ${data.common.errMsg}`
-    );
+  const commonError = data.common?.errYn === "Y";
+  const nestedError = data.data?.errYn === "Y";
+
+  if (commonError || nestedError) {
+    const errorCode = data.common?.errCd || data.data?.errCd || "UNKNOWN";
+    const errorMessage = data.common?.errMsg || data.data?.errMsg || "알 수 없는 오류";
+    throw new Error(`Hyphen API 오류 [${errorCode}]: ${errorMessage}`);
   }
 
   return data;
