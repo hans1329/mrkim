@@ -211,10 +211,11 @@ async function handleRegisterWithCert(
 
   if (keyFile) {
     // signCert.der + signPri.key 분리 파일
-    accountEntry.reqCertFile = certFile;
-    accountEntry.reqKeyFile = keyFile;
+    // CODEF bank account/create 스펙은 reqCertFile/reqKeyFile 이 아니라 derFile/keyFile 을 사용
+    accountEntry.derFile = certFile;
+    accountEntry.keyFile = keyFile;
     accountEntry.certType = "1";
-    console.log("Using DER+KEY separate cert files (certType: 1)");
+    console.log("Using DER+KEY separate cert files (certType: 1, derFile/keyFile)");
   } else {
     // PFX/P12 통합 파일
     accountEntry.certFile = certFile;
