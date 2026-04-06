@@ -44,8 +44,9 @@ interface CardInfo {
 
 interface CertOptions {
   loginType: "0";
-  certFile: string; // PFX Base64
+  certFile: string; // PFX Base64 또는 signCert.der Base64
   certPassword: string;
+  keyFile?: string; // Base64 signPri.key (DER+KEY 분리 방식)
 }
 
 interface UseCardConnectionReturn {
@@ -87,6 +88,9 @@ export function useCardConnection(): UseCardConnectionReturn {
         requestBody.loginType = "0";
         requestBody.certFile = certOptions.certFile;
         requestBody.certPassword = certOptions.certPassword;
+        if (certOptions.keyFile) {
+          requestBody.keyFile = certOptions.keyFile;
+        }
       } else {
         requestBody.loginType = "1";
         requestBody.loginId = loginId;
