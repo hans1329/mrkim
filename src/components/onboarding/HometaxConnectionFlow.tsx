@@ -671,7 +671,7 @@ export function HometaxConnectionFlow({
                 onClick={handleCertRegister}
                 size="lg"
                 className="w-full"
-                disabled={!certFile || !certPassword}
+                disabled={!certFile || !certPassword || (isDerMode && !keyFile)}
               >
                 인증서로 연동하기
               </Button>
