@@ -460,7 +460,8 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                         {keyFile ? (
                           <>
                             <FileKey className="h-4 w-4 text-primary" />
-                            <span className="truncate text-sm">{keyFile.name}</span>
+                            <span className="truncate text-sm flex-1">{keyFile.name}</span>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setKeyFile(null); }} className="p-0.5 rounded-full hover:bg-muted"><X className="h-3.5 w-3.5 text-muted-foreground" /></button>
                           </>
                         ) : (
                           <>
