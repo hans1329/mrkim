@@ -57,6 +57,11 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
     });
   };
 
+  const getStoreListFromPayload = (payload: any): any[] => {
+    const storeList = payload?.data?.data?.storeList;
+    return Array.isArray(storeList) ? storeList : [];
+  };
+
   const handleVerify = async () => {
     if (!bmUserId.trim() || !bmUserPw.trim()) {
       setError("아이디와 비밀번호를 입력해주세요.");
@@ -82,19 +87,30 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
         throw new Error(getHyphenErrorMessage(verifyData, "계정 검증에 실패했습니다. 아이디/비밀번호를 확인해주세요."));
       }
 
-      // 매장 수 확인 (실패해도 연동은 진행)
-      let stores: any[] = [];
-      try {
-        const storeResponse = await supabase.functions.invoke("hyphen-baemin", {
-          body: { action: "store_info", userId: bmUserId, userPw: bmUserPw },
-        });
-        stores = Array.isArray(storeResponse.data?.data?.data?.storeList)
-          ? storeResponse.data.data.data.storeList
-          : [];
-      } catch {
-        // 매장 조회 실패해도 연동 진행
+      const probeActions = ["store_info", "my_store", "account_info"] as const;
+      const probeResults = await Promise.allSettled(
+        probeActions.map((action) =>
+          supabase.functions.invoke("hyphen-baemin", {
+            body: {
+              action,
+              userId: bmUserId,
+              userPw: bmUserPw,
+            },
+          })
+        )
+      );
+
+      const successfulProbes = probeResults
+        .filter((result): result is PromiseFulfilledResult<{ data: any; error: unknown }> => result.status === "fulfilled")
+        .map((result) => result.value)
+        .filter(({ error, data }) => !error && !hasHyphenError(data));
+
+      const hasVerifiedAccess = successfulProbes.some(({ data }) => hasMeaningfulProbeData(data));
+      if (!hasVerifiedAccess) {
+        throw new Error("배달의민족 계정을 확인할 수 없습니다. 아이디/비밀번호를 다시 확인해주세요.");
       }
 
+      const stores = successfulProbes.flatMap(({ data }) => getStoreListFromPayload(data));
       setStoreCount(stores.length);
 
       const connected = await connectService("hyphen_baemin", `bm_${bmUserId}`, {
