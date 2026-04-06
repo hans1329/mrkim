@@ -157,7 +157,7 @@ serve(async (req) => {
           `Syncing ${connectorId} for user ${instance.user_id} (job: ${job.id})`
         );
 
-        const syncResult = await handler(supabase, instance, job);
+        const syncResult = await handler(supabase, instance, job, { forceFullSync });
 
         // sync_job 완료 업데이트
         await supabase
