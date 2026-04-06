@@ -54,6 +54,7 @@ serve(async (req) => {
   try {
     let targetInstanceId: string | null = null;
     let targetConnectorId: string | null = null;
+    let forceFullSync = false;
 
     // POST body에서 특정 인스턴스 ID 또는 커넥터 ID 확인
     if (req.method === "POST") {
@@ -61,6 +62,7 @@ serve(async (req) => {
         const body = await req.json();
         targetInstanceId = body.instanceId || null;
         targetConnectorId = body.connectorId || null;
+        forceFullSync = body.forceFullSync === true;
       } catch {
         // body 없을 수 있음 (cron 호출)
       }
