@@ -1315,7 +1315,12 @@ async function syncBaemin(
       detailListYn: "Y",
     });
 
-    const orderList = salesRes.data?.touchOrderList || [];
+    console.log(`[baemin] Sales API response keys:`, Object.keys(salesRes.data || {}));
+    console.log(`[baemin] Sales date range: ${startDate} ~ ${endDate}`);
+    const rawData = salesRes.data?.data || salesRes.data;
+    console.log(`[baemin] rawData keys:`, Object.keys(rawData || {}));
+    const orderList = rawData?.touchOrderList || salesRes.data?.touchOrderList || [];
+    console.log(`[baemin] orderList length:`, orderList.length);
     totalFetched += orderList.length;
 
     for (const order of orderList) {
