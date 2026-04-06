@@ -81,6 +81,7 @@ export function HometaxConnectionFlow({
   const keyFileInputRef = useRef<HTMLInputElement>(null);
 
   const isDerMode = certFile?.name.toLowerCase().endsWith(".der");
+  const clientType: "P" | "B" = profile?.business_type === "법인" ? "B" : "P";
 
   const hasVerifiedBusinessInfo = Boolean(
     businessInfo?.businessStatus || businessInfo?.taxationTypeDesc
@@ -247,6 +248,7 @@ export function HometaxConnectionFlow({
             certFileBase64,
             certPassword,
             keyFileBase64,
+            clientType,
           },
         }
       );
