@@ -46,11 +46,8 @@ import {
   Send,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useOnboarding } from "@/hooks/useOnboarding";
 import { useProfile } from "@/hooks/useProfile";
-import { useConnectorInstances } from "@/hooks/useConnectors";
 import { toast } from "sonner";
-
 export default function Settings() {
   const navigate = useNavigate();
   const { openDrawer } = useConnectionDrawer();
