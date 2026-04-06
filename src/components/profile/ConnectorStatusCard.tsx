@@ -84,7 +84,7 @@ export function ConnectorStatusCard() {
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<{ id: string; name: string } | null>(null);
-
+  const [confirmResync, setConfirmResync] = useState<{ id: string; name: string } | null>(null);
   const handleResync = async (connectorId: string) => {
     setSyncing(connectorId);
     try {
