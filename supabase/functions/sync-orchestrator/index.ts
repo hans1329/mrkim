@@ -537,7 +537,8 @@ async function fetchCardNumbers(
     }
 
     if (parsed.result?.code !== "CF-00000") {
-      throw new Error(`card-list failed: ${parsed.result?.code} ${parsed.result?.message}`);
+      console.warn(`[Card Sync] card-list failed (${parsed.result?.code}), falling back to empty cardNo`);
+      return [""];  // 빈 cardNo로 전체 승인내역 조회 시도
     }
 
     const cards = Array.isArray(parsed.data) ? parsed.data : [];
@@ -545,10 +546,11 @@ async function fetchCardNumbers(
       .map((c: any) => c?.resCardNo ? String(c.resCardNo) : "")
       .filter((no: string) => no.length > 0);
 
+    if (cardNos.length === 0) return [""];
     return Array.from(new Set(cardNos));
   } catch (err) {
-    console.error("[Card Sync] fetchCardNumbers error:", err);
-    throw new Error(`카드 목록 조회 실패: ${err instanceof Error ? err.message : String(err)}`);
+    console.warn("[Card Sync] fetchCardNumbers error, falling back to empty cardNo:", err);
+    return [""];  // 폴백: 빈 cardNo로 전체 조회
   }
 }
 

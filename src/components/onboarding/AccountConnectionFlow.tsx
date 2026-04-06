@@ -22,6 +22,7 @@ import {
   FileKey
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import { useAccountConnection } from "@/hooks/useAccountConnection";
 import { useBankSync } from "@/hooks/useBankSync";
 import { useConnection } from "@/contexts/ConnectionContext";
@@ -38,6 +39,14 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // 모든 은행에서 아이디/비밀번호 로그인을 기본 지원하며, 인증서 로그인은 선택 옵션
+
+// 은행 기관코드 매핑 (codef-bank 엣지 함수와 동일)
+const BANK_CODES: Record<string, string> = {
+  kb: "0004", shinhan: "0088", woori: "0020", hana: "0081", nh: "0011",
+  ibk: "0003", sc: "0023", citi: "0027", kakao: "0090", toss: "0092",
+  kbank: "0089", busan: "0032", daegu: "0031", kwangju: "0034",
+  jeonbuk: "0037", jeju: "0035", postbank: "0071", saemaul: "0045", shinhyup: "0048",
+};
 
 // 은행 목록
 const BANKS = [
@@ -170,7 +179,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
     });
   };
 
-  // 계좌 선택 후 거래 내역 자동 동기화
+  // 계좌 선택 후 connected_accounts 저장 + 거래 내역 자동 동기화
   const handleSelectAccounts = async () => {
     if (selectedAccounts.length === 0 || !currentConnectedId || !selectedBank) {
       setStep("complete");
@@ -181,6 +190,37 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
     setSyncProgress({ synced: 0, total: selectedAccounts.length });
     
     const bankName = selectedBankData?.name || "은행";
+    const bankCode = BANK_CODES[selectedBank] || selectedBank;
+    
+    // 선택된 계좌를 connected_accounts 테이블에 저장 (sync-orchestrator용)
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        const accountRows = selectedAccounts.map((accountNo) => {
+          const accountData = fetchedAccounts.find(a => a.accountNo === accountNo);
+          return {
+            user_id: userData.user!.id,
+            bank_code: bankCode,
+            bank_name: bankName,
+            account_number: accountNo,
+            account_type: accountData?.accountType || "unknown",
+            account_holder: accountData?.holder || null,
+            codef_connected: true,
+            is_active: true,
+          };
+        });
+        
+        const { error: insertError } = await supabase
+          .from("connected_accounts")
+          .insert(accountRows);
+        
+        if (insertError) {
+          console.error("Failed to save connected accounts:", insertError);
+        }
+      }
+    } catch (err) {
+      console.error("Error saving connected accounts:", err);
+    }
     
     // 선택된 각 계좌에 대해 거래 내역 동기화
     for (let i = 0; i < selectedAccounts.length; i++) {
