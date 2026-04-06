@@ -224,59 +224,50 @@ export function ConnectorStatusCard() {
                   </Badge>
                 ) : null}
               </div>
-              {/* 2행: 동기화 시간 + 액션 버튼 */}
-              <div className="flex items-center justify-between pl-[42px]">
-                <p className="text-[10px] text-muted-foreground">
-                  {instance?.last_sync_at
-                    ? formatDistanceToNow(new Date(instance.last_sync_at), { addSuffix: true, locale: ko }) + " 동기화"
-                    : isFallbackConnected && profileConnectedAt[connector.category]
-                      ? formatDistanceToNow(new Date(profileConnectedAt[connector.category]!), { addSuffix: true, locale: ko }) + " 연동"
-                      : isConnected ? "연동 완료" : "미연동"}
-                </p>
-                <div className="flex items-center gap-0.5">
-                  {isConnected && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-1.5 gap-0.5 text-[10px] text-muted-foreground hover:text-primary"
-                        onClick={() => {
-                          const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
-                          if (drawerType) openDrawer(drawerType);
-                        }}
-                      >
-                        <RefreshCw className="h-3 w-3" />
-                        연동 관리
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                        disabled={disconnecting === connector.id}
-                        onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
-                      >
-                        {disconnecting === connector.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Unlink className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </>
-                  )}
-                  {!isConnected && (
+              {/* 2행: 액션 버튼 */}
+              <div className="flex items-center justify-end pl-[42px]">
+                {isConnected && (
+                  <div className="flex items-center gap-0.5">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      className="h-6 px-2 text-[10px]"
+                      className="h-6 px-1.5 gap-0.5 text-[10px] text-muted-foreground hover:text-primary"
                       onClick={() => {
                         const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
                         if (drawerType) openDrawer(drawerType);
                       }}
                     >
-                      연동하기
+                      <RefreshCw className="h-3 w-3" />
+                      연동 관리
                     </Button>
-                  )}
-                </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                      disabled={disconnecting === connector.id}
+                      onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
+                    >
+                      {disconnecting === connector.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Unlink className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                )}
+                {!isConnected && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-[10px]"
+                    onClick={() => {
+                      const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
+                      if (drawerType) openDrawer(drawerType);
+                    }}
+                  >
+                    연동하기
+                  </Button>
+                )}
               </div>
             </div>
           );
