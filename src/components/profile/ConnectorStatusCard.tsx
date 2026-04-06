@@ -262,6 +262,20 @@ export function ConnectorStatusCard() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
+                      disabled={syncing === connector.id}
+                      onClick={() => handleResync(connector.id)}
+                    >
+                      {syncing === connector.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" />
+                      )}
+                      재수집
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-destructive"
                       disabled={disconnecting === connector.id}
                       onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
