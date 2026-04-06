@@ -113,9 +113,7 @@ export function useDeposits() {
       if (error) throw error;
       return (data || []) as Deposit[];
     },
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-    refetchOnWindowFocus: false,
+    // 기본 캐싱 설정 사용
   });
 
   const addDeposit = useMutation({
@@ -208,9 +206,7 @@ export function useAutoTransfers() {
       if (error) throw error;
       return (data || []) as AutoTransfer[];
     },
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-    refetchOnWindowFocus: false,
+    // 기본 캐싱 설정 사용
   });
 
   const addTransfer = useMutation({

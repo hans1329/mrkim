@@ -70,10 +70,7 @@ export function useProfileQuery() {
   const { data: profile, isLoading: loading, refetch } = useQuery({
     queryKey: ["profile"],
     queryFn: fetchProfile,
-    staleTime: 1000 * 60 * 5, // 5분간 fresh 상태 유지
-    gcTime: 1000 * 60 * 30, // 30분간 캐시 유지 (cacheTime → gcTime)
-    refetchOnWindowFocus: false, // 포커스 시 자동 refetch 비활성화
-    retry: 1, // 실패 시 1회만 재시도
+    // 기본 캐싱 설정 사용 (5분 stale, 30분 gc, retry 1)
   });
 
   // 프로필 업데이트 후 캐시 갱신

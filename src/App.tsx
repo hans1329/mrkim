@@ -60,7 +60,17 @@ import AccountantConsultations from "./pages/accountant/AccountantConsultations"
 import AccountantFilings from "./pages/accountant/AccountantFilings";
 import { AccountantLayout } from "./components/accountant/AccountantLayout";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,       // 5분 기본 fresh
+      gcTime: 1000 * 60 * 30,         // 30분 캐시 유지
+      refetchOnWindowFocus: false,    // 포커스 시 자동 refetch 비활성화
+      retry: 1,                       // 실패 시 1회 재시도
+      refetchOnReconnect: true,       // 네트워크 복구 시 refetch
+    },
+  },
+});
 
 const App = () => (
   <ErrorBoundary>

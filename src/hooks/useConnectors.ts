@@ -75,9 +75,7 @@ export function useConnectorInstances() {
       if (error) throw error;
       return data as ConnectorInstance[];
     },
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-    refetchOnWindowFocus: false,
+    // 기본 캐싱 설정 사용
   });
 }
 

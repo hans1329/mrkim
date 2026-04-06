@@ -54,9 +54,7 @@ export function useDashboardStats(enabled = true) {
     queryKey: ["dashboard-summary-stats"],
     queryFn: fetchSummaryStats,
     enabled,
-    staleTime: 1000 * 60 * 5, // 5분
-    gcTime: 1000 * 60 * 30,
-    refetchOnWindowFocus: false,
+    // 기본 캐싱 설정 사용 (5분 stale, 30분 gc)
   });
 }
 
@@ -119,9 +117,7 @@ export function useWeeklyChartData(enabled = true) {
     queryKey: ["dashboard-weekly-chart"],
     queryFn: fetchWeeklyData,
     enabled,
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-    refetchOnWindowFocus: false,
+    // 기본 캐싱 설정 사용
   });
 }
 
@@ -162,9 +158,7 @@ export function useRecentTransactions(enabled = true) {
     queryKey: ["dashboard-recent-transactions"],
     queryFn: fetchRecentTransactions,
     enabled,
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-    refetchOnWindowFocus: false,
+    // 기본 캐싱 설정 사용
   });
 }
 
@@ -187,9 +181,7 @@ export function useUnclassifiedCount(enabled = true) {
     queryKey: ["dashboard-unclassified-count"],
     queryFn: fetchUnclassifiedCount,
     enabled,
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-    refetchOnWindowFocus: false,
+    // 기본 캐싱 설정 사용
   });
 }
 
@@ -312,8 +304,6 @@ export function useActionData(enabled = true) {
     queryKey: ["dashboard-action-data"],
     queryFn: fetchActionData,
     enabled,
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-    refetchOnWindowFocus: false,
+    // 기본 캐싱 설정 사용
   });
 }
