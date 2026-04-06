@@ -104,8 +104,10 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
 
   const { isLoading, registerBankAccount, getAccounts } = useAccountConnection();
   const bankSync = useBankSync();
-  const { refetch: refetchProfile } = useConnection();
+  const { refetch: refetchProfile, profile } = useConnection();
   const { connections: existingBankConnections } = useBankConnectionInfo();
+
+  const clientType: "P" | "B" = profile?.business_type === "법인" ? "B" : "P";
 
   const stepProgress: Record<FlowStep, number> = {
     "select-bank": 20,
@@ -145,15 +147,18 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
         }
         newConnectedId = await registerBankAccount(
           selectedBank,
-          "", // id는 인증서 방식에선 불필요
+          "",
           certPassword,
-          { loginType: "2", certFile: certBase64, certPassword, keyFile: keyBase64 }
+          { loginType: "2", certFile: certBase64, certPassword, keyFile: keyBase64, clientType },
+          clientType,
         );
       } else {
         newConnectedId = await registerBankAccount(
           selectedBank,
           credentials.id,
-          credentials.password
+          credentials.password,
+          undefined,
+          clientType,
         );
       }
       
