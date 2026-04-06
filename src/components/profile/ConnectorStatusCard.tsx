@@ -281,7 +281,7 @@ export function ConnectorStatusCard() {
                       size="sm"
                       className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
                       disabled={syncing === connector.id}
-                      onClick={() => handleResync(connector.id)}
+                      onClick={() => setConfirmResync({ id: connector.id, name: connector.name })}
                     >
                       {syncing === connector.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -342,6 +342,33 @@ export function ConnectorStatusCard() {
               onClick={() => confirmDisconnect && handleDisconnect(confirmDisconnect.id)}
             >
               해제하기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 재수집 확인 다이얼로그 */}
+      <AlertDialog open={!!confirmResync} onOpenChange={(open) => !open && setConfirmResync(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>데이터를 재수집하시겠습니까?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmResync?.name}의 전체 데이터를 처음부터 다시 수집합니다.
+              기존 데이터와 중복되는 항목은 자동으로 병합됩니다.
+              수집에 시간이 다소 걸릴 수 있습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmResync) {
+                  handleResync(confirmResync.id);
+                  setConfirmResync(null);
+                }
+              }}
+            >
+              재수집 시작
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
