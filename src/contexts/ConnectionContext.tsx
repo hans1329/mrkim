@@ -16,12 +16,14 @@ import { toast } from "sonner";
 export type AuthStatus = "loading" | "logged_out" | "logged_in";
 
 // 커넥터 ID → 카테고리 매핑
-const CONNECTOR_CATEGORY_MAP: Record<string, "hometax" | "card" | "account"> = {
+const CONNECTOR_CATEGORY_MAP: Record<string, "hometax" | "card" | "account" | "delivery"> = {
   codef_hometax_tax_invoice: "hometax",
   codef_hometax_cash_receipt: "hometax",
   codef_bank_account: "account",
   codef_card_sales: "card",
   codef_card_usage: "card",
+  hyphen_baemin: "delivery",
+  hyphen_coupangeats: "delivery",
 };
 
 export interface ConnectionState {
