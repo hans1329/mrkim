@@ -42,8 +42,6 @@ import {
   Save,
   Pencil,
   Trash2,
-  Bike,
-  UtensilsCrossed,
   MessageSquare,
   Send,
 } from "lucide-react";
