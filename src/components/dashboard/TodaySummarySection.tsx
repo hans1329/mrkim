@@ -133,7 +133,7 @@ function RealStatCard({
             {subtitle && (
               <span className={cn(
                 "text-[10px] truncate",
-                variant === "default" ? "text-muted-foreground" : "opacity-70"
+                isHero ? "opacity-70" : "text-foreground/60"
               )}>
                 {subtitle}
               </span>
