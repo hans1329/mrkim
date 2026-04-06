@@ -117,7 +117,10 @@ serve(async (req) => {
       );
     }
 
-    const { action, bankId, loginId, password, loginType, certFile, certPassword, keyFile, connectedId, accountNo, startDate, endDate } = await req.json();
+    const { action, bankId, loginId, password, loginType, certFile, certPassword, keyFile, connectedId, accountNo, startDate, endDate, clientType: rawClientType } = await req.json();
+    // clientType: "P" (개인) 또는 "B" (법인/기업), 기본값 "P"
+    const clientType = (rawClientType === "B") ? "B" : "P";
+    console.log("Client type:", clientType);
 
     console.log("Getting access token...");
     const accessToken = await getAccessToken();
@@ -140,18 +143,16 @@ serve(async (req) => {
 
     if (action === "register") {
       if (loginType === "2" || loginType === "0" || Boolean(certFile)) {
-        // 인증서 로그인
-        return await handleRegisterWithCert(accessToken, publicKey, bankId, certFile, certPassword, keyFile);
+        return await handleRegisterWithCert(accessToken, publicKey, bankId, certFile, certPassword, keyFile, clientType);
       } else {
-        // 아이디/비밀번호 로그인
-        return await handleRegister(accessToken, publicKey, bankId, loginId, password);
+        return await handleRegister(accessToken, publicKey, bankId, loginId, password, clientType);
       }
     } else if (action === "addAccount") {
-      return await handleAddAccount(accessToken, publicKey, connectedId, bankId, loginId, password);
+      return await handleAddAccount(accessToken, publicKey, connectedId, bankId, loginId, password, clientType);
     } else if (action === "getAccounts") {
-      return await handleGetAccounts(accessToken, connectedId, bankId);
+      return await handleGetAccounts(accessToken, connectedId, bankId, clientType);
     } else if (action === "getTransactions") {
-      return await handleGetTransactions(accessToken, connectedId, bankId, accountNo, startDate, endDate);
+      return await handleGetTransactions(accessToken, connectedId, bankId, accountNo, startDate, endDate, clientType);
     } else {
       return new Response(
         JSON.stringify({ success: false, error: "알 수 없는 action입니다." }),
@@ -176,9 +177,10 @@ async function handleRegisterWithCert(
   accessToken: string,
   publicKey: string,
   bankId: string,
-  certFile: string,      // Base64 인증서 파일 (PFX 또는 signCert.der)
-  certPassword: string,  // 인증서 비밀번호 (평문, RSA 암호화 적용)
-  keyFile?: string,      // Base64 signPri.key (DER+KEY 분리 방식일 때)
+  certFile: string,
+  certPassword: string,
+  keyFile?: string,
+  clientType: string = "P",
 ): Promise<Response> {
   const organizationCode = BANK_ORGANIZATION_CODES[bankId];
   if (!organizationCode) {
@@ -203,19 +205,17 @@ async function handleRegisterWithCert(
   const accountEntry: Record<string, unknown> = {
     countryCode: "KR",
     businessType: "BK",
-    clientType: "P",
+    clientType,
     organization: organizationCode,
     loginType: "0",
     password: encryptedCertPassword,
   };
 
   if (keyFile) {
-    // signCert.der + signPri.key 분리 파일
-    // CODEF bank account/create 스펙은 reqCertFile/reqKeyFile 이 아니라 derFile/keyFile 을 사용
     accountEntry.derFile = certFile;
     accountEntry.keyFile = keyFile;
     accountEntry.certType = "1";
-    console.log("Using DER+KEY separate cert files (certType: 1, derFile/keyFile)");
+    console.log(`Using DER+KEY separate cert files (certType: 1, clientType: ${clientType})`);
   } else {
     // PFX/P12 통합 파일
     accountEntry.certFile = certFile;
@@ -277,7 +277,8 @@ async function handleRegister(
   publicKey: string,
   bankId: string,
   loginId: string,
-  password: string
+  password: string,
+  clientType: string = "P",
 ): Promise<Response> {
   const organizationCode = BANK_ORGANIZATION_CODES[bankId];
   if (!organizationCode) {
@@ -295,10 +296,10 @@ async function handleRegister(
     accountList: [
       {
         countryCode: "KR",
-        businessType: "BK",  // 은행
-        clientType: "P",     // 개인
+        businessType: "BK",
+        clientType,
         organization: organizationCode,
-        loginType: "1",      // ID/PW 로그인
+        loginType: "1",
         id: loginId,
         password: encryptedPassword,
       }
@@ -358,7 +359,8 @@ async function handleAddAccount(
   connectedId: string,
   bankId: string,
   loginId: string,
-  password: string
+  password: string,
+  clientType: string = "P",
 ): Promise<Response> {
   const organizationCode = BANK_ORGANIZATION_CODES[bankId];
   if (!organizationCode) {
@@ -376,7 +378,7 @@ async function handleAddAccount(
       {
         countryCode: "KR",
         businessType: "BK",
-        clientType: "P",
+        clientType,
         organization: organizationCode,
         loginType: "1",
         id: loginId,
@@ -422,7 +424,8 @@ async function handleAddAccount(
 async function handleGetAccounts(
   accessToken: string,
   connectedId: string,
-  bankId: string
+  bankId: string,
+  clientType: string = "P",
 ): Promise<Response> {
   const organizationCode = BANK_ORGANIZATION_CODES[bankId];
   if (!organizationCode) {
@@ -442,7 +445,8 @@ async function handleGetAccounts(
 
   console.log("Getting accounts for connectedId:", connectedId, "organization:", organizationCode);
 
-  const response = await fetch(`${CODEF_API_URL}/v1/kr/bank/p/account/account-list`, {
+  const clientPath = clientType === "B" ? "b" : "p";
+  const response = await fetch(`${CODEF_API_URL}/v1/kr/bank/${clientPath}/account/account-list`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -494,7 +498,8 @@ async function handleGetTransactions(
   bankId: string,
   accountNo: string,
   startDate: string,
-  endDate: string
+  endDate: string,
+  clientType: string = "P",
 ): Promise<Response> {
   const organizationCode = BANK_ORGANIZATION_CODES[bankId];
   if (!organizationCode) {
@@ -523,7 +528,8 @@ async function handleGetTransactions(
 
   console.log("Getting transactions for account:", accountNo, "from:", startDate, "to:", endDate);
 
-  const response = await fetch(`${CODEF_API_URL}/v1/kr/bank/p/account/transaction-list`, {
+  const clientPath = clientType === "B" ? "b" : "p";
+  const response = await fetch(`${CODEF_API_URL}/v1/kr/bank/${clientPath}/account/transaction-list`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
