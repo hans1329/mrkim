@@ -24,14 +24,29 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
   const [storeCount, setStoreCount] = useState(0);
   const { connectService } = useConnection();
 
-  const hasHyphenError = (payload: any) => {
-    const result = payload?.data;
-    return !payload?.success || result?.common?.errYn === "Y" || result?.data?.errYn === "Y";
-  };
+  const getVerifyStatus = (payload: any): { ok: boolean; message: string } => {
+    if (!payload?.success) {
+      return { ok: false, message: payload?.error || "API 호출에 실패했습니다." };
+    }
+    const common = payload?.data?.common;
+    const nested = payload?.data?.data;
 
-  const getHyphenErrorMessage = (payload: any, fallback: string) => {
-    const result = payload?.data;
-    return result?.data?.errMsg || result?.common?.errMsg || payload?.error || fallback;
+    // errYn === "Y" → 명시적 에러
+    if (common?.errYn === "Y" || nested?.errYn === "Y") {
+      const msg = nested?.errMsg || common?.errMsg || "계정 검증에 실패했습니다.";
+      return { ok: false, message: msg };
+    }
+
+    // errYn === "N" → 명시적 성공
+    if (common?.errYn === "N") {
+      return { ok: true, message: "" };
+    }
+
+    // errYn이 null/빈값 → API가 요청을 처리하지 않음
+    return {
+      ok: false,
+      message: "하이픈 API가 정상 응답하지 않고 있습니다. 하이픈 대시보드에서 배달의민족 상품 구독 상태를 확인해주세요.",
+    };
   };
 
   const hasMeaningfulValue = (value: unknown): boolean => {
