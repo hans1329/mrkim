@@ -82,7 +82,26 @@ export function ConnectorStatusCard() {
   const { openDrawer } = useConnectionDrawer();
   const queryClient = useQueryClient();
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<{ id: string; name: string } | null>(null);
+
+  const handleResync = async (connectorId: string) => {
+    setSyncing(connectorId);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
+        body: { connectorId },
+      });
+      if (error) throw error;
+      toast.success("데이터 재수집을 시작했습니다");
+      queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
+      queryClient.invalidateQueries({ queryKey: ["connector-status"] });
+    } catch (err) {
+      console.error("Resync error:", err);
+      toast.error("데이터 재수집에 실패했습니다");
+    } finally {
+      setSyncing(null);
+    }
+  };
 
   const handleDisconnect = async (connectorId: string) => {
     setDisconnecting(connectorId);
@@ -239,6 +258,20 @@ export function ConnectorStatusCard() {
                     >
                       <RefreshCw className="h-3 w-3" />
                       연동 관리
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
+                      disabled={syncing === connector.id}
+                      onClick={() => handleResync(connector.id)}
+                    >
+                      {syncing === connector.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" />
+                      )}
+                      재수집
                     </Button>
                     <Button
                       variant="ghost"
