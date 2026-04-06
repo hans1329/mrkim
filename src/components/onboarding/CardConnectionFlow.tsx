@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Upload,
   FileKey,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCardConnection } from "@/hooks/useCardConnection";
