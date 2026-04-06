@@ -27,7 +27,6 @@ import {
   XCircle,
   Link2,
   RefreshCw,
-  PlusCircle,
   Unlink,
   Loader2,
 } from "lucide-react";
@@ -212,14 +211,11 @@ export function ConnectorStatusCard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{connector.name}</p>
-                  {connectedInstanceCount > 1 && (
-                    <p className="text-[10px] text-muted-foreground">{connectedInstanceCount}개 연동됨</p>
-                  )}
                 </div>
                 {isConnected ? (
                   <Badge variant={statusInfo!.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
                     {StatusIcon && <StatusIcon className="h-2.5 w-2.5" />}
-                    {statusInfo!.label}
+                    {connectedInstanceCount > 1 ? `${connectedInstanceCount}개 연동됨` : statusInfo!.label}
                   </Badge>
                 ) : statusInfo ? (
                   <Badge variant={statusInfo.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
@@ -238,51 +234,36 @@ export function ConnectorStatusCard() {
                       : isConnected ? "연동 완료" : "미연동"}
                 </p>
                 <div className="flex items-center gap-0.5">
-                  {(isConnected || instance) && (
+                  {isConnected && (
                     <>
                       <Button
                         variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground"
+                        size="sm"
+                        className="h-6 px-1.5 gap-0.5 text-[10px] text-muted-foreground hover:text-primary"
                         onClick={() => {
                           const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
                           if (drawerType) openDrawer(drawerType);
                         }}
                       >
                         <RefreshCw className="h-3 w-3" />
+                        연동 관리
                       </Button>
-                      {(connector.category === "card" || connector.category === "bank") && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-1.5 gap-0.5 text-[10px] text-muted-foreground hover:text-primary"
-                          onClick={() => {
-                            const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
-                            if (drawerType) openDrawer(drawerType);
-                          }}
-                        >
-                          <PlusCircle className="h-3 w-3" />
-                          추가
-                        </Button>
-                      )}
-                      {isConnected && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                          disabled={disconnecting === connector.id}
-                          onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
-                        >
-                          {disconnecting === connector.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Unlink className="h-3 w-3" />
-                          )}
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                        disabled={disconnecting === connector.id}
+                        onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
+                      >
+                        {disconnecting === connector.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Unlink className="h-3 w-3" />
+                        )}
+                      </Button>
                     </>
                   )}
-                  {!isConnected && !instance && (
+                  {!isConnected && (
                     <Button
                       variant="outline"
                       size="sm"
