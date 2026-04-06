@@ -1294,10 +1294,22 @@ async function syncBaemin(
   }
   const endDate = now.toISOString().slice(0, 10).replace(/-/g, "");
 
-  // 1. 가게 정보 동기화
+  // 1. 가게 정보 동기화 (store_info → my_store fallback)
   try {
     const storeRes = await callHyphenBaemin("store_info", bmUserId, bmUserPw);
-    const storeList = storeRes.data?.storeList || [];
+    let storeList = storeRes.data?.storeList || [];
+
+    // store_info가 null이면 my_store API로 fallback
+    if (storeList.length === 0) {
+      console.log("[baemin] store_info returned empty, trying my_store fallback...");
+      try {
+        const myStoreRes = await callHyphenBaemin("my_store", bmUserId, bmUserPw);
+        storeList = myStoreRes.data?.storeList || [];
+        console.log(`[baemin] my_store returned ${storeList.length} stores`);
+      } catch (fallbackErr) {
+        console.error("[baemin] my_store fallback failed:", fallbackErr);
+      }
+    }
 
     for (const store of storeList) {
       await supabase.from("delivery_stores").upsert(
@@ -1319,27 +1331,44 @@ async function syncBaemin(
     console.error("배민 가게 정보 동기화 실패:", e);
   }
 
-  // 2. 매출(주문) 데이터 동기화
+  // 2. 매출(주문) 데이터 동기화 (sales → orders fallback)
   try {
+    // 먼저 sales API 시도
     const salesRes = await callHyphenBaemin("sales", bmUserId, bmUserPw, {
       dateFrom: startDate,
       dateTo: endDate,
       detailListYn: "Y",
     });
 
-    console.log(`[baemin] Full salesRes keys:`, Object.keys(salesRes || {}));
-    console.log(`[baemin] salesRes.data keys:`, Object.keys(salesRes.data || {}));
-    console.log(`[baemin] salesRes.data.data keys:`, Object.keys(salesRes.data?.data || {}));
-    console.log(`[baemin] salesRes snippet:`, JSON.stringify(salesRes).substring(0, 500));
-    console.log(`[baemin] Sales date range: ${startDate} ~ ${endDate}`);
-    
-    // Hyphen 응답 구조 탐색: salesRes 자체 또는 salesRes.data.data
-    const orderList = 
-      salesRes.data?.data?.touchOrderList ||
+    let orderList = 
       salesRes.data?.touchOrderList ||
       salesRes.touchOrderList ||
       [];
-    console.log(`[baemin] orderList length:`, orderList.length);
+    
+    console.log(`[baemin] sales API returned ${orderList.length} orders`);
+
+    // sales API가 빈 응답이면 orders API(주문내역조회)로 fallback
+    if (orderList.length === 0) {
+      console.log("[baemin] sales returned empty, trying orders API fallback...");
+      try {
+        const ordersRes = await callHyphenBaemin("orders", bmUserId, bmUserPw, {
+          dateFrom: startDate,
+          dateTo: endDate,
+          detailListYn: "Y",
+        });
+        
+        orderList = 
+          ordersRes.data?.touchOrderList ||
+          ordersRes.touchOrderList ||
+          [];
+        console.log(`[baemin] orders API returned ${orderList.length} orders`);
+        console.log(`[baemin] orders API response snippet:`, JSON.stringify(ordersRes).substring(0, 500));
+      } catch (fallbackErr) {
+        console.error("[baemin] orders API fallback failed:", fallbackErr);
+      }
+    }
+
+    console.log(`[baemin] Final orderList length: ${orderList.length}, date range: ${startDate} ~ ${endDate}`);
     totalFetched += orderList.length;
 
     for (const order of orderList) {
