@@ -33,11 +33,20 @@ const BANK_ORGANIZATION_CODES: Record<string, string> = {
   "shinhyup": "0048",  // 신협
 };
 
-// RSA PKCS1 v1.5 암호화 (node-forge 사용 - Java Cipher.getInstance("RSA")와 동일)
-function encryptRSAPKCS1(plainText: string, base64PublicKey: string): string {
-  const pem = `-----BEGIN PUBLIC KEY-----\n${base64PublicKey.match(/.{1,64}/g)!.join("\n")}\n-----END PUBLIC KEY-----`;
-  const publicKey = forge.pki.publicKeyFromPem(pem);
-  const encrypted = publicKey.encrypt(plainText, "RSAES-PKCS1-V1_5");
+// RSA PKCS1 v1.5 암호화 (CODEF Java SDK와 동일한 UTF-8 바이트 기준)
+function encryptRSAPKCS1(plainText: string, rawPublicKey: string): string {
+  const cleanKey = rawPublicKey.replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|[\r\n\s]/g, "");
+  const derBytes = forge.util.decode64(cleanKey);
+  const asn1 = forge.asn1.fromDer(derBytes);
+  const publicKey = forge.pki.publicKeyFromAsn1(asn1);
+
+  const utf8Bytes = new TextEncoder().encode(plainText);
+  let binaryStr = "";
+  for (const byte of utf8Bytes) {
+    binaryStr += String.fromCharCode(byte);
+  }
+
+  const encrypted = publicKey.encrypt(binaryStr, "RSAES-PKCS1-V1_5");
   return forge.util.encode64(encrypted);
 }
 
@@ -70,6 +79,30 @@ async function getAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+async function getPublicKeyFromAPI(accessToken: string): Promise<string> {
+  const response = await fetch(`${CODEF_API_URL}/v1/common/public-key`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Public key request failed:", errorText);
+    throw new Error(`Public key request failed: ${response.status}`);
+  }
+
+  const text = await response.text();
+
+  try {
+    const json = JSON.parse(text);
+    return json.publicKey || json.data?.publicKey || text.trim();
+  } catch {
+    return text.trim();
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -90,10 +123,19 @@ serve(async (req) => {
     const accessToken = await getAccessToken();
     console.log("Access token obtained");
 
-    // 공개키 (환경변수에서 로드)
-    const publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
-    if (!publicKey && (action === "register" || action === "addAccount")) {
-      throw new Error("CODEF_PUBLIC_KEY가 설정되지 않았습니다.");
+    let publicKey = "";
+    if (action === "register" || action === "addAccount") {
+      try {
+        publicKey = await getPublicKeyFromAPI(accessToken);
+        console.log("Using dynamic public key, length:", publicKey.length);
+      } catch (publicKeyError) {
+        console.error("Dynamic public key fetch failed:", publicKeyError);
+        publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
+        if (!publicKey) {
+          throw new Error("공개키를 가져올 수 없습니다.");
+        }
+        console.log("Using env public key fallback, length:", publicKey.length);
+      }
     }
 
     if (action === "register") {
