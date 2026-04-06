@@ -552,7 +552,7 @@ export default function Profile() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">
-                    {profile.secretary_phone?.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")}
+                    {profile.secretary_phone?.replace(/^\+82/, "0").replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")}
                   </p>
                 </div>
                 <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleChangeNumber}>
