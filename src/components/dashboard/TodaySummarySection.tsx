@@ -170,12 +170,10 @@ interface TodaySummarySectionProps {
 export function TodaySummarySection({ isLoggedOut = false, isHero = false }: TodaySummarySectionProps) {
   const { openDrawer } = useConnectionDrawer();
   const isMobile = useIsMobile();
-  const { profile, profileLoading } = useConnection();
+  const { profileLoading, isAnyConnected } = useConnection();
   
   // React Query 캐싱 적용
   const { data: stats, isLoading: statsLoading } = useDashboardStats(!isLoggedOut);
-
-  const isAnyConnected = profile?.hometax_connected || profile?.card_connected || profile?.account_connected;
   const isAllLoading = profileLoading || statsLoading;
 
   const monthlyProfit = (stats?.monthlyIncome ?? 0) - (stats?.monthlyExpense ?? 0);

@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
-import { useProfile } from "@/hooks/useProfile";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +8,7 @@ import { CheckCircle2, Clock, AlertTriangle, ChevronRight, MessageCircle, Calend
 import { cn, josa } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChat } from "@/contexts/ChatContext";
+import { useConnection } from "@/contexts/ConnectionContext";
 import { useActionData } from "@/hooks/useDashboardStats";
 import { formatCurrency } from "@/data/mockData";
 
@@ -61,11 +61,10 @@ export function TodayActionsCard({ isLoggedOut = false }: TodayActionsCardProps)
   const navigate = useNavigate();
   const { openDrawer } = useConnectionDrawer();
   const { openChat } = useChat();
-  const { profile, loading } = useProfile();
+  const { profile, profileLoading: loading, isAnyConnected } = useConnection();
   const [statusOverrides, setStatusOverrides] = useState<Record<string, ActionStatus>>({});
   
   const secretaryName = profile?.secretary_name || "김비서";
-  const isAnyConnected = profile?.hometax_connected || profile?.card_connected || profile?.account_connected;
   
   // React Query 캐싱 적용
   const { data: actionData, isLoading: actionLoading } = useActionData(

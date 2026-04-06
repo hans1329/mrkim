@@ -11,7 +11,7 @@ import {
   Clock
 } from "lucide-react";
 import { useTaxInvoices } from "@/hooks/useTaxInvoices";
-import { useProfile } from "@/hooks/useProfile";
+import { useConnection } from "@/contexts/ConnectionContext";
 import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -22,7 +22,7 @@ type FilterType = "all" | "sales" | "purchase";
 
 export function TaxInvoiceTab() {
   const { openDrawer } = useConnectionDrawer();
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile, profileLoading, hometaxConnected } = useConnection();
   const { 
     invoices,
     syncStatus, 
@@ -36,7 +36,7 @@ export function TaxInvoiceTab() {
   
   const [filter, setFilter] = useState<FilterType>("all");
 
-  const isConnected = profile?.hometax_connected;
+  const isConnected = hometaxConnected;
 
   const formatAmount = (amount: number) => {
     return amount.toLocaleString();
