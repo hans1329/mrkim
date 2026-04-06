@@ -227,12 +227,16 @@ export function HometaxConnectionFlow({
   // Step 2: 공동인증서로 등록
   const handleCertRegister = async () => {
     if (!certFile || !certPassword || !businessInfo) return;
-
+    if (isDerMode && !keyFile) return;
     setStep("registering");
     setError(null);
 
     try {
       const certFileBase64 = await fileToBase64(certFile);
+      let keyFileBase64: string | undefined;
+      if (keyFile) {
+        keyFileBase64 = await fileToBase64(keyFile);
+      }
 
       const { data, error: funcError } = await supabase.functions.invoke(
         "codef-hometax",
@@ -242,6 +246,7 @@ export function HometaxConnectionFlow({
             businessNumber: businessInfo.businessNumber,
             certFileBase64,
             certPassword,
+            keyFileBase64,
           },
         }
       );
@@ -306,12 +311,28 @@ export function HometaxConnectionFlow({
     const file = e.target.files?.[0];
     if (file) {
       const ext = file.name.toLowerCase();
-      if (!ext.endsWith(".pfx") && !ext.endsWith(".p12")) {
-        toast.error("PFX 또는 P12 형식의 인증서 파일만 지원합니다.");
+      if (ext.endsWith(".pfx") || ext.endsWith(".p12")) {
+        setCertFile(file);
+        setKeyFile(null);
+        setError(null);
+      } else if (ext.endsWith(".der")) {
+        setCertFile(file);
+        setError(null);
+      } else {
+        toast.error("PFX, P12 또는 DER 형식의 인증서 파일만 지원합니다.");
         return;
       }
-      setCertFile(file);
-      setError(null);
+    }
+  };
+
+  const handleKeyFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.name.toLowerCase().endsWith(".key")) {
+        setKeyFile(file);
+      } else {
+        toast.error("signPri.key 파일만 업로드 가능합니다.");
+      }
     }
   };
 
