@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const FUNCTION_VERSION = "1.3.0"; // forceFullSync 지원, 디버깅 로그 추가
+const FUNCTION_UPDATED_AT = "2026-04-06";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
