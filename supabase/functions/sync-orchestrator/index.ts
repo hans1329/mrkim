@@ -1321,11 +1321,18 @@ async function syncBaemin(
       detailListYn: "Y",
     });
 
-    console.log(`[baemin] Sales API response keys:`, Object.keys(salesRes.data || {}));
+    console.log(`[baemin] Full salesRes keys:`, Object.keys(salesRes || {}));
+    console.log(`[baemin] salesRes.data keys:`, Object.keys(salesRes.data || {}));
+    console.log(`[baemin] salesRes.data.data keys:`, Object.keys(salesRes.data?.data || {}));
+    console.log(`[baemin] salesRes snippet:`, JSON.stringify(salesRes).substring(0, 500));
     console.log(`[baemin] Sales date range: ${startDate} ~ ${endDate}`);
-    const rawData = salesRes.data?.data || salesRes.data;
-    console.log(`[baemin] rawData keys:`, Object.keys(rawData || {}));
-    const orderList = rawData?.touchOrderList || salesRes.data?.touchOrderList || [];
+    
+    // Hyphen 응답 구조 탐색: salesRes 자체 또는 salesRes.data.data
+    const orderList = 
+      salesRes.data?.data?.touchOrderList ||
+      salesRes.data?.touchOrderList ||
+      salesRes.touchOrderList ||
+      [];
     console.log(`[baemin] orderList length:`, orderList.length);
     totalFetched += orderList.length;
 
