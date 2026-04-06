@@ -155,8 +155,9 @@ export function ConnectorStatusCard() {
     );
   }
 
-  // 여신금융협회(codef_card_sales)는 사용하지 않으므로 필터링
-  const filteredConnectors = connectors?.filter(c => c.id !== "codef_card_sales");
+  // 사용하지 않는 커넥터 필터링 (여신금융협회, 인터넷지로 등)
+  const HIDDEN_CONNECTORS = ["codef_card_sales", "codef_giro"];
+  const filteredConnectors = connectors?.filter(c => !HIDDEN_CONNECTORS.includes(c.id));
 
   const connectedCount = filteredConnectors?.filter((c) => {
     if (c.instance?.status === "connected") return true;
