@@ -174,7 +174,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           연동하면 {josa(secretaryName, "이/가")} 실시간으로 사업 현황을 분석해드려요
         </p>
 
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="flex items-center gap-2 mb-3 overflow-x-auto no-scrollbar">
           {connections.map((conn) => (
             <div
               key={conn.key}
