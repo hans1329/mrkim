@@ -68,6 +68,11 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
         bm_user_pw: bmUserPw,
       });
 
+      // 초기 데이터 동기화 트리거 (백그라운드)
+      supabase.functions.invoke("sync-orchestrator", {
+        body: { connectorId: "hyphen_baemin" },
+      }).catch(err => console.error("Initial baemin sync error:", err));
+
       setStep("complete");
       toast.success("배달의민족 연동 완료!");
     } catch (err) {

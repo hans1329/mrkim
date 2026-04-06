@@ -71,6 +71,11 @@ export function CoupangeatsConnectionFlow({ onComplete, onBack }: CoupangeatsCon
         ce_user_pw: ceUserPw,
       });
 
+      // 초기 데이터 동기화 트리거 (백그라운드)
+      supabase.functions.invoke("sync-orchestrator", {
+        body: { connectorId: "hyphen_coupangeats" },
+      }).catch(err => console.error("Initial coupangeats sync error:", err));
+
       setStep("complete");
       toast.success("쿠팡이츠 연동 완료!");
     } catch (err) {
