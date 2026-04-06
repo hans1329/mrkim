@@ -227,11 +227,11 @@ export function ConnectorStatusCard() {
               {/* 2행: 액션 버튼 */}
               <div className="flex items-center justify-center">
                 {isConnected && (
-                  <div className="flex items-center gap-0.5">
+                  <div className="flex items-center gap-2 w-full">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 px-1.5 gap-0.5 text-[10px] text-muted-foreground hover:text-primary"
+                      className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
                       onClick={() => {
                         const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
                         if (drawerType) openDrawer(drawerType);
@@ -242,8 +242,8 @@ export function ConnectorStatusCard() {
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                      size="sm"
+                      className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-destructive"
                       disabled={disconnecting === connector.id}
                       onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
                     >
@@ -252,6 +252,7 @@ export function ConnectorStatusCard() {
                       ) : (
                         <Unlink className="h-3 w-3" />
                       )}
+                      연동 끊기
                     </Button>
                   </div>
                 )}
