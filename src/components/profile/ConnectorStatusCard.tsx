@@ -89,7 +89,7 @@ export function ConnectorStatusCard() {
     setSyncing(connectorId);
     try {
       const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
-        body: { connectorId },
+        body: { connectorId, forceFullSync: true },
       });
       if (error) throw error;
 

@@ -29,7 +29,8 @@ const SYNC_HANDLERS: Record<
   (
     supabase: ReturnType<typeof createClient>,
     instance: any,
-    job: any
+    job: any,
+    options: { forceFullSync: boolean }
   ) => Promise<{ recordsFetched: number; recordsSaved: number }>
 > = {
   codef_hometax_tax_invoice: syncHometaxInvoices,
@@ -54,6 +55,7 @@ serve(async (req) => {
   try {
     let targetInstanceId: string | null = null;
     let targetConnectorId: string | null = null;
+    let forceFullSync = false;
 
     // POST body에서 특정 인스턴스 ID 또는 커넥터 ID 확인
     if (req.method === "POST") {
@@ -61,6 +63,7 @@ serve(async (req) => {
         const body = await req.json();
         targetInstanceId = body.instanceId || null;
         targetConnectorId = body.connectorId || null;
+        forceFullSync = body.forceFullSync === true;
       } catch {
         // body 없을 수 있음 (cron 호출)
       }
@@ -124,13 +127,13 @@ serve(async (req) => {
         continue;
       }
 
-      // sync_job 생성
+      // sync_job 생성 (forceFullSync일 때 항상 full 타입)
       const { data: job, error: jobError } = await supabase
         .from("sync_jobs")
         .insert({
           instance_id: instance.id,
           user_id: instance.user_id,
-          job_type: instance.last_sync_at ? "delta" : "full",
+          job_type: forceFullSync || !instance.last_sync_at ? "full" : "delta",
           status: "running",
           started_at: new Date().toISOString(),
         })
@@ -154,7 +157,7 @@ serve(async (req) => {
           `Syncing ${connectorId} for user ${instance.user_id} (job: ${job.id})`
         );
 
-        const syncResult = await handler(supabase, instance, job);
+        const syncResult = await handler(supabase, instance, job, { forceFullSync });
 
         // sync_job 완료 업데이트
         await supabase
@@ -319,7 +322,8 @@ function getConnectorLabel(connectorId: string): string {
 async function syncHometaxInvoices(
   supabase: ReturnType<typeof createClient>,
   instance: any,
-  _job: any
+  _job: any,
+  options: { forceFullSync: boolean }
 ): Promise<{ recordsFetched: number; recordsSaved: number }> {
   // connectedId 확인 - 간편인증 완료된 인스턴스만 세금계산서 조회 가능
   const connectedId = instance.connected_id;
@@ -344,7 +348,7 @@ async function syncHometaxInvoices(
   const now = new Date();
   let startDate: string;
 
-  if (instance.last_sync_at) {
+  if (instance.last_sync_at && !options.forceFullSync) {
     const lastSync = new Date(instance.last_sync_at);
     lastSync.setDate(lastSync.getDate() - 1);
     startDate = lastSync.toISOString().slice(0, 10).replace(/-/g, "");
@@ -562,7 +566,8 @@ async function fetchCardNumbers(
 async function syncCardTransactions(
   supabase: ReturnType<typeof createClient>,
   instance: any,
-  _job: any
+  _job: any,
+  options: { forceFullSync: boolean }
 ): Promise<{ recordsFetched: number; recordsSaved: number }> {
   if (!instance.connected_id) {
     throw new Error("ConnectedId가 없습니다. 카드사를 먼저 등록해주세요.");
@@ -588,7 +593,7 @@ async function syncCardTransactions(
   // 동기화 기간
   const now = new Date();
   let startDate: string;
-  if (instance.last_sync_at) {
+  if (instance.last_sync_at && !options.forceFullSync) {
     const lastSync = new Date(instance.last_sync_at);
     lastSync.setDate(lastSync.getDate() - 1);
     startDate = lastSync.toISOString().slice(0, 10).replace(/-/g, "");
@@ -716,7 +721,8 @@ async function syncCardTransactions(
 async function syncBankTransactions(
   supabase: ReturnType<typeof createClient>,
   instance: any,
-  _job: any
+  _job: any,
+  options: { forceFullSync: boolean }
 ): Promise<{ recordsFetched: number; recordsSaved: number }> {
   if (!instance.connected_id) {
     throw new Error("ConnectedId가 없습니다. 은행을 먼저 등록해주세요.");
@@ -742,7 +748,7 @@ async function syncBankTransactions(
   // 동기화 기간
   const now = new Date();
   let startDate: string;
-  if (instance.last_sync_at) {
+  if (instance.last_sync_at && !options.forceFullSync) {
     const lastSync = new Date(instance.last_sync_at);
     lastSync.setDate(lastSync.getDate() - 1);
     startDate = lastSync.toISOString().slice(0, 10).replace(/-/g, "");
@@ -981,7 +987,8 @@ async function callHyphenCoupangeats(
 async function syncCoupangeats(
   supabase: ReturnType<typeof createClient>,
   instance: any,
-  _job: any
+  _job: any,
+  options: { forceFullSync: boolean }
 ): Promise<{ recordsFetched: number; recordsSaved: number }> {
   // credentials_meta에서 쿠팡이츠 로그인 정보 가져오기
   const meta = instance.credentials_meta || {};
@@ -999,7 +1006,7 @@ async function syncCoupangeats(
   // 동기화 기간 결정
   const now = new Date();
   let startDate: string;
-  if (instance.last_sync_at) {
+  if (instance.last_sync_at && !options.forceFullSync) {
     const lastSync = new Date(instance.last_sync_at);
     lastSync.setDate(lastSync.getDate() - 1);
     startDate = lastSync.toISOString().slice(0, 10).replace(/-/g, "");
@@ -1246,7 +1253,8 @@ async function callHyphenBaemin(
 async function syncBaemin(
   supabase: ReturnType<typeof createClient>,
   instance: any,
-  _job: any
+  _job: any,
+  options: { forceFullSync: boolean }
 ): Promise<{ recordsFetched: number; recordsSaved: number }> {
   const meta = instance.credentials_meta || {};
   const bmUserId = meta.bm_user_id as string;
@@ -1262,8 +1270,8 @@ async function syncBaemin(
 
   const now = new Date();
   let startDate: string;
-  // 최초 동기화는 최근 1개월만 (타임아웃 방지), 이후 델타
-  if (instance.last_sync_at) {
+  // forceFullSync이면 항상 최근 1개월 전체, 아니면 델타
+  if (instance.last_sync_at && !options.forceFullSync) {
     const lastSync = new Date(instance.last_sync_at);
     lastSync.setDate(lastSync.getDate() - 1);
     startDate = lastSync.toISOString().slice(0, 10).replace(/-/g, "");
