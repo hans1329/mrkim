@@ -137,6 +137,19 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
 
   const isDerMode = certFile?.name.toLowerCase().endsWith(".der");
 
+  // File → Base64 변환
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = reject;
+    });
+  };
+
   const handleAuth = async () => {
     if (!agreedTerms || !selectedCompany) return;
 
