@@ -93,8 +93,11 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
 
   const { isLoading, registerCardAccount, getCards } = useCardConnection();
   const cardSync = useCardSync();
-  const { refetch: refetchProfile } = useConnection();
+  const { refetch: refetchProfile, profile } = useConnection();
   const { connections: existingCardConnections } = useCardConnectionInfo();
+
+  // 법인사업자면 clientType "B", 아니면 "P"
+  const clientType: "P" | "B" = profile?.business_type === "법인" ? "B" : "P";
 
   const stepProgress: Record<FlowStep, number> = {
     "select-card": 20,
@@ -176,20 +179,24 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
 
         newConnectedId = await registerCardAccount(
           selectedCompany,
-          "", // 인증서 로그인시 ID 불필요
-          "", // 인증서 로그인시 PW 불필요
+          "",
+          "",
           {
             loginType: "0",
             certFile: certBase64,
             certPassword: certPassword,
             keyFile: keyBase64,
-          }
+            clientType,
+          },
+          clientType,
         );
       } else {
         newConnectedId = await registerCardAccount(
           selectedCompany,
           credentials.id,
-          credentials.password
+          credentials.password,
+          undefined,
+          clientType,
         );
       }
 
