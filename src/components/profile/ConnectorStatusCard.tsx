@@ -182,7 +182,7 @@ export function ConnectorStatusCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
-        {connectors?.map((connector) => {
+        {filteredConnectors?.map((connector) => {
           const Icon = CATEGORY_ICONS[connector.category] || FileText;
           const instance = connector.instance;
           const isFallbackConnected = !instance && profileFallback[connector.category];
