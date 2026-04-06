@@ -29,7 +29,8 @@ const SYNC_HANDLERS: Record<
   (
     supabase: ReturnType<typeof createClient>,
     instance: any,
-    job: any
+    job: any,
+    options: { forceFullSync: boolean }
   ) => Promise<{ recordsFetched: number; recordsSaved: number }>
 > = {
   codef_hometax_tax_invoice: syncHometaxInvoices,
@@ -126,13 +127,13 @@ serve(async (req) => {
         continue;
       }
 
-      // sync_job 생성
+      // sync_job 생성 (forceFullSync일 때 항상 full 타입)
       const { data: job, error: jobError } = await supabase
         .from("sync_jobs")
         .insert({
           instance_id: instance.id,
           user_id: instance.user_id,
-          job_type: instance.last_sync_at ? "delta" : "full",
+          job_type: forceFullSync || !instance.last_sync_at ? "full" : "delta",
           status: "running",
           started_at: new Date().toISOString(),
         })
