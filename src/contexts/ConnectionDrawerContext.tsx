@@ -1,11 +1,9 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useMemo } from "react";
 import { ConnectionHub, ServiceType } from "@/components/onboarding/ConnectionHub";
-import { ConnectionHub, ServiceType } from "@/components/onboarding/ConnectionHub";
 import { useQueryClient } from "@tanstack/react-query";
 import { useConnectorInstances } from "@/hooks/useConnectors";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { isCardCompanyConnected, isConnectorConnected } from "@/lib/connectionStatus";
-import { supabase } from "@/integrations/supabase/client";
 
 // Keep backward compatibility with old ConnectionType
 export type ConnectionType = ServiceType;
@@ -28,7 +26,7 @@ export function ConnectionDrawerProvider({ children }: { children: ReactNode }) 
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<ConnectionType | null>(null);
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  
   const { data: connectorInstances = [] } = useConnectorInstances();
   const { hometaxConnected, accountConnected } = useConnection();
 
