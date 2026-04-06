@@ -34,6 +34,26 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
     return result?.data?.errMsg || result?.common?.errMsg || payload?.error || fallback;
   };
 
+  const hasMeaningfulValue = (value: unknown): boolean => {
+    if (value == null) return false;
+    if (typeof value === "string") return value.trim().length > 0;
+    if (typeof value === "number" || typeof value === "boolean") return true;
+    if (Array.isArray(value)) return value.some(hasMeaningfulValue);
+    if (typeof value === "object") return Object.values(value as Record<string, unknown>).some(hasMeaningfulValue);
+    return false;
+  };
+
+  const hasMeaningfulProbeData = (payload: any) => {
+    const result = payload?.data?.data;
+    if (!result || typeof result !== "object") return false;
+
+    return Object.entries(result as Record<string, unknown>).some(([key, value]) => {
+      if (key === "errYn" || key === "errMsg") return false;
+      if (key === "storeList") return Array.isArray(value) && value.length > 0;
+      return hasMeaningfulValue(value);
+    });
+  };
+
   const handleVerify = async () => {
     if (!bmUserId.trim() || !bmUserPw.trim()) {
       setError("아이디와 비밀번호를 입력해주세요.");
@@ -59,26 +79,40 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
         throw new Error(getHyphenErrorMessage(verifyData, "계정 검증에 실패했습니다."));
       }
 
-      let stores: Array<Record<string, unknown>> = [];
-
-      const { data: storeData, error: storeError } = await supabase.functions.invoke(
-        "hyphen-baemin",
-        {
+      const [storeResponse, myStoreResponse, accountResponse] = await Promise.all([
+        supabase.functions.invoke("hyphen-baemin", {
           body: {
             action: "store_info",
             userId: bmUserId,
             userPw: bmUserPw,
           },
-        }
+        }),
+        supabase.functions.invoke("hyphen-baemin", {
+          body: {
+            action: "my_store",
+            userId: bmUserId,
+            userPw: bmUserPw,
+          },
+        }),
+        supabase.functions.invoke("hyphen-baemin", {
+          body: {
+            action: "account_info",
+            userId: bmUserId,
+            userPw: bmUserPw,
+          },
+        }),
+      ]);
+
+      const stores = Array.isArray(storeResponse.data?.data?.data?.storeList)
+        ? storeResponse.data.data.data.storeList
+        : [];
+
+      const hasValidProbe = [storeResponse, myStoreResponse, accountResponse].some(
+        ({ data, error }) => !error && !hasHyphenError(data) && hasMeaningfulProbeData(data)
       );
 
-      if (storeError) {
-        console.warn("Baemin store info warning:", storeError);
-      } else if (hasHyphenError(storeData)) {
-        console.warn("Baemin store info warning:", getHyphenErrorMessage(storeData, "매장 정보를 확인하지 못했습니다."));
-      } else {
-        const storeResult = storeData?.data?.data;
-        stores = Array.isArray(storeResult?.storeList) ? storeResult.storeList : [];
+      if (!hasValidProbe) {
+        throw new Error("배달의민족 계정을 확인할 수 없습니다. 아이디/비밀번호를 다시 확인해주세요.");
       }
 
       setStoreCount(stores.length);
