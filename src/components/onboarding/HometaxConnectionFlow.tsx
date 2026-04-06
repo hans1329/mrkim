@@ -74,9 +74,13 @@ export function HometaxConnectionFlow({
 
   // 공동인증서 관련
   const [certFile, setCertFile] = useState<File | null>(null);
+  const [keyFile, setKeyFile] = useState<File | null>(null);
   const [certPassword, setCertPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const keyFileInputRef = useRef<HTMLInputElement>(null);
+
+  const isDerMode = certFile?.name.toLowerCase().endsWith(".der");
 
   const hasVerifiedBusinessInfo = Boolean(
     businessInfo?.businessStatus || businessInfo?.taxationTypeDesc
@@ -223,12 +227,16 @@ export function HometaxConnectionFlow({
   // Step 2: 공동인증서로 등록
   const handleCertRegister = async () => {
     if (!certFile || !certPassword || !businessInfo) return;
-
+    if (isDerMode && !keyFile) return;
     setStep("registering");
     setError(null);
 
     try {
       const certFileBase64 = await fileToBase64(certFile);
+      let keyFileBase64: string | undefined;
+      if (keyFile) {
+        keyFileBase64 = await fileToBase64(keyFile);
+      }
 
       const { data, error: funcError } = await supabase.functions.invoke(
         "codef-hometax",
@@ -238,6 +246,7 @@ export function HometaxConnectionFlow({
             businessNumber: businessInfo.businessNumber,
             certFileBase64,
             certPassword,
+            keyFileBase64,
           },
         }
       );
@@ -302,12 +311,28 @@ export function HometaxConnectionFlow({
     const file = e.target.files?.[0];
     if (file) {
       const ext = file.name.toLowerCase();
-      if (!ext.endsWith(".pfx") && !ext.endsWith(".p12")) {
-        toast.error("PFX 또는 P12 형식의 인증서 파일만 지원합니다.");
+      if (ext.endsWith(".pfx") || ext.endsWith(".p12")) {
+        setCertFile(file);
+        setKeyFile(null);
+        setError(null);
+      } else if (ext.endsWith(".der")) {
+        setCertFile(file);
+        setError(null);
+      } else {
+        toast.error("PFX, P12 또는 DER 형식의 인증서 파일만 지원합니다.");
         return;
       }
-      setCertFile(file);
-      setError(null);
+    }
+  };
+
+  const handleKeyFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.name.toLowerCase().endsWith(".key")) {
+        setKeyFile(file);
+      } else {
+        toast.error("signPri.key 파일만 업로드 가능합니다.");
+      }
     }
   };
 
@@ -541,7 +566,7 @@ export function HometaxConnectionFlow({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".pfx,.p12"
+                  accept=".pfx,.p12,.der"
                   onChange={handleFileChange}
                   className="hidden"
                 />
@@ -567,11 +592,51 @@ export function HometaxConnectionFlow({
                   ) : (
                     <div className="flex items-center justify-center w-full py-4 gap-2">
                       <Upload className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">공동인증서 파일 업로드 (.pfx, .p12)</p>
+                      <p className="text-sm text-muted-foreground">인증서 파일 (.pfx, .p12 또는 signCert.der)</p>
                     </div>
                   )}
                 </button>
               </div>
+
+              {/* DER 모드일 때 key 파일 업로드 */}
+              {isDerMode && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">개인키 파일</label>
+                  <input
+                    ref={keyFileInputRef}
+                    type="file"
+                    accept=".key"
+                    onChange={handleKeyFileChange}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => keyFileInputRef.current?.click()}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed transition-all text-left",
+                      keyFile ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    {keyFile ? (
+                      <>
+                        <FileCheck className="h-5 w-5 text-primary shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{keyFile.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            개인키 등록 완료 · {formatFileSize(keyFile.size)}
+                          </p>
+                        </div>
+                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center w-full py-4 gap-2">
+                        <Upload className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">signPri.key 파일 업로드</p>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              )}
 
               {/* 인증서 비밀번호 */}
               <div className="space-y-2">
@@ -606,7 +671,7 @@ export function HometaxConnectionFlow({
                 onClick={handleCertRegister}
                 size="lg"
                 className="w-full"
-                disabled={!certFile || !certPassword}
+                disabled={!certFile || !certPassword || (isDerMode && !keyFile)}
               >
                 인증서로 연동하기
               </Button>

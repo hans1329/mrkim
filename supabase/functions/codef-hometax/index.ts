@@ -165,7 +165,7 @@ async function handleBusinessVerify(body: any): Promise<Response> {
  * 공동인증서 방식 계정 등록 (loginType: "0")
  */
 async function handleRegister(_req: Request, body: any): Promise<Response> {
-  const { businessNumber, certFileBase64, certPassword } = body;
+  const { businessNumber, certFileBase64, certPassword, keyFileBase64 } = body;
 
   if (!businessNumber || !certFileBase64 || !certPassword) {
     return new Response(
@@ -184,20 +184,28 @@ async function handleRegister(_req: Request, body: any): Promise<Response> {
   // 인증서 비밀번호를 RSA 암호화
   const encryptedPassword = publicKey ? encryptRSAPKCS1(certPassword, publicKey) : certPassword;
 
+  // DER+KEY 분리 방식 vs PFX 통합 방식
+  const accountEntry: Record<string, unknown> = {
+    countryCode: "KR",
+    businessType: "NT",
+    clientType: "P",
+    organization: "0002",
+    loginType: "0",
+    certFile: certFileBase64,
+    password: encryptedPassword,
+    identity: cleanedNumber,
+  };
+
+  if (keyFileBase64) {
+    accountEntry.keyFile = keyFileBase64;
+    console.log("Using DER+KEY separate cert files for hometax");
+  } else {
+    accountEntry.certType = "pfx";
+    console.log("Using PFX/P12 combined cert file for hometax");
+  }
+
   const requestBody = {
-    accountList: [
-      {
-        countryCode: "KR",
-        businessType: "NT",
-        clientType: "P",
-        organization: "0002",
-        loginType: "0",      // 공동인증서 방식
-        certType: "pfx",
-        certFile: certFileBase64,  // PFX 파일 Base64
-        password: encryptedPassword,
-        identity: cleanedNumber,
-      },
-    ],
+    accountList: [accountEntry],
   };
 
   console.log(`Registering hometax account with certificate, identity=${cleanedNumber}`);

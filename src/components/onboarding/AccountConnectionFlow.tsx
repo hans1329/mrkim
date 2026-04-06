@@ -84,6 +84,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const [credentials, setCredentials] = useState({ id: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [certFile, setCertFile] = useState<File | null>(null);
+  const [keyFile, setKeyFile] = useState<File | null>(null); // signPri.key
   const [certPassword, setCertPassword] = useState("");
   const [showCertPassword, setShowCertPassword] = useState(false);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
@@ -94,10 +95,12 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const [currentConnectedId, setCurrentConnectedId] = useState<string | null>(null);
   const [showReconnectDialog, setShowReconnectDialog] = useState(false);
   const certFileInputRef = useRef<HTMLInputElement>(null);
+  const keyFileInputRef = useRef<HTMLInputElement>(null);
 
   // 로그인 방식: 기본 아이디/비번, 인증서는 사용자 선택
   const [useCertLogin, setUseCertLogin] = useState(false);
   const isCertBank = useCertLogin;
+  const isDerMode = certFile?.name.toLowerCase().endsWith(".der");
 
   const { isLoading, registerBankAccount, getAccounts } = useAccountConnection();
   const bankSync = useBankSync();
@@ -121,8 +124,9 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const handleAuth = async () => {
     if (!agreedTerms || !selectedBank) return;
 
-    // 인증서 은행: certFile + certPassword 필요
+    // 인증서 은행: certFile + certPassword 필요 (DER 모드: keyFile도 필요)
     if (isCertBank && (!certFile || !certPassword)) return;
+    if (isCertBank && isDerMode && !keyFile) return;
     // 아이디 은행: id + password 필요
     if (!isCertBank && (!credentials.id || !credentials.password)) return;
     
@@ -135,11 +139,15 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
       if (isCertBank && certFile) {
         // 인증서 파일을 Base64로 변환
         const certBase64 = await fileToBase64(certFile);
+        let keyBase64: string | undefined;
+        if (keyFile) {
+          keyBase64 = await fileToBase64(keyFile);
+        }
         newConnectedId = await registerBankAccount(
           selectedBank,
           "", // id는 인증서 방식에선 불필요
           certPassword,
-          { loginType: "2", certFile: certBase64, certPassword }
+          { loginType: "2", certFile: certBase64, certPassword, keyFile: keyBase64 }
         );
       } else {
         newConnectedId = await registerBankAccount(
@@ -385,11 +393,19 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
                     <input
                       ref={certFileInputRef}
                       type="file"
-                      accept=".pfx,.p12,.der,.key"
+                      accept=".pfx,.p12,.der"
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0] || null;
-                        setCertFile(file);
+                        if (file) {
+                          const ext = file.name.split(".").pop()?.toLowerCase();
+                          if (ext === "pfx" || ext === "p12") {
+                            setCertFile(file);
+                            setKeyFile(null);
+                          } else if (ext === "der") {
+                            setCertFile(file);
+                          }
+                        }
                       }}
                     />
                     <button
@@ -415,13 +431,58 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
                         <>
                           <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
                           <div>
-                            <p className="text-sm text-muted-foreground">내 PC에서 인증서 불러오기</p>
+                            <p className="text-sm text-muted-foreground">인증서 파일 (.pfx, .p12 또는 signCert.der)</p>
                             <p className="text-xs text-muted-foreground">USB 또는 하드디스크에 저장된 인증서</p>
                           </div>
                         </>
                       )}
                     </button>
                   </div>
+
+                  {/* DER 모드일 때 key 파일 업로드 */}
+                  {isDerMode && (
+                    <div className="space-y-2">
+                      <Label className="text-xs">개인키 파일</Label>
+                      <input
+                        ref={keyFileInputRef}
+                        type="file"
+                        accept=".key"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          if (file) setKeyFile(file);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => keyFileInputRef.current?.click()}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed transition-all text-left",
+                          keyFile ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                        )}
+                      >
+                        {keyFile ? (
+                          <>
+                            <FileKey className="h-5 w-5 text-primary shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">{keyFile.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                개인키 등록 완료 · {(keyFile.size / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                            <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
+                            <div>
+                              <p className="text-sm text-muted-foreground">signPri.key 파일 업로드</p>
+                            </div>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
 
                   {/* 인증서 비밀번호 */}
                   <div className="space-y-2">

@@ -16,6 +16,7 @@ interface CertOptions {
   loginType: "2";
   certFile: string; // Base64
   certPassword: string;
+  keyFile?: string; // Base64 signPri.key (DER+KEY 분리 방식)
 }
 
 interface UseAccountConnectionReturn {
@@ -58,6 +59,9 @@ export function useAccountConnection(): UseAccountConnectionReturn {
         requestBody.loginType = "2";
         requestBody.certFile = certOptions.certFile;
         requestBody.certPassword = certOptions.certPassword;
+        if (certOptions.keyFile) {
+          requestBody.keyFile = certOptions.keyFile;
+        }
       } else {
         // 아이디/비밀번호 로그인 (loginType "1")
         requestBody.loginType = "1";

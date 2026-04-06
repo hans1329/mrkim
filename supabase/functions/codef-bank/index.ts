@@ -84,7 +84,7 @@ serve(async (req) => {
       );
     }
 
-    const { action, bankId, loginId, password, loginType, certFile, certPassword, connectedId, accountNo, startDate, endDate } = await req.json();
+    const { action, bankId, loginId, password, loginType, certFile, certPassword, keyFile, connectedId, accountNo, startDate, endDate } = await req.json();
 
     console.log("Getting access token...");
     const accessToken = await getAccessToken();
@@ -99,7 +99,7 @@ serve(async (req) => {
     if (action === "register") {
       if (loginType === "2") {
         // 인증서 로그인
-        return await handleRegisterWithCert(accessToken, publicKey, bankId, certFile, certPassword);
+        return await handleRegisterWithCert(accessToken, publicKey, bankId, certFile, certPassword, keyFile);
       } else {
         // 아이디/비밀번호 로그인
         return await handleRegister(accessToken, publicKey, bankId, loginId, password);
@@ -134,8 +134,9 @@ async function handleRegisterWithCert(
   accessToken: string,
   publicKey: string,
   bankId: string,
-  certFile: string,      // Base64 인증서 파일
+  certFile: string,      // Base64 인증서 파일 (PFX 또는 signCert.der)
   certPassword: string,  // 인증서 비밀번호 (평문, RSA 암호화 적용)
+  keyFile?: string,      // Base64 signPri.key (DER+KEY 분리 방식일 때)
 ): Promise<Response> {
   const organizationCode = BANK_ORGANIZATION_CODES[bankId];
   if (!organizationCode) {
@@ -156,19 +157,29 @@ async function handleRegisterWithCert(
   const encryptedCertPassword = encryptRSAPKCS1(certPassword, publicKey);
   console.log("Cert password encrypted successfully");
 
+  // DER+KEY 분리 방식 vs PFX 통합 방식
+  const accountEntry: Record<string, unknown> = {
+    countryCode: "KR",
+    businessType: "BK",
+    clientType: "P",
+    organization: organizationCode,
+    loginType: "2",
+    certFile: certFile,
+    password: encryptedCertPassword,
+  };
+
+  if (keyFile) {
+    // signCert.der + signPri.key 분리 파일
+    accountEntry.keyFile = keyFile;
+    console.log("Using DER+KEY separate cert files");
+  } else {
+    // PFX/P12 통합 파일
+    accountEntry.certType = "pfx";
+    console.log("Using PFX/P12 combined cert file");
+  }
+
   const requestBody = {
-    accountList: [
-      {
-        countryCode: "KR",
-        businessType: "BK",
-        clientType: "P",
-        organization: organizationCode,
-        loginType: "2",           // 공동인증서 로그인
-        certType: "pfx",          // PFX/P12 통합 인증서 파일
-        certFile: certFile,       // Base64 인증서 파일
-        password: encryptedCertPassword,
-      }
-    ]
+    accountList: [accountEntry]
   };
 
   console.log("Registering bank account with cert for organization:", organizationCode);

@@ -85,9 +85,11 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
   // 인증서 로그인 관련
   const [useCertLogin, setUseCertLogin] = useState(false);
   const [certFile, setCertFile] = useState<File | null>(null);
+  const [keyFile, setKeyFile] = useState<File | null>(null); // signPri.key (DER+KEY 분리)
   const [certPassword, setCertPassword] = useState("");
   const [showCertPassword, setShowCertPassword] = useState(false);
   const certFileInputRef = useRef<HTMLInputElement>(null);
+  const keyFileInputRef = useRef<HTMLInputElement>(null);
 
   const { isLoading, registerCardAccount, getCards } = useCardConnection();
   const cardSync = useCardSync();
@@ -108,12 +110,44 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
     const file = e.target.files?.[0];
     if (file) {
       const ext = file.name.split(".").pop()?.toLowerCase();
-      if (ext === "pfx" || ext === "p12" || ext === "der") {
+      if (ext === "pfx" || ext === "p12") {
         setCertFile(file);
+        setKeyFile(null); // PFX 선택 시 key 파일 초기화
+      } else if (ext === "der") {
+        setCertFile(file);
+      } else if (ext === "key") {
+        setKeyFile(file);
       } else {
-        toast.error("공동인증서 파일(.pfx, .p12, .der)만 업로드 가능합니다.");
+        toast.error("공동인증서 파일(.pfx, .p12, .der, .key)만 업로드 가능합니다.");
       }
     }
+  };
+
+  const handleKeyFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      if (ext === "key") {
+        setKeyFile(file);
+      } else {
+        toast.error("signPri.key 파일만 업로드 가능합니다.");
+      }
+    }
+  };
+
+  const isDerMode = certFile?.name.toLowerCase().endsWith(".der");
+
+  // File → Base64 변환
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = reject;
+    });
   };
 
   const handleAuth = async () => {
@@ -121,6 +155,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
 
     if (useCertLogin) {
       if (!certFile || !certPassword) return;
+      if (isDerMode && !keyFile) return; // DER 모드에서는 key 파일도 필요
     } else {
       if (!credentials.id || !credentials.password) return;
     }
@@ -133,15 +168,11 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
 
       if (useCertLogin && certFile) {
         // 인증서 파일을 Base64로 변환
-        const certBase64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result as string;
-            resolve(result.split(",")[1]); // data:...;base64, 부분 제거
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(certFile);
-        });
+        const certBase64 = await fileToBase64(certFile);
+        let keyBase64: string | undefined;
+        if (keyFile) {
+          keyBase64 = await fileToBase64(keyFile);
+        }
 
         newConnectedId = await registerCardAccount(
           selectedCompany,
@@ -151,6 +182,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
             loginType: "0",
             certFile: certBase64,
             certPassword: certPassword,
+            keyFile: keyBase64,
           }
         );
       } else {
@@ -396,11 +428,40 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                       ) : (
                         <>
                           <Upload className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">공동인증서 파일 업로드 (.pfx, .p12)</span>
+                          <span className="text-sm text-muted-foreground">인증서 파일 (.pfx, .p12 또는 signCert.der)</span>
                         </>
                       )}
                     </Button>
                   </div>
+                  {/* DER 모드일 때 key 파일 업로드 */}
+                  {isDerMode && (
+                    <div>
+                      <input
+                        ref={keyFileInputRef}
+                        type="file"
+                        accept=".key"
+                        onChange={handleKeyFileChange}
+                        className="hidden"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => keyFileInputRef.current?.click()}
+                        className={`w-full justify-center gap-2 h-11 hover:bg-muted hover:text-foreground ${keyFile ? '' : 'border-dashed border-2'}`}
+                      >
+                        {keyFile ? (
+                          <>
+                            <FileKey className="h-4 w-4 text-primary" />
+                            <span className="truncate text-sm">{keyFile.name}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">개인키 파일 (signPri.key)</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
                   <div className="relative">
                     <Input
                       type={showCertPassword ? "text" : "password"}
