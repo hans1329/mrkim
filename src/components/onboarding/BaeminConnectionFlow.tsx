@@ -22,7 +22,7 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [storeCount, setStoreCount] = useState(0);
-  const { connectService } = useConnection();
+  const { connectService, connectorInstances } = useConnection();
 
   const hasHyphenError = (payload: any) => {
     if (!payload?.success) return true;
@@ -60,6 +60,14 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
   const getStoreListFromPayload = (payload: any): any[] => {
     const storeList = payload?.data?.data?.storeList;
     return Array.isArray(storeList) ? storeList : [];
+  };
+
+  const hasStoredCredentialMatch = (userId: string, userPw: string) => {
+    return connectorInstances.some((instance) => {
+      if (instance.connector_id !== "hyphen_baemin") return false;
+      const meta = (instance.credentials_meta ?? {}) as Record<string, unknown>;
+      return meta.bm_user_id === userId && meta.bm_user_pw === userPw;
+    });
   };
 
   const handleVerify = async () => {
@@ -106,20 +114,8 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
         .filter(({ error, data }) => !error && !hasHyphenError(data));
 
       const hasVerifiedAccess = successfulProbes.some(({ data }) => hasMeaningfulProbeData(data));
-      if (!hasVerifiedAccess) {
-        const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke(
-          "hyphen-baemin-credential-check",
-          {
-            body: {
-              userId: bmUserId,
-              userPw: bmUserPw,
-            },
-          }
-        );
-
-        if (fallbackError || !fallbackData?.success || !fallbackData?.matchesExistingCredentials) {
-          throw new Error("배달의민족 계정을 확인할 수 없습니다. 아이디/비밀번호를 다시 확인해주세요.");
-        }
+      if (!hasVerifiedAccess && !hasStoredCredentialMatch(bmUserId, bmUserPw)) {
+        throw new Error("배달의민족 계정을 확인할 수 없습니다. 아이디/비밀번호를 다시 확인해주세요.");
       }
 
       const stores = successfulProbes.flatMap(({ data }) => getStoreListFromPayload(data));
