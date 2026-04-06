@@ -16,12 +16,14 @@ import { toast } from "sonner";
 export type AuthStatus = "loading" | "logged_out" | "logged_in";
 
 // 커넥터 ID → 카테고리 매핑
-const CONNECTOR_CATEGORY_MAP: Record<string, "hometax" | "card" | "account"> = {
+const CONNECTOR_CATEGORY_MAP: Record<string, "hometax" | "card" | "account" | "delivery"> = {
   codef_hometax_tax_invoice: "hometax",
   codef_hometax_cash_receipt: "hometax",
   codef_bank_account: "account",
   codef_card_sales: "card",
   codef_card_usage: "card",
+  hyphen_baemin: "delivery",
+  hyphen_coupangeats: "delivery",
 };
 
 export interface ConnectionState {
@@ -39,6 +41,7 @@ export interface ConnectionState {
   hometaxConnected: boolean;
   cardConnected: boolean;
   accountConnected: boolean;
+  deliveryConnected: boolean;
   
   // 커넥터 인스턴스 원본
   connectorInstances: ConnectorInstance[];
@@ -135,6 +138,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       hometax: connected.has("hometax"),
       card: connected.has("card"),
       account: connected.has("account"),
+      delivery: connected.has("delivery"),
     };
   }, [connectorInstances]);
 
@@ -161,13 +165,14 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   }, [updateProfileCache]);
 
   // profiles 플래그 동기화 헬퍼
-  const syncProfileFlags = useCallback(async (category: "hometax" | "card" | "account", connected: boolean) => {
-    const flagMap = {
+  const syncProfileFlags = useCallback(async (category: "hometax" | "card" | "account" | "delivery", connected: boolean) => {
+    const flagMap: Record<string, { connected: string; connectedAt: string } | undefined> = {
       hometax: { connected: "hometax_connected", connectedAt: "hometax_connected_at" },
       card: { connected: "card_connected", connectedAt: "card_connected_at" },
       account: { connected: "account_connected", connectedAt: "account_connected_at" },
     };
     const flags = flagMap[category];
+    if (!flags) return; // delivery 등은 profiles 플래그 없음
     const updates: Record<string, unknown> = {
       [flags.connected]: connected,
       [flags.connectedAt]: connected ? new Date().toISOString() : null,
@@ -313,17 +318,18 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   const hometaxConnected = derivedStatus.hometax;
   const cardConnected = derivedStatus.card;
   const accountConnected = derivedStatus.account;
+  const deliveryConnected = derivedStatus.delivery;
   
-  const isAnyConnected = hometaxConnected || cardConnected || accountConnected;
+  const isAnyConnected = hometaxConnected || cardConnected || accountConnected || deliveryConnected;
   const isFullyConnected = hometaxConnected && cardConnected && accountConnected;
   const isTransactionConnected = cardConnected || accountConnected;
-  const connectedCount = [hometaxConnected, cardConnected, accountConnected].filter(Boolean).length;
+  const connectedCount = [hometaxConnected, cardConnected, accountConnected, deliveryConnected].filter(Boolean).length;
   const isLoggedInButNotConnected = isLoggedIn && !isAnyConnected && !profileLoading;
 
   const value: ConnectionState = {
     authStatus, isLoggedIn, isLoggedOut, userId,
     profile, profileLoading,
-    hometaxConnected, cardConnected, accountConnected,
+    hometaxConnected, cardConnected, accountConnected, deliveryConnected,
     connectorInstances,
     isAnyConnected, isFullyConnected, isTransactionConnected, connectedCount,
     isLoggedInButNotConnected,
@@ -359,6 +365,7 @@ export function getConnectionSummary(state: ConnectionState): string {
   if (state.hometaxConnected) connected.push("국세청(홈택스)"); else notConnected.push("국세청(홈택스)");
   if (state.cardConnected) connected.push("카드"); else notConnected.push("카드");
   if (state.accountConnected) connected.push("계좌"); else notConnected.push("계좌");
+  if (state.deliveryConnected) connected.push("배달플랫폼"); else notConnected.push("배달플랫폼");
 
   if (state.isFullyConnected) return `모든 데이터가 연동되어 있습니다: ${connected.join(", ")}.`;
   return `연동: ${connected.join(", ")}. 미연동: ${notConnected.join(", ")}.`;
