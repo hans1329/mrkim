@@ -365,6 +365,7 @@ export function getConnectionSummary(state: ConnectionState): string {
   if (state.hometaxConnected) connected.push("국세청(홈택스)"); else notConnected.push("국세청(홈택스)");
   if (state.cardConnected) connected.push("카드"); else notConnected.push("카드");
   if (state.accountConnected) connected.push("계좌"); else notConnected.push("계좌");
+  if (state.deliveryConnected) connected.push("배달플랫폼"); else notConnected.push("배달플랫폼");
 
   if (state.isFullyConnected) return `모든 데이터가 연동되어 있습니다: ${connected.join(", ")}.`;
   return `연동: ${connected.join(", ")}. 미연동: ${notConnected.join(", ")}.`;
