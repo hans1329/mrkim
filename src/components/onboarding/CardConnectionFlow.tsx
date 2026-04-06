@@ -154,15 +154,11 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
 
       if (useCertLogin && certFile) {
         // 인증서 파일을 Base64로 변환
-        const certBase64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result as string;
-            resolve(result.split(",")[1]); // data:...;base64, 부분 제거
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(certFile);
-        });
+        const certBase64 = await fileToBase64(certFile);
+        let keyBase64: string | undefined;
+        if (keyFile) {
+          keyBase64 = await fileToBase64(keyFile);
+        }
 
         newConnectedId = await registerCardAccount(
           selectedCompany,
@@ -172,6 +168,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
             loginType: "0",
             certFile: certBase64,
             certPassword: certPassword,
+            keyFile: keyBase64,
           }
         );
       } else {
