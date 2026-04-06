@@ -100,6 +100,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   // 로그인 방식: 기본 아이디/비번, 인증서는 사용자 선택
   const [useCertLogin, setUseCertLogin] = useState(false);
   const isCertBank = useCertLogin;
+  const isDerMode = certFile?.name.toLowerCase().endsWith(".der");
 
   const { isLoading, registerBankAccount, getAccounts } = useAccountConnection();
   const bankSync = useBankSync();
@@ -123,8 +124,9 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const handleAuth = async () => {
     if (!agreedTerms || !selectedBank) return;
 
-    // 인증서 은행: certFile + certPassword 필요
+    // 인증서 은행: certFile + certPassword 필요 (DER 모드: keyFile도 필요)
     if (isCertBank && (!certFile || !certPassword)) return;
+    if (isCertBank && isDerMode && !keyFile) return;
     // 아이디 은행: id + password 필요
     if (!isCertBank && (!credentials.id || !credentials.password)) return;
     
@@ -137,11 +139,15 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
       if (isCertBank && certFile) {
         // 인증서 파일을 Base64로 변환
         const certBase64 = await fileToBase64(certFile);
+        let keyBase64: string | undefined;
+        if (keyFile) {
+          keyBase64 = await fileToBase64(keyFile);
+        }
         newConnectedId = await registerBankAccount(
           selectedBank,
           "", // id는 인증서 방식에선 불필요
           certPassword,
-          { loginType: "2", certFile: certBase64, certPassword }
+          { loginType: "2", certFile: certBase64, certPassword, keyFile: keyBase64 }
         );
       } else {
         newConnectedId = await registerBankAccount(
