@@ -360,71 +360,50 @@ export default function Settings() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Building2 className="h-4 w-4 text-primary" />
+            {(() => {
+              const isHometaxConnected = connectorInstances.some(i => 
+                (i.connector_id === "codef_hometax_tax_invoice" || i.connector_id === "codef_hometax_cash_receipt") && i.status === "connected"
+              );
+              const isCardConnected = connectorInstances.some(i => 
+                (i.connector_id === "codef_card_sales" || i.connector_id === "codef_card_usage") && i.status === "connected"
+              );
+              const isAccountConnected = connectorInstances.some(i => 
+                i.connector_id === "codef_bank_account" && i.status === "connected"
+              );
+
+              const items = [
+                { label: "국세청 (홈택스)", desc: "세금계산서, 매출 데이터", icon: Building2, connected: isHometaxConnected, drawer: "hometax" as const },
+                { label: "카드", desc: "지출 내역 자동 분류", icon: CreditCard, connected: isCardConnected, drawer: "card" as const },
+                { label: "계좌", desc: "입출금 내역 실시간 확인", icon: Landmark, connected: isAccountConnected, drawer: "account" as const },
+              ];
+
+              return items.map((item, idx) => (
+                <div key={item.drawer}>
+                  {idx > 0 && <Separator className="my-4" />}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <item.icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{item.label}</p>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
+                    </div>
+                    {item.connected ? (
+                      <span className="flex items-center gap-1 text-green-500 text-xs">
+                        <CheckCircle2 className="h-3 w-3" />
+                        연결됨
+                      </span>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={() => openDrawer(item.drawer)}>
+                        연결
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">국세청 (홈택스)</p>
-                  <p className="text-xs text-muted-foreground">세금계산서, 매출 데이터</p>
-                </div>
-              </div>
-              {profile?.hometax_connected ? (
-                <span className="flex items-center gap-1 text-green-500 text-xs">
-                  <CheckCircle2 className="h-3 w-3" />
-                  연결됨
-                </span>
-              ) : (
-                <Button variant="outline" size="sm" onClick={() => openDrawer("hometax")}>
-                  연결
-                </Button>
-              )}
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <CreditCard className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">카드</p>
-                  <p className="text-xs text-muted-foreground">지출 내역 자동 분류</p>
-                </div>
-              </div>
-              {profile?.card_connected ? (
-                <span className="flex items-center gap-1 text-green-500 text-xs">
-                  <CheckCircle2 className="h-3 w-3" />
-                  연결됨
-                </span>
-              ) : (
-                <Button variant="outline" size="sm" onClick={() => openDrawer("card")}>
-                  연결
-                </Button>
-              )}
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Landmark className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">계좌</p>
-                  <p className="text-xs text-muted-foreground">입출금 내역 실시간 확인</p>
-                </div>
-              </div>
-              {profile?.account_connected ? (
-                <span className="flex items-center gap-1 text-green-500 text-xs">
-                  <CheckCircle2 className="h-3 w-3" />
-                  연결됨
-                </span>
-              ) : (
-                <Button variant="outline" size="sm" onClick={() => openDrawer("account")}>
-                  연결
-                </Button>
-              )}
-            </div>
+              ));
+            })()}
             <Separator />
             {/* 쿠팡이츠 */}
             <div className="flex items-center justify-between">
