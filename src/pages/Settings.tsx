@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +49,6 @@ import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
 export default function Settings() {
   const navigate = useNavigate();
-  const { openDrawer } = useConnectionDrawer();
   const { theme, setTheme } = useTheme();
   const { profile, loading, updating, updateProfile } = useProfile();
   
