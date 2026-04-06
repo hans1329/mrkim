@@ -155,13 +155,15 @@ export function ConnectorStatusCard() {
     );
   }
 
-  const connectedCount = connectors?.filter((c) => {
+  // 여신금융협회(codef_card_sales)는 사용하지 않으므로 필터링
+  const filteredConnectors = connectors?.filter(c => c.id !== "codef_card_sales");
+
+  const connectedCount = filteredConnectors?.filter((c) => {
     if (c.instance?.status === "connected") return true;
-    // fallback: profiles 플래그 확인
     if (!c.instance && profileFallback[c.category]) return true;
     return false;
   }).length || 0;
-  const totalCount = connectors?.length || 0;
+  const totalCount = filteredConnectors?.length || 0;
 
   return (
     <Card>

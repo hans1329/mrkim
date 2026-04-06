@@ -42,15 +42,10 @@ export function ConnectionDrawerProvider({ children }: { children: ReactNode }) 
     };
   }, [connectorInstances, hometaxConnected, accountConnected]);
 
-  const openDrawer = useCallback(async (t?: ConnectionType) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate("/login");
-      return;
-    }
+  const openDrawer = useCallback((t?: ConnectionType) => {
     setType(t || null);
     setOpen(true);
-  }, [navigate]);
+  }, []);
 
   const closeDrawer = useCallback(() => {
     setOpen(false);
