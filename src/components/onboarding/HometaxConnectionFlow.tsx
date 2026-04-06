@@ -13,6 +13,7 @@ import {
   FileCheck,
   Eye,
   EyeOff,
+  X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -589,7 +590,7 @@ export function HometaxConnectionFlow({
                           인증서 등록 완료 · {formatFileSize(certFile.size)}
                         </p>
                       </div>
-                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setCertFile(null); setKeyFile(null); setCertPassword(""); }} className="p-1 rounded-full hover:bg-muted"><X className="h-4 w-4 text-muted-foreground" /></button>
                     </>
                   ) : (
                     <div className="flex items-center justify-center w-full py-4 gap-2">
@@ -620,16 +621,16 @@ export function HometaxConnectionFlow({
                     )}
                   >
                     {keyFile ? (
-                      <>
-                        <FileCheck className="h-5 w-5 text-primary shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate">{keyFile.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            개인키 등록 완료 · {formatFileSize(keyFile.size)}
-                          </p>
-                        </div>
-                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                      </>
+                    <>
+                      <FileCheck className="h-5 w-5 text-primary shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{keyFile.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          개인키 등록 완료 · {formatFileSize(keyFile.size)}
+                        </p>
+                      </div>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setKeyFile(null); }} className="p-1 rounded-full hover:bg-muted"><X className="h-4 w-4 text-muted-foreground" /></button>
+                    </>
                     ) : (
                       <div className="flex items-center justify-center w-full py-4 gap-2">
                         <Upload className="h-4 w-4 text-muted-foreground" />

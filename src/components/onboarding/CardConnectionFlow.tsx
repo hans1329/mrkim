@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Upload,
   FileKey,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCardConnection } from "@/hooks/useCardConnection";
@@ -430,7 +431,8 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                       {certFile ? (
                         <>
                           <FileKey className="h-4 w-4 text-primary" />
-                          <span className="truncate text-sm">{certFile.name}</span>
+                          <span className="truncate text-sm flex-1">{certFile.name}</span>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setCertFile(null); setKeyFile(null); setCertPassword(""); }} className="p-0.5 rounded-full hover:bg-muted"><X className="h-3.5 w-3.5 text-muted-foreground" /></button>
                         </>
                       ) : (
                         <>
@@ -458,7 +460,8 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
                         {keyFile ? (
                           <>
                             <FileKey className="h-4 w-4 text-primary" />
-                            <span className="truncate text-sm">{keyFile.name}</span>
+                            <span className="truncate text-sm flex-1">{keyFile.name}</span>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setKeyFile(null); }} className="p-0.5 rounded-full hover:bg-muted"><X className="h-3.5 w-3.5 text-muted-foreground" /></button>
                           </>
                         ) : (
                           <>

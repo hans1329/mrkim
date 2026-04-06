@@ -19,7 +19,8 @@ import {
   AlertCircle,
   Wallet,
   Upload,
-  FileKey
+  FileKey,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -430,7 +431,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
                               인증서 등록 완료 · {(certFile.size / 1024).toFixed(1)} KB
                             </p>
                           </div>
-                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setCertFile(null); setKeyFile(null); setCertPassword(""); }} className="p-1 rounded-full hover:bg-muted"><X className="h-4 w-4 text-muted-foreground" /></button>
                         </>
                       ) : (
                         <>
@@ -467,16 +468,16 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
                         )}
                       >
                         {keyFile ? (
-                          <>
-                            <FileKey className="h-5 w-5 text-primary shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium truncate">{keyFile.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                개인키 등록 완료 · {(keyFile.size / 1024).toFixed(1)} KB
-                              </p>
-                            </div>
-                            <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                          </>
+                        <>
+                          <FileKey className="h-5 w-5 text-primary shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{keyFile.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              개인키 등록 완료 · {(keyFile.size / 1024).toFixed(1)} KB
+                            </p>
+                          </div>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setKeyFile(null); }} className="p-1 rounded-full hover:bg-muted"><X className="h-4 w-4 text-muted-foreground" /></button>
+                        </>
                         ) : (
                           <>
                             <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
