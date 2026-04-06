@@ -32,9 +32,11 @@ const CATEGORY_TO_STEP: Record<string, string> = {
 
 // connector_id → ConnectionDrawer type 매핑
 const CONNECTOR_TO_DRAWER_TYPE: Record<string, "hometax" | "card" | "account" | "coupangeats" | "baemin"> = {
-  codef_hometax: "hometax",
-  codef_bank: "account",
-  codef_card: "card",
+  codef_hometax_tax_invoice: "hometax",
+  codef_hometax_cash_receipt: "hometax",
+  codef_bank_account: "account",
+  codef_card_sales: "card",
+  codef_card_usage: "card",
   hyphen_baemin: "baemin",
   hyphen_coupangeats: "coupangeats",
 };
