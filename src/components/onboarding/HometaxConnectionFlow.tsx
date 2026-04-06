@@ -566,7 +566,7 @@ export function HometaxConnectionFlow({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".pfx,.p12"
+                  accept=".pfx,.p12,.der"
                   onChange={handleFileChange}
                   className="hidden"
                 />
@@ -592,11 +592,51 @@ export function HometaxConnectionFlow({
                   ) : (
                     <div className="flex items-center justify-center w-full py-4 gap-2">
                       <Upload className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">공동인증서 파일 업로드 (.pfx, .p12)</p>
+                      <p className="text-sm text-muted-foreground">인증서 파일 (.pfx, .p12 또는 signCert.der)</p>
                     </div>
                   )}
                 </button>
               </div>
+
+              {/* DER 모드일 때 key 파일 업로드 */}
+              {isDerMode && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">개인키 파일</label>
+                  <input
+                    ref={keyFileInputRef}
+                    type="file"
+                    accept=".key"
+                    onChange={handleKeyFileChange}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => keyFileInputRef.current?.click()}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed transition-all text-left",
+                      keyFile ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    {keyFile ? (
+                      <>
+                        <FileCheck className="h-5 w-5 text-primary shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{keyFile.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            개인키 등록 완료 · {formatFileSize(keyFile.size)}
+                          </p>
+                        </div>
+                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center w-full py-4 gap-2">
+                        <Upload className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">signPri.key 파일 업로드</p>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              )}
 
               {/* 인증서 비밀번호 */}
               <div className="space-y-2">
