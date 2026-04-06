@@ -92,7 +92,24 @@ export function ConnectorStatusCard() {
         body: { connectorId },
       });
       if (error) throw error;
-      toast.success("데이터 재수집을 시작했습니다");
+
+      if (data?.success) {
+        const results = data.results || [];
+        const successResults = results.filter((r: any) => r.success);
+        const failedResults = results.filter((r: any) => !r.success);
+        const totalSaved = successResults.reduce((sum: number, r: any) => sum + (r.recordsSaved || 0), 0);
+
+        if (failedResults.length > 0 && successResults.length === 0) {
+          toast.error(`데이터 수집 실패: ${failedResults[0]?.error || "알 수 없는 오류"}`);
+        } else if (totalSaved > 0) {
+          toast.success(`${totalSaved}건의 데이터를 수집했습니다`);
+        } else {
+          toast.info("새로운 데이터가 없습니다");
+        }
+      } else {
+        toast.error(data?.error || "데이터 재수집에 실패했습니다");
+      }
+
       queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
       queryClient.invalidateQueries({ queryKey: ["connector-status"] });
     } catch (err) {
