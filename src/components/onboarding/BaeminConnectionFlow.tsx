@@ -24,6 +24,16 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
   const [storeCount, setStoreCount] = useState(0);
   const { connectService } = useConnection();
 
+  const hasHyphenError = (payload: any) => {
+    const result = payload?.data;
+    return !payload?.success || result?.common?.errYn === "Y" || result?.data?.errYn === "Y";
+  };
+
+  const getHyphenErrorMessage = (payload: any, fallback: string) => {
+    const result = payload?.data;
+    return result?.data?.errMsg || result?.common?.errMsg || payload?.error || fallback;
+  };
+
   const handleVerify = async () => {
     if (!bmUserId.trim() || !bmUserPw.trim()) {
       setError("아이디와 비밀번호를 입력해주세요.");
@@ -45,10 +55,11 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
         }
       );
 
-      const verifyResult = verifyData?.data?.data;
-      if (verifyError || !verifyData?.success || verifyResult?.errYn === "Y") {
-        throw new Error(verifyResult?.errMsg || verifyData?.error || "계정 검증에 실패했습니다.");
+      if (verifyError || hasHyphenError(verifyData)) {
+        throw new Error(getHyphenErrorMessage(verifyData, "계정 검증에 실패했습니다."));
       }
+
+      let stores: Array<Record<string, unknown>> = [];
 
       const { data: storeData, error: storeError } = await supabase.functions.invoke(
         "hyphen-baemin",
@@ -61,14 +72,13 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
         }
       );
 
-      const storeResult = storeData?.data?.data;
-      if (storeError || !storeData?.success || storeResult?.errYn === "Y") {
-        throw new Error(storeResult?.errMsg || storeData?.error || "매장 정보를 확인하지 못했습니다.");
-      }
-
-      const stores = Array.isArray(storeResult?.storeList) ? storeResult.storeList : [];
-      if (stores.length === 0) {
-        throw new Error("배달의민족 계정을 확인할 수 없습니다. 아이디/비밀번호를 다시 확인해주세요.");
+      if (storeError) {
+        console.warn("Baemin store info warning:", storeError);
+      } else if (hasHyphenError(storeData)) {
+        console.warn("Baemin store info warning:", getHyphenErrorMessage(storeData, "매장 정보를 확인하지 못했습니다."));
+      } else {
+        const storeResult = storeData?.data?.data;
+        stores = Array.isArray(storeResult?.storeList) ? storeResult.storeList : [];
       }
 
       setStoreCount(stores.length);
@@ -82,7 +92,6 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
         throw new Error("연동 정보를 저장하지 못했습니다. 다시 시도해주세요.");
       }
 
-      // 초기 데이터 동기화 트리거 (백그라운드)
       supabase.functions.invoke("sync-orchestrator", {
         body: { connectorId: "hyphen_baemin" },
       }).catch(err => console.error("Initial baemin sync error:", err));
