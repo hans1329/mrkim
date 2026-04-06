@@ -83,7 +83,7 @@ interface ConnectionStatusBannerProps {
 export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: ConnectionStatusBannerProps) {
   const navigate = useNavigate();
   const { openDrawer } = useConnectionDrawer();
-  const { profile, profileLoading: loading, isLoggedIn } = useConnection();
+  const { profile, profileLoading: loading, isLoggedIn, hometaxConnected, cardConnected, accountConnected } = useConnection();
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const secretaryName = profile?.secretary_name || "김비서";
