@@ -78,13 +78,8 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
         }
       );
 
-      if (verifyError) {
-        throw new Error("API 호출에 실패했습니다. 다시 시도해주세요.");
-      }
-
-      const verifyStatus = getVerifyStatus(verifyData);
-      if (!verifyStatus.ok) {
-        throw new Error(verifyStatus.message);
+      if (verifyError || hasHyphenError(verifyData)) {
+        throw new Error(getHyphenErrorMessage(verifyData, "계정 검증에 실패했습니다. 아이디/비밀번호를 확인해주세요."));
       }
 
       // 매장 수 확인 (실패해도 연동은 진행)
