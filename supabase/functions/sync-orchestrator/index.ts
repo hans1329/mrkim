@@ -1294,10 +1294,22 @@ async function syncBaemin(
   }
   const endDate = now.toISOString().slice(0, 10).replace(/-/g, "");
 
-  // 1. 가게 정보 동기화
+  // 1. 가게 정보 동기화 (store_info → my_store fallback)
   try {
     const storeRes = await callHyphenBaemin("store_info", bmUserId, bmUserPw);
-    const storeList = storeRes.data?.storeList || [];
+    let storeList = storeRes.data?.storeList || [];
+
+    // store_info가 null이면 my_store API로 fallback
+    if (storeList.length === 0) {
+      console.log("[baemin] store_info returned empty, trying my_store fallback...");
+      try {
+        const myStoreRes = await callHyphenBaemin("my_store", bmUserId, bmUserPw);
+        storeList = myStoreRes.data?.storeList || [];
+        console.log(`[baemin] my_store returned ${storeList.length} stores`);
+      } catch (fallbackErr) {
+        console.error("[baemin] my_store fallback failed:", fallbackErr);
+      }
+    }
 
     for (const store of storeList) {
       await supabase.from("delivery_stores").upsert(
