@@ -212,14 +212,11 @@ export function ConnectorStatusCard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{connector.name}</p>
-                  {connectedInstanceCount > 1 && (
-                    <p className="text-[10px] text-muted-foreground">{connectedInstanceCount}개 연동됨</p>
-                  )}
                 </div>
                 {isConnected ? (
                   <Badge variant={statusInfo!.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
                     {StatusIcon && <StatusIcon className="h-2.5 w-2.5" />}
-                    {statusInfo!.label}
+                    {connectedInstanceCount > 1 ? `${connectedInstanceCount}개 연동됨` : statusInfo!.label}
                   </Badge>
                 ) : statusInfo ? (
                   <Badge variant={statusInfo.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
