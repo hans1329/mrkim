@@ -107,7 +107,19 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
 
       const hasVerifiedAccess = successfulProbes.some(({ data }) => hasMeaningfulProbeData(data));
       if (!hasVerifiedAccess) {
-        throw new Error("배달의민족 계정을 확인할 수 없습니다. 아이디/비밀번호를 다시 확인해주세요.");
+        const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke(
+          "hyphen-baemin-credential-check",
+          {
+            body: {
+              userId: bmUserId,
+              userPw: bmUserPw,
+            },
+          }
+        );
+
+        if (fallbackError || !fallbackData?.success || !fallbackData?.matchesExistingCredentials) {
+          throw new Error("배달의민족 계정을 확인할 수 없습니다. 아이디/비밀번호를 다시 확인해주세요.");
+        }
       }
 
       const stores = successfulProbes.flatMap(({ data }) => getStoreListFromPayload(data));
