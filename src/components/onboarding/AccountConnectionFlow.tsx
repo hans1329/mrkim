@@ -84,6 +84,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const [credentials, setCredentials] = useState({ id: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [certFile, setCertFile] = useState<File | null>(null);
+  const [keyFile, setKeyFile] = useState<File | null>(null); // signPri.key
   const [certPassword, setCertPassword] = useState("");
   const [showCertPassword, setShowCertPassword] = useState(false);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
@@ -94,6 +95,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const [currentConnectedId, setCurrentConnectedId] = useState<string | null>(null);
   const [showReconnectDialog, setShowReconnectDialog] = useState(false);
   const certFileInputRef = useRef<HTMLInputElement>(null);
+  const keyFileInputRef = useRef<HTMLInputElement>(null);
 
   // 로그인 방식: 기본 아이디/비번, 인증서는 사용자 선택
   const [useCertLogin, setUseCertLogin] = useState(false);
