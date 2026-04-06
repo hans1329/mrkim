@@ -44,18 +44,19 @@ interface CardInfo {
 
 interface CertOptions {
   loginType: "0";
-  certFile: string; // PFX Base64 또는 signCert.der Base64
+  certFile: string;
   certPassword: string;
-  keyFile?: string; // Base64 signPri.key (DER+KEY 분리 방식)
+  keyFile?: string;
+  clientType?: "P" | "B";
 }
 
 interface UseCardConnectionReturn {
   isLoading: boolean;
   connectedId: string | null;
   cards: CardInfo[];
-  registerCardAccount: (cardCompanyId: string, loginId: string, password: string, certOptions?: CertOptions) => Promise<string | null>;
-  addCardAccount: (cardCompanyId: string, loginId: string, password: string) => Promise<boolean>;
-  getCards: (cardCompanyId: string, overrideConnectedId?: string) => Promise<CardInfo[]>;
+  registerCardAccount: (cardCompanyId: string, loginId: string, password: string, certOptions?: CertOptions, clientType?: "P" | "B") => Promise<string | null>;
+  addCardAccount: (cardCompanyId: string, loginId: string, password: string, clientType?: "P" | "B") => Promise<boolean>;
+  getCards: (cardCompanyId: string, overrideConnectedId?: string, clientType?: "P" | "B") => Promise<CardInfo[]>;
 }
 
 export function useCardConnection(): UseCardConnectionReturn {
@@ -69,7 +70,8 @@ export function useCardConnection(): UseCardConnectionReturn {
     cardCompanyId: string, 
     loginId: string, 
     password: string,
-    certOptions?: CertOptions
+    certOptions?: CertOptions,
+    clientType?: "P" | "B",
   ): Promise<string | null> => {
     setIsLoading(true);
     try {
@@ -82,6 +84,7 @@ export function useCardConnection(): UseCardConnectionReturn {
       const requestBody: Record<string, unknown> = {
         action: "register",
         cardCompanyId,
+        clientType: certOptions?.clientType || clientType || "P",
       };
 
       if (certOptions) {
@@ -152,7 +155,8 @@ export function useCardConnection(): UseCardConnectionReturn {
   const addCardAccount = async (
     cardCompanyId: string,
     loginId: string,
-    password: string
+    password: string,
+    clientType?: "P" | "B",
   ): Promise<boolean> => {
     if (!connectedId) {
       toast.error("먼저 카드사를 등록해주세요.");
@@ -168,6 +172,7 @@ export function useCardConnection(): UseCardConnectionReturn {
           cardCompanyId,
           loginId,
           password,
+          clientType: clientType || "P",
         },
       });
 
@@ -194,7 +199,7 @@ export function useCardConnection(): UseCardConnectionReturn {
   };
 
   // 보유 카드 목록 조회
-  const getCards = async (cardCompanyId: string, overrideConnectedId?: string): Promise<CardInfo[]> => {
+  const getCards = async (cardCompanyId: string, overrideConnectedId?: string, clientType?: "P" | "B"): Promise<CardInfo[]> => {
     const idToUse = overrideConnectedId || connectedId;
     
     if (!idToUse) {
@@ -209,6 +214,7 @@ export function useCardConnection(): UseCardConnectionReturn {
           action: "getCards",
           connectedId: idToUse,
           cardCompanyId,
+          clientType: clientType || "P",
         },
       });
 
