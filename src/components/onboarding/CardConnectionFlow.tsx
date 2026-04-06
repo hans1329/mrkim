@@ -155,6 +155,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
 
     if (useCertLogin) {
       if (!certFile || !certPassword) return;
+      if (isDerMode && !keyFile) return; // DER 모드에서는 key 파일도 필요
     } else {
       if (!credentials.id || !credentials.password) return;
     }
