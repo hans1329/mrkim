@@ -136,7 +136,9 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { action, cardCompanyId, loginId, loginType, certFile, certPassword: rawCertPassword, password, connectedId, startDate, endDate, cardNo, keyFile } = body;
+    const { action, cardCompanyId, loginId, loginType, certFile, certPassword: rawCertPassword, password, connectedId, startDate, endDate, cardNo, keyFile, clientType: rawClientType } = body;
+    const clientType = (rawClientType === "B") ? "B" : "P";
+    console.log("Client type:", clientType);
 
     // 1. 토큰 발급
     console.log("Getting access token...");
@@ -161,15 +163,15 @@ serve(async (req) => {
     // 액션에 따른 분기
     if (action === "register") {
       if (loginType === "0") {
-        return await handleRegisterWithCert(accessToken, publicKey, cardCompanyId, certFile, rawCertPassword, keyFile);
+        return await handleRegisterWithCert(accessToken, publicKey, cardCompanyId, certFile, rawCertPassword, keyFile, clientType);
       }
-      return await handleRegister(accessToken, publicKey, cardCompanyId, loginId, password);
+      return await handleRegister(accessToken, publicKey, cardCompanyId, loginId, password, clientType);
     } else if (action === "addAccount") {
-      return await handleAddAccount(accessToken, publicKey, connectedId, cardCompanyId, loginId, password);
+      return await handleAddAccount(accessToken, publicKey, connectedId, cardCompanyId, loginId, password, clientType);
     } else if (action === "getCards") {
-      return await handleGetCards(accessToken, connectedId, cardCompanyId);
+      return await handleGetCards(accessToken, connectedId, cardCompanyId, clientType);
     } else if (action === "getTransactions") {
-      return await handleGetTransactions(accessToken, connectedId, cardCompanyId, startDate, endDate, cardNo);
+      return await handleGetTransactions(accessToken, connectedId, cardCompanyId, startDate, endDate, cardNo, clientType);
     } else {
       return new Response(
         JSON.stringify({ success: false, error: "알 수 없는 action입니다." }),
@@ -197,6 +199,7 @@ async function handleRegisterWithCert(
   certFile: string,
   certPassword: string,
   keyFile?: string,
+  clientType: string = "P",
 ): Promise<Response> {
   const organizationCode = CARD_ORGANIZATION_CODES[cardCompanyId];
   if (!organizationCode) {
@@ -222,7 +225,7 @@ async function handleRegisterWithCert(
   const accountEntry: Record<string, unknown> = {
     countryCode: "KR",
     businessType: "CD",
-    clientType: "P",
+    clientType,
     organization: organizationCode,
     loginType: "0",
     password: encryptedPassword,
@@ -292,7 +295,8 @@ async function handleRegister(
   publicKey: string,
   cardCompanyId: string,
   loginId: string,
-  password: string
+  password: string,
+  clientType: string = "P",
 ): Promise<Response> {
   const organizationCode = CARD_ORGANIZATION_CODES[cardCompanyId];
   if (!organizationCode) {
@@ -312,9 +316,9 @@ async function handleRegister(
       {
         countryCode: "KR",
         businessType: "CD",
-        clientType: "P",
+        clientType,
         organization: organizationCode,
-        loginType: "1",      // ID/PW 로그인
+        loginType: "1",
         id: loginId,
         password: encryptedPassword,
       }
@@ -371,7 +375,8 @@ async function handleAddAccount(
   connectedId: string,
   cardCompanyId: string,
   loginId: string,
-  password: string
+  password: string,
+  clientType: string = "P",
 ): Promise<Response> {
   const organizationCode = CARD_ORGANIZATION_CODES[cardCompanyId];
   if (!organizationCode) {
@@ -389,7 +394,7 @@ async function handleAddAccount(
       {
         countryCode: "KR",
         businessType: "CD",
-        clientType: "P",
+        clientType,
         organization: organizationCode,
         loginType: "1",
         id: loginId,
@@ -434,7 +439,8 @@ async function handleAddAccount(
 async function handleGetCards(
   accessToken: string,
   connectedId: string,
-  cardCompanyId: string
+  cardCompanyId: string,
+  clientType: string = "P",
 ): Promise<Response> {
   const organizationCode = CARD_ORGANIZATION_CODES[cardCompanyId];
   if (!organizationCode) {
@@ -453,7 +459,8 @@ async function handleGetCards(
 
   console.log("Getting cards for connectedId:", connectedId, "organization:", organizationCode);
 
-  const response = await fetch(`${CODEF_API_URL}/v1/kr/card/p/account/card-list`, {
+  const clientPath = clientType === "B" ? "b" : "p";
+  const response = await fetch(`${CODEF_API_URL}/v1/kr/card/${clientPath}/account/card-list`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -529,7 +536,8 @@ async function handleGetTransactions(
   cardCompanyId: string,
   startDate?: string,
   endDate?: string,
-  cardNo?: string
+  cardNo?: string,
+  clientType: string = "P",
 ): Promise<Response> {
   const organizationCode = CARD_ORGANIZATION_CODES[cardCompanyId];
   if (!organizationCode) {
@@ -554,7 +562,8 @@ async function handleGetTransactions(
   const normalizedStart = startDate?.replace(/-/g, "") || defaultStartDate;
   const normalizedEnd = endDate?.replace(/-/g, "") || defaultEndDate;
 
-  const approvalApiPath = `${CODEF_API_URL}/v1/kr/card/p/account/approval-list`;
+  const clientPath = clientType === "B" ? "b" : "p";
+  const approvalApiPath = `${CODEF_API_URL}/v1/kr/card/${clientPath}/account/approval-list`;
 
   const buildApprovalRequestBody = (cardNoValue: string) => ({
     connectedId,
@@ -608,7 +617,7 @@ async function handleGetTransactions(
         inquiryType: "0",
       };
 
-      const resp = await fetch(`${CODEF_API_URL}/v1/kr/card/p/account/card-list`, {
+      const resp = await fetch(`${CODEF_API_URL}/v1/kr/card/${clientPath}/account/card-list`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
