@@ -41,6 +41,7 @@ export interface ConnectionState {
   hometaxConnected: boolean;
   cardConnected: boolean;
   accountConnected: boolean;
+  deliveryConnected: boolean;
   
   // 커넥터 인스턴스 원본
   connectorInstances: ConnectorInstance[];
@@ -137,6 +138,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       hometax: connected.has("hometax"),
       card: connected.has("card"),
       account: connected.has("account"),
+      delivery: connected.has("delivery"),
     };
   }, [connectorInstances]);
 
@@ -163,13 +165,14 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   }, [updateProfileCache]);
 
   // profiles 플래그 동기화 헬퍼
-  const syncProfileFlags = useCallback(async (category: "hometax" | "card" | "account", connected: boolean) => {
-    const flagMap = {
+  const syncProfileFlags = useCallback(async (category: "hometax" | "card" | "account" | "delivery", connected: boolean) => {
+    const flagMap: Record<string, { connected: string; connectedAt: string } | undefined> = {
       hometax: { connected: "hometax_connected", connectedAt: "hometax_connected_at" },
       card: { connected: "card_connected", connectedAt: "card_connected_at" },
       account: { connected: "account_connected", connectedAt: "account_connected_at" },
     };
     const flags = flagMap[category];
+    if (!flags) return; // delivery 등은 profiles 플래그 없음
     const updates: Record<string, unknown> = {
       [flags.connected]: connected,
       [flags.connectedAt]: connected ? new Date().toISOString() : null,
@@ -315,11 +318,12 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   const hometaxConnected = derivedStatus.hometax;
   const cardConnected = derivedStatus.card;
   const accountConnected = derivedStatus.account;
+  const deliveryConnected = derivedStatus.delivery;
   
-  const isAnyConnected = hometaxConnected || cardConnected || accountConnected;
+  const isAnyConnected = hometaxConnected || cardConnected || accountConnected || deliveryConnected;
   const isFullyConnected = hometaxConnected && cardConnected && accountConnected;
   const isTransactionConnected = cardConnected || accountConnected;
-  const connectedCount = [hometaxConnected, cardConnected, accountConnected].filter(Boolean).length;
+  const connectedCount = [hometaxConnected, cardConnected, accountConnected, deliveryConnected].filter(Boolean).length;
   const isLoggedInButNotConnected = isLoggedIn && !isAnyConnected && !profileLoading;
 
   const value: ConnectionState = {
