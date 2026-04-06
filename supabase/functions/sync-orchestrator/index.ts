@@ -53,12 +53,14 @@ serve(async (req) => {
 
   try {
     let targetInstanceId: string | null = null;
+    let targetConnectorId: string | null = null;
 
-    // POST body에서 특정 인스턴스 ID 확인
+    // POST body에서 특정 인스턴스 ID 또는 커넥터 ID 확인
     if (req.method === "POST") {
       try {
         const body = await req.json();
         targetInstanceId = body.instanceId || null;
+        targetConnectorId = body.connectorId || null;
       } catch {
         // body 없을 수 있음 (cron 호출)
       }
