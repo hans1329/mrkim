@@ -170,7 +170,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
     });
   };
 
-  // 계좌 선택 후 거래 내역 자동 동기화
+  // 계좌 선택 후 connected_accounts 저장 + 거래 내역 자동 동기화
   const handleSelectAccounts = async () => {
     if (selectedAccounts.length === 0 || !currentConnectedId || !selectedBank) {
       setStep("complete");
@@ -181,6 +181,37 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
     setSyncProgress({ synced: 0, total: selectedAccounts.length });
     
     const bankName = selectedBankData?.name || "은행";
+    const bankCode = BANK_CODES[selectedBank] || selectedBank;
+    
+    // 선택된 계좌를 connected_accounts 테이블에 저장 (sync-orchestrator용)
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        const accountRows = selectedAccounts.map((accountNo) => {
+          const accountData = fetchedAccounts.find(a => a.accountNo === accountNo);
+          return {
+            user_id: userData.user!.id,
+            bank_code: bankCode,
+            bank_name: bankName,
+            account_number: accountNo,
+            account_type: accountData?.accountType || "unknown",
+            account_holder: accountData?.holder || null,
+            codef_connected: true,
+            is_active: true,
+          };
+        });
+        
+        const { error: upsertError } = await supabase
+          .from("connected_accounts")
+          .upsert(accountRows, { onConflict: "user_id,account_number" });
+        
+        if (upsertError) {
+          console.error("Failed to save connected accounts:", upsertError);
+        }
+      }
+    } catch (err) {
+      console.error("Error saving connected accounts:", err);
+    }
     
     // 선택된 각 계좌에 대해 거래 내역 동기화
     for (let i = 0; i < selectedAccounts.length; i++) {
