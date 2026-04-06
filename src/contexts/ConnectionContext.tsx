@@ -329,7 +329,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   const value: ConnectionState = {
     authStatus, isLoggedIn, isLoggedOut, userId,
     profile, profileLoading,
-    hometaxConnected, cardConnected, accountConnected,
+    hometaxConnected, cardConnected, accountConnected, deliveryConnected,
     connectorInstances,
     isAnyConnected, isFullyConnected, isTransactionConnected, connectedCount,
     isLoggedInButNotConnected,
