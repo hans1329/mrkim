@@ -106,9 +106,9 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
   };
 
   const connections = [
-    { key: "hometax", label: "국세청", connected: profile?.hometax_connected ?? false },
-    { key: "card", label: "카드", connected: profile?.card_connected ?? false },
-    { key: "account", label: "계좌", connected: profile?.account_connected ?? false },
+    { key: "hometax", label: "국세청", connected: hometaxConnected },
+    { key: "card", label: "카드", connected: cardConnected },
+    { key: "account", label: "계좌", connected: accountConnected },
   ];
   
   const connectedCount = connections.filter(c => c.connected).length;
