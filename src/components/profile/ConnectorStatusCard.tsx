@@ -259,7 +259,7 @@ export function ConnectorStatusCard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-6 px-2 text-[10px]"
+                    className="h-7 w-full text-xs"
                     onClick={() => {
                       const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
                       if (drawerType) openDrawer(drawerType);
