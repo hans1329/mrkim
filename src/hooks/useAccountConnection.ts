@@ -14,18 +14,19 @@ interface AccountInfo {
 
 interface CertOptions {
   loginType: "2";
-  certFile: string; // Base64
+  certFile: string;
   certPassword: string;
-  keyFile?: string; // Base64 signPri.key (DER+KEY 분리 방식)
+  keyFile?: string;
+  clientType?: "P" | "B";
 }
 
 interface UseAccountConnectionReturn {
   isLoading: boolean;
   connectedId: string | null;
   accounts: AccountInfo[];
-  registerBankAccount: (bankId: string, loginId: string, password: string, certOptions?: CertOptions) => Promise<string | null>;
-  addBankAccount: (bankId: string, loginId: string, password: string) => Promise<boolean>;
-  getAccounts: (bankId: string, overrideConnectedId?: string) => Promise<AccountInfo[]>;
+  registerBankAccount: (bankId: string, loginId: string, password: string, certOptions?: CertOptions, clientType?: "P" | "B") => Promise<string | null>;
+  addBankAccount: (bankId: string, loginId: string, password: string, clientType?: "P" | "B") => Promise<boolean>;
+  getAccounts: (bankId: string, overrideConnectedId?: string, clientType?: "P" | "B") => Promise<AccountInfo[]>;
 }
 
 export function useAccountConnection(): UseAccountConnectionReturn {
@@ -39,7 +40,8 @@ export function useAccountConnection(): UseAccountConnectionReturn {
     bankId: string, 
     loginId: string, 
     password: string,
-    certOptions?: CertOptions
+    certOptions?: CertOptions,
+    clientType?: "P" | "B",
   ): Promise<string | null> => {
     setIsLoading(true);
     try {
@@ -52,6 +54,7 @@ export function useAccountConnection(): UseAccountConnectionReturn {
       const requestBody: Record<string, unknown> = {
         action: "register",
         bankId,
+        clientType: certOptions?.clientType || clientType || "P",
       };
 
       if (certOptions) {
@@ -116,7 +119,8 @@ export function useAccountConnection(): UseAccountConnectionReturn {
   const addBankAccount = async (
     bankId: string,
     loginId: string,
-    password: string
+    password: string,
+    clientType?: "P" | "B",
   ): Promise<boolean> => {
     if (!connectedId) {
       toast.error("먼저 은행을 등록해주세요.");
@@ -132,6 +136,7 @@ export function useAccountConnection(): UseAccountConnectionReturn {
           bankId,
           loginId,
           password,
+          clientType: clientType || "P",
         },
       });
 
@@ -158,7 +163,7 @@ export function useAccountConnection(): UseAccountConnectionReturn {
   };
 
   // 보유 계좌 목록 조회
-  const getAccounts = async (bankId: string, overrideConnectedId?: string): Promise<AccountInfo[]> => {
+  const getAccounts = async (bankId: string, overrideConnectedId?: string, clientType?: "P" | "B"): Promise<AccountInfo[]> => {
     const idToUse = overrideConnectedId || connectedId;
     
     if (!idToUse) {
@@ -173,6 +178,7 @@ export function useAccountConnection(): UseAccountConnectionReturn {
           action: "getAccounts",
           connectedId: idToUse,
           bankId,
+          clientType: clientType || "P",
         },
       });
 
