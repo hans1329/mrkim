@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { ConnectionHub, ServiceType } from "@/components/onboarding/ConnectionHub";
 import { ConnectionHub, ServiceType } from "@/components/onboarding/ConnectionHub";
 import { useQueryClient } from "@tanstack/react-query";
 import { useConnectorInstances } from "@/hooks/useConnectors";
