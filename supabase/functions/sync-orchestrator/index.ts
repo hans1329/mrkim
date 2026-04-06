@@ -932,8 +932,6 @@ function decodeField(value: string | undefined | null): string | null {
 
 // ─── 쿠팡이츠 동기화 핸들러 ────────────────────────────
 
-const HYPHEN_API_URL = "https://api.hyphen.im";
-
 async function callHyphenCoupangeats(
   action: string,
   ceUserId: string,
