@@ -19,8 +19,8 @@ const leftNav = [
 
 
 const rightNav = [
-{ title: "자금", url: "/funds", icon: Wallet },
-{ title: "매출/매입", url: "/transactions", icon: Receipt }];
+{ title: "매출/매입", url: "/transactions", icon: Receipt },
+{ title: "자금", url: "/funds", icon: Wallet }];
 
 
 export function BottomNav() {
