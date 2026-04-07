@@ -36,6 +36,7 @@ export function useCardSync() {
       endDate,
       isInitialSync = false,
       clientType = "P",
+      selectedCardNos,
     }: {
       connectedId: string;
       cardCompanyId: string;
@@ -44,6 +45,7 @@ export function useCardSync() {
       endDate?: string;
       isInitialSync?: boolean;
       clientType?: "P" | "B";
+      selectedCardNos?: string[];
     }): Promise<SyncResult> => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("로그인이 필요합니다");
