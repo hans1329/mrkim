@@ -134,10 +134,8 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
       });
 
       if (!connected) {
-        throw new Error("연동 정보를 저장하지 못했습니다. 다시 시도해주세요.");
+        throw new Error("연동은 되었지만 초기 데이터 동기화에 실패했습니다. 다시 시도해주세요.");
       }
-
-      // sync는 connectService 내부에서 자동 트리거됨 (중복 호출 제거)
 
       setStep("complete");
       toast.success("배달의민족 연동 완료!");
