@@ -29,6 +29,7 @@ import {
   RefreshCw,
   Unlink,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -85,6 +86,73 @@ export function ConnectorStatusCard() {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<{ id: string; name: string } | null>(null);
   const [confirmResync, setConfirmResync] = useState<{ id: string; name: string } | null>(null);
+  const [confirmPurge, setConfirmPurge] = useState(false);
+  const [purging, setPurging] = useState(false);
+
+  const handlePurgeAllData = async () => {
+    setPurging(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("로그인이 필요합니다");
+
+      // 1. 모든 connector_instances를 disconnected로 변경
+      await supabase
+        .from("connector_instances")
+        .update({ status: "disconnected" as any, last_sync_at: null })
+        .eq("user_id", user.id);
+
+      // 2. 거래 데이터 삭제
+      await supabase.from("transactions").delete().eq("user_id", user.id);
+
+      // 3. 배달 관련 데이터 삭제
+      await Promise.all([
+        supabase.from("delivery_orders").delete().eq("user_id", user.id),
+        supabase.from("delivery_stores").delete().eq("user_id", user.id),
+        supabase.from("delivery_menus").delete().eq("user_id", user.id),
+        supabase.from("delivery_settlements").delete().eq("user_id", user.id),
+        supabase.from("delivery_statistics").delete().eq("user_id", user.id),
+        supabase.from("delivery_reviews").delete().eq("user_id", user.id),
+        supabase.from("delivery_ads").delete().eq("user_id", user.id),
+        supabase.from("delivery_pg_sales").delete().eq("user_id", user.id),
+        supabase.from("delivery_nearby_sales").delete().eq("user_id", user.id),
+      ]);
+
+      // 4. 세금계산서 데이터 삭제
+      await supabase.from("tax_invoices").delete().eq("user_id", user.id);
+
+      // 5. 홈택스 동기화 상태 삭제
+      await supabase.from("hometax_sync_status").delete().eq("user_id", user.id);
+
+      // 6. 연결 계좌 삭제
+      await supabase.from("connected_accounts").delete().eq("user_id", user.id);
+
+      // 7. profiles 플래그 초기화
+      await supabase.from("profiles").update({
+        hometax_connected: false,
+        hometax_connected_at: null,
+        card_connected: false,
+        card_connected_at: null,
+        account_connected: false,
+        account_connected_at: null,
+      }).eq("user_id", user.id);
+
+      // 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
+      queryClient.invalidateQueries({ queryKey: ["connector-status"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["transaction-stats"] });
+
+      toast.success("모든 데이터와 연동이 초기화되었습니다");
+    } catch (error) {
+      console.error("Purge error:", error);
+      toast.error("데이터 삭제 중 오류가 발생했습니다");
+    } finally {
+      setPurging(false);
+      setConfirmPurge(false);
+    }
+  };
+
   const handleResync = async (connectorId: string) => {
     setSyncing(connectorId);
     try {
@@ -323,6 +391,24 @@ export function ConnectorStatusCard() {
             </div>
           );
         })}
+
+        {/* 전체 데이터 삭제 버튼 */}
+        <div className="pt-2 border-t border-border/50">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full h-8 text-xs text-muted-foreground hover:text-destructive gap-1.5"
+            disabled={purging}
+            onClick={() => setConfirmPurge(true)}
+          >
+            {purging ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Trash2 className="h-3 w-3" />
+            )}
+            전체 데이터 삭제 및 연동 초기화
+          </Button>
+        </div>
       </CardContent>
 
       {/* 연동 해제 확인 다이얼로그 */}
@@ -369,6 +455,42 @@ export function ConnectorStatusCard() {
               }}
             >
               재수집 시작
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 전체 삭제 확인 다이얼로그 */}
+      <AlertDialog open={confirmPurge} onOpenChange={setConfirmPurge}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ 전체 데이터를 삭제하시겠습니까?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">이 작업은 되돌릴 수 없습니다. 다음 데이터가 모두 삭제됩니다:</span>
+              <span className="block text-destructive font-medium">
+                • 모든 거래 내역 (카드, 계좌, 배달)<br />
+                • 세금계산서 데이터<br />
+                • 배달앱 주문/정산/리뷰/메뉴 데이터<br />
+                • 연결된 계좌 정보
+              </span>
+              <span className="block">모든 연동도 함께 해제됩니다.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={purging}
+              onClick={handlePurgeAllData}
+            >
+              {purging ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                  삭제 중...
+                </>
+              ) : (
+                "전체 삭제"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
