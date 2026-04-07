@@ -1,6 +1,9 @@
 import { useState, lazy, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { Button } from "@/components/ui/button";
+import { LinkIcon } from "lucide-react";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { SalesAnalysisTab } from "@/components/reports/SalesAnalysisTab";
@@ -53,7 +56,12 @@ export default function Reports() {
   const ActiveComponent = TAB_COMPONENTS[activeTab];
 
   return (
-    <MainLayout title="리포트" subtitle="경영 현황 분석" showBackButton>
+    <MainLayout title="리포트" subtitle="경영 현황 분석" showBackButton headerRight={
+      <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs rounded-full" onClick={() => useConnectionDrawer.caller()}>
+        <LinkIcon className="h-3.5 w-3.5" />
+        연동 관리
+      </Button>
+    }>
       <div className="-mx-4 px-4 -mt-2 pt-1">
         <div className="overflow-x-auto flex gap-2 mb-3 pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {(["sales", "expense", "menu", "classify", "tax", "employee", "insights"] as const).map((tab) => (
