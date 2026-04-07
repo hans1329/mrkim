@@ -38,6 +38,7 @@ import {
   Sparkles,
   Building2,
   HeartPulse,
+  LinkIcon,
   Home,
   CreditCard,
   Zap,
@@ -52,6 +53,7 @@ import { InvestmentCard } from "@/components/funds/InvestmentCard";
 import { LoanCard } from "@/components/funds/LoanCard";
 import { FundsConnectionPrompt } from "@/components/funds/FundsConnectionPrompt";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useDeposits,
@@ -837,6 +839,7 @@ function TransferSection({
 export default function Funds() {
   const navigate = useNavigate();
   const { accountConnected, profileLoading } = useConnection();
+  const { openDrawer } = useConnectionDrawer();
 
   const { deposits, isLoading: depositsLoading, totalDeposits, addDeposit, updateDeposit, deleteDeposit } = useDeposits();
   const { autoTransfers, isLoading: transfersLoading, addTransfer, deleteTransfer } = useAutoTransfers();
@@ -847,7 +850,7 @@ export default function Funds() {
 
   if (isLoading) {
     return (
-      <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요" showBackButton>
+      <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요" showBackButton headerRight={<Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs rounded-full" onClick={() => openDrawer()}><LinkIcon className="h-3.5 w-3.5" />연동 관리</Button>}>
         <div className="space-y-4">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-8 w-32" />
@@ -862,7 +865,7 @@ export default function Funds() {
 
   if (!accountConnected) {
     return (
-      <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요" showBackButton>
+      <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요" showBackButton headerRight={<Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs rounded-full" onClick={() => openDrawer()}><LinkIcon className="h-3.5 w-3.5" />연동 관리</Button>}>
         <div className="space-y-4">
           <FundsConnectionPrompt />
           <DepositSection
@@ -887,7 +890,7 @@ export default function Funds() {
   }
 
   return (
-    <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요" showBackButton>
+    <MainLayout title="자금 관리" subtitle="예치금과 자동이체를 관리하세요" showBackButton headerRight={<Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs rounded-full" onClick={() => openDrawer()}><LinkIcon className="h-3.5 w-3.5" />연동 관리</Button>}>
       <div className="space-y-4">
         <Card className="bg-primary text-primary-foreground">
           <CardContent className="flex items-center justify-between p-4">

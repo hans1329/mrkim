@@ -24,6 +24,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/data/mockData";
 import { Plus, Users, Wallet, Shield, User, LinkIcon, Heart, Pencil, Calendar } from "lucide-react";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { PraiseDialog } from "@/components/employees/PraiseDialog";
@@ -55,6 +56,7 @@ function PraiseHeartButton({ employee, onPraise }: { employee: Employee; onPrais
 }
 
 export default function Employees() {
+  const { openDrawer } = useConnectionDrawer();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPraiseDialogOpen, setIsPraiseDialogOpen] = useState(false);
@@ -125,7 +127,12 @@ export default function Employees() {
   };
 
   return (
-    <MainLayout title="직원 관리" subtitle="직원 정보를 관리하세요" showBackButton>
+    <MainLayout title="직원 관리" subtitle="직원 정보를 관리하세요" showBackButton headerRight={
+      <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs rounded-full" onClick={() => openDrawer()}>
+        <LinkIcon className="h-3.5 w-3.5" />
+        연동 관리
+      </Button>
+    }>
       <div className="space-y-4">
         {/* 요약 카드 */}
         <div className="grid grid-cols-3 gap-2">
