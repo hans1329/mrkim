@@ -340,9 +340,9 @@ export function ConnectionHub({
   };
 
   const CATEGORY_RESYNC_CONNECTORS: Record<HubCategory, string[]> = {
-    hometax: ["codef_hometax"],
-    card: ["crefia"],
-    account: ["codef_bank"],
+    hometax: ["codef_hometax_tax_invoice"],
+    card: ["codef_card_usage"],
+    account: ["codef_bank_account"],
     delivery: ["hyphen_baemin", "hyphen_coupangeats"],
   };
 
