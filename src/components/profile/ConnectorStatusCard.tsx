@@ -86,70 +86,74 @@ export function ConnectorStatusCard() {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<{ id: string; name: string } | null>(null);
   const [confirmResync, setConfirmResync] = useState<{ id: string; name: string } | null>(null);
-  const [confirmPurge, setConfirmPurge] = useState(false);
-  const [purging, setPurging] = useState(false);
+  const [confirmPurge, setConfirmPurge] = useState<{ id: string; name: string; category: string } | null>(null);
+  const [purging, setPurging] = useState<string | null>(null);
 
-  const handlePurgeAllData = async () => {
-    setPurging(true);
+  // 카테고리별 데이터 삭제 매핑
+  const purgeByCategory = async (userId: string, category: string) => {
+    switch (category) {
+      case "hometax":
+        await Promise.all([
+          supabase.from("tax_invoices").delete().eq("user_id", userId),
+          supabase.from("hometax_sync_status").delete().eq("user_id", userId),
+        ]);
+        await supabase.from("profiles").update({ hometax_connected: false, hometax_connected_at: null }).eq("user_id", userId);
+        break;
+      case "card":
+        await supabase.from("transactions").delete().eq("user_id", userId).eq("source_type", "card");
+        await supabase.from("profiles").update({ card_connected: false, card_connected_at: null }).eq("user_id", userId);
+        break;
+      case "bank":
+        await supabase.from("transactions").delete().eq("user_id", userId).eq("source_type", "bank");
+        await supabase.from("connected_accounts").delete().eq("user_id", userId);
+        await supabase.from("profiles").update({ account_connected: false, account_connected_at: null }).eq("user_id", userId);
+        break;
+      case "delivery":
+        await Promise.all([
+          supabase.from("delivery_orders").delete().eq("user_id", userId),
+          supabase.from("delivery_stores").delete().eq("user_id", userId),
+          supabase.from("delivery_menus").delete().eq("user_id", userId),
+          supabase.from("delivery_settlements").delete().eq("user_id", userId),
+          supabase.from("delivery_statistics").delete().eq("user_id", userId),
+          supabase.from("delivery_reviews").delete().eq("user_id", userId),
+          supabase.from("delivery_ads").delete().eq("user_id", userId),
+          supabase.from("delivery_pg_sales").delete().eq("user_id", userId),
+          supabase.from("delivery_nearby_sales").delete().eq("user_id", userId),
+          supabase.from("transactions").delete().eq("user_id", userId).eq("source_type", "delivery"),
+        ]);
+        break;
+    }
+  };
+
+  const handlePurgeConnector = async (connectorId: string, category: string) => {
+    setPurging(connectorId);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다");
 
-      // 1. 모든 connector_instances를 disconnected로 변경
+      // 연동 해제
       await supabase
         .from("connector_instances")
         .update({ status: "disconnected" as any, last_sync_at: null })
+        .eq("connector_id", connectorId)
         .eq("user_id", user.id);
 
-      // 2. 거래 데이터 삭제
-      await supabase.from("transactions").delete().eq("user_id", user.id);
+      // 카테고리별 데이터 삭제
+      await purgeByCategory(user.id, category);
 
-      // 3. 배달 관련 데이터 삭제
-      await Promise.all([
-        supabase.from("delivery_orders").delete().eq("user_id", user.id),
-        supabase.from("delivery_stores").delete().eq("user_id", user.id),
-        supabase.from("delivery_menus").delete().eq("user_id", user.id),
-        supabase.from("delivery_settlements").delete().eq("user_id", user.id),
-        supabase.from("delivery_statistics").delete().eq("user_id", user.id),
-        supabase.from("delivery_reviews").delete().eq("user_id", user.id),
-        supabase.from("delivery_ads").delete().eq("user_id", user.id),
-        supabase.from("delivery_pg_sales").delete().eq("user_id", user.id),
-        supabase.from("delivery_nearby_sales").delete().eq("user_id", user.id),
-      ]);
-
-      // 4. 세금계산서 데이터 삭제
-      await supabase.from("tax_invoices").delete().eq("user_id", user.id);
-
-      // 5. 홈택스 동기화 상태 삭제
-      await supabase.from("hometax_sync_status").delete().eq("user_id", user.id);
-
-      // 6. 연결 계좌 삭제
-      await supabase.from("connected_accounts").delete().eq("user_id", user.id);
-
-      // 7. profiles 플래그 초기화
-      await supabase.from("profiles").update({
-        hometax_connected: false,
-        hometax_connected_at: null,
-        card_connected: false,
-        card_connected_at: null,
-        account_connected: false,
-        account_connected_at: null,
-      }).eq("user_id", user.id);
-
-      // 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
       queryClient.invalidateQueries({ queryKey: ["connector-status"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["transaction-stats"] });
 
-      toast.success("모든 데이터와 연동이 초기화되었습니다");
+      toast.success("데이터가 삭제되고 연동이 해제되었습니다");
     } catch (error) {
       console.error("Purge error:", error);
       toast.error("데이터 삭제 중 오류가 발생했습니다");
     } finally {
-      setPurging(false);
-      setConfirmPurge(false);
+      setPurging(null);
+      setConfirmPurge(null);
     }
   };
 
