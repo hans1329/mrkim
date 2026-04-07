@@ -414,23 +414,6 @@ export function ConnectorStatusCard() {
           );
         })}
 
-        {/* 전체 데이터 삭제 버튼 */}
-        <div className="pt-2 border-t border-border/50">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full h-8 text-xs text-muted-foreground hover:text-destructive gap-1.5"
-            disabled={purging}
-            onClick={() => setConfirmPurge(true)}
-          >
-            {purging ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <Trash2 className="h-3 w-3" />
-            )}
-            전체 데이터 삭제 및 연동 초기화
-          </Button>
-        </div>
       </CardContent>
 
       {/* 연동 해제 확인 다이얼로그 */}
@@ -482,28 +465,24 @@ export function ConnectorStatusCard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 전체 삭제 확인 다이얼로그 */}
-      <AlertDialog open={confirmPurge} onOpenChange={setConfirmPurge}>
+      {/* 데이터 삭제 확인 다이얼로그 */}
+      <AlertDialog open={!!confirmPurge} onOpenChange={(open) => !open && setConfirmPurge(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>⚠️ 전체 데이터를 삭제하시겠습니까?</AlertDialogTitle>
+            <AlertDialogTitle>⚠️ {confirmPurge?.name} 데이터를 삭제하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <span className="block">이 작업은 되돌릴 수 없습니다. 다음 데이터가 모두 삭제됩니다:</span>
+              <span className="block">이 작업은 되돌릴 수 없습니다.</span>
               <span className="block text-destructive font-medium">
-                • 모든 거래 내역 (카드, 계좌, 배달)<br />
-                • 세금계산서 데이터<br />
-                • 배달앱 주문/정산/리뷰/메뉴 데이터<br />
-                • 연결된 계좌 정보
+                {confirmPurge?.name}에서 수집된 모든 데이터가 삭제되며, 연동도 함께 해제됩니다.
               </span>
-              <span className="block">모든 연동도 함께 해제됩니다.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={purging}
-              onClick={handlePurgeAllData}
+              disabled={!!purging}
+              onClick={() => confirmPurge && handlePurgeConnector(confirmPurge.id, confirmPurge.category)}
             >
               {purging ? (
                 <>
@@ -511,7 +490,7 @@ export function ConnectorStatusCard() {
                   삭제 중...
                 </>
               ) : (
-                "전체 삭제"
+                "삭제하기"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
