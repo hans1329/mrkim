@@ -65,6 +65,7 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
   const hasStoredCredentialMatch = (userId: string, userPw: string) => {
     return connectorInstances.some((instance) => {
       if (instance.connector_id !== "hyphen_baemin") return false;
+      if (instance.status !== "connected" && instance.status !== "disconnected") return false;
       const meta = (instance.credentials_meta ?? {}) as Record<string, unknown>;
       return meta.bm_user_id === userId && meta.bm_user_pw === userPw;
     });
