@@ -1,6 +1,8 @@
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, X, ChevronRight, CheckCircle2, Clock, Sparkles } from "lucide-react";
+import { AlertTriangle, X, ChevronRight, CheckCircle2, Clock, Sparkles, RefreshCw } from "lucide-react";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
+import { toast } from "sonner";
 import { SecretaryInsightCard } from "./SecretaryInsightCard";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -17,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn, josa } from "@/lib/utils";
 import { useConnection } from "@/contexts/ConnectionContext";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUnclassifiedCount } from "@/hooks/useDashboardStats";
 
