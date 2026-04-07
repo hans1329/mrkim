@@ -606,14 +606,29 @@ export function ConnectionHub({
 
                           {/* Disconnect button for connected services */}
                           {anyConnected && (
-                            <div className="px-3.5 pb-2.5 -mt-1">
+                            <div className="px-3.5 pb-2.5 -mt-1 flex items-center gap-3 ml-14">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleResync(cat.key);
+                                }}
+                                disabled={resyncing === cat.key}
+                                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                              >
+                                {resyncing === cat.key ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <RefreshCw className="h-3 w-3" />
+                                )}
+                                재수집
+                              </button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setConfirmDisconnect({ key: cat.key, label: cat.label });
                                 }}
                                 disabled={disconnecting === cat.key}
-                                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive transition-colors ml-14"
+                                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive transition-colors"
                               >
                                 {disconnecting === cat.key ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />
