@@ -108,12 +108,12 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const { refetch: refetchProfile, profile } = useConnection();
   const { connections: existingBankConnections } = useBankConnectionInfo();
 
-  // 사업자등록번호 기반 법인 자동 판별 (첫 자리 1~6이면 법인)
+  // 사업자등록번호 중간 2자리(4-5번째)로 법인 판별: 81~99이면 법인
   const clientType: "P" | "B" = (() => {
     const brn = profile?.business_registration_number?.replace(/\D/g, "");
-    if (brn && brn.length >= 1) {
-      const first = parseInt(brn[0], 10);
-      if (first >= 1 && first <= 6) return "B";
+    if (brn && brn.length >= 5) {
+      const mid = parseInt(brn.substring(3, 5), 10);
+      if (mid >= 81) return "B";
     }
     return "P";
   })();
