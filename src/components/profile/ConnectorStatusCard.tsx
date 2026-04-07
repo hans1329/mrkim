@@ -338,7 +338,11 @@ export function ConnectorStatusCard() {
                 <Badge variant={statusInfo.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
                   {statusInfo.label}
                 </Badge>
-              ) : null}
+              ) : (
+                <Badge variant="outline" className="text-[10px] shrink-0 px-1.5 py-0.5 text-muted-foreground">
+                  미연동
+                </Badge>
+              )}
 
               {/* 액션 */}
               {isConnected ? (
