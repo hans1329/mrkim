@@ -16,6 +16,7 @@ import {
   Smartphone,
   Loader2,
   Unlink,
+  RefreshCw,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -114,6 +115,7 @@ export function ConnectionHub({
   const [isVerifying, setIsVerifying] = useState(false);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<{ key: HubCategory; label: string } | null>(null);
+  const [resyncing, setResyncing] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const formatPhone = (value: string) => {
     const cleaned = value.replace(/\D/g, "").slice(0, 11);
@@ -309,6 +311,35 @@ export function ConnectionHub({
     } finally {
       setDisconnecting(null);
       setConfirmDisconnect(null);
+    }
+  };
+
+  const CATEGORY_RESYNC_CONNECTORS: Record<HubCategory, string[]> = {
+    hometax: ["codef_hometax"],
+    card: ["crefia"],
+    account: ["codef_bank"],
+    delivery: ["hyphen_baemin", "hyphen_coupangeats"],
+  };
+
+  const handleResync = async (categoryKey: HubCategory) => {
+    setResyncing(categoryKey);
+    try {
+      const connectorIds = CATEGORY_RESYNC_CONNECTORS[categoryKey];
+      let totalSaved = 0;
+      for (const connectorId of connectorIds) {
+        const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
+          body: { connectorId, forceFullSync: true },
+        });
+        if (error) throw error;
+        const saved = data?.results?.reduce((sum: number, r: any) => sum + (r.recordsSaved || 0), 0) || 0;
+        totalSaved += saved;
+      }
+      toast.success(totalSaved > 0 ? `${totalSaved}건 데이터 재수집 완료` : "새로운 데이터가 없습니다");
+    } catch (err) {
+      console.error("Resync error:", err);
+      toast.error("재수집에 실패했습니다");
+    } finally {
+      setResyncing(null);
     }
   };
 
@@ -575,14 +606,29 @@ export function ConnectionHub({
 
                           {/* Disconnect button for connected services */}
                           {anyConnected && (
-                            <div className="px-3.5 pb-2.5 -mt-1">
+                            <div className="px-3.5 pb-2.5 -mt-1 flex items-center gap-3 ml-14">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleResync(cat.key);
+                                }}
+                                disabled={resyncing === cat.key}
+                                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                              >
+                                {resyncing === cat.key ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <RefreshCw className="h-3 w-3" />
+                                )}
+                                재수집
+                              </button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setConfirmDisconnect({ key: cat.key, label: cat.label });
                                 }}
                                 disabled={disconnecting === cat.key}
-                                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive transition-colors ml-14"
+                                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive transition-colors"
                               >
                                 {disconnecting === cat.key ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />

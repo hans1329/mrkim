@@ -1,8 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, X, ChevronRight, CheckCircle2, Clock, Sparkles, RefreshCw } from "lucide-react";
+import { AlertTriangle, X, ChevronRight, CheckCircle2, Clock, Sparkles } from "lucide-react";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
-import { toast } from "sonner";
 import { SecretaryInsightCard } from "./SecretaryInsightCard";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -88,25 +87,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
   const { profile, profileLoading: loading, isLoggedIn, hometaxConnected, cardConnected, accountConnected, deliveryConnected } = useConnection();
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [isResyncing, setIsResyncing] = useState(false);
   const secretaryName = profile?.secretary_name || "김비서";
-
-  const handleResync = async () => {
-    setIsResyncing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
-        body: { forceFullSync: true },
-      });
-      if (error) throw error;
-      const total = data?.results?.reduce((sum: number, r: any) => sum + (r.recordsSaved || 0), 0) || 0;
-      toast.success(total > 0 ? `${total}건 데이터 재수집 완료` : "새로운 데이터가 없습니다");
-    } catch (err) {
-      console.error("Resync error:", err);
-      toast.error("재수집에 실패했습니다");
-    } finally {
-      setIsResyncing(false);
-    }
-  };
 
   // React Query 캐싱 적용
   const { data: unclassifiedCount = 0 } = useUnclassifiedCount(!isLoggedOut && !loading && isLoggedIn);
@@ -223,27 +204,15 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           <Progress value={progressPercent} className={cn("h-1.5", isHero && "[&]:bg-white/20 [&>div]:bg-white/60")} />
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            className={cn("h-10 gap-1 rounded-full flex-1", isHero && "bg-white text-primary hover:bg-white/90")}
-            onClick={handleStartConnection}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            이어서 연동하기
-            <ChevronRight className="h-3 w-3" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className={cn("h-10 gap-1 rounded-full shrink-0", isHero && "border-white/30 text-white hover:bg-white/10")}
-            onClick={handleResync}
-            disabled={isResyncing}
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", isResyncing && "animate-spin")} />
-            재수집
-          </Button>
-        </div>
+        <Button
+          size="sm"
+          className={cn("h-10 gap-1 rounded-full", isHero && "bg-white text-primary hover:bg-white/90")}
+          onClick={handleStartConnection}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          이어서 연동하기
+          <ChevronRight className="h-3 w-3" />
+        </Button>
       </div>
     );
   }
