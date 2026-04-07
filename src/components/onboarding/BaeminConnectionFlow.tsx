@@ -119,8 +119,14 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
         throw new Error("배달의민족 계정을 확인할 수 없습니다. 아이디/비밀번호를 다시 확인해주세요.");
       }
 
-      const stores = successfulProbes.flatMap(({ data }) => getStoreListFromPayload(data));
-      setStoreCount(stores.length);
+      const uniqueStores = Array.from(
+        new Map(
+          successfulProbes
+            .flatMap(({ data }) => getStoreListFromPayload(data))
+            .map((store) => [store.storeId || store.storeName || JSON.stringify(store), store])
+        ).values()
+      );
+      setStoreCount(uniqueStores.length);
 
       const connected = await connectService("hyphen_baemin", `bm_${bmUserId}`, {
         bm_user_id: bmUserId,
