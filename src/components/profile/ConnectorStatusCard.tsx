@@ -346,7 +346,7 @@ export function ConnectorStatusCard() {
                           if (drawerType) openDrawer(drawerType);
                         }}
                       >
-                        <RefreshCw className="h-3 w-3" />
+                        <Settings className="h-3 w-3" />
                         연동 관리
                       </Button>
                       <Button
