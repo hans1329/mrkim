@@ -1068,36 +1068,29 @@ async function syncCoupangeats(
     const orderList = salesRes.data?.touchOrderList || [];
     totalFetched += orderList.length;
 
-    for (const order of orderList) {
-      const { error } = await supabase.from("delivery_orders").upsert(
-        {
-          user_id: userId,
-          platform: "coupangeats",
-          store_id: order.storeId || null,
-          order_no: order.orderNo,
-          order_div: order.orderDiv || null,
-          order_dt: order.orderDt || null,
-          order_tm: order.orderTm || null,
-          settle_dt: order.settleDt || null,
-          order_name: order.orderName || null,
-          delivery_type: order.deliveryType || null,
-          total_amt: parseInt(order.totalAmt || "0", 10),
-          discnt_amt: parseInt(order.discntAmt || "0", 10),
-          order_fee: parseInt(order.orderFee || "0", 10),
-          card_fee: parseInt(order.cardFee || "0", 10),
-          delivery_amt: parseInt(order.deliveryAmt || "0", 10),
-          add_tax: parseInt(order.addTax || "0", 10),
-          ad_fee: parseInt(order.adFee || "0", 10),
-          mfd_discount_amount: parseInt(order.mfdDiscountAmount || "0", 10),
-          settle_amt: parseInt(order.settleAmt || "0", 10),
-          detail_list: order.detailList || [],
-          raw_data: order,
-          synced_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,platform,order_no" }
-      );
-      if (!error) totalSaved++;
+    // delivery_orders 배치 upsert
+    const orderRows = orderList.map((order: any) => ({
+      user_id: userId, platform: "coupangeats", store_id: order.storeId || null,
+      order_no: order.orderNo, order_div: order.orderDiv || null,
+      order_dt: order.orderDt || null, order_tm: order.orderTm || null,
+      settle_dt: order.settleDt || null, order_name: order.orderName || null,
+      delivery_type: order.deliveryType || null,
+      total_amt: parseInt(order.totalAmt || "0", 10),
+      discnt_amt: parseInt(order.discntAmt || "0", 10),
+      order_fee: parseInt(order.orderFee || "0", 10),
+      card_fee: parseInt(order.cardFee || "0", 10),
+      delivery_amt: parseInt(order.deliveryAmt || "0", 10),
+      add_tax: parseInt(order.addTax || "0", 10),
+      ad_fee: parseInt(order.adFee || "0", 10),
+      mfd_discount_amount: parseInt(order.mfdDiscountAmount || "0", 10),
+      settle_amt: parseInt(order.settleAmt || "0", 10),
+      detail_list: order.detailList || [], raw_data: order,
+      synced_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    }));
+    const BATCH = 50;
+    for (let i = 0; i < orderRows.length; i += BATCH) {
+      const { error } = await supabase.from("delivery_orders").upsert(orderRows.slice(i, i + BATCH), { onConflict: "user_id,platform,order_no" });
+      if (!error) totalSaved += orderRows.slice(i, i + BATCH).length;
     }
 
     // 매출을 transactions 테이블에도 반영 (배치)
