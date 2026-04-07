@@ -140,6 +140,7 @@ export function ConnectionHub({
     currentStep: number;
     totalSaved: number;
   } | null>(null);
+  const [localConnectionStatus, setLocalConnectionStatus] = useState(connectionStatus);
   const queryClient = useQueryClient();
   const formatPhone = (value: string) => {
     const cleaned = value.replace(/\D/g, "").slice(0, 11);
@@ -232,6 +233,10 @@ export function ConnectionHub({
 
   // Sync with open/initialService — check phone first
   useEffect(() => {
+    setLocalConnectionStatus(connectionStatus);
+  }, [connectionStatus]);
+
+  useEffect(() => {
     if (open) {
       const hasPhone = !!profile?.phone;
       if (!hasPhone && !initialService) {
@@ -244,7 +249,7 @@ export function ConnectionHub({
     if (!open) {
       setView({ screen: "hub" });
     }
-  }, [open, initialService]);
+  }, [open, initialService, profile?.phone]);
 
   const handleClose = () => {
     setView({ screen: "hub" });
@@ -289,8 +294,8 @@ export function ConnectionHub({
     setView({ screen: "flow", service: "hometax" });
   };
 
-  const isConnected = (key: ServiceType) => connectionStatus[key] === true;
-  const connectedCount = Object.values(connectionStatus).filter(Boolean).length;
+  const isConnected = (key: ServiceType) => localConnectionStatus[key] === true;
+  const connectedCount = Object.values(localConnectionStatus).filter(Boolean).length;
 
   const CATEGORY_CONNECTOR_MAP: Record<HubCategory, { connectorId: string; profileField: string; profileAtField: string }[]> = {
     hometax: [{ connectorId: "codef_hometax_tax_invoice", profileField: "hometax_connected", profileAtField: "hometax_connected_at" }],
@@ -324,6 +329,19 @@ export function ConnectionHub({
             .eq("user_id", user.id);
         }
       }
+
+      const nextStatus = { ...localConnectionStatus };
+      if (categoryKey === "delivery") {
+        nextStatus.baemin = false;
+        nextStatus.coupangeats = false;
+      } else if (categoryKey === "hometax") {
+        nextStatus.hometax = false;
+      } else if (categoryKey === "card") {
+        nextStatus.card = false;
+      } else if (categoryKey === "account") {
+        nextStatus.account = false;
+      }
+      setLocalConnectionStatus(nextStatus);
 
       queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
       queryClient.invalidateQueries({ queryKey: ["connector-status"] });
