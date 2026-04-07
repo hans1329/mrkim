@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import {
   Building2,
   CreditCard,
@@ -17,6 +18,10 @@ import {
   Loader2,
   Unlink,
   RefreshCw,
+  Package,
+  FileText,
+  Star,
+  BarChart3,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -116,6 +121,12 @@ export function ConnectionHub({
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<{ key: HubCategory; label: string } | null>(null);
   const [resyncing, setResyncing] = useState<string | null>(null);
+  const [resyncProgress, setResyncProgress] = useState<{
+    category: string;
+    steps: { label: string; icon: any; status: "pending" | "loading" | "done" | "error"; count?: number }[];
+    currentStep: number;
+    totalSaved: number;
+  } | null>(null);
   const queryClient = useQueryClient();
   const formatPhone = (value: string) => {
     const cleaned = value.replace(/\D/g, "").slice(0, 11);
@@ -321,23 +332,119 @@ export function ConnectionHub({
     delivery: ["hyphen_baemin", "hyphen_coupangeats"],
   };
 
+  const DELIVERY_RESYNC_STEPS = [
+    { label: "주문 데이터 수집", icon: Package },
+    { label: "정산 내역 수집", icon: FileText },
+    { label: "리뷰 수집", icon: Star },
+    { label: "매출 통계 수집", icon: BarChart3 },
+  ];
+
+  const SIMPLE_RESYNC_STEPS: Record<string, { label: string; icon: any }[]> = {
+    hometax: [{ label: "세금계산서 수집", icon: FileText }],
+    card: [{ label: "카드 매출 수집", icon: CreditCard }],
+    account: [{ label: "계좌 내역 수집", icon: Landmark }],
+  };
+
   const handleResync = async (categoryKey: HubCategory) => {
     setResyncing(categoryKey);
+
+    const isDelivery = categoryKey === "delivery";
+    const stepDefs = isDelivery ? DELIVERY_RESYNC_STEPS : (SIMPLE_RESYNC_STEPS[categoryKey] || [{ label: "데이터 수집", icon: RefreshCw }]);
+
+    const steps = stepDefs.map(s => ({ ...s, status: "pending" as const }));
+    setResyncProgress({ category: categoryKey, steps, currentStep: 0, totalSaved: 0 });
+
     try {
       const connectorIds = CATEGORY_RESYNC_CONNECTORS[categoryKey];
       let totalSaved = 0;
-      for (const connectorId of connectorIds) {
-        const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
-          body: { connectorId, forceFullSync: true },
-        });
-        if (error) throw error;
-        const saved = data?.results?.reduce((sum: number, r: any) => sum + (r.recordsSaved || 0), 0) || 0;
-        totalSaved += saved;
+
+      if (isDelivery) {
+        // 배달앱: 단계별 진행 표시
+        for (let i = 0; i < connectorIds.length; i++) {
+          // 첫 번째 커넥터 시작 시 모든 스텝을 순차 진행
+          const connectorId = connectorIds[i];
+
+          if (i === 0) {
+            // 스텝 0: 주문 데이터
+            setResyncProgress(prev => prev ? {
+              ...prev,
+              steps: prev.steps.map((s, idx) => idx === 0 ? { ...s, status: "loading" } : s),
+              currentStep: 0,
+            } : null);
+          }
+
+          const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
+            body: { connectorId, forceFullSync: true },
+          });
+
+          if (error) throw error;
+
+          const results = data?.results || [];
+          const saved = results.reduce((sum: number, r: any) => sum + (r.recordsSaved || 0), 0);
+          totalSaved += saved;
+
+          if (i === connectorIds.length - 1) {
+            // 마지막 커넥터 완료 시 모든 스텝 완료 처리
+            setResyncProgress(prev => prev ? {
+              ...prev,
+              steps: prev.steps.map(s => ({ ...s, status: "done" as const })),
+              currentStep: prev.steps.length,
+              totalSaved,
+            } : null);
+          } else {
+            // 중간: 절반 진행
+            const midStep = Math.floor(steps.length / 2);
+            setResyncProgress(prev => prev ? {
+              ...prev,
+              steps: prev.steps.map((s, idx) =>
+                idx < midStep ? { ...s, status: "done" as const, count: saved } :
+                idx === midStep ? { ...s, status: "loading" } : s
+              ),
+              currentStep: midStep,
+              totalSaved,
+            } : null);
+          }
+        }
+      } else {
+        // 비배달: 단일 스텝
+        setResyncProgress(prev => prev ? {
+          ...prev,
+          steps: prev.steps.map(s => ({ ...s, status: "loading" as const })),
+          currentStep: 0,
+        } : null);
+
+        for (const connectorId of connectorIds) {
+          const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
+            body: { connectorId, forceFullSync: true },
+          });
+          if (error) throw error;
+          const saved = data?.results?.reduce((sum: number, r: any) => sum + (r.recordsSaved || 0), 0) || 0;
+          totalSaved += saved;
+        }
+
+        setResyncProgress(prev => prev ? {
+          ...prev,
+          steps: prev.steps.map(s => ({ ...s, status: "done" as const })),
+          currentStep: prev.steps.length,
+          totalSaved,
+        } : null);
       }
-      toast.success(totalSaved > 0 ? `${totalSaved}건 데이터 재수집 완료` : "새로운 데이터가 없습니다");
+
+      // 2초 후 자동 닫기
+      setTimeout(() => {
+        setResyncProgress(null);
+        toast.success(totalSaved > 0 ? `${totalSaved}건 데이터 재수집 완료` : "새로운 데이터가 없습니다");
+      }, 2000);
     } catch (err) {
       console.error("Resync error:", err);
-      toast.error("재수집에 실패했습니다");
+      setResyncProgress(prev => prev ? {
+        ...prev,
+        steps: prev.steps.map(s => s.status === "loading" ? { ...s, status: "error" as const } : s),
+      } : null);
+      setTimeout(() => {
+        setResyncProgress(null);
+        toast.error("재수집에 실패했습니다");
+      }, 2000);
     } finally {
       setResyncing(null);
     }
