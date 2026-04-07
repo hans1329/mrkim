@@ -314,6 +314,35 @@ export function ConnectionHub({
     }
   };
 
+  const CATEGORY_RESYNC_CONNECTORS: Record<HubCategory, string[]> = {
+    hometax: ["codef_hometax"],
+    card: ["crefia"],
+    account: ["codef_bank"],
+    delivery: ["hyphen_baemin", "hyphen_coupangeats"],
+  };
+
+  const handleResync = async (categoryKey: HubCategory) => {
+    setResyncing(categoryKey);
+    try {
+      const connectorIds = CATEGORY_RESYNC_CONNECTORS[categoryKey];
+      let totalSaved = 0;
+      for (const connectorId of connectorIds) {
+        const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
+          body: { connectorId, forceFullSync: true },
+        });
+        if (error) throw error;
+        const saved = data?.results?.reduce((sum: number, r: any) => sum + (r.recordsSaved || 0), 0) || 0;
+        totalSaved += saved;
+      }
+      toast.success(totalSaved > 0 ? `${totalSaved}건 데이터 재수집 완료` : "새로운 데이터가 없습니다");
+    } catch (err) {
+      console.error("Resync error:", err);
+      toast.error("재수집에 실패했습니다");
+    } finally {
+      setResyncing(null);
+    }
+  };
+
   const getHeaderTitle = () => {
     if (view.screen === "phone-register") return "연락처 등록";
     if (view.screen === "hub") return "데이터 연동";
