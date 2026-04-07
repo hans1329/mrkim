@@ -29,6 +29,7 @@ import {
   RefreshCw,
   Unlink,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
