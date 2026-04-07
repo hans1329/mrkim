@@ -92,6 +92,7 @@ export function useBankSync() {
             accountNo,
             startDate: effectiveStartDate,
             endDate: effectiveEndDate,
+            clientType,
           },
         }
       );
