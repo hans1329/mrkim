@@ -266,6 +266,52 @@ export function ConnectionHub({
   const isConnected = (key: ServiceType) => connectionStatus[key] === true;
   const connectedCount = Object.values(connectionStatus).filter(Boolean).length;
 
+  const CATEGORY_CONNECTOR_MAP: Record<HubCategory, { connectorId: string; profileField: string; profileAtField: string }[]> = {
+    hometax: [{ connectorId: "codef_hometax", profileField: "hometax_connected", profileAtField: "hometax_connected_at" }],
+    card: [{ connectorId: "crefia", profileField: "card_connected", profileAtField: "card_connected_at" }],
+    account: [{ connectorId: "codef_bank", profileField: "account_connected", profileAtField: "account_connected_at" }],
+    delivery: [
+      { connectorId: "hyphen_baemin", profileField: "", profileAtField: "" },
+      { connectorId: "hyphen_coupangeats", profileField: "", profileAtField: "" },
+    ],
+  };
+
+  const handleDisconnect = async (categoryKey: HubCategory) => {
+    setDisconnecting(categoryKey);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const mappings = CATEGORY_CONNECTOR_MAP[categoryKey];
+      for (const mapping of mappings) {
+        await supabase
+          .from("connector_instances")
+          .update({ status: "disconnected" as any })
+          .eq("connector_id", mapping.connectorId)
+          .eq("user_id", user.id);
+
+        if (mapping.profileField) {
+          await supabase
+            .from("profiles")
+            .update({ [mapping.profileField]: false, [mapping.profileAtField]: null })
+            .eq("user_id", user.id);
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
+      queryClient.invalidateQueries({ queryKey: ["connector-status"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      onComplete?.();
+      toast.success("연동이 해제되었습니다");
+    } catch (error) {
+      console.error("Disconnect error:", error);
+      toast.error("연동 해제에 실패했습니다");
+    } finally {
+      setDisconnecting(null);
+      setConfirmDisconnect(null);
+    }
+  };
+
   const getHeaderTitle = () => {
     if (view.screen === "phone-register") return "연락처 등록";
     if (view.screen === "hub") return "데이터 연동";
