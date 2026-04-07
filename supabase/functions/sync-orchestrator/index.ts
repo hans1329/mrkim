@@ -962,7 +962,10 @@ async function callHyphenCoupangeats(
     settlement: "/in0024000081",
     store_info: "/in0024000082",
     orders: "/in0024000086",
+    account_info: "/in0024000722",
+    reviews: "/in0024000800",
     my_store: "/in0024000955",
+    menu: "/in0024000976",
     pg_sales: "/in0024000150",
   };
 
@@ -1196,6 +1199,120 @@ async function syncCoupangeats(
     }
   } catch (e) {
     console.error("정산 동기화 실패:", e);
+  }
+
+  // 4. 리뷰 동기화
+  try {
+    const reviewRes = await callHyphenCoupangeats("reviews", ceUserId, ceUserPw, {
+      dateFrom: startDate,
+      dateTo: endDate,
+    });
+    const reviewList = reviewRes.data?.reviewList || [];
+    console.log(`[coupangeats] reviews API returned ${reviewList.length} reviews`);
+    for (const review of reviewList) {
+      await supabase.from("delivery_reviews").upsert(
+        {
+          user_id: userId,
+          platform: "coupangeats",
+          store_id: review.storeId || null,
+          review_id: review.reviewId || null,
+          order_no: review.orderNo || null,
+          reviewer_name: review.reviewerName || null,
+          rating: review.rating ? parseFloat(review.rating) : null,
+          review_content: review.reviewContent || null,
+          reply_content: review.replyContent || null,
+          review_date: review.reviewDate || review.reviewDt || null,
+          menu_names: review.menuNames || [],
+          tags: review.tags || [],
+          raw_data: review,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,review_id" }
+      );
+    }
+  } catch (e) {
+    console.error("[coupangeats] 리뷰 동기화 실패:", e);
+  }
+
+  // 5. 메뉴 동기화
+  try {
+    const menuRes = await callHyphenCoupangeats("menu", ceUserId, ceUserPw);
+    const menuList = menuRes.data?.menuList || [];
+    console.log(`[coupangeats] menu API returned ${menuList.length} menus`);
+    for (const menu of menuList) {
+      await supabase.from("delivery_menus").upsert(
+        {
+          user_id: userId,
+          platform: "coupangeats",
+          store_id: menu.storeId || null,
+          menu_id: menu.menuId || null,
+          menu_name: menu.menuName || "Unknown",
+          menu_group: menu.menuGroup || null,
+          price: menu.price ? parseInt(menu.price, 10) : null,
+          description: menu.description || null,
+          image_url: menu.imageUrl || null,
+          status: menu.status || null,
+          order_count: menu.orderCount ? parseInt(menu.orderCount, 10) : null,
+          raw_data: menu,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,menu_id" }
+      );
+    }
+  } catch (e) {
+    console.error("[coupangeats] 메뉴 동기화 실패:", e);
+  }
+
+  // 6. PG매출 동기화
+  try {
+    const pgRes = await callHyphenCoupangeats("pg_sales", ceUserId, ceUserPw, {
+      dateFrom: startDate,
+      dateTo: endDate,
+    });
+    const pgList = pgRes.data?.pgSalesList || [];
+    console.log(`[coupangeats] pg_sales API returned ${pgList.length} records`);
+    for (const pg of pgList) {
+      await supabase.from("delivery_pg_sales").upsert(
+        {
+          user_id: userId,
+          platform: "coupangeats",
+          store_id: pg.storeId || null,
+          pg_date: pg.pgDate || pg.salesDate,
+          pg_type: pg.pgType || null,
+          card_company: pg.cardCompany || null,
+          approval_no: pg.approvalNo || null,
+          sales_amount: pg.salesAmount ? parseInt(pg.salesAmount, 10) : null,
+          fee_amount: pg.feeAmount ? parseInt(pg.feeAmount, 10) : null,
+          net_amount: pg.netAmount ? parseInt(pg.netAmount, 10) : null,
+          raw_data: pg,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,pg_date,approval_no" }
+      );
+    }
+  } catch (e) {
+    console.error("[coupangeats] PG매출 동기화 실패:", e);
+  }
+
+  // 7. 계좌정보 → delivery_stores 보강
+  try {
+    const acctRes = await callHyphenCoupangeats("account_info", ceUserId, ceUserPw);
+    const acctData = acctRes.data;
+    if (acctData?.depositBank || acctData?.depositAccount) {
+      await supabase.from("delivery_stores")
+        .update({
+          deposit_bank: acctData.depositBank || null,
+          deposit_account: acctData.depositAccount || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId)
+        .eq("platform", "coupangeats");
+    }
+  } catch (e) {
+    console.error("[coupangeats] 계좌정보 동기화 실패:", e);
   }
 
   return { recordsFetched: totalFetched, recordsSaved: totalSaved };
@@ -1499,9 +1616,221 @@ async function syncBaemin(
     console.error("배민 정산 동기화 실패:", e);
   }
 
-  // 부가 데이터(통계, 리뷰, 주문상세, 계좌, 광고, 내가게, NOW, 인근매출, 메뉴, PG매출)는
-  // 핵심 동기화 완료 후 별도 호출로 처리 (타임아웃 방지)
-  // TODO: 2차 동기화 job으로 분리
+  // 4. 리뷰 동기화
+  try {
+    const reviewRes = await callHyphenBaemin("reviews", bmUserId, bmUserPw, {
+      dateFrom: startDate,
+      dateTo: endDate,
+    });
+    const reviewList = reviewRes.data?.reviewList || [];
+    console.log(`[baemin] reviews API returned ${reviewList.length} reviews`);
+    for (const review of reviewList) {
+      await supabase.from("delivery_reviews").upsert(
+        {
+          user_id: userId,
+          platform: "baemin",
+          store_id: review.storeId || null,
+          review_id: review.reviewId || null,
+          order_no: review.orderNo || null,
+          reviewer_name: review.reviewerName || null,
+          rating: review.rating ? parseFloat(review.rating) : null,
+          review_content: review.reviewContent || null,
+          reply_content: review.replyContent || null,
+          review_date: review.reviewDate || review.reviewDt || null,
+          menu_names: review.menuNames || [],
+          tags: review.tags || [],
+          raw_data: review,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,review_id" }
+      );
+    }
+  } catch (e) {
+    console.error("[baemin] 리뷰 동기화 실패:", e);
+  }
+
+  // 5. 통계 동기화
+  try {
+    const statRes = await callHyphenBaemin("statistics", bmUserId, bmUserPw, {
+      dateFrom: startDate,
+      dateTo: endDate,
+    });
+    const statList = statRes.data?.statisticsList || [];
+    console.log(`[baemin] statistics API returned ${statList.length} records`);
+    for (const stat of statList) {
+      await supabase.from("delivery_statistics").upsert(
+        {
+          user_id: userId,
+          platform: "baemin",
+          store_id: stat.storeId || null,
+          stat_date: stat.statDate || stat.date,
+          stat_type: stat.statType || "daily",
+          order_count: stat.orderCount ? parseInt(stat.orderCount, 10) : null,
+          total_sales: stat.totalSales ? parseInt(stat.totalSales, 10) : null,
+          avg_order_amount: stat.avgOrderAmount ? parseInt(stat.avgOrderAmount, 10) : null,
+          cancel_count: stat.cancelCount ? parseInt(stat.cancelCount, 10) : null,
+          new_customer_count: stat.newCustomerCount ? parseInt(stat.newCustomerCount, 10) : null,
+          revisit_customer_count: stat.revisitCustomerCount ? parseInt(stat.revisitCustomerCount, 10) : null,
+          raw_data: stat,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,store_id,stat_date,stat_type" }
+      );
+    }
+  } catch (e) {
+    console.error("[baemin] 통계 동기화 실패:", e);
+  }
+
+  // 6. 광고 관리 동기화
+  try {
+    const adRes = await callHyphenBaemin("ad_management", bmUserId, bmUserPw, {
+      dateFrom: startDate,
+      dateTo: endDate,
+    });
+    const adList = adRes.data?.adList || [];
+    console.log(`[baemin] ad_management API returned ${adList.length} ads`);
+    for (const ad of adList) {
+      await supabase.from("delivery_ads").upsert(
+        {
+          user_id: userId,
+          platform: "baemin",
+          store_id: ad.storeId || null,
+          ad_id: ad.adId || null,
+          ad_name: ad.adName || null,
+          ad_type: ad.adType || null,
+          status: ad.status || null,
+          budget: ad.budget ? parseInt(ad.budget, 10) : null,
+          spent: ad.spent ? parseInt(ad.spent, 10) : null,
+          impressions: ad.impressions ? parseInt(ad.impressions, 10) : null,
+          clicks: ad.clicks ? parseInt(ad.clicks, 10) : null,
+          orders_from_ad: ad.ordersFromAd ? parseInt(ad.ordersFromAd, 10) : null,
+          start_date: ad.startDate || null,
+          end_date: ad.endDate || null,
+          raw_data: ad,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,ad_id" }
+      );
+    }
+  } catch (e) {
+    console.error("[baemin] 광고 동기화 실패:", e);
+  }
+
+  // 7. 메뉴 동기화
+  try {
+    const menuRes = await callHyphenBaemin("menu", bmUserId, bmUserPw);
+    const menuList = menuRes.data?.menuList || [];
+    console.log(`[baemin] menu API returned ${menuList.length} menus`);
+    for (const menu of menuList) {
+      await supabase.from("delivery_menus").upsert(
+        {
+          user_id: userId,
+          platform: "baemin",
+          store_id: menu.storeId || null,
+          menu_id: menu.menuId || null,
+          menu_name: menu.menuName || "Unknown",
+          menu_group: menu.menuGroup || null,
+          price: menu.price ? parseInt(menu.price, 10) : null,
+          description: menu.description || null,
+          image_url: menu.imageUrl || null,
+          status: menu.status || null,
+          order_count: menu.orderCount ? parseInt(menu.orderCount, 10) : null,
+          raw_data: menu,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,menu_id" }
+      );
+    }
+  } catch (e) {
+    console.error("[baemin] 메뉴 동기화 실패:", e);
+  }
+
+  // 8. PG매출 동기화
+  try {
+    const pgRes = await callHyphenBaemin("pg_sales", bmUserId, bmUserPw, {
+      dateFrom: startDate,
+      dateTo: endDate,
+    });
+    const pgList = pgRes.data?.pgSalesList || [];
+    console.log(`[baemin] pg_sales API returned ${pgList.length} records`);
+    for (const pg of pgList) {
+      await supabase.from("delivery_pg_sales").upsert(
+        {
+          user_id: userId,
+          platform: "baemin",
+          store_id: pg.storeId || null,
+          pg_date: pg.pgDate || pg.salesDate,
+          pg_type: pg.pgType || null,
+          card_company: pg.cardCompany || null,
+          approval_no: pg.approvalNo || null,
+          sales_amount: pg.salesAmount ? parseInt(pg.salesAmount, 10) : null,
+          fee_amount: pg.feeAmount ? parseInt(pg.feeAmount, 10) : null,
+          net_amount: pg.netAmount ? parseInt(pg.netAmount, 10) : null,
+          raw_data: pg,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,pg_date,approval_no" }
+      );
+    }
+  } catch (e) {
+    console.error("[baemin] PG매출 동기화 실패:", e);
+  }
+
+  // 9. 인근매출 동기화
+  try {
+    const nearbyRes = await callHyphenBaemin("nearby_sales", bmUserId, bmUserPw, {
+      dateFrom: startDate,
+      dateTo: endDate,
+    });
+    const nearbyList = nearbyRes.data?.nearbySalesList || [];
+    console.log(`[baemin] nearby_sales API returned ${nearbyList.length} records`);
+    for (const ns of nearbyList) {
+      await supabase.from("delivery_nearby_sales").upsert(
+        {
+          user_id: userId,
+          platform: "baemin",
+          store_id: ns.storeId || null,
+          stat_date: ns.statDate || ns.date,
+          region1: ns.region1 || null,
+          region2: ns.region2 || null,
+          category: ns.category || null,
+          my_rank: ns.myRank ? parseInt(ns.myRank, 10) : null,
+          total_stores: ns.totalStores ? parseInt(ns.totalStores, 10) : null,
+          avg_sales: ns.avgSales ? parseInt(ns.avgSales, 10) : null,
+          avg_order_count: ns.avgOrderCount ? parseInt(ns.avgOrderCount, 10) : null,
+          raw_data: ns,
+          synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,platform,store_id,stat_date" }
+      );
+    }
+  } catch (e) {
+    console.error("[baemin] 인근매출 동기화 실패:", e);
+  }
+
+  // 10. 계좌정보 → delivery_stores 보강
+  try {
+    const acctRes = await callHyphenBaemin("account_info", bmUserId, bmUserPw);
+    const acctData = acctRes.data;
+    if (acctData?.depositBank || acctData?.depositAccount) {
+      await supabase.from("delivery_stores")
+        .update({
+          deposit_bank: acctData.depositBank || null,
+          deposit_account: acctData.depositAccount || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId)
+        .eq("platform", "baemin");
+    }
+  } catch (e) {
+    console.error("[baemin] 계좌정보 동기화 실패:", e);
+  }
 
   return { recordsFetched: totalFetched, recordsSaved: totalSaved };
 }
