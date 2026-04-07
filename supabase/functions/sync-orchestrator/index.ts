@@ -1131,7 +1131,12 @@ async function syncCoupangeats(
     if (txRows.length > 0) {
       const BATCH = 50;
       for (let i = 0; i < txRows.length; i += BATCH) {
-        await supabase.from("transactions").upsert(txRows.slice(i, i + BATCH), { onConflict: "user_id,external_tx_id" });
+        const chunk = txRows.slice(i, i + BATCH);
+        const extIds = chunk.map((r: any) => r.external_tx_id);
+        const { data: existing } = await supabase.from("transactions").select("external_tx_id").eq("user_id", userId).in("external_tx_id", extIds);
+        const existingSet = new Set((existing || []).map((e: any) => e.external_tx_id));
+        const newRows = chunk.filter((r: any) => !existingSet.has(r.external_tx_id));
+        if (newRows.length > 0) await supabase.from("transactions").insert(newRows);
       }
     }
   } catch (e) {
