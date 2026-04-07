@@ -112,6 +112,9 @@ export function ConnectionHub({
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [confirmDisconnect, setConfirmDisconnect] = useState<{ key: HubCategory; label: string } | null>(null);
+  const queryClient = useQueryClient();
   const formatPhone = (value: string) => {
     const cleaned = value.replace(/\D/g, "").slice(0, 11);
     if (cleaned.length <= 3) return cleaned;
