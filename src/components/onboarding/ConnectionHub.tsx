@@ -140,6 +140,7 @@ export function ConnectionHub({
     currentStep: number;
     totalSaved: number;
   } | null>(null);
+  const [localConnectionStatus, setLocalConnectionStatus] = useState(connectionStatus);
   const queryClient = useQueryClient();
   const formatPhone = (value: string) => {
     const cleaned = value.replace(/\D/g, "").slice(0, 11);
