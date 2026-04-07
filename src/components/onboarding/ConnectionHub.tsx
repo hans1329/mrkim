@@ -15,7 +15,9 @@ import {
   Sparkles,
   Smartphone,
   Loader2,
+  Unlink,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { HometaxConnectionFlow } from "./HometaxConnectionFlow";
 import { CardConnectionFlow } from "./CardConnectionFlow";
@@ -110,6 +112,9 @@ export function ConnectionHub({
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [confirmDisconnect, setConfirmDisconnect] = useState<{ key: HubCategory; label: string } | null>(null);
+  const queryClient = useQueryClient();
   const formatPhone = (value: string) => {
     const cleaned = value.replace(/\D/g, "").slice(0, 11);
     if (cleaned.length <= 3) return cleaned;
@@ -261,6 +266,52 @@ export function ConnectionHub({
   const isConnected = (key: ServiceType) => connectionStatus[key] === true;
   const connectedCount = Object.values(connectionStatus).filter(Boolean).length;
 
+  const CATEGORY_CONNECTOR_MAP: Record<HubCategory, { connectorId: string; profileField: string; profileAtField: string }[]> = {
+    hometax: [{ connectorId: "codef_hometax", profileField: "hometax_connected", profileAtField: "hometax_connected_at" }],
+    card: [{ connectorId: "crefia", profileField: "card_connected", profileAtField: "card_connected_at" }],
+    account: [{ connectorId: "codef_bank", profileField: "account_connected", profileAtField: "account_connected_at" }],
+    delivery: [
+      { connectorId: "hyphen_baemin", profileField: "", profileAtField: "" },
+      { connectorId: "hyphen_coupangeats", profileField: "", profileAtField: "" },
+    ],
+  };
+
+  const handleDisconnect = async (categoryKey: HubCategory) => {
+    setDisconnecting(categoryKey);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const mappings = CATEGORY_CONNECTOR_MAP[categoryKey];
+      for (const mapping of mappings) {
+        await supabase
+          .from("connector_instances")
+          .update({ status: "disconnected" as any })
+          .eq("connector_id", mapping.connectorId)
+          .eq("user_id", user.id);
+
+        if (mapping.profileField) {
+          await supabase
+            .from("profiles")
+            .update({ [mapping.profileField]: false, [mapping.profileAtField]: null })
+            .eq("user_id", user.id);
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
+      queryClient.invalidateQueries({ queryKey: ["connector-status"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      onComplete?.();
+      toast.success("연동이 해제되었습니다");
+    } catch (error) {
+      console.error("Disconnect error:", error);
+      toast.error("연동 해제에 실패했습니다");
+    } finally {
+      setDisconnecting(null);
+      setConfirmDisconnect(null);
+    }
+  };
+
   const getHeaderTitle = () => {
     if (view.screen === "phone-register") return "연락처 등록";
     if (view.screen === "hub") return "데이터 연동";
@@ -281,9 +332,10 @@ export function ConnectionHub({
     <>
       {/* Full-screen drawer overlay */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        initial={{ opacity: 0, y: "100%" }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
         className="fixed inset-0 z-50 bg-background flex flex-col"
       >
         {/* Header */}
@@ -465,15 +517,13 @@ export function ConnectionHub({
                       const totalSub = cat.connectedKeys.length;
 
                       return (
-                        <motion.button
+                        <motion.div
                           key={cat.key}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.06, duration: 0.25 }}
-                          onClick={() => handleCategoryClick(cat.key)}
                           className={cn(
-                            "w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all text-left",
-                            "active:scale-[0.98]",
+                            "w-full rounded-2xl transition-all overflow-hidden",
                             allConnected
                               ? "bg-green-500/5 border border-green-500/20"
                               : anyConnected
@@ -481,43 +531,69 @@ export function ConnectionHub({
                                 : "bg-muted/40 border border-transparent hover:bg-muted/70"
                           )}
                         >
-                          {/* Icon */}
-                          <div className={cn(
-                            "h-11 w-11 rounded-xl flex items-center justify-center shrink-0",
-                            allConnected ? "bg-green-500/10" : "bg-primary/10"
-                          )}>
-                            {allConnected ? (
-                              <CheckCircle2 className="h-5 w-5 text-green-500" />
-                            ) : (
-                              <cat.icon className="h-5 w-5 text-primary" />
-                            )}
-                          </div>
-
-                          {/* Text */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-sm font-semibold text-foreground leading-tight">
-                                {cat.label}
-                              </span>
-                              {allConnected && (
-                                <span className="text-[10px] font-medium text-green-600 bg-green-500/10 px-1.5 py-0.5 rounded-full leading-none">
-                                  연결됨
-                                </span>
-                              )}
-                              {anyConnected && !allConnected && totalSub > 1 && (
-                                <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full leading-none">
-                                  {connectedSub}/{totalSub}
-                                </span>
+                          <button
+                            onClick={() => handleCategoryClick(cat.key)}
+                            className="w-full flex items-center gap-3 p-3.5 text-left active:scale-[0.98] transition-transform"
+                          >
+                            {/* Icon */}
+                            <div className={cn(
+                              "h-11 w-11 rounded-xl flex items-center justify-center shrink-0",
+                              allConnected ? "bg-green-500/10" : "bg-primary/10"
+                            )}>
+                              {allConnected ? (
+                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                              ) : (
+                                <cat.icon className="h-5 w-5 text-primary" />
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
-                              {cat.description}
-                            </p>
-                          </div>
 
-                          {/* Arrow */}
-                          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-                        </motion.button>
+                            {/* Text */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-sm font-semibold text-foreground leading-tight">
+                                  {cat.label}
+                                </span>
+                                {allConnected && (
+                                  <span className="text-[10px] font-medium text-green-600 bg-green-500/10 px-1.5 py-0.5 rounded-full leading-none">
+                                    연결됨
+                                  </span>
+                                )}
+                                {anyConnected && !allConnected && totalSub > 1 && (
+                                  <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full leading-none">
+                                    {connectedSub}/{totalSub}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                                {cat.description}
+                              </p>
+                            </div>
+
+                            {/* Arrow */}
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                          </button>
+
+                          {/* Disconnect button for connected services */}
+                          {anyConnected && (
+                            <div className="px-3.5 pb-2.5 -mt-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmDisconnect({ key: cat.key, label: cat.label });
+                                }}
+                                disabled={disconnecting === cat.key}
+                                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive transition-colors ml-14"
+                              >
+                                {disconnecting === cat.key ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Unlink className="h-3 w-3" />
+                                )}
+                                연동 끊기
+                              </button>
+                            </div>
+                          )}
+                        </motion.div>
                       );
                     })}
                   </div>
@@ -630,6 +706,42 @@ export function ConnectionHub({
           </div>
         </div>
       </motion.div>
+
+      {/* Disconnect Confirmation */}
+      {confirmDisconnect && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
+          <div className="bg-background rounded-2xl p-5 mx-6 max-w-sm w-full space-y-4 shadow-xl">
+            <div className="space-y-1.5">
+              <h3 className="text-base font-semibold text-foreground">연동을 해제할까요?</h3>
+              <p className="text-sm text-muted-foreground">
+                {confirmDisconnect.label} 연동을 해제하면 관련 데이터 동기화가 중단됩니다.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setConfirmDisconnect(null)}
+              >
+                취소
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 gap-1"
+                disabled={disconnecting === confirmDisconnect.key}
+                onClick={() => handleDisconnect(confirmDisconnect.key)}
+              >
+                {disconnecting === confirmDisconnect.key ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Unlink className="h-4 w-4" />
+                )}
+                해제
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Business Number Modal */}
       <BusinessNumberModal
