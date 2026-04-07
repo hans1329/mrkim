@@ -1,4 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+function LoadingStepText() {
+  const [showAlt, setShowAlt] = useState(false);
+  useEffect(() => {
+    const interval = setInterval(() => setShowAlt(prev => !prev), 2500);
+    return () => clearInterval(interval);
+  }, []);
+  return (
+    <span className="text-[10px] text-muted-foreground transition-opacity duration-300">
+      {showAlt ? "조금 오래걸려요!" : "수집 중..."}
+    </span>
+  );
+}
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -973,7 +986,7 @@ export function ConnectionHub({
                         {step.label}
                       </span>
                       {step.status === "loading" && (
-                        <span className="text-[10px] text-muted-foreground">수집 중...</span>
+                        <LoadingStepText />
                       )}
                     </div>
                   );
