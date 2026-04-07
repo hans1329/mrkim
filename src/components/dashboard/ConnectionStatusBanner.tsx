@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn, josa } from "@/lib/utils";
 import { useConnection } from "@/contexts/ConnectionContext";
-import { useState, useMemo, useCallback } from "react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useUnclassifiedCount } from "@/hooks/useDashboardStats";
 
