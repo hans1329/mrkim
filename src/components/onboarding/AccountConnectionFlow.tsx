@@ -144,6 +144,8 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
     setError(null);
     setStep("loading");
     
+    console.log("[AccountConnectionFlow] BRN:", profile?.business_registration_number, "→ clientType:", clientType);
+    
     try {
       let newConnectedId: string | null = null;
 
