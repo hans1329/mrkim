@@ -35,6 +35,13 @@ const normalizeMenuName = (value: unknown) => {
     .trim();
 };
 
+const getDetailMenuName = (item: unknown) => {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return "";
+
+  const detail = item as Record<string, unknown>;
+  return normalizeMenuName(detail.menuName || detail.name || detail.itemName);
+};
+
 export function MenuAnalysisTab() {
   const [platform, setPlatform] = useState<string>("all");
 
@@ -210,9 +217,9 @@ export function MenuAnalysisTab() {
       }
 
       const firstDetail = Array.isArray(order.detail_list)
-        ? order.detail_list.find((item: any) => normalizeMenuName(item?.menuName || item?.name || item?.itemName))
+        ? order.detail_list.find((item) => getDetailMenuName(item))
         : null;
-      const detailName = normalizeMenuName(firstDetail?.menuName || firstDetail?.name || firstDetail?.itemName);
+      const detailName = getDetailMenuName(firstDetail);
       if (detailName) uniqueRepresentativeMenus.add(detailName);
     }
 
