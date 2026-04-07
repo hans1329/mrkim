@@ -335,47 +335,65 @@ export function ConnectorStatusCard() {
               {/* 2행: 액션 버튼 */}
               <div className="flex items-center justify-center">
                 {isConnected && (
-                  <div className="flex items-center gap-2 w-full">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
-                      onClick={() => {
-                        const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
-                        if (drawerType) openDrawer(drawerType);
-                      }}
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                      연동 관리
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
-                      disabled={syncing === connector.id}
-                      onClick={() => setConfirmResync({ id: connector.id, name: connector.name })}
-                    >
-                      {syncing === connector.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
+                  <div className="space-y-1 w-full">
+                    <div className="flex items-center gap-2 w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
+                        onClick={() => {
+                          const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
+                          if (drawerType) openDrawer(drawerType);
+                        }}
+                      >
                         <RefreshCw className="h-3 w-3" />
-                      )}
-                      재수집
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-destructive"
-                      disabled={disconnecting === connector.id}
-                      onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
-                    >
-                      {disconnecting === connector.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Unlink className="h-3 w-3" />
-                      )}
-                      연동 끊기
-                    </Button>
+                        연동 관리
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
+                        disabled={syncing === connector.id}
+                        onClick={() => setConfirmResync({ id: connector.id, name: connector.name })}
+                      >
+                        {syncing === connector.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3" />
+                        )}
+                        재수집
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2 w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-destructive"
+                        disabled={disconnecting === connector.id}
+                        onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
+                      >
+                        {disconnecting === connector.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Unlink className="h-3 w-3" />
+                        )}
+                        연동 끊기
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-destructive"
+                        disabled={purging === connector.id}
+                        onClick={() => setConfirmPurge({ id: connector.id, name: connector.name, category: connector.category })}
+                      >
+                        {purging === connector.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
+                        데이터 삭제
+                      </Button>
+                    </div>
                   </div>
                 )}
                 {!isConnected && (
