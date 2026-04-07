@@ -312,9 +312,10 @@ export function ConnectionHub({
       for (const mapping of mappings) {
         await supabase
           .from("connector_instances")
-          .update({ status: "disconnected" as any })
+          .update({ status: "disconnected" as any, status_message: "사용자가 연동 해제" })
           .eq("connector_id", mapping.connectorId)
-          .eq("user_id", user.id);
+          .eq("user_id", user.id)
+          .eq("status", "connected" as any);
 
         if (mapping.profileField) {
           await supabase
