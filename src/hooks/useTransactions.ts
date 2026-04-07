@@ -10,7 +10,7 @@ export interface Transaction {
   description: string;
   amount: number;
   type: "income" | "expense" | "transfer_in";
-  source_type: "card" | "bank";
+  source_type: "card" | "bank" | "delivery";
   source_name: string | null;
   source_account: string | null;
   category: string | null;
@@ -33,7 +33,7 @@ export interface TransactionInsert {
   description: string;
   amount: number;
   type: "income" | "expense" | "transfer_in";
-  source_type: "card" | "bank";
+  source_type: "card" | "bank" | "delivery";
   source_name?: string;
   source_account?: string;
   category?: string;
@@ -60,7 +60,7 @@ export interface TransactionFilters {
   category?: string;
   startDate?: string;
   endDate?: string;
-  sourceType?: "card" | "bank";
+  sourceType?: "card" | "bank" | "delivery";
   searchTerm?: string;
 }
 
