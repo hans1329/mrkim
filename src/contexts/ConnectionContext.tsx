@@ -220,45 +220,21 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         await syncProfileFlags(category, true);
       }
 
-      // 연동 완료 후 방금 갱신한 정확한 인스턴스로 최초 동기화 트리거
-      try {
-        const instanceId = Array.isArray(instance) ? instance[0]?.id : instance?.id;
+      // 연동 완료 후 방금 갱신한 정확한 인스턴스로 최초 동기화 트리거 (fire-and-forget)
+      const instanceId = Array.isArray(instance) ? instance[0]?.id : instance?.id;
 
-        if (instanceId) {
-          if (connectorId.startsWith("hyphen_")) {
-            const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
-              body: { instanceId, forceFullSync: true },
-            });
-
-            if (error) {
-              throw new Error(error.message || "초기 데이터 동기화 호출에 실패했습니다.");
-            }
-
-            const syncResult = Array.isArray(data?.results)
-              ? data.results.find((result: { instanceId?: string }) => result.instanceId === instanceId)
-              : undefined;
-
-            if (data?.success === false || syncResult?.success === false) {
-              throw new Error(syncResult?.error || data?.error || "초기 데이터 동기화에 실패했습니다.");
-            }
-
+      if (instanceId) {
+        // 모든 커넥터: fire-and-forget으로 sync-orchestrator 호출
+        supabase.functions.invoke("sync-orchestrator", {
+          body: { instanceId, forceFullSync: true },
+        }).then((res) => {
+          if (res.data?.success) {
+            console.log(`Initial sync completed for ${connectorId}:`, res.data);
             invalidatePostSyncQueries();
-            console.log(`Initial sync completed for ${connectorId}:`, data);
-          } else {
-            supabase.functions.invoke("sync-orchestrator", {
-              body: { instanceId },
-            }).then((res) => {
-              if (res.data?.success) {
-                console.log(`Initial sync triggered for ${connectorId}:`, res.data);
-              }
-            }).catch((err) => {
-              console.warn("Initial sync trigger failed (non-blocking):", err);
-            });
           }
-        }
-      } catch (syncErr) {
-        console.warn("Failed to trigger initial sync:", syncErr);
-        throw syncErr;
+        }).catch((err) => {
+          console.warn("Initial sync trigger failed (non-blocking):", err);
+        });
       }
 
       return true;
