@@ -517,15 +517,13 @@ export function ConnectionHub({
                       const totalSub = cat.connectedKeys.length;
 
                       return (
-                        <motion.button
+                        <motion.div
                           key={cat.key}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.06, duration: 0.25 }}
-                          onClick={() => handleCategoryClick(cat.key)}
                           className={cn(
-                            "w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all text-left",
-                            "active:scale-[0.98]",
+                            "w-full rounded-2xl transition-all overflow-hidden",
                             allConnected
                               ? "bg-green-500/5 border border-green-500/20"
                               : anyConnected
@@ -533,43 +531,69 @@ export function ConnectionHub({
                                 : "bg-muted/40 border border-transparent hover:bg-muted/70"
                           )}
                         >
-                          {/* Icon */}
-                          <div className={cn(
-                            "h-11 w-11 rounded-xl flex items-center justify-center shrink-0",
-                            allConnected ? "bg-green-500/10" : "bg-primary/10"
-                          )}>
-                            {allConnected ? (
-                              <CheckCircle2 className="h-5 w-5 text-green-500" />
-                            ) : (
-                              <cat.icon className="h-5 w-5 text-primary" />
-                            )}
-                          </div>
-
-                          {/* Text */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-sm font-semibold text-foreground leading-tight">
-                                {cat.label}
-                              </span>
-                              {allConnected && (
-                                <span className="text-[10px] font-medium text-green-600 bg-green-500/10 px-1.5 py-0.5 rounded-full leading-none">
-                                  연결됨
-                                </span>
-                              )}
-                              {anyConnected && !allConnected && totalSub > 1 && (
-                                <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full leading-none">
-                                  {connectedSub}/{totalSub}
-                                </span>
+                          <button
+                            onClick={() => handleCategoryClick(cat.key)}
+                            className="w-full flex items-center gap-3 p-3.5 text-left active:scale-[0.98] transition-transform"
+                          >
+                            {/* Icon */}
+                            <div className={cn(
+                              "h-11 w-11 rounded-xl flex items-center justify-center shrink-0",
+                              allConnected ? "bg-green-500/10" : "bg-primary/10"
+                            )}>
+                              {allConnected ? (
+                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                              ) : (
+                                <cat.icon className="h-5 w-5 text-primary" />
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
-                              {cat.description}
-                            </p>
-                          </div>
 
-                          {/* Arrow */}
-                          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-                        </motion.button>
+                            {/* Text */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-sm font-semibold text-foreground leading-tight">
+                                  {cat.label}
+                                </span>
+                                {allConnected && (
+                                  <span className="text-[10px] font-medium text-green-600 bg-green-500/10 px-1.5 py-0.5 rounded-full leading-none">
+                                    연결됨
+                                  </span>
+                                )}
+                                {anyConnected && !allConnected && totalSub > 1 && (
+                                  <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full leading-none">
+                                    {connectedSub}/{totalSub}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                                {cat.description}
+                              </p>
+                            </div>
+
+                            {/* Arrow */}
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                          </button>
+
+                          {/* Disconnect button for connected services */}
+                          {anyConnected && (
+                            <div className="px-3.5 pb-2.5 -mt-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmDisconnect({ key: cat.key, label: cat.label });
+                                }}
+                                disabled={disconnecting === cat.key}
+                                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive transition-colors ml-14"
+                              >
+                                {disconnecting === cat.key ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Unlink className="h-3 w-3" />
+                                )}
+                                연동 끊기
+                              </button>
+                            </div>
+                          )}
+                        </motion.div>
                       );
                     })}
                   </div>
