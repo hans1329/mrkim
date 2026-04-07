@@ -213,7 +213,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
         localStorage.setItem("codef_card_company", selectedCompany);
         localStorage.setItem("codef_card_company_name", selectedCompanyName);
 
-        const cards = await getCards(selectedCompany, newConnectedId);
+        const cards = await getCards(selectedCompany, newConnectedId, clientType);
         setFetchedCards(cards);
         setStep("select-cards");
       } else {
@@ -252,6 +252,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
           cardCompanyName: storedCardCompanyName || storedCardCompany,
           startDate,
           endDate,
+          clientType,
         });
 
         setSyncResult({ synced: result.synced, skipped: result.skipped });

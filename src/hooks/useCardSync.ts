@@ -33,6 +33,7 @@ export function useCardSync() {
       startDate,
       endDate,
       isInitialSync = false,
+      clientType = "P",
     }: {
       connectedId: string;
       cardCompanyId: string;
@@ -40,6 +41,7 @@ export function useCardSync() {
       startDate?: string;
       endDate?: string;
       isInitialSync?: boolean;
+      clientType?: "P" | "B";
     }): Promise<SyncResult> => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("로그인이 필요합니다");
@@ -88,6 +90,7 @@ export function useCardSync() {
             cardCompanyId,
             startDate: effectiveStartDate,
             endDate: effectiveEndDate,
+            clientType,
           },
         }
       );
@@ -198,9 +201,11 @@ export function useConnectedCards() {
     mutationFn: async ({
       connectedId,
       cardCompanyId,
+      clientType = "P",
     }: {
       connectedId: string;
       cardCompanyId: string;
+      clientType?: "P" | "B";
     }) => {
       const { data: response, error } = await supabase.functions.invoke(
         "codef-card",
@@ -209,6 +214,7 @@ export function useConnectedCards() {
             action: "getCards",
             connectedId,
             cardCompanyId,
+            clientType,
           },
         }
       );
