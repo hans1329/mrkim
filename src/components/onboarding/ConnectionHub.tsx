@@ -973,7 +973,7 @@ export function ConnectionHub({
                         {step.label}
                       </span>
                       {step.status === "loading" && (
-                        <span className="text-[10px] text-muted-foreground">수집 중...</span>
+                        <LoadingStepText />
                       )}
                     </div>
                   );
