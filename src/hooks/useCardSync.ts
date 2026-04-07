@@ -16,6 +16,7 @@ interface CodefTransaction {
   installment: string;
   currency?: string;
   localAmount?: number;
+  rawData?: Record<string, unknown>;
 }
 
 interface SyncResult {
@@ -184,6 +185,7 @@ export function useCardSync() {
           merchant_name: tx.merchantName,
           merchant_category: tx.merchantCategory,
           currency: tx.currency || "KRW",
+          local_amount: tx.localAmount || null,
         };
       });
 
