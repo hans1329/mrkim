@@ -100,11 +100,13 @@ export function MenuAnalysisTab() {
           menuMap.set(menuName, existing);
         }
       } else if (order.order_name) {
-        // detail_list 없으면 order_name 기반
-        const existing = menuMap.get(order.order_name) || { name: order.order_name, count: 0, revenue: 0 };
+        // detail_list 없으면 order_name 기반 — "외 N" 제거하여 대표 메뉴명 추출
+        const cleanName = order.order_name.replace(/\s*외\s*\d+.*$/, "").trim();
+        if (!cleanName) continue;
+        const existing = menuMap.get(cleanName) || { name: cleanName, count: 0, revenue: 0 };
         existing.count += 1;
         existing.revenue += Number(order.total_amt || 0);
-        menuMap.set(order.order_name, existing);
+        menuMap.set(cleanName, existing);
       }
     }
 
