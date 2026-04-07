@@ -839,6 +839,7 @@ function TransferSection({
 export default function Funds() {
   const navigate = useNavigate();
   const { accountConnected, profileLoading } = useConnection();
+  const { openDrawer } = useConnectionDrawer();
 
   const { deposits, isLoading: depositsLoading, totalDeposits, addDeposit, updateDeposit, deleteDeposit } = useDeposits();
   const { autoTransfers, isLoading: transfersLoading, addTransfer, deleteTransfer } = useAutoTransfers();
