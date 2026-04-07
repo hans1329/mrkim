@@ -33,6 +33,7 @@ export function useBankSync() {
       startDate,
       endDate,
       isInitialSync = false,
+      clientType = "P",
     }: {
       connectedId: string;
       bankId: string;
@@ -41,6 +42,7 @@ export function useBankSync() {
       startDate?: string;
       endDate?: string;
       isInitialSync?: boolean;
+      clientType?: "P" | "B";
     }): Promise<SyncResult> => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("로그인이 필요합니다");
@@ -90,6 +92,7 @@ export function useBankSync() {
             accountNo,
             startDate: effectiveStartDate,
             endDate: effectiveEndDate,
+            clientType,
           },
         }
       );
