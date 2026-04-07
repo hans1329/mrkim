@@ -1100,66 +1100,45 @@ async function syncCoupangeats(
       if (!error) totalSaved++;
     }
 
-    // 매출을 transactions 테이블에도 반영 (source_type: delivery)
+    // 매출을 transactions 테이블에도 반영 (배치)
+    const txRows: any[] = [];
     for (const order of orderList) {
       if (!order.orderNo || !order.orderDt) continue;
       const txDate = formatDateStr(order.orderDt);
       const totalAmt = parseInt(order.totalAmt || "0", 10);
       const syncedAt = new Date().toISOString();
-      const txTime = order.orderTm
-        ? `${order.orderTm.slice(0, 2)}:${order.orderTm.slice(2, 4)}:00`
-        : null;
+      const txTime = order.orderTm ? `${order.orderTm.slice(0, 2)}:${order.orderTm.slice(2, 4)}:00` : null;
 
-      // 매출(총 주문금액) - income
-      await supabase.from("transactions").upsert(
-        {
-          user_id: userId,
-          source_type: "delivery",
-          source_name: "쿠팡이츠",
-          external_tx_id: `ce_${order.orderNo}`,
-          transaction_date: txDate,
-          transaction_time: txTime,
-          amount: totalAmt,
-          type: "income",
-          description: `쿠팡이츠 주문 ${order.orderName || order.orderNo}`,
-          category: "배달매출",
-          category_icon: "🛵",
-          merchant_name: "쿠팡이츠",
-          synced_at: syncedAt,
-        },
-        { onConflict: "user_id,external_tx_id" }
-      );
+      txRows.push({
+        user_id: userId, source_type: "delivery", source_name: "쿠팡이츠",
+        external_tx_id: `ce_${order.orderNo}`, transaction_date: txDate,
+        transaction_time: txTime, amount: totalAmt, type: "income",
+        description: `쿠팡이츠 주문 ${order.orderName || order.orderNo}`,
+        category: "배달매출", category_icon: "🛵", merchant_name: "쿠팡이츠", synced_at: syncedAt,
+      });
 
-      // 수수료 분리 저장 - expense
-      const feeItems = [
-        { key: "orderFee", label: "주문중개수수료", icon: "📋", category: "지급수수료" },
-        { key: "cardFee", label: "카드결제수수료", icon: "💳", category: "지급수수료" },
-        { key: "adFee", label: "광고비", icon: "📢", category: "광고선전비" },
-        { key: "deliveryAmt", label: "배달대행료", icon: "🏍️", category: "운반비" },
+      const fees = [
+        { key: "orderFee", label: "주문중개수수료", icon: "📋", cat: "지급수수료" },
+        { key: "cardFee", label: "카드결제수수료", icon: "💳", cat: "지급수수료" },
+        { key: "adFee", label: "광고비", icon: "📢", cat: "광고선전비" },
+        { key: "deliveryAmt", label: "배달대행료", icon: "🏍️", cat: "운반비" },
       ];
-
-      for (const fee of feeItems) {
-        const feeAmt = parseInt(order[fee.key] || "0", 10);
-        if (feeAmt <= 0) continue;
-
-        await supabase.from("transactions").upsert(
-          {
-            user_id: userId,
-            source_type: "delivery",
-            source_name: "쿠팡이츠",
-            external_tx_id: `ce_${order.orderNo}_${fee.key}`,
-            transaction_date: txDate,
-            transaction_time: txTime,
-            amount: feeAmt,
-            type: "expense",
-            description: `쿠팡이츠 ${fee.label} (${order.orderName || order.orderNo})`,
-            category: fee.category,
-            category_icon: fee.icon,
-            merchant_name: "쿠팡이츠",
-            synced_at: syncedAt,
-          },
-          { onConflict: "user_id,external_tx_id" }
-        );
+      for (const f of fees) {
+        const amt = parseInt(order[f.key] || "0", 10);
+        if (amt <= 0) continue;
+        txRows.push({
+          user_id: userId, source_type: "delivery", source_name: "쿠팡이츠",
+          external_tx_id: `ce_${order.orderNo}_${f.key}`, transaction_date: txDate,
+          transaction_time: txTime, amount: amt, type: "expense",
+          description: `쿠팡이츠 ${f.label} (${order.orderName || order.orderNo})`,
+          category: f.cat, category_icon: f.icon, merchant_name: "쿠팡이츠", synced_at: syncedAt,
+        });
+      }
+    }
+    if (txRows.length > 0) {
+      const BATCH = 50;
+      for (let i = 0; i < txRows.length; i += BATCH) {
+        await supabase.from("transactions").upsert(txRows.slice(i, i + BATCH), { onConflict: "user_id,external_tx_id" });
       }
     }
   } catch (e) {
@@ -1169,151 +1148,106 @@ async function syncCoupangeats(
   // 3. 정산 내역 동기화
   try {
     const settleRes = await callHyphenCoupangeats("settlement", ceUserId, ceUserPw, {
-      dateFrom: startDate,
-      dateTo: endDate,
-      allTransYn: "Y",
+      dateFrom: startDate, dateTo: endDate, allTransYn: "Y",
     });
-
     const calList = settleRes.data?.calList || [];
-
-    for (const cal of calList) {
-      const settlementList = cal.settlementList || [];
-      const details = settlementList.length > 0 ? settlementList[0].details || {} : {};
-
-      await supabase.from("delivery_settlements").upsert(
-        {
-          user_id: userId,
-          platform: "coupangeats",
-          store_id: cal.storeId || null,
-          biz_no: cal.bizNo || null,
-          cal_date: cal.calDate,
+    if (calList.length > 0) {
+      const rows = calList.map((cal: any) => {
+        const sl = cal.settlementList || [];
+        return {
+          user_id: userId, platform: "coupangeats", store_id: cal.storeId || null,
+          biz_no: cal.bizNo || null, cal_date: cal.calDate,
           settlement_amt: parseInt(cal.settlementAmt || "0", 10),
           balance: parseInt(cal.balance || "0", 10),
-          settlement_details: details,
-          raw_data: cal,
-          synced_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,platform,store_id,cal_date" }
-      );
+          settlement_details: sl.length > 0 ? sl[0].details || {} : {},
+          raw_data: cal, synced_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+        };
+      });
+      const BATCH = 50;
+      for (let i = 0; i < rows.length; i += BATCH) {
+        await supabase.from("delivery_settlements").upsert(rows.slice(i, i + BATCH), { onConflict: "user_id,platform,store_id,cal_date" });
+      }
     }
   } catch (e) {
     console.error("정산 동기화 실패:", e);
   }
 
-  // 4. 리뷰 동기화
+  // 4~7: 부가 데이터 (개별 try-catch)
+  // 4. 리뷰
   try {
-    const reviewRes = await callHyphenCoupangeats("reviews", ceUserId, ceUserPw, {
-      dateFrom: startDate,
-      dateTo: endDate,
-    });
-    const reviewList = reviewRes.data?.reviewList || [];
-    console.log(`[coupangeats] reviews API returned ${reviewList.length} reviews`);
-    for (const review of reviewList) {
-      await supabase.from("delivery_reviews").upsert(
-        {
-          user_id: userId,
-          platform: "coupangeats",
-          store_id: review.storeId || null,
-          review_id: review.reviewId || null,
-          order_no: review.orderNo || null,
-          reviewer_name: review.reviewerName || null,
-          rating: review.rating ? parseFloat(review.rating) : null,
-          review_content: review.reviewContent || null,
-          reply_content: review.replyContent || null,
-          review_date: review.reviewDate || review.reviewDt || null,
-          menu_names: review.menuNames || [],
-          tags: review.tags || [],
-          raw_data: review,
-          synced_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,platform,review_id" }
-      );
+    const res = await callHyphenCoupangeats("reviews", ceUserId, ceUserPw, { dateFrom: startDate, dateTo: endDate });
+    const list = res.data?.reviewList || [];
+    console.log(`[coupangeats] reviews: ${list.length}`);
+    if (list.length > 0) {
+      const rows = list.map((r: any) => ({
+        user_id: userId, platform: "coupangeats", store_id: r.storeId || null,
+        review_id: r.reviewId || null, order_no: r.orderNo || null,
+        reviewer_name: r.reviewerName || null, rating: r.rating ? parseFloat(r.rating) : null,
+        review_content: r.reviewContent || null, reply_content: r.replyContent || null,
+        review_date: r.reviewDate || r.reviewDt || null, menu_names: r.menuNames || [],
+        tags: r.tags || [], raw_data: r, synced_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      }));
+      const BATCH = 50;
+      for (let i = 0; i < rows.length; i += BATCH) {
+        await supabase.from("delivery_reviews").upsert(rows.slice(i, i + BATCH), { onConflict: "user_id,platform,review_id" });
+      }
     }
-  } catch (e) {
-    console.error("[coupangeats] 리뷰 동기화 실패:", e);
-  }
+  } catch (e) { console.error("[coupangeats] 리뷰 실패:", e); }
 
-  // 5. 메뉴 동기화
+  // 5. 메뉴
   try {
-    const menuRes = await callHyphenCoupangeats("menu", ceUserId, ceUserPw);
-    const menuList = menuRes.data?.menuList || [];
-    console.log(`[coupangeats] menu API returned ${menuList.length} menus`);
-    for (const menu of menuList) {
-      await supabase.from("delivery_menus").upsert(
-        {
-          user_id: userId,
-          platform: "coupangeats",
-          store_id: menu.storeId || null,
-          menu_id: menu.menuId || null,
-          menu_name: menu.menuName || "Unknown",
-          menu_group: menu.menuGroup || null,
-          price: menu.price ? parseInt(menu.price, 10) : null,
-          description: menu.description || null,
-          image_url: menu.imageUrl || null,
-          status: menu.status || null,
-          order_count: menu.orderCount ? parseInt(menu.orderCount, 10) : null,
-          raw_data: menu,
-          synced_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,platform,menu_id" }
-      );
+    const res = await callHyphenCoupangeats("menu", ceUserId, ceUserPw);
+    const list = res.data?.menuList || [];
+    console.log(`[coupangeats] menus: ${list.length}`);
+    if (list.length > 0) {
+      const rows = list.map((m: any) => ({
+        user_id: userId, platform: "coupangeats", store_id: m.storeId || null,
+        menu_id: m.menuId || null, menu_name: m.menuName || "Unknown",
+        menu_group: m.menuGroup || null, price: m.price ? parseInt(m.price, 10) : null,
+        description: m.description || null, image_url: m.imageUrl || null,
+        status: m.status || null, order_count: m.orderCount ? parseInt(m.orderCount, 10) : null,
+        raw_data: m, synced_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      }));
+      const BATCH = 50;
+      for (let i = 0; i < rows.length; i += BATCH) {
+        await supabase.from("delivery_menus").upsert(rows.slice(i, i + BATCH), { onConflict: "user_id,platform,menu_id" });
+      }
     }
-  } catch (e) {
-    console.error("[coupangeats] 메뉴 동기화 실패:", e);
-  }
+  } catch (e) { console.error("[coupangeats] 메뉴 실패:", e); }
 
-  // 6. PG매출 동기화
+  // 6. PG매출
   try {
-    const pgRes = await callHyphenCoupangeats("pg_sales", ceUserId, ceUserPw, {
-      dateFrom: startDate,
-      dateTo: endDate,
-    });
-    const pgList = pgRes.data?.pgSalesList || [];
-    console.log(`[coupangeats] pg_sales API returned ${pgList.length} records`);
-    for (const pg of pgList) {
-      await supabase.from("delivery_pg_sales").upsert(
-        {
-          user_id: userId,
-          platform: "coupangeats",
-          store_id: pg.storeId || null,
-          pg_date: pg.pgDate || pg.salesDate,
-          pg_type: pg.pgType || null,
-          card_company: pg.cardCompany || null,
-          approval_no: pg.approvalNo || null,
-          sales_amount: pg.salesAmount ? parseInt(pg.salesAmount, 10) : null,
-          fee_amount: pg.feeAmount ? parseInt(pg.feeAmount, 10) : null,
-          net_amount: pg.netAmount ? parseInt(pg.netAmount, 10) : null,
-          raw_data: pg,
-          synced_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,platform,pg_date,approval_no" }
-      );
+    const res = await callHyphenCoupangeats("pg_sales", ceUserId, ceUserPw, { dateFrom: startDate, dateTo: endDate });
+    const list = res.data?.pgSalesList || [];
+    console.log(`[coupangeats] pg_sales: ${list.length}`);
+    if (list.length > 0) {
+      const rows = list.map((p: any) => ({
+        user_id: userId, platform: "coupangeats", store_id: p.storeId || null,
+        pg_date: p.pgDate || p.salesDate, pg_type: p.pgType || null,
+        card_company: p.cardCompany || null, approval_no: p.approvalNo || null,
+        sales_amount: p.salesAmount ? parseInt(p.salesAmount, 10) : null,
+        fee_amount: p.feeAmount ? parseInt(p.feeAmount, 10) : null,
+        net_amount: p.netAmount ? parseInt(p.netAmount, 10) : null,
+        raw_data: p, synced_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      }));
+      const BATCH = 50;
+      for (let i = 0; i < rows.length; i += BATCH) {
+        await supabase.from("delivery_pg_sales").upsert(rows.slice(i, i + BATCH), { onConflict: "user_id,platform,pg_date,approval_no" });
+      }
     }
-  } catch (e) {
-    console.error("[coupangeats] PG매출 동기화 실패:", e);
-  }
+  } catch (e) { console.error("[coupangeats] PG매출 실패:", e); }
 
-  // 7. 계좌정보 → delivery_stores 보강
+  // 7. 계좌정보
   try {
-    const acctRes = await callHyphenCoupangeats("account_info", ceUserId, ceUserPw);
-    const acctData = acctRes.data;
-    if (acctData?.depositBank || acctData?.depositAccount) {
-      await supabase.from("delivery_stores")
-        .update({
-          deposit_bank: acctData.depositBank || null,
-          deposit_account: acctData.depositAccount || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", userId)
-        .eq("platform", "coupangeats");
+    const res = await callHyphenCoupangeats("account_info", ceUserId, ceUserPw);
+    const d = res.data;
+    if (d?.depositBank || d?.depositAccount) {
+      await supabase.from("delivery_stores").update({
+        deposit_bank: d.depositBank || null, deposit_account: d.depositAccount || null,
+        updated_at: new Date().toISOString(),
+      }).eq("user_id", userId).eq("platform", "coupangeats");
     }
-  } catch (e) {
-    console.error("[coupangeats] 계좌정보 동기화 실패:", e);
-  }
+  } catch (e) { console.error("[coupangeats] 계좌정보 실패:", e); }
 
   return { recordsFetched: totalFetched, recordsSaved: totalSaved };
 }
