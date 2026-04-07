@@ -2072,6 +2072,7 @@ export type Database = {
           id: string
           is_fixed_asset: boolean | null
           is_manually_classified: boolean | null
+          local_amount: number | null
           memo: string | null
           merchant_category: string | null
           merchant_name: string | null
@@ -2108,6 +2109,7 @@ export type Database = {
           id?: string
           is_fixed_asset?: boolean | null
           is_manually_classified?: boolean | null
+          local_amount?: number | null
           memo?: string | null
           merchant_category?: string | null
           merchant_name?: string | null
@@ -2144,6 +2146,7 @@ export type Database = {
           id?: string
           is_fixed_asset?: boolean | null
           is_manually_classified?: boolean | null
+          local_amount?: number | null
           memo?: string | null
           merchant_category?: string | null
           merchant_name?: string | null
