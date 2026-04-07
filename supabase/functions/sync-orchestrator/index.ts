@@ -1440,7 +1440,7 @@ async function syncBaemin(
         { key: "deliveryAmt", label: "배달대행료", icon: "🏍️", cat: "운반비" },
       ];
       for (const f of fees) {
-        const amt = parseInt(order[f.key] || "0", 10);
+        const amt = Math.abs(parseInt(order[f.key] || "0", 10));
         if (amt <= 0) continue;
         txRows.push({
           user_id: userId, source_type: "delivery", source_name: "배달의민족",
