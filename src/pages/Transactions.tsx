@@ -529,7 +529,7 @@ export default function Transactions() {
                                 (transaction.type === "income" || transaction.type === "transfer_in") ? "text-green-600" : "text-red-600"
                               )}>
                                 {(transaction.type === "income" || transaction.type === "transfer_in") ? "+" : "-"}
-                                {formatCurrency(transaction.amount)}
+                                {formatCurrency(transaction.amount, (transaction as any).currency)}
                               </p>
                               <Button
                                 variant="ghost"
@@ -538,7 +538,7 @@ export default function Transactions() {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setDeleteTargetId(transaction.id);
-                                  setDeleteTargetLabel(`${transaction.description} (${formatCurrency(transaction.amount)})`);
+                                  setDeleteTargetLabel(`${transaction.description} (${formatCurrency(transaction.amount, (transaction as any).currency)})`);
                                 }}
                               >
                                 <Trash2 className="h-3 w-3" />
