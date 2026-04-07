@@ -91,8 +91,10 @@ export function MenuAnalysisTab() {
           const menuName = item.menuName || item.name || item.itemName;
           if (!menuName) continue;
           const existing = menuMap.get(menuName) || { name: menuName, count: 0, revenue: 0 };
-          existing.count += parseInt(item.qty || item.quantity || "1", 10);
-          existing.revenue += parseInt(item.amount || item.price || "0", 10) * parseInt(item.qty || item.quantity || "1", 10);
+          const qty = parseInt(item.qty || item.quantity || "1", 10);
+          const price = parseInt(item.salePrice || item.amount || item.price || item.unitPrice || "0", 10);
+          existing.count += qty;
+          existing.revenue += price;
           menuMap.set(menuName, existing);
         }
       } else if (order.order_name) {
