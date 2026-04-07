@@ -276,7 +276,8 @@ async function handleRegisterWithCert(
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } else {
-    const errorMessage = data.data?.errorList?.[0]?.message || result.message || "인증서 등록 실패";
+    const errorCode = data.data?.errorList?.[0]?.code || result.code;
+    const errorMessage = getCardFriendlyMessage(errorCode);
     return new Response(
       JSON.stringify({
         success: false,
@@ -355,7 +356,8 @@ async function handleRegister(
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } else {
-    const errorMessage = data.data?.errorList?.[0]?.message || result.message || "계정 등록 실패";
+    const errorCode = data.data?.errorList?.[0]?.code || result.code;
+    const errorMessage = getCardFriendlyMessage(errorCode);
     return new Response(
       JSON.stringify({
         success: false,
@@ -753,4 +755,44 @@ async function handleGetTransactions(
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr || dateStr.length !== 8) return dateStr || "";
   return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+}
+
+function getCardFriendlyMessage(errorCode: string): string {
+  const errorMessages: Record<string, string> = {
+    // 인증서 관련
+    "CF-12302": "인증서 비밀번호가 틀렸어요. 정확한 비밀번호를 입력해주세요.",
+    "CF-12303": "인증서가 만료되었어요. 새 인증서를 발급받아주세요.",
+    "CF-12304": "인증서가 폐기되었어요. 새 인증서를 발급받아주세요.",
+    "CF-12305": "해당 카드사에서 사용할 수 없는 인증서예요. 확인해주세요.",
+    
+    // 아이디/비밀번호 관련
+    "CF-12800": "아이디 또는 비밀번호가 일치하지 않아요. 다시 확인해주세요.",
+    "CF-12801": "비밀번호가 일치하지 않아요. 다시 확인해주세요.",
+    "CF-12802": "아이디가 존재하지 않아요. 다시 확인해주세요.",
+    "CF-12803": "로그인 정보가 올바르지 않아요. 다시 확인해주세요.",
+    "CF-12817": "카드사 비밀번호가 등록되지 않았어요. 해당 카드사 앱에서 비밀번호를 먼저 등록해주세요.",
+    
+    // 잠금/차단 관련
+    "CF-12811": "비밀번호 오류 횟수가 초과되었어요. 카드사 앱이나 고객센터에서 비밀번호를 재설정해주세요. (자동 해제되지 않습니다)",
+    "CF-12812": "계정이 잠겼어요. 카드사 고객센터에 문의해주세요.",
+    
+    // 서비스 관련
+    "CF-12820": "현재 서비스 점검 중이에요. 잠시 후 다시 시도해주세요.",
+    "CF-12821": "카드사 서버가 일시적으로 응답하지 않아요. 잠시 후 다시 시도해주세요.",
+    
+    // 계정/등록 관련
+    "CF-04000": "요청 처리 중 문제가 발생했어요. 입력 정보를 다시 확인해주세요.",
+    "CF-04002": "인증서 비밀번호가 올바르지 않아요. 다시 확인해주세요.",
+    "CF-04003": "인증서가 만료되었어요. 갱신된 인증서를 사용해주세요.",
+    "CF-04005": "인증서 형식이 올바르지 않아요. PFX/P12 또는 DER+KEY 파일을 확인해주세요.",
+    "CF-04009": "인증서 정보가 올바르지 않아요. 인증서 파일과 비밀번호를 다시 확인해주세요.",
+    "CF-04012": "이미 등록된 계정이에요. 기존 연동을 해제한 후 다시 시도해주세요.",
+    "CF-04015": "계정 조회에 실패했어요. 사업자 유형(개인/법인)이 올바른지 확인해주세요.",
+    
+    // 일반 에러
+    "CF-09998": "카드사 서버 점검 중이에요. 잠시 후 다시 시도해주세요.",
+    "CF-09999": "일시적인 오류가 발생했어요. 잠시 후 다시 시도해주세요.",
+  };
+
+  return errorMessages[errorCode] || "카드 연결 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.";
 }
