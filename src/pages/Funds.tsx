@@ -53,6 +53,7 @@ import { InvestmentCard } from "@/components/funds/InvestmentCard";
 import { LoanCard } from "@/components/funds/LoanCard";
 import { FundsConnectionPrompt } from "@/components/funds/FundsConnectionPrompt";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useDeposits,
