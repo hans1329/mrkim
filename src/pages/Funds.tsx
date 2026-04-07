@@ -38,6 +38,7 @@ import {
   Sparkles,
   Building2,
   HeartPulse,
+  LinkIcon,
   Home,
   CreditCard,
   Zap,

@@ -24,6 +24,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/data/mockData";
 import { Plus, Users, Wallet, Shield, User, LinkIcon, Heart, Pencil, Calendar } from "lucide-react";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { PraiseDialog } from "@/components/employees/PraiseDialog";
