@@ -108,7 +108,15 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
   const { refetch: refetchProfile, profile } = useConnection();
   const { connections: existingBankConnections } = useBankConnectionInfo();
 
-  const clientType: "P" | "B" = profile?.business_type === "법인" ? "B" : "P";
+  // 사업자등록번호 기반 법인 자동 판별 (첫 자리 1~6이면 법인)
+  const clientType: "P" | "B" = (() => {
+    const brn = profile?.business_registration_number?.replace(/\D/g, "");
+    if (brn && brn.length >= 1) {
+      const first = parseInt(brn[0], 10);
+      if (first >= 1 && first <= 6) return "B";
+    }
+    return "P";
+  })();
 
   const stepProgress: Record<FlowStep, number> = {
     "select-bank": 20,
