@@ -261,7 +261,13 @@ export const getWeeklyData = () => {
   }));
 };
 
-export const formatCurrency = (amount: number): string => {
+export const formatCurrency = (amount: number, currency: string = 'KRW'): string => {
+  if (currency === 'USD') {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  }
   return new Intl.NumberFormat('ko-KR', {
     style: 'currency',
     currency: 'KRW',
