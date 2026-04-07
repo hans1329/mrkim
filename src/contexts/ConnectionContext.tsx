@@ -64,7 +64,7 @@ export interface ConnectionState {
   disconnectService: (connectorId: string) => Promise<boolean>;
 }
 
-const ConnectionContext = createContext<ConnectionState | undefined>(undefined);
+export const ConnectionContext = createContext<ConnectionState | undefined>(undefined);
 
 export function ConnectionProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -185,6 +185,25 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     updateProfileCache(updates as Partial<Profile>);
   }, [updateProfileCache]);
 
+  const invalidatePostSyncQueries = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["transaction-stats"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-summary-stats"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-weekly-chart"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-recent-transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-unclassified-count"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-action-data"] });
+    queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
+    queryClient.invalidateQueries({ queryKey: ["connector-status"] });
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
+    queryClient.invalidateQueries({ queryKey: ["delivery_orders"] });
+    queryClient.invalidateQueries({ queryKey: ["delivery_menus"] });
+    queryClient.invalidateQueries({ queryKey: ["delivery_stores"] });
+    queryClient.invalidateQueries({ queryKey: ["delivery_settlements"] });
+    queryClient.invalidateQueries({ queryKey: ["delivery_reviews"] });
+    queryClient.invalidateQueries({ queryKey: ["delivery_statistics"] });
+  }, [queryClient]);
+
   // 커넥터 연결 (다중 인스턴스 지원)
   const connectService = useCallback(async (connectorId: string, connectedId?: string, credentialsMeta?: Record<string, unknown>): Promise<boolean> => {
     try {
@@ -206,18 +225,40 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         const instanceId = Array.isArray(instance) ? instance[0]?.id : instance?.id;
 
         if (instanceId) {
-          supabase.functions.invoke("sync-orchestrator", {
-            body: { instanceId },
-          }).then((res) => {
-            if (res.data?.success) {
-              console.log(`Initial sync triggered for ${connectorId}:`, res.data);
+          if (connectorId.startsWith("hyphen_")) {
+            const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
+              body: { instanceId, forceFullSync: true },
+            });
+
+            if (error) {
+              throw new Error(error.message || "초기 데이터 동기화 호출에 실패했습니다.");
             }
-          }).catch((err) => {
-            console.warn("Initial sync trigger failed (non-blocking):", err);
-          });
+
+            const syncResult = Array.isArray(data?.results)
+              ? data.results.find((result: { instanceId?: string }) => result.instanceId === instanceId)
+              : undefined;
+
+            if (data?.success === false || syncResult?.success === false) {
+              throw new Error(syncResult?.error || data?.error || "초기 데이터 동기화에 실패했습니다.");
+            }
+
+            invalidatePostSyncQueries();
+            console.log(`Initial sync completed for ${connectorId}:`, data);
+          } else {
+            supabase.functions.invoke("sync-orchestrator", {
+              body: { instanceId },
+            }).then((res) => {
+              if (res.data?.success) {
+                console.log(`Initial sync triggered for ${connectorId}:`, res.data);
+              }
+            }).catch((err) => {
+              console.warn("Initial sync trigger failed (non-blocking):", err);
+            });
+          }
         }
       } catch (syncErr) {
         console.warn("Failed to trigger initial sync:", syncErr);
+        throw syncErr;
       }
 
       return true;
@@ -225,7 +266,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       console.error("connectService error:", error);
       return false;
     }
-  }, [upsertInstance, syncProfileFlags]);
+  }, [invalidatePostSyncQueries, upsertInstance, syncProfileFlags]);
 
   // 커넥터 해제 (특정 connected_id 또는 전체)
   const disconnectService = useCallback(async (connectorId: string, connectedId?: string): Promise<boolean> => {
