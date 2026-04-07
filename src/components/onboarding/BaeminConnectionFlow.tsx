@@ -130,9 +130,7 @@ export function BaeminConnectionFlow({ onComplete, onBack }: BaeminConnectionFlo
         throw new Error("연동 정보를 저장하지 못했습니다. 다시 시도해주세요.");
       }
 
-      supabase.functions.invoke("sync-orchestrator", {
-        body: { connectorId: "hyphen_baemin" },
-      }).catch(err => console.error("Initial baemin sync error:", err));
+      // sync는 connectService 내부에서 자동 트리거됨 (중복 호출 제거)
 
       setStep("complete");
       toast.success("배달의민족 연동 완료!");
