@@ -204,27 +204,15 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
           <Progress value={progressPercent} className={cn("h-1.5", isHero && "[&]:bg-white/20 [&>div]:bg-white/60")} />
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            className={cn("h-10 gap-1 rounded-full flex-1", isHero && "bg-white text-primary hover:bg-white/90")}
-            onClick={handleStartConnection}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            이어서 연동하기
-            <ChevronRight className="h-3 w-3" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className={cn("h-10 gap-1 rounded-full shrink-0", isHero && "border-white/30 text-white hover:bg-white/10")}
-            onClick={handleResync}
-            disabled={isResyncing}
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", isResyncing && "animate-spin")} />
-            재수집
-          </Button>
-        </div>
+        <Button
+          size="sm"
+          className={cn("h-10 gap-1 rounded-full", isHero && "bg-white text-primary hover:bg-white/90")}
+          onClick={handleStartConnection}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          이어서 연동하기
+          <ChevronRight className="h-3 w-3" />
+        </Button>
       </div>
     );
   }
