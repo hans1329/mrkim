@@ -1,0 +1,2 @@
+ALTER TABLE public.transactions DROP CONSTRAINT transactions_source_type_check;
+ALTER TABLE public.transactions ADD CONSTRAINT transactions_source_type_check CHECK (source_type = ANY (ARRAY['card'::text, 'bank'::text, 'delivery'::text]));

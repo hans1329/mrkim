@@ -1117,7 +1117,7 @@ async function syncCoupangeats(
         { key: "deliveryAmt", label: "배달대행료", icon: "🏍️", cat: "운반비" },
       ];
       for (const f of fees) {
-        const amt = parseInt(order[f.key] || "0", 10);
+        const amt = Math.abs(parseInt(order[f.key] || "0", 10));
         if (amt <= 0) continue;
         txRows.push({
           user_id: userId, source_type: "delivery", source_name: "쿠팡이츠",
@@ -1131,7 +1131,12 @@ async function syncCoupangeats(
     if (txRows.length > 0) {
       const BATCH = 50;
       for (let i = 0; i < txRows.length; i += BATCH) {
-        await supabase.from("transactions").upsert(txRows.slice(i, i + BATCH), { onConflict: "user_id,external_tx_id" });
+        const chunk = txRows.slice(i, i + BATCH);
+        const extIds = chunk.map((r: any) => r.external_tx_id);
+        const { data: existing } = await supabase.from("transactions").select("external_tx_id").eq("user_id", userId).in("external_tx_id", extIds);
+        const existingSet = new Set((existing || []).map((e: any) => e.external_tx_id));
+        const newRows = chunk.filter((r: any) => !existingSet.has(r.external_tx_id));
+        if (newRows.length > 0) await supabase.from("transactions").insert(newRows);
       }
     }
   } catch (e) {
@@ -1435,7 +1440,7 @@ async function syncBaemin(
         { key: "deliveryAmt", label: "배달대행료", icon: "🏍️", cat: "운반비" },
       ];
       for (const f of fees) {
-        const amt = parseInt(order[f.key] || "0", 10);
+        const amt = Math.abs(parseInt(order[f.key] || "0", 10));
         if (amt <= 0) continue;
         txRows.push({
           user_id: userId, source_type: "delivery", source_name: "배달의민족",
@@ -1446,7 +1451,17 @@ async function syncBaemin(
         });
       }
     }
-    if (txRows.length > 0) await batchUpsert("transactions", txRows, "user_id,external_tx_id");
+    if (txRows.length > 0) {
+      const TX_BATCH = 50;
+      for (let i = 0; i < txRows.length; i += TX_BATCH) {
+        const chunk = txRows.slice(i, i + TX_BATCH);
+        const extIds = chunk.map((r: any) => r.external_tx_id);
+        const { data: existing } = await supabase.from("transactions").select("external_tx_id").eq("user_id", userId).in("external_tx_id", extIds);
+        const existingSet = new Set((existing || []).map((e: any) => e.external_tx_id));
+        const newRows = chunk.filter((r: any) => !existingSet.has(r.external_tx_id));
+        if (newRows.length > 0) await supabase.from("transactions").insert(newRows);
+      }
+    }
   } catch (e) { console.error("[baemin] 매출 동기화 실패:", e); }
 
   // 3. 정산 내역
