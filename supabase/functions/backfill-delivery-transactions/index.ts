@@ -95,13 +95,20 @@ Deno.serve(async (req) => {
     let totalInserted = 0;
     for (let i = 0; i < txRows.length; i += BATCH) {
       const chunk = txRows.slice(i, i + BATCH);
-      const { error } = await supabase
+      // Check which external_tx_ids already exist
+      const extIds = chunk.map((r: any) => r.external_tx_id);
+      const { data: existing } = await supabase
         .from("transactions")
-        .upsert(chunk, { onConflict: "user_id,external_tx_id" });
+        .select("external_tx_id")
+        .in("external_tx_id", extIds);
+      const existingSet = new Set((existing || []).map((e: any) => e.external_tx_id));
+      const newRows = chunk.filter((r: any) => !existingSet.has(r.external_tx_id));
+      if (newRows.length === 0) continue;
+      const { error } = await supabase.from("transactions").insert(newRows);
       if (error) {
         console.error(`Batch ${i / BATCH} error:`, error.message);
       } else {
-        totalInserted += chunk.length;
+        totalInserted += newRows.length;
       }
     }
 
