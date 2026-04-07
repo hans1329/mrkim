@@ -276,7 +276,8 @@ async function handleRegisterWithCert(
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } else {
-    const errorMessage = data.data?.errorList?.[0]?.message || result.message || "인증서 등록 실패";
+    const errorCode = data.data?.errorList?.[0]?.code || result.code;
+    const errorMessage = getCardFriendlyMessage(errorCode);
     return new Response(
       JSON.stringify({
         success: false,
@@ -355,7 +356,8 @@ async function handleRegister(
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } else {
-    const errorMessage = data.data?.errorList?.[0]?.message || result.message || "계정 등록 실패";
+    const errorCode = data.data?.errorList?.[0]?.code || result.code;
+    const errorMessage = getCardFriendlyMessage(errorCode);
     return new Response(
       JSON.stringify({
         success: false,
