@@ -173,7 +173,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
       
       if (newConnectedId) {
         setCurrentConnectedId(newConnectedId);
-        const accounts = await getAccounts(selectedBank, newConnectedId);
+        const accounts = await getAccounts(selectedBank, newConnectedId, clientType);
         setFetchedAccounts(accounts);
         setStep("select-accounts");
       } else {
