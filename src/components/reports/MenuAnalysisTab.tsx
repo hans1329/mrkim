@@ -21,6 +21,8 @@ const CHART_COLORS = [
   "#ec4899",
   "#06b6d4",
   "#f97316",
+  "#ef4444",
+  "#6366f1",
 ];
 
 export function MenuAnalysisTab() {
