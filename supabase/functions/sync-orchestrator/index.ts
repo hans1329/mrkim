@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const FUNCTION_VERSION = "1.3.0"; // forceFullSync 지원, 디버깅 로그 추가
-const FUNCTION_UPDATED_AT = "2026-04-06";
+const FUNCTION_VERSION = "1.4.0"; // 사용자 범위 제한, 배민 메뉴 동기화 보강
+const FUNCTION_UPDATED_AT = "2026-04-07";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,12 +55,16 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabaseAnonKey =
+    Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
   const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const anonClient = supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
   try {
     let targetInstanceId: string | null = null;
     let targetConnectorId: string | null = null;
     let forceFullSync = false;
+    let authenticatedUserId: string | null = null;
 
     // POST body에서 특정 인스턴스 ID 또는 커넥터 ID 확인
     if (req.method === "POST") {
@@ -74,11 +78,48 @@ serve(async (req) => {
       }
     }
 
+    const requiresUserScopedSync = Boolean(targetInstanceId || targetConnectorId);
+    if (requiresUserScopedSync) {
+      const authHeader = req.headers.get("Authorization") || "";
+      const accessToken = authHeader.replace("Bearer ", "").trim();
+
+      if (!accessToken || !anonClient) {
+        return new Response(
+          JSON.stringify({ success: false, error: "인증이 필요합니다." }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const {
+        data: { user },
+        error: authError,
+      } = await anonClient.auth.getUser(accessToken);
+
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ success: false, error: "유효한 사용자 인증이 필요합니다." }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      authenticatedUserId = user.id;
+    }
+
     // 동기화 대상 인스턴스 조회
     let query = supabase
       .from("connector_instances")
       .select("*, connectors!inner(id, name, category, provider)")
       .eq("status", "connected");
+
+    if (authenticatedUserId) {
+      query = query.eq("user_id", authenticatedUserId);
+    }
 
     if (targetInstanceId) {
       query = query.eq("id", targetInstanceId);
@@ -1328,6 +1369,7 @@ async function syncBaemin(
   const userId = instance.user_id;
   let totalFetched = 0;
   let totalSaved = 0;
+  const knownStoreIds = new Set<string>();
 
   const now = new Date();
   let startDate: string;
@@ -1342,6 +1384,8 @@ async function syncBaemin(
   }
   const endDate = now.toISOString().slice(0, 10).replace(/-/g, "");
 
+  const shouldReplaceExistingBaeminData = options.forceFullSync && !instance.last_sync_at;
+
   // 배치 upsert 헬퍼 (50건씩)
   async function batchUpsert(table: string, rows: any[], onConflict: string) {
     const BATCH = 50;
@@ -1353,6 +1397,39 @@ async function syncBaemin(
       else console.error(`[baemin] ${table} batch upsert error:`, error.message);
     }
     return saved;
+  }
+
+  const normalizeMenuName = (value: unknown) => {
+    if (typeof value !== "string") return "";
+    return value
+      .replace(/^\[[^\]]+\]\s*/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const clearExistingBaeminData = async () => {
+    await Promise.all([
+      supabase.from("delivery_ads").delete().eq("user_id", userId).eq("platform", "baemin"),
+      supabase.from("delivery_menus").delete().eq("user_id", userId).eq("platform", "baemin"),
+      supabase.from("delivery_nearby_sales").delete().eq("user_id", userId).eq("platform", "baemin"),
+      supabase.from("delivery_orders").delete().eq("user_id", userId).eq("platform", "baemin"),
+      supabase.from("delivery_pg_sales").delete().eq("user_id", userId).eq("platform", "baemin"),
+      supabase.from("delivery_reviews").delete().eq("user_id", userId).eq("platform", "baemin"),
+      supabase.from("delivery_settlements").delete().eq("user_id", userId).eq("platform", "baemin"),
+      supabase.from("delivery_statistics").delete().eq("user_id", userId).eq("platform", "baemin"),
+      supabase.from("delivery_stores").delete().eq("user_id", userId).eq("platform", "baemin"),
+      supabase
+        .from("transactions")
+        .delete()
+        .eq("user_id", userId)
+        .eq("source_type", "delivery")
+        .eq("source_name", "배달의민족"),
+    ]);
+  };
+
+  if (shouldReplaceExistingBaeminData) {
+    console.log(`[baemin] replacing existing data for user ${userId}`);
+    await clearExistingBaeminData();
   }
 
   // 1. 가게 정보 동기화
@@ -1373,6 +1450,9 @@ async function syncBaemin(
         tel_no: store.telNo || null, addr: store.addr || null,
         raw_data: store, updated_at: new Date().toISOString(),
       }));
+      rows.forEach((row) => {
+        if (row.store_id) knownStoreIds.add(row.store_id);
+      });
       await batchUpsert("delivery_stores", rows, "user_id,platform,store_id");
     }
   } catch (e) { console.error("[baemin] 가게 정보 동기화 실패:", e); }
@@ -1397,6 +1477,9 @@ async function syncBaemin(
 
     totalFetched += orderList.length;
     const syncedAt = new Date().toISOString();
+    orderList.forEach((order: any) => {
+      if (order.storeId) knownStoreIds.add(order.storeId);
+    });
 
     // delivery_orders 배치 upsert
     const orderRows = orderList.map((order: any) => ({
@@ -1551,18 +1634,57 @@ async function syncBaemin(
 
     // 7. 메뉴
     try {
-      const res = await callHyphenBaemin("menu", bmUserId, bmUserPw);
-      const list = res.data?.menuList || [];
-      console.log(`[baemin] menus: ${list.length}`);
-      if (list.length > 0) {
-        const rows = list.map((m: any) => ({
-          user_id: userId, platform: "baemin", store_id: m.storeId || null,
-          menu_id: m.menuId || null, menu_name: m.menuName || "Unknown",
-          menu_group: m.menuGroup || null, price: m.price ? parseInt(m.price, 10) : null,
-          description: m.description || null, image_url: m.imageUrl || null,
-          status: m.status || null, order_count: m.orderCount ? parseInt(m.orderCount, 10) : null,
-          raw_data: m, synced_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-        }));
+      const requestedStoreIds = Array.from(knownStoreIds).filter(Boolean);
+      const menuRequests = requestedStoreIds.length > 0
+        ? requestedStoreIds.map((storeId) => ({
+            storeId,
+            request: callHyphenBaemin("menu", bmUserId, bmUserPw, { storeId }),
+          }))
+        : [{ storeId: null, request: callHyphenBaemin("menu", bmUserId, bmUserPw) }];
+
+      const menuResults = await Promise.allSettled(menuRequests.map(({ request }) => request));
+      const menuRowMap = new Map<string, any>();
+
+      menuResults.forEach((result, index) => {
+        const requestStoreId = menuRequests[index]?.storeId || null;
+
+        if (result.status !== "fulfilled") {
+          console.error(`[baemin] 메뉴 실패 (storeId=${requestStoreId ?? "none"}):`, result.reason);
+          return;
+        }
+
+        const list = result.value.data?.menuList || [];
+        console.log(`[baemin] menus (${requestStoreId ?? "none"}): ${list.length}`);
+
+        for (const m of list) {
+          const resolvedStoreId = m.storeId || requestStoreId || null;
+          const normalizedMenuName = normalizeMenuName(m.menuName || "Unknown") || "Unknown";
+          const resolvedMenuId = String(m.menuId || "").trim() || `${resolvedStoreId || "unknown"}:${normalizedMenuName}`;
+          const mapKey = `${resolvedStoreId || "unknown"}|${resolvedMenuId}`;
+
+          if (menuRowMap.has(mapKey)) continue;
+
+          menuRowMap.set(mapKey, {
+            user_id: userId,
+            platform: "baemin",
+            store_id: resolvedStoreId,
+            menu_id: resolvedMenuId,
+            menu_name: normalizedMenuName,
+            menu_group: m.menuGroup || null,
+            price: m.price ? parseInt(m.price, 10) : null,
+            description: m.description || null,
+            image_url: m.imageUrl || null,
+            status: m.status || null,
+            order_count: m.orderCount ? parseInt(m.orderCount, 10) : null,
+            raw_data: m,
+            synced_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        }
+      });
+
+      const rows = Array.from(menuRowMap.values());
+      if (rows.length > 0) {
         await batchUpsert("delivery_menus", rows, "user_id,platform,menu_id");
       }
     } catch (e) { console.error("[baemin] 메뉴 실패:", e); }
