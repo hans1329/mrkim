@@ -16,6 +16,7 @@ import {
   Smartphone,
   Loader2,
   Unlink,
+  RefreshCw,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -114,6 +115,7 @@ export function ConnectionHub({
   const [isVerifying, setIsVerifying] = useState(false);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<{ key: HubCategory; label: string } | null>(null);
+  const [resyncing, setResyncing] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const formatPhone = (value: string) => {
     const cleaned = value.replace(/\D/g, "").slice(0, 11);
