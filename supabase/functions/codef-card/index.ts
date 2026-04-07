@@ -232,10 +232,10 @@ async function handleRegisterWithCert(
   };
 
   if (keyFile) {
-    accountEntry.reqCertFile = certFile;
-    accountEntry.reqKeyFile = keyFile;
+    accountEntry.derFile = certFile;
+    accountEntry.keyFile = keyFile;
     accountEntry.certType = "1";
-    console.log("Using DER+KEY separate cert files (certType: 1)");
+    console.log(`Using DER+KEY separate cert files (certType: 1, clientType: ${clientType})`);
   } else {
     accountEntry.certFile = certFile;
     accountEntry.certType = "pfx";
