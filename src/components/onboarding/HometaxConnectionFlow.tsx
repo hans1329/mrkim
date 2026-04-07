@@ -82,7 +82,15 @@ export function HometaxConnectionFlow({
   const keyFileInputRef = useRef<HTMLInputElement>(null);
 
   const isDerMode = certFile?.name.toLowerCase().endsWith(".der");
-  const clientType: "P" | "B" = profile?.business_type === "법인" ? "B" : "P";
+  // 사업자등록번호 중간 2자리(4-5번째)로 법인 판별: 81~99이면 법인
+  const clientType: "P" | "B" = (() => {
+    const brn = profile?.business_registration_number?.replace(/\D/g, "");
+    if (brn && brn.length >= 5) {
+      const mid = parseInt(brn.substring(3, 5), 10);
+      if (mid >= 81) return "B";
+    }
+    return "P";
+  })();
 
   const hasVerifiedBusinessInfo = Boolean(
     businessInfo?.businessStatus || businessInfo?.taxationTypeDesc
