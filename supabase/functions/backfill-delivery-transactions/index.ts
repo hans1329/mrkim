@@ -14,13 +14,23 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get all delivery orders
-    const { data: orders, error: ordersErr } = await supabase
-      .from("delivery_orders")
-      .select("user_id, order_no, order_dt, order_tm, order_name, total_amt, order_fee, card_fee, delivery_amt, ad_fee, platform")
-      .order("order_dt", { ascending: true });
-
-    if (ordersErr) throw ordersErr;
+    // Process in pages to avoid timeout
+    const PAGE = 200;
+    let offset = 0;
+    let allOrders: any[] = [];
+    while (true) {
+      const { data: page, error: pageErr } = await supabase
+        .from("delivery_orders")
+        .select("user_id, order_no, order_dt, order_tm, order_name, total_amt, order_fee, card_fee, delivery_amt, ad_fee, platform")
+        .order("order_dt", { ascending: true })
+        .range(offset, offset + PAGE - 1);
+      if (pageErr) throw pageErr;
+      if (!page || page.length === 0) break;
+      allOrders = allOrders.concat(page);
+      if (page.length < PAGE) break;
+      offset += PAGE;
+    }
+    const orders = allOrders;
     if (!orders || orders.length === 0) {
       return new Response(JSON.stringify({ message: "No orders found", inserted: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
