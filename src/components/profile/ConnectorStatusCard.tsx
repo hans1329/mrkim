@@ -312,98 +312,105 @@ export function ConnectorStatusCard() {
           return (
             <div
               key={connector.id}
-              className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/40"
+              className="p-3 rounded-lg bg-muted/40 space-y-2"
             >
-              {/* 아이콘 */}
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full shrink-0 ${
-                isConnected ? "bg-primary/10" : "bg-muted"
-              }`}>
-                <Icon className={`h-4 w-4 ${isConnected ? "text-primary" : "text-muted-foreground"}`} />
-              </div>
-
-              {/* 이름 + 부가 정보 */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium leading-tight">{connector.name}</p>
-                {isConnected && lastSyncLabel && (
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{lastSyncLabel} 동기화</p>
+              {/* 1행: 아이콘 + 이름 + 배지 */}
+              <div className="flex items-center gap-2.5">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full shrink-0 ${
+                  isConnected ? "bg-primary/10" : "bg-muted"
+                }`}>
+                  <Icon className={`h-4 w-4 ${isConnected ? "text-primary" : "text-muted-foreground"}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium leading-tight truncate">{connector.name}</p>
+                  {isConnected && lastSyncLabel && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{lastSyncLabel} 동기화</p>
+                  )}
+                </div>
+                {isConnected ? (
+                  <Badge variant="default" className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">
+                    {connectedInstanceCount > 1 ? `${connectedInstanceCount}개` : "연결됨"}
+                  </Badge>
+                ) : statusInfo ? (
+                  <Badge variant={statusInfo.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
+                    {statusInfo.label}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[10px] shrink-0 px-1.5 py-0.5 text-muted-foreground">
+                    미연동
+                  </Badge>
                 )}
               </div>
 
-              {/* 상태 배지 */}
+              {/* 2행: 액션 버튼 */}
               {isConnected ? (
-                <Badge variant="default" className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">
-                  {connectedInstanceCount > 1 ? `${connectedInstanceCount}개` : "연결됨"}
-                </Badge>
-              ) : statusInfo ? (
-                <Badge variant={statusInfo.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
-                  {statusInfo.label}
-                </Badge>
+                <div className="flex items-center gap-2 pl-[42px]">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground hover:text-primary gap-1 px-2"
+                    onClick={() => {
+                      const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
+                      if (drawerType) openDrawer(drawerType);
+                    }}
+                  >
+                    <Settings className="h-3 w-3" />
+                    관리
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground hover:text-primary gap-1 px-2"
+                    disabled={syncing === connector.id}
+                    onClick={() => setConfirmResync({ id: connector.id, name: connector.name })}
+                  >
+                    {syncing === connector.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    재수집
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto shrink-0">
+                        <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-36">
+                      <DropdownMenuItem
+                        disabled={disconnecting === connector.id}
+                        onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
+                        className="text-destructive focus:text-destructive text-xs"
+                      >
+                        <Unlink className="h-3.5 w-3.5 mr-2" />
+                        연동 끊기
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={purging === connector.id}
+                        onClick={() => setConfirmPurge({ id: connector.id, name: connector.name, category: connector.category })}
+                        className="text-destructive focus:text-destructive text-xs"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-2" />
+                        데이터 삭제
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               ) : (
-                <Badge variant="outline" className="text-[10px] shrink-0 px-1.5 py-0.5 text-muted-foreground">
-                  미연동
-                </Badge>
-              )}
-
-              {/* 액션 */}
-              {isConnected ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
-                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
-                        if (drawerType) openDrawer(drawerType);
-                      }}
-                    >
-                      <Settings className="h-3.5 w-3.5 mr-2" />
-                      연동 관리
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled={syncing === connector.id}
-                      onClick={() => setConfirmResync({ id: connector.id, name: connector.name })}
-                    >
-                      {syncing === connector.id ? (
-                        <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-3.5 w-3.5 mr-2" />
-                      )}
-                      재수집
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={disconnecting === connector.id}
-                      onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Unlink className="h-3.5 w-3.5 mr-2" />
-                      연동 끊기
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled={purging === connector.id}
-                      onClick={() => setConfirmPurge({ id: connector.id, name: connector.name, category: connector.category })}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5 mr-2" />
-                      데이터 삭제
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs shrink-0"
-                  onClick={() => {
-                    const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
-                    if (drawerType) openDrawer(drawerType);
-                  }}
-                >
-                  연동하기
-                </Button>
+                <div className="pl-[42px]">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs w-full"
+                    onClick={() => {
+                      const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
+                      if (drawerType) openDrawer(drawerType);
+                    }}
+                  >
+                    연동하기
+                  </Button>
+                </div>
               )}
             </div>
           );
