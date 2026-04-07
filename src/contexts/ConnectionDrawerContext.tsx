@@ -60,6 +60,15 @@ export function ConnectionDrawerProvider({ children }: { children: ReactNode }) 
     queryClient.invalidateQueries({ queryKey: ["dashboard-unclassified-count"] });
     queryClient.invalidateQueries({ queryKey: ["dashboard-action-data"] });
     queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
+    queryClient.invalidateQueries({ queryKey: ["connector-status"] });
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
+    // 배달앱 관련 쿼리
+    queryClient.invalidateQueries({ queryKey: ["delivery_orders"] });
+    queryClient.invalidateQueries({ queryKey: ["delivery_menus"] });
+    queryClient.invalidateQueries({ queryKey: ["delivery_stores"] });
+    queryClient.invalidateQueries({ queryKey: ["delivery_settlements"] });
+    queryClient.invalidateQueries({ queryKey: ["delivery_reviews"] });
+    queryClient.invalidateQueries({ queryKey: ["delivery_statistics"] });
   }, [queryClient]);
 
   return (
