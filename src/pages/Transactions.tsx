@@ -536,6 +536,7 @@ export default function Transactions() {
                                   ${(transaction as any).local_amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                               )}
+                              </div>
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -543,7 +544,7 @@ export default function Transactions() {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setDeleteTargetId(transaction.id);
-                                  setDeleteTargetLabel(`${transaction.description} (${formatCurrency(transaction.amount, (transaction as any).currency)})`);
+                                  setDeleteTargetLabel(`${transaction.description} (${formatCurrency(transaction.amount)})`);
                                 }}
                               >
                                 <Trash2 className="h-3 w-3" />
