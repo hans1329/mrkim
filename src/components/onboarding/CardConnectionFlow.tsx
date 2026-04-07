@@ -253,6 +253,7 @@ export const CardConnectionFlow = forwardRef<CardConnectionFlowRef, CardConnecti
           startDate,
           endDate,
           clientType,
+          selectedCardNos: selectedCards.length > 0 ? selectedCards : undefined,
         });
 
         setSyncResult({ synced: result.synced, skipped: result.skipped });
