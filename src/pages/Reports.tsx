@@ -38,6 +38,7 @@ function TabFallback() {
 
 export default function Reports() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { openDrawer } = useConnectionDrawer();
   const tabParam = searchParams.get("tab");
   
   const activeTab: TabValue = VALID_TABS.includes(tabParam as TabValue) 
@@ -57,7 +58,7 @@ export default function Reports() {
 
   return (
     <MainLayout title="리포트" subtitle="경영 현황 분석" showBackButton headerRight={
-      <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs rounded-full" onClick={() => useConnectionDrawer.caller()}>
+      <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs rounded-full" onClick={() => openDrawer()}>
         <LinkIcon className="h-3.5 w-3.5" />
         연동 관리
       </Button>
