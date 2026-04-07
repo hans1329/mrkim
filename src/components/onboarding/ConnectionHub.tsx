@@ -896,6 +896,117 @@ export function ConnectionHub({
         </div>
       )}
 
+      {/* Resync Progress Overlay */}
+      <AnimatePresence>
+        {resyncProgress && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center px-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-background rounded-2xl w-full max-w-sm p-6 shadow-xl space-y-5"
+            >
+              <div className="text-center space-y-1">
+                <h3 className="text-base font-bold text-foreground">데이터 재수집 중</h3>
+                <p className="text-xs text-muted-foreground">잠시만 기다려주세요...</p>
+              </div>
+
+              {/* Overall progress bar */}
+              <div className="space-y-1.5">
+                <Progress
+                  value={
+                    resyncProgress.steps.length > 0
+                      ? (resyncProgress.steps.filter(s => s.status === "done").length / resyncProgress.steps.length) * 100
+                      : 0
+                  }
+                  className="h-2"
+                />
+                <p className="text-[11px] text-muted-foreground text-right">
+                  {resyncProgress.steps.filter(s => s.status === "done").length} / {resyncProgress.steps.length} 완료
+                </p>
+              </div>
+
+              {/* Step list */}
+              <div className="space-y-2">
+                {resyncProgress.steps.map((step, idx) => {
+                  const StepIcon = step.icon;
+                  return (
+                    <div
+                      key={idx}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all",
+                        step.status === "done" ? "bg-green-500/5" :
+                        step.status === "loading" ? "bg-primary/5" :
+                        step.status === "error" ? "bg-destructive/5" :
+                        "bg-muted/30"
+                      )}
+                    >
+                      <div className={cn(
+                        "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
+                        step.status === "done" ? "bg-green-500/10" :
+                        step.status === "loading" ? "bg-primary/10" :
+                        step.status === "error" ? "bg-destructive/10" :
+                        "bg-muted/50"
+                      )}>
+                        {step.status === "loading" ? (
+                          <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                        ) : step.status === "done" ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : step.status === "error" ? (
+                          <X className="h-4 w-4 text-destructive" />
+                        ) : (
+                          <StepIcon className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <span className={cn(
+                        "text-[13px] font-medium flex-1",
+                        step.status === "done" ? "text-green-600" :
+                        step.status === "loading" ? "text-foreground" :
+                        step.status === "error" ? "text-destructive" :
+                        "text-muted-foreground"
+                      )}>
+                        {step.label}
+                      </span>
+                      {step.status === "loading" && (
+                        <span className="text-[10px] text-muted-foreground">수집 중...</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Result summary */}
+              {resyncProgress.steps.every(s => s.status === "done") && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center pt-1"
+                >
+                  <p className="text-sm font-semibold text-green-600">
+                    ✅ {resyncProgress.totalSaved > 0 ? `${resyncProgress.totalSaved}건 수집 완료!` : "수집 완료 (신규 데이터 없음)"}
+                  </p>
+                </motion.div>
+              )}
+
+              {resyncProgress.steps.some(s => s.status === "error") && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center pt-1"
+                >
+                  <p className="text-sm font-semibold text-destructive">수집 중 오류가 발생했습니다</p>
+                </motion.div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Business Number Modal */}
       <BusinessNumberModal
         open={showBusinessModal}
