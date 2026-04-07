@@ -86,70 +86,74 @@ export function ConnectorStatusCard() {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<{ id: string; name: string } | null>(null);
   const [confirmResync, setConfirmResync] = useState<{ id: string; name: string } | null>(null);
-  const [confirmPurge, setConfirmPurge] = useState(false);
-  const [purging, setPurging] = useState(false);
+  const [confirmPurge, setConfirmPurge] = useState<{ id: string; name: string; category: string } | null>(null);
+  const [purging, setPurging] = useState<string | null>(null);
 
-  const handlePurgeAllData = async () => {
-    setPurging(true);
+  // 카테고리별 데이터 삭제 매핑
+  const purgeByCategory = async (userId: string, category: string) => {
+    switch (category) {
+      case "hometax":
+        await Promise.all([
+          supabase.from("tax_invoices").delete().eq("user_id", userId),
+          supabase.from("hometax_sync_status").delete().eq("user_id", userId),
+        ]);
+        await supabase.from("profiles").update({ hometax_connected: false, hometax_connected_at: null }).eq("user_id", userId);
+        break;
+      case "card":
+        await supabase.from("transactions").delete().eq("user_id", userId).eq("source_type", "card");
+        await supabase.from("profiles").update({ card_connected: false, card_connected_at: null }).eq("user_id", userId);
+        break;
+      case "bank":
+        await supabase.from("transactions").delete().eq("user_id", userId).eq("source_type", "bank");
+        await supabase.from("connected_accounts").delete().eq("user_id", userId);
+        await supabase.from("profiles").update({ account_connected: false, account_connected_at: null }).eq("user_id", userId);
+        break;
+      case "delivery":
+        await Promise.all([
+          supabase.from("delivery_orders").delete().eq("user_id", userId),
+          supabase.from("delivery_stores").delete().eq("user_id", userId),
+          supabase.from("delivery_menus").delete().eq("user_id", userId),
+          supabase.from("delivery_settlements").delete().eq("user_id", userId),
+          supabase.from("delivery_statistics").delete().eq("user_id", userId),
+          supabase.from("delivery_reviews").delete().eq("user_id", userId),
+          supabase.from("delivery_ads").delete().eq("user_id", userId),
+          supabase.from("delivery_pg_sales").delete().eq("user_id", userId),
+          supabase.from("delivery_nearby_sales").delete().eq("user_id", userId),
+          supabase.from("transactions").delete().eq("user_id", userId).eq("source_type", "delivery"),
+        ]);
+        break;
+    }
+  };
+
+  const handlePurgeConnector = async (connectorId: string, category: string) => {
+    setPurging(connectorId);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다");
 
-      // 1. 모든 connector_instances를 disconnected로 변경
+      // 연동 해제
       await supabase
         .from("connector_instances")
         .update({ status: "disconnected" as any, last_sync_at: null })
+        .eq("connector_id", connectorId)
         .eq("user_id", user.id);
 
-      // 2. 거래 데이터 삭제
-      await supabase.from("transactions").delete().eq("user_id", user.id);
+      // 카테고리별 데이터 삭제
+      await purgeByCategory(user.id, category);
 
-      // 3. 배달 관련 데이터 삭제
-      await Promise.all([
-        supabase.from("delivery_orders").delete().eq("user_id", user.id),
-        supabase.from("delivery_stores").delete().eq("user_id", user.id),
-        supabase.from("delivery_menus").delete().eq("user_id", user.id),
-        supabase.from("delivery_settlements").delete().eq("user_id", user.id),
-        supabase.from("delivery_statistics").delete().eq("user_id", user.id),
-        supabase.from("delivery_reviews").delete().eq("user_id", user.id),
-        supabase.from("delivery_ads").delete().eq("user_id", user.id),
-        supabase.from("delivery_pg_sales").delete().eq("user_id", user.id),
-        supabase.from("delivery_nearby_sales").delete().eq("user_id", user.id),
-      ]);
-
-      // 4. 세금계산서 데이터 삭제
-      await supabase.from("tax_invoices").delete().eq("user_id", user.id);
-
-      // 5. 홈택스 동기화 상태 삭제
-      await supabase.from("hometax_sync_status").delete().eq("user_id", user.id);
-
-      // 6. 연결 계좌 삭제
-      await supabase.from("connected_accounts").delete().eq("user_id", user.id);
-
-      // 7. profiles 플래그 초기화
-      await supabase.from("profiles").update({
-        hometax_connected: false,
-        hometax_connected_at: null,
-        card_connected: false,
-        card_connected_at: null,
-        account_connected: false,
-        account_connected_at: null,
-      }).eq("user_id", user.id);
-
-      // 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
       queryClient.invalidateQueries({ queryKey: ["connector-status"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["transaction-stats"] });
 
-      toast.success("모든 데이터와 연동이 초기화되었습니다");
+      toast.success("데이터가 삭제되고 연동이 해제되었습니다");
     } catch (error) {
       console.error("Purge error:", error);
       toast.error("데이터 삭제 중 오류가 발생했습니다");
     } finally {
-      setPurging(false);
-      setConfirmPurge(false);
+      setPurging(null);
+      setConfirmPurge(null);
     }
   };
 
@@ -331,47 +335,65 @@ export function ConnectorStatusCard() {
               {/* 2행: 액션 버튼 */}
               <div className="flex items-center justify-center">
                 {isConnected && (
-                  <div className="flex items-center gap-2 w-full">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
-                      onClick={() => {
-                        const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
-                        if (drawerType) openDrawer(drawerType);
-                      }}
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                      연동 관리
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
-                      disabled={syncing === connector.id}
-                      onClick={() => setConfirmResync({ id: connector.id, name: connector.name })}
-                    >
-                      {syncing === connector.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
+                  <div className="space-y-1 w-full">
+                    <div className="flex items-center gap-2 w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
+                        onClick={() => {
+                          const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
+                          if (drawerType) openDrawer(drawerType);
+                        }}
+                      >
                         <RefreshCw className="h-3 w-3" />
-                      )}
-                      재수집
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-destructive"
-                      disabled={disconnecting === connector.id}
-                      onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
-                    >
-                      {disconnecting === connector.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Unlink className="h-3 w-3" />
-                      )}
-                      연동 끊기
-                    </Button>
+                        연동 관리
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
+                        disabled={syncing === connector.id}
+                        onClick={() => setConfirmResync({ id: connector.id, name: connector.name })}
+                      >
+                        {syncing === connector.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3" />
+                        )}
+                        재수집
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2 w-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-destructive"
+                        disabled={disconnecting === connector.id}
+                        onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
+                      >
+                        {disconnecting === connector.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Unlink className="h-3 w-3" />
+                        )}
+                        연동 끊기
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-destructive"
+                        disabled={purging === connector.id}
+                        onClick={() => setConfirmPurge({ id: connector.id, name: connector.name, category: connector.category })}
+                      >
+                        {purging === connector.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
+                        데이터 삭제
+                      </Button>
+                    </div>
                   </div>
                 )}
                 {!isConnected && (
@@ -392,23 +414,6 @@ export function ConnectorStatusCard() {
           );
         })}
 
-        {/* 전체 데이터 삭제 버튼 */}
-        <div className="pt-2 border-t border-border/50">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full h-8 text-xs text-muted-foreground hover:text-destructive gap-1.5"
-            disabled={purging}
-            onClick={() => setConfirmPurge(true)}
-          >
-            {purging ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <Trash2 className="h-3 w-3" />
-            )}
-            전체 데이터 삭제 및 연동 초기화
-          </Button>
-        </div>
       </CardContent>
 
       {/* 연동 해제 확인 다이얼로그 */}
@@ -460,28 +465,24 @@ export function ConnectorStatusCard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 전체 삭제 확인 다이얼로그 */}
-      <AlertDialog open={confirmPurge} onOpenChange={setConfirmPurge}>
+      {/* 데이터 삭제 확인 다이얼로그 */}
+      <AlertDialog open={!!confirmPurge} onOpenChange={(open) => !open && setConfirmPurge(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>⚠️ 전체 데이터를 삭제하시겠습니까?</AlertDialogTitle>
+            <AlertDialogTitle>⚠️ {confirmPurge?.name} 데이터를 삭제하시겠습니까?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <span className="block">이 작업은 되돌릴 수 없습니다. 다음 데이터가 모두 삭제됩니다:</span>
+              <span className="block">이 작업은 되돌릴 수 없습니다.</span>
               <span className="block text-destructive font-medium">
-                • 모든 거래 내역 (카드, 계좌, 배달)<br />
-                • 세금계산서 데이터<br />
-                • 배달앱 주문/정산/리뷰/메뉴 데이터<br />
-                • 연결된 계좌 정보
+                {confirmPurge?.name}에서 수집된 모든 데이터가 삭제되며, 연동도 함께 해제됩니다.
               </span>
-              <span className="block">모든 연동도 함께 해제됩니다.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={purging}
-              onClick={handlePurgeAllData}
+              disabled={!!purging}
+              onClick={() => confirmPurge && handlePurgeConnector(confirmPurge.id, confirmPurge.category)}
             >
               {purging ? (
                 <>
@@ -489,7 +490,7 @@ export function ConnectorStatusCard() {
                   삭제 중...
                 </>
               ) : (
-                "전체 삭제"
+                "삭제하기"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
