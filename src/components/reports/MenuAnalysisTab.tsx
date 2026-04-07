@@ -25,6 +25,16 @@ const CHART_COLORS = [
   "#6366f1",
 ];
 
+const normalizeMenuName = (value: unknown) => {
+  if (typeof value !== "string") return "";
+
+  return value
+    .replace(/^\[[^\]]+\]\s*/g, "")
+    .replace(/\s*외\s*\d+.*$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 export function MenuAnalysisTab() {
   const [platform, setPlatform] = useState<string>("all");
 
@@ -90,7 +100,7 @@ export function MenuAnalysisTab() {
       const details = order.detail_list as any[] || [];
       if (details.length > 0) {
         for (const item of details) {
-          const menuName = item.menuName || item.name || item.itemName;
+          const menuName = normalizeMenuName(item.menuName || item.name || item.itemName);
           if (!menuName) continue;
           const existing = menuMap.get(menuName) || { name: menuName, count: 0, revenue: 0 };
           const qty = parseInt(item.qty || item.quantity || "1", 10);
@@ -100,8 +110,7 @@ export function MenuAnalysisTab() {
           menuMap.set(menuName, existing);
         }
       } else if (order.order_name) {
-        // detail_list 없으면 order_name 기반 — "외 N" 제거하여 대표 메뉴명 추출
-        const cleanName = order.order_name.replace(/\s*외\s*\d+.*$/, "").trim();
+        const cleanName = normalizeMenuName(order.order_name);
         if (!cleanName) continue;
         const existing = menuMap.get(cleanName) || { name: cleanName, count: 0, revenue: 0 };
         existing.count += 1;
@@ -121,10 +130,13 @@ export function MenuAnalysisTab() {
     for (const review of reviews) {
       if (!review.rating || !review.menu_names) continue;
       for (const menuName of (review.menu_names as string[])) {
-        const existing = ratingMap.get(menuName) || { total: 0, count: 0 };
+        const normalizedName = normalizeMenuName(menuName);
+        if (!normalizedName) continue;
+
+        const existing = ratingMap.get(normalizedName) || { total: 0, count: 0 };
         existing.total += Number(review.rating);
         existing.count += 1;
-        ratingMap.set(menuName, existing);
+        ratingMap.set(normalizedName, existing);
       }
     }
     return ratingMap;
@@ -164,16 +176,50 @@ export function MenuAnalysisTab() {
   // 메뉴 DB 기반 정보 (delivery_menus 테이블)
   const menuDbInfo = useMemo(() => {
     if (!menus) return [];
-    return menus.map((m: any) => ({
-      name: m.menu_name,
-      group: m.menu_group || "미분류",
-      price: Number(m.price || 0),
-      status: m.status,
-      orderCount: Number(m.order_count || 0),
-    }));
+    const uniqueMenus = new Map<string, { name: string; group: string; price: number; status: string | null; orderCount: number }>();
+
+    for (const m of menus as any[]) {
+      const normalizedName = normalizeMenuName(m.menu_name);
+      if (!normalizedName) continue;
+
+      const existing = uniqueMenus.get(normalizedName);
+      const nextValue = {
+        name: normalizedName,
+        group: m.menu_group || existing?.group || "미분류",
+        price: Math.max(Number(m.price || 0), existing?.price || 0),
+        status: m.status || existing?.status || null,
+        orderCount: Math.max(Number(m.order_count || 0), existing?.orderCount || 0),
+      };
+
+      uniqueMenus.set(normalizedName, nextValue);
+    }
+
+    return Array.from(uniqueMenus.values());
   }, [menus]);
 
-  const totalMenuCount = (menus?.length || 0) > 0 ? menus!.length : menuSalesData.length;
+  const fallbackMenuCount = useMemo(() => {
+    if (!orders) return menuSalesData.length;
+
+    const uniqueRepresentativeMenus = new Set<string>();
+
+    for (const order of orders) {
+      const representativeName = normalizeMenuName(order.order_name);
+      if (representativeName) {
+        uniqueRepresentativeMenus.add(representativeName);
+        continue;
+      }
+
+      const firstDetail = Array.isArray(order.detail_list)
+        ? order.detail_list.find((item: any) => normalizeMenuName(item?.menuName || item?.name || item?.itemName))
+        : null;
+      const detailName = normalizeMenuName(firstDetail?.menuName || firstDetail?.name || firstDetail?.itemName);
+      if (detailName) uniqueRepresentativeMenus.add(detailName);
+    }
+
+    return uniqueRepresentativeMenus.size;
+  }, [orders, menuSalesData.length]);
+
+  const totalMenuCount = menuDbInfo.length > 0 ? menuDbInfo.length : fallbackMenuCount;
   const totalOrderCount = menuSalesData.reduce((sum, m) => sum + m.count, 0);
   const totalRevenue = menuSalesData.reduce((sum, m) => sum + m.revenue, 0);
   const avgOrderValue = totalOrderCount > 0 ? Math.round(totalRevenue / totalOrderCount) : 0;
