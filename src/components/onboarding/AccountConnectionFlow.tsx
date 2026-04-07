@@ -158,7 +158,7 @@ export function AccountConnectionFlow({ onComplete, onBack }: AccountConnectionF
           selectedBank,
           "",
           certPassword,
-          { loginType: "2", certFile: certBase64, certPassword, keyFile: keyBase64, clientType },
+          { loginType: "0", certFile: certBase64, certPassword, keyFile: keyBase64, clientType },
           clientType,
         );
       } else {

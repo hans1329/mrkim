@@ -13,7 +13,7 @@ interface AccountInfo {
 }
 
 interface CertOptions {
-  loginType: "2";
+  loginType: "0" | "2";
   certFile: string;
   certPassword: string;
   keyFile?: string;
@@ -58,8 +58,8 @@ export function useAccountConnection(): UseAccountConnectionReturn {
       };
 
       if (certOptions) {
-        // 인증서 로그인 (loginType "2")
-        requestBody.loginType = "2";
+        // 인증서 로그인: 은행은 loginType "0", 카드/홈택스는 "2"
+        requestBody.loginType = certOptions.loginType;
         requestBody.certFile = certOptions.certFile;
         requestBody.certPassword = certOptions.certPassword;
         if (certOptions.keyFile) {
