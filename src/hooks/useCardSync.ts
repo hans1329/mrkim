@@ -36,6 +36,7 @@ export function useCardSync() {
       endDate,
       isInitialSync = false,
       clientType = "P",
+      selectedCardNos,
     }: {
       connectedId: string;
       cardCompanyId: string;
@@ -44,6 +45,7 @@ export function useCardSync() {
       endDate?: string;
       isInitialSync?: boolean;
       clientType?: "P" | "B";
+      selectedCardNos?: string[];
     }): Promise<SyncResult> => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("로그인이 필요합니다");
@@ -82,26 +84,36 @@ export function useCardSync() {
         }
       }
 
-      // 1. 코드에프에서 거래 내역 조회
-      const { data: response, error: fetchError } = await supabase.functions.invoke(
-        "codef-card",
-        {
-          body: {
-            action: "getTransactions",
-            connectedId,
-            cardCompanyId,
-            startDate: effectiveStartDate,
-            endDate: effectiveEndDate,
-            clientType,
-          },
-        }
-      );
+      // 선택된 카드가 있으면 카드별로 조회, 없으면 전체 조회
+      const cardNosToSync = selectedCardNos && selectedCardNos.length > 0 ? selectedCardNos : [undefined];
+      
+      let allTransactions: CodefTransaction[] = [];
+      
+      for (const cardNoValue of cardNosToSync) {
+        const { data: response, error: fetchError } = await supabase.functions.invoke(
+          "codef-card",
+          {
+            body: {
+              action: "getTransactions",
+              connectedId,
+              cardCompanyId,
+              startDate: effectiveStartDate,
+              endDate: effectiveEndDate,
+              clientType,
+              cardNo: cardNoValue,
+            },
+          }
+        );
 
-      if (fetchError || !response?.success) {
-        throw new Error(response?.error || fetchError?.message || "거래 내역 조회 실패");
+        if (fetchError || !response?.success) {
+          console.error("Transaction fetch error for card:", cardNoValue, response?.error || fetchError?.message);
+          continue;
+        }
+        
+        allTransactions = allTransactions.concat(response.transactions || []);
       }
 
-      const transactions: CodefTransaction[] = response.transactions || [];
+      const transactions: CodefTransaction[] = allTransactions;
       
       if (transactions.length === 0) {
         return { synced: 0, skipped: 0, errors: 0 };
