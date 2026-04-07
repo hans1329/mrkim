@@ -2065,6 +2065,7 @@ export type Database = {
           category_icon: string | null
           classification_confidence: string | null
           created_at: string
+          currency: string
           depreciation_method: string | null
           description: string
           external_tx_id: string | null
@@ -2100,6 +2101,7 @@ export type Database = {
           category_icon?: string | null
           classification_confidence?: string | null
           created_at?: string
+          currency?: string
           depreciation_method?: string | null
           description: string
           external_tx_id?: string | null
@@ -2135,6 +2137,7 @@ export type Database = {
           category_icon?: string | null
           classification_confidence?: string | null
           created_at?: string
+          currency?: string
           depreciation_method?: string | null
           description?: string
           external_tx_id?: string | null

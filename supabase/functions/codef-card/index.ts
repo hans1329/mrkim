@@ -685,20 +685,47 @@ async function handleGetTransactions(
 
     const rawTransactions = fulfilled.flatMap((r) => r.value.rawTransactions || []);
     
-    const transactions = rawTransactions.map((tx: any) => ({
-      transactionDate: formatDate(tx.resUsedDate),
-      transactionTime: tx.resUsedTime || null,
-      amount: parseInt(tx.resUsedAmount?.replace(/,/g, "") || "0", 10),
-      merchantName: tx.resMemberStoreName || tx.resStoreName || "",
-      merchantCategory: tx.resMemberStoreType || "",
-      description: tx.resMemberStoreName || tx.resStoreName || tx.resNote || "카드 결제",
-      cardNo: tx.resCardNo || "",
-      cardName: tx.resCardName || "",
-      status: tx.resApprovalStatus || "approved",
-      approvalNo: tx.resApprovalNo || "",
-      installment: tx.resInstallmentCnt || "0",
-      rawData: tx,
-    }));
+    const transactions = rawTransactions.map((tx: any) => {
+      // 해외 결제 감지: resCurrencyCode, resCountryCode, 또는 상호명 패턴으로 판별
+      const currencyCode = tx.resCurrencyCode || tx.resCountryCode || "";
+      const merchantName = tx.resMemberStoreName || tx.resStoreName || "";
+      const isOverseas = tx.resOverseasFlag === "1" || tx.resOverseasFlag === "Y"
+        || (currencyCode && currencyCode !== "" && currencyCode !== "KRW" && currencyCode !== "410")
+        || /USD|usd/.test(currencyCode);
+      
+      // 해외 결제 시 현지 통화 금액(resOverseasAmount)과 원화 결제 금액(resUsedAmount) 구분
+      const localAmount = tx.resOverseasAmount ? parseInt(tx.resOverseasAmount.replace(/,/g, "") || "0", 10) : 0;
+      const krwAmount = parseInt(tx.resUsedAmount?.replace(/,/g, "") || "0", 10);
+      
+      // 통화 결정: Codef가 통화코드를 줄 경우 사용, 아니면 금액 크기로 추정
+      let currency = "KRW";
+      if (isOverseas) {
+        currency = (currencyCode === "840" || /USD|usd/.test(currencyCode)) ? "USD" : (currencyCode || "USD");
+      } else if (krwAmount > 0 && krwAmount < 10000) {
+        // 금액이 너무 작고 상호명이 영문인 경우 해외 결제로 추정
+        const isEnglishMerchant = /^[A-Z0-9\s\*\.\,\-\/]+$/i.test(merchantName) && merchantName.length > 2;
+        if (isEnglishMerchant) {
+          currency = "USD";
+        }
+      }
+      
+      return {
+        transactionDate: formatDate(tx.resUsedDate),
+        transactionTime: tx.resUsedTime || null,
+        amount: krwAmount,
+        merchantName,
+        merchantCategory: tx.resMemberStoreType || "",
+        description: merchantName || tx.resNote || "카드 결제",
+        cardNo: tx.resCardNo || "",
+        cardName: tx.resCardName || "",
+        status: tx.resApprovalStatus || "approved",
+        approvalNo: tx.resApprovalNo || "",
+        installment: tx.resInstallmentCnt || "0",
+        currency,
+        localAmount: isOverseas && localAmount > 0 ? localAmount : undefined,
+        rawData: tx,
+      };
+    });
 
     return new Response(
       JSON.stringify({

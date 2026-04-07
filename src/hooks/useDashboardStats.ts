@@ -138,7 +138,7 @@ async function fetchRecentTransactions(): Promise<{ data: Transaction[]; hasReal
 
   const { data, error } = await supabase
     .from("transactions")
-    .select("id, description, amount, type, category, source_type, transaction_date")
+    .select("id, description, amount, type, category, source_type, transaction_date, currency")
     .eq("user_id", user.id)
     .order("transaction_date", { ascending: false })
     .order("created_at", { ascending: false })

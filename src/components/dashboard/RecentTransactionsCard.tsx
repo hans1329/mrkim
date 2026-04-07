@@ -147,7 +147,7 @@ export function RecentTransactionsCard() {
                 "text-sm font-semibold",
                 transaction.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
               )}>
-                {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
+                {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount, (transaction as any).currency)}
               </p>
             </div>
           ))}

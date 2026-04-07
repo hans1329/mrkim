@@ -14,6 +14,8 @@ interface CodefTransaction {
   status: string;
   approvalNo: string;
   installment: string;
+  currency?: string;
+  localAmount?: number;
 }
 
 interface SyncResult {
@@ -169,6 +171,7 @@ export function useCardSync() {
           synced_at: new Date().toISOString(),
           merchant_name: tx.merchantName,
           merchant_category: tx.merchantCategory,
+          currency: tx.currency || "KRW",
         };
       });
 
