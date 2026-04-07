@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useConnectorStatus, useConnectorInstances } from "@/hooks/useConnectors";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +14,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   FileText,
   Receipt,
@@ -30,6 +37,7 @@ import {
   Unlink,
   Loader2,
   Trash2,
+  MoreHorizontal,
   Settings,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -47,7 +55,6 @@ const CATEGORY_TO_STEP: Record<string, string> = {
   card: "card",
 };
 
-// connector_id → ConnectionDrawer type 매핑
 const CONNECTOR_TO_DRAWER_TYPE: Record<string, "hometax" | "card" | "account" | "coupangeats" | "baemin"> = {
   codef_hometax_tax_invoice: "hometax",
   codef_hometax_cash_receipt: "hometax",
@@ -90,7 +97,6 @@ export function ConnectorStatusCard() {
   const [confirmPurge, setConfirmPurge] = useState<{ id: string; name: string; category: string } | null>(null);
   const [purging, setPurging] = useState<string | null>(null);
 
-  // 카테고리별 데이터 삭제 매핑
   const purgeByCategory = async (userId: string, category: string) => {
     switch (category) {
       case "hometax":
@@ -132,14 +138,12 @@ export function ConnectorStatusCard() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다");
 
-      // 연동 해제
       await supabase
         .from("connector_instances")
         .update({ status: "disconnected" as any, last_sync_at: null })
         .eq("connector_id", connectorId)
         .eq("user_id", user.id);
 
-      // 카테고리별 데이터 삭제
       await purgeByCategory(user.id, category);
 
       queryClient.invalidateQueries({ queryKey: ["connector_instances"] });
@@ -198,17 +202,15 @@ export function ConnectorStatusCard() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      
-      // connector_instances에서 해당 connector의 인스턴스들을 disconnected로 변경
+
       const { error } = await supabase
         .from("connector_instances")
         .update({ status: "disconnected" as any })
         .eq("connector_id", connectorId)
         .eq("user_id", user.id);
-      
+
       if (error) throw error;
 
-      // profiles 플래그도 업데이트
       const category = connectors?.find(c => c.id === connectorId)?.category;
       if (category === "hometax") {
         await supabase.from("profiles").update({ hometax_connected: false, hometax_connected_at: null }).eq("user_id", user.id);
@@ -231,14 +233,12 @@ export function ConnectorStatusCard() {
     }
   };
 
-  // profiles fallback: connector_instances가 없을 때 카테고리별 연동 상태
   const profileFallback: Record<string, boolean> = {
     hometax: hometaxConnected,
     card: cardConnected,
     bank: accountConnected,
   };
 
-  // profiles fallback: 연동 시점
   const profileConnectedAt: Record<string, string | null> = {
     hometax: profile?.hometax_connected_at || null,
     card: profile?.card_connected_at || null,
@@ -263,7 +263,6 @@ export function ConnectorStatusCard() {
     );
   }
 
-  // 사용하지 않는 커넥터 필터링 (여신금융협회, 인터넷지로 등)
   const HIDDEN_CONNECTORS = ["codef_card_sales", "codef_giro"];
   const filteredConnectors = connectors?.filter(c => !HIDDEN_CONNECTORS.includes(c.id));
 
@@ -286,11 +285,8 @@ export function ConnectorStatusCard() {
             {connectedCount}/{totalCount} 연동
           </Badge>
         </div>
-        <CardDescription className="text-xs">
-          코드에프를 통한 금융 데이터 연동 상태를 확인합니다
-        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-1.5">
         {filteredConnectors?.map((connector) => {
           const Icon = CATEGORY_ICONS[connector.category] || FileText;
           const instance = connector.instance;
@@ -303,118 +299,111 @@ export function ConnectorStatusCard() {
           const StatusIcon = statusInfo?.icon;
           const isConnected = instance?.status === "connected" || isFallbackConnected;
 
-          // 같은 카테고리의 모든 연결된 인스턴스 수
           const connectedInstanceCount = connectorInstances.filter(
             (inst) => inst.connector_id === connector.id && inst.status === "connected"
           ).length;
 
+          const lastSyncLabel = instance?.last_sync_at
+            ? formatDistanceToNow(new Date(instance.last_sync_at), { addSuffix: true, locale: ko })
+            : isFallbackConnected && profileConnectedAt[connector.category]
+              ? formatDistanceToNow(new Date(profileConnectedAt[connector.category]!), { addSuffix: true, locale: ko })
+              : null;
+
           return (
             <div
               key={connector.id}
-              className="p-3 rounded-lg bg-muted/50 space-y-2"
+              className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/40"
             >
-              {/* 1행: 아이콘 + 이름 + 상태 배지 */}
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
-                  <Icon className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{connector.name}</p>
-                </div>
-                {isConnected ? (
-                  <Badge variant={statusInfo!.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
-                    {StatusIcon && <StatusIcon className="h-2.5 w-2.5" />}
-                    {connectedInstanceCount > 1 ? `${connectedInstanceCount}개 연동됨` : statusInfo!.label}
-                  </Badge>
-                ) : statusInfo ? (
-                  <Badge variant={statusInfo.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
-                    {StatusIcon && <StatusIcon className="h-2.5 w-2.5" />}
-                    {statusInfo.label}
-                  </Badge>
-                ) : null}
+              {/* 아이콘 */}
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full shrink-0 ${
+                isConnected ? "bg-primary/10" : "bg-muted"
+              }`}>
+                <Icon className={`h-4 w-4 ${isConnected ? "text-primary" : "text-muted-foreground"}`} />
               </div>
-              {/* 2행: 액션 버튼 */}
-              <div className="flex items-center justify-center">
-                {isConnected && (
-                  <div className="space-y-1 w-full">
-                    <div className="flex items-center gap-2 w-full">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
-                        onClick={() => {
-                          const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
-                          if (drawerType) openDrawer(drawerType);
-                        }}
-                      >
-                        <Settings className="h-3 w-3" />
-                        연동 관리
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-primary"
-                        disabled={syncing === connector.id}
-                        onClick={() => setConfirmResync({ id: connector.id, name: connector.name })}
-                      >
-                        {syncing === connector.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-3 w-3" />
-                        )}
-                        재수집
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-2 w-full">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-destructive"
-                        disabled={disconnecting === connector.id}
-                        onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
-                      >
-                        {disconnecting === connector.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Unlink className="h-3 w-3" />
-                        )}
-                        연동 끊기
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-destructive"
-                        disabled={purging === connector.id}
-                        onClick={() => setConfirmPurge({ id: connector.id, name: connector.name, category: connector.category })}
-                      >
-                        {purging === connector.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-3 w-3" />
-                        )}
-                        데이터 삭제
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                {!isConnected && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 w-full text-xs"
-                    onClick={() => {
-                      const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
-                      if (drawerType) openDrawer(drawerType);
-                    }}
-                  >
-                    연동하기
-                  </Button>
+
+              {/* 이름 + 부가 정보 */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium leading-tight">{connector.name}</p>
+                {isConnected && lastSyncLabel && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{lastSyncLabel} 동기화</p>
                 )}
               </div>
+
+              {/* 상태 배지 */}
+              {isConnected ? (
+                <Badge variant="default" className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">
+                  {connectedInstanceCount > 1 ? `${connectedInstanceCount}개` : "연결됨"}
+                </Badge>
+              ) : statusInfo ? (
+                <Badge variant={statusInfo.variant} className="text-[10px] gap-0.5 shrink-0 px-1.5 py-0.5">
+                  {statusInfo.label}
+                </Badge>
+              ) : null}
+
+              {/* 액션 */}
+              {isConnected ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
+                        if (drawerType) openDrawer(drawerType);
+                      }}
+                    >
+                      <Settings className="h-3.5 w-3.5 mr-2" />
+                      연동 관리
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={syncing === connector.id}
+                      onClick={() => setConfirmResync({ id: connector.id, name: connector.name })}
+                    >
+                      {syncing === connector.id ? (
+                        <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3.5 w-3.5 mr-2" />
+                      )}
+                      재수집
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={disconnecting === connector.id}
+                      onClick={() => setConfirmDisconnect({ id: connector.id, name: connector.name })}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Unlink className="h-3.5 w-3.5 mr-2" />
+                      연동 끊기
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={purging === connector.id}
+                      onClick={() => setConfirmPurge({ id: connector.id, name: connector.name, category: connector.category })}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-2" />
+                      데이터 삭제
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs shrink-0"
+                  onClick={() => {
+                    const drawerType = CONNECTOR_TO_DRAWER_TYPE[connector.id];
+                    if (drawerType) openDrawer(drawerType);
+                  }}
+                >
+                  연동하기
+                </Button>
+              )}
             </div>
           );
         })}
-
       </CardContent>
 
       {/* 연동 해제 확인 다이얼로그 */}
@@ -447,7 +436,6 @@ export function ConnectorStatusCard() {
             <AlertDialogDescription>
               {confirmResync?.name}의 전체 데이터를 처음부터 다시 수집합니다.
               기존 데이터와 중복되는 항목은 자동으로 병합됩니다.
-              수집에 시간이 다소 걸릴 수 있습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
