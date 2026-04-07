@@ -293,9 +293,9 @@ export function ConnectionHub({
   const connectedCount = Object.values(connectionStatus).filter(Boolean).length;
 
   const CATEGORY_CONNECTOR_MAP: Record<HubCategory, { connectorId: string; profileField: string; profileAtField: string }[]> = {
-    hometax: [{ connectorId: "codef_hometax", profileField: "hometax_connected", profileAtField: "hometax_connected_at" }],
-    card: [{ connectorId: "crefia", profileField: "card_connected", profileAtField: "card_connected_at" }],
-    account: [{ connectorId: "codef_bank", profileField: "account_connected", profileAtField: "account_connected_at" }],
+    hometax: [{ connectorId: "codef_hometax_tax_invoice", profileField: "hometax_connected", profileAtField: "hometax_connected_at" }],
+    card: [{ connectorId: "codef_card_usage", profileField: "card_connected", profileAtField: "card_connected_at" }],
+    account: [{ connectorId: "codef_bank_account", profileField: "account_connected", profileAtField: "account_connected_at" }],
     delivery: [
       { connectorId: "hyphen_baemin", profileField: "", profileAtField: "" },
       { connectorId: "hyphen_coupangeats", profileField: "", profileAtField: "" },
