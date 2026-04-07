@@ -207,23 +207,23 @@ export function MenuAnalysisTab() {
   const fallbackMenuCount = useMemo(() => {
     if (!orders) return menuSalesData.length;
 
-    const uniqueRepresentativeMenus = new Set<string>();
+    // detail_list 내부의 모든 개별 메뉴를 정규화하여 고유 메뉴 수 산출
+    const uniqueMenuNames = new Set<string>();
 
     for (const order of orders) {
-      const representativeName = normalizeMenuName(order.order_name);
-      if (representativeName) {
-        uniqueRepresentativeMenus.add(representativeName);
-        continue;
+      const details = order.detail_list as any[] || [];
+      if (details.length > 0) {
+        for (const item of details) {
+          const name = normalizeMenuName(item.menuName || item.name || item.itemName);
+          if (name) uniqueMenuNames.add(name);
+        }
+      } else {
+        const name = normalizeMenuName(order.order_name);
+        if (name) uniqueMenuNames.add(name);
       }
-
-      const firstDetail = Array.isArray(order.detail_list)
-        ? order.detail_list.find((item) => getDetailMenuName(item))
-        : null;
-      const detailName = getDetailMenuName(firstDetail);
-      if (detailName) uniqueRepresentativeMenus.add(detailName);
     }
 
-    return uniqueRepresentativeMenus.size;
+    return uniqueMenuNames.size;
   }, [orders, menuSalesData.length]);
 
   const totalMenuCount = menuDbInfo.length > 0 ? menuDbInfo.length : fallbackMenuCount;
