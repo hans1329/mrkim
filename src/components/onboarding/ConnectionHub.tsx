@@ -707,6 +707,42 @@ export function ConnectionHub({
         </div>
       </motion.div>
 
+      {/* Disconnect Confirmation */}
+      {confirmDisconnect && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
+          <div className="bg-background rounded-2xl p-5 mx-6 max-w-sm w-full space-y-4 shadow-xl">
+            <div className="space-y-1.5">
+              <h3 className="text-base font-semibold text-foreground">연동을 해제할까요?</h3>
+              <p className="text-sm text-muted-foreground">
+                {confirmDisconnect.label} 연동을 해제하면 관련 데이터 동기화가 중단됩니다.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setConfirmDisconnect(null)}
+              >
+                취소
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 gap-1"
+                disabled={disconnecting === confirmDisconnect.key}
+                onClick={() => handleDisconnect(confirmDisconnect.key)}
+              >
+                {disconnecting === confirmDisconnect.key ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Unlink className="h-4 w-4" />
+                )}
+                해제
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Business Number Modal */}
       <BusinessNumberModal
         open={showBusinessModal}
