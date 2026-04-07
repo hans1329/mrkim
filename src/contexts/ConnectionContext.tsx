@@ -188,7 +188,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   // 커넥터 연결 (다중 인스턴스 지원)
   const connectService = useCallback(async (connectorId: string, connectedId?: string, credentialsMeta?: Record<string, unknown>): Promise<boolean> => {
     try {
-      await upsertInstance.mutateAsync({
+      const instance = await upsertInstance.mutateAsync({
         connector_id: connectorId,
         status: "connected",
         connected_id: connectedId,
@@ -201,20 +201,13 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         await syncProfileFlags(category, true);
       }
 
-      // 연동 완료 후 즉시 최초 동기화 트리거 (fire-and-forget)
-      // connector_instances에서 해당 인스턴스 ID를 찾아 sync-orchestrator 호출
+      // 연동 완료 후 방금 갱신한 정확한 인스턴스로 최초 동기화 트리거
       try {
-        const { data: instances } = await supabase
-          .from("connector_instances")
-          .select("id")
-          .eq("connector_id", connectorId)
-          .eq("status", "connected")
-          .order("created_at", { ascending: false })
-          .limit(1);
+        const instanceId = Array.isArray(instance) ? instance[0]?.id : instance?.id;
 
-        if (instances && instances.length > 0) {
+        if (instanceId) {
           supabase.functions.invoke("sync-orchestrator", {
-            body: { instanceId: instances[0].id },
+            body: { instanceId },
           }).then((res) => {
             if (res.data?.success) {
               console.log(`Initial sync triggered for ${connectorId}:`, res.data);
