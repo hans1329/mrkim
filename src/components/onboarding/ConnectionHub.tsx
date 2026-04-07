@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import {
   Building2,
   CreditCard,
@@ -17,6 +18,10 @@ import {
   Loader2,
   Unlink,
   RefreshCw,
+  Package,
+  FileText,
+  Star,
+  BarChart3,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -116,6 +121,12 @@ export function ConnectionHub({
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<{ key: HubCategory; label: string } | null>(null);
   const [resyncing, setResyncing] = useState<string | null>(null);
+  const [resyncProgress, setResyncProgress] = useState<{
+    category: string;
+    steps: { label: string; icon: any; status: "pending" | "loading" | "done" | "error"; count?: number }[];
+    currentStep: number;
+    totalSaved: number;
+  } | null>(null);
   const queryClient = useQueryClient();
   const formatPhone = (value: string) => {
     const cleaned = value.replace(/\D/g, "").slice(0, 11);
@@ -321,23 +332,119 @@ export function ConnectionHub({
     delivery: ["hyphen_baemin", "hyphen_coupangeats"],
   };
 
+  const DELIVERY_RESYNC_STEPS = [
+    { label: "주문 데이터 수집", icon: Package },
+    { label: "정산 내역 수집", icon: FileText },
+    { label: "리뷰 수집", icon: Star },
+    { label: "매출 통계 수집", icon: BarChart3 },
+  ];
+
+  const SIMPLE_RESYNC_STEPS: Record<string, { label: string; icon: any }[]> = {
+    hometax: [{ label: "세금계산서 수집", icon: FileText }],
+    card: [{ label: "카드 매출 수집", icon: CreditCard }],
+    account: [{ label: "계좌 내역 수집", icon: Landmark }],
+  };
+
   const handleResync = async (categoryKey: HubCategory) => {
     setResyncing(categoryKey);
+
+    const isDelivery = categoryKey === "delivery";
+    const stepDefs = isDelivery ? DELIVERY_RESYNC_STEPS : (SIMPLE_RESYNC_STEPS[categoryKey] || [{ label: "데이터 수집", icon: RefreshCw }]);
+
+    const steps = stepDefs.map(s => ({ ...s, status: "pending" as const }));
+    setResyncProgress({ category: categoryKey, steps, currentStep: 0, totalSaved: 0 });
+
     try {
       const connectorIds = CATEGORY_RESYNC_CONNECTORS[categoryKey];
       let totalSaved = 0;
-      for (const connectorId of connectorIds) {
-        const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
-          body: { connectorId, forceFullSync: true },
-        });
-        if (error) throw error;
-        const saved = data?.results?.reduce((sum: number, r: any) => sum + (r.recordsSaved || 0), 0) || 0;
-        totalSaved += saved;
+
+      if (isDelivery) {
+        // 배달앱: 단계별 진행 표시
+        for (let i = 0; i < connectorIds.length; i++) {
+          // 첫 번째 커넥터 시작 시 모든 스텝을 순차 진행
+          const connectorId = connectorIds[i];
+
+          if (i === 0) {
+            // 스텝 0: 주문 데이터
+            setResyncProgress(prev => prev ? {
+              ...prev,
+              steps: prev.steps.map((s, idx) => idx === 0 ? { ...s, status: "loading" } : s),
+              currentStep: 0,
+            } : null);
+          }
+
+          const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
+            body: { connectorId, forceFullSync: true },
+          });
+
+          if (error) throw error;
+
+          const results = data?.results || [];
+          const saved = results.reduce((sum: number, r: any) => sum + (r.recordsSaved || 0), 0);
+          totalSaved += saved;
+
+          if (i === connectorIds.length - 1) {
+            // 마지막 커넥터 완료 시 모든 스텝 완료 처리
+            setResyncProgress(prev => prev ? {
+              ...prev,
+              steps: prev.steps.map(s => ({ ...s, status: "done" as const })),
+              currentStep: prev.steps.length,
+              totalSaved,
+            } : null);
+          } else {
+            // 중간: 절반 진행
+            const midStep = Math.floor(steps.length / 2);
+            setResyncProgress(prev => prev ? {
+              ...prev,
+              steps: prev.steps.map((s, idx) =>
+                idx < midStep ? { ...s, status: "done" as const, count: saved } :
+                idx === midStep ? { ...s, status: "loading" } : s
+              ),
+              currentStep: midStep,
+              totalSaved,
+            } : null);
+          }
+        }
+      } else {
+        // 비배달: 단일 스텝
+        setResyncProgress(prev => prev ? {
+          ...prev,
+          steps: prev.steps.map(s => ({ ...s, status: "loading" as const })),
+          currentStep: 0,
+        } : null);
+
+        for (const connectorId of connectorIds) {
+          const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
+            body: { connectorId, forceFullSync: true },
+          });
+          if (error) throw error;
+          const saved = data?.results?.reduce((sum: number, r: any) => sum + (r.recordsSaved || 0), 0) || 0;
+          totalSaved += saved;
+        }
+
+        setResyncProgress(prev => prev ? {
+          ...prev,
+          steps: prev.steps.map(s => ({ ...s, status: "done" as const })),
+          currentStep: prev.steps.length,
+          totalSaved,
+        } : null);
       }
-      toast.success(totalSaved > 0 ? `${totalSaved}건 데이터 재수집 완료` : "새로운 데이터가 없습니다");
+
+      // 2초 후 자동 닫기
+      setTimeout(() => {
+        setResyncProgress(null);
+        toast.success(totalSaved > 0 ? `${totalSaved}건 데이터 재수집 완료` : "새로운 데이터가 없습니다");
+      }, 2000);
     } catch (err) {
       console.error("Resync error:", err);
-      toast.error("재수집에 실패했습니다");
+      setResyncProgress(prev => prev ? {
+        ...prev,
+        steps: prev.steps.map(s => s.status === "loading" ? { ...s, status: "error" as const } : s),
+      } : null);
+      setTimeout(() => {
+        setResyncProgress(null);
+        toast.error("재수집에 실패했습니다");
+      }, 2000);
     } finally {
       setResyncing(null);
     }
@@ -788,6 +895,117 @@ export function ConnectionHub({
           </div>
         </div>
       )}
+
+      {/* Resync Progress Overlay */}
+      <AnimatePresence>
+        {resyncProgress && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center px-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-background rounded-2xl w-full max-w-sm p-6 shadow-xl space-y-5"
+            >
+              <div className="text-center space-y-1">
+                <h3 className="text-base font-bold text-foreground">데이터 재수집 중</h3>
+                <p className="text-xs text-muted-foreground">잠시만 기다려주세요...</p>
+              </div>
+
+              {/* Overall progress bar */}
+              <div className="space-y-1.5">
+                <Progress
+                  value={
+                    resyncProgress.steps.length > 0
+                      ? (resyncProgress.steps.filter(s => s.status === "done").length / resyncProgress.steps.length) * 100
+                      : 0
+                  }
+                  className="h-2"
+                />
+                <p className="text-[11px] text-muted-foreground text-right">
+                  {resyncProgress.steps.filter(s => s.status === "done").length} / {resyncProgress.steps.length} 완료
+                </p>
+              </div>
+
+              {/* Step list */}
+              <div className="space-y-2">
+                {resyncProgress.steps.map((step, idx) => {
+                  const StepIcon = step.icon;
+                  return (
+                    <div
+                      key={idx}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all",
+                        step.status === "done" ? "bg-green-500/5" :
+                        step.status === "loading" ? "bg-primary/5" :
+                        step.status === "error" ? "bg-destructive/5" :
+                        "bg-muted/30"
+                      )}
+                    >
+                      <div className={cn(
+                        "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
+                        step.status === "done" ? "bg-green-500/10" :
+                        step.status === "loading" ? "bg-primary/10" :
+                        step.status === "error" ? "bg-destructive/10" :
+                        "bg-muted/50"
+                      )}>
+                        {step.status === "loading" ? (
+                          <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                        ) : step.status === "done" ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : step.status === "error" ? (
+                          <X className="h-4 w-4 text-destructive" />
+                        ) : (
+                          <StepIcon className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <span className={cn(
+                        "text-[13px] font-medium flex-1",
+                        step.status === "done" ? "text-green-600" :
+                        step.status === "loading" ? "text-foreground" :
+                        step.status === "error" ? "text-destructive" :
+                        "text-muted-foreground"
+                      )}>
+                        {step.label}
+                      </span>
+                      {step.status === "loading" && (
+                        <span className="text-[10px] text-muted-foreground">수집 중...</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Result summary */}
+              {resyncProgress.steps.every(s => s.status === "done") && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center pt-1"
+                >
+                  <p className="text-sm font-semibold text-green-600">
+                    ✅ {resyncProgress.totalSaved > 0 ? `${resyncProgress.totalSaved}건 수집 완료!` : "수집 완료 (신규 데이터 없음)"}
+                  </p>
+                </motion.div>
+              )}
+
+              {resyncProgress.steps.some(s => s.status === "error") && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center pt-1"
+                >
+                  <p className="text-sm font-semibold text-destructive">수집 중 오류가 발생했습니다</p>
+                </motion.div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Business Number Modal */}
       <BusinessNumberModal
