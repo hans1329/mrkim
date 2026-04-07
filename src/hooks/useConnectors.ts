@@ -137,13 +137,15 @@ export function useUpsertConnectorInstance() {
           .maybeSingle();
 
         if (existing) {
-          // 업데이트
+          // 업데이트 — 재연동 시 last_sync_at을 null로 리셋하여 전체 동기화 유도
+          const isReconnecting = params.status === "connected";
           const { data, error } = await supabase
             .from("connector_instances")
             .update({
               status: params.status,
               status_message: params.status_message || null,
               ...(params.credentials_meta ? { credentials_meta: params.credentials_meta as unknown as Record<string, unknown> } : {}),
+              ...(isReconnecting ? { last_sync_at: null } : {}),
             } as Record<string, unknown>)
             .eq("id", existing.id)
             .select()
