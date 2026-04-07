@@ -21,6 +21,8 @@ const CHART_COLORS = [
   "#ec4899",
   "#06b6d4",
   "#f97316",
+  "#ef4444",
+  "#6366f1",
 ];
 
 export function MenuAnalysisTab() {
@@ -169,7 +171,7 @@ export function MenuAnalysisTab() {
     }));
   }, [menus]);
 
-  const totalMenuCount = menus?.length || 0;
+  const totalMenuCount = (menus?.length || 0) > 0 ? menus!.length : menuSalesData.length;
   const totalOrderCount = menuSalesData.reduce((sum, m) => sum + m.count, 0);
   const totalRevenue = menuSalesData.reduce((sum, m) => sum + m.revenue, 0);
   const avgOrderValue = totalOrderCount > 0 ? Math.round(totalRevenue / totalOrderCount) : 0;
