@@ -1,8 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, X, ChevronRight, CheckCircle2, Clock, Sparkles, RefreshCw } from "lucide-react";
+import { AlertTriangle, X, ChevronRight, CheckCircle2, Clock, Sparkles } from "lucide-react";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
-import { toast } from "sonner";
 import { SecretaryInsightCard } from "./SecretaryInsightCard";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -88,25 +87,7 @@ export function ConnectionStatusBanner({ isLoggedOut = false, isHero = false }: 
   const { profile, profileLoading: loading, isLoggedIn, hometaxConnected, cardConnected, accountConnected, deliveryConnected } = useConnection();
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [isResyncing, setIsResyncing] = useState(false);
   const secretaryName = profile?.secretary_name || "김비서";
-
-  const handleResync = async () => {
-    setIsResyncing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("sync-orchestrator", {
-        body: { forceFullSync: true },
-      });
-      if (error) throw error;
-      const total = data?.results?.reduce((sum: number, r: any) => sum + (r.recordsSaved || 0), 0) || 0;
-      toast.success(total > 0 ? `${total}건 데이터 재수집 완료` : "새로운 데이터가 없습니다");
-    } catch (err) {
-      console.error("Resync error:", err);
-      toast.error("재수집에 실패했습니다");
-    } finally {
-      setIsResyncing(false);
-    }
-  };
 
   // React Query 캐싱 적용
   const { data: unclassifiedCount = 0 } = useUnclassifiedCount(!isLoggedOut && !loading && isLoggedIn);
