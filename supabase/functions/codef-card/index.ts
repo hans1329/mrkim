@@ -695,6 +695,15 @@ async function handleGetTransactions(
         || (currencyCode && currencyCode !== "" && currencyCode !== "KRW" && currencyCode !== "410")
         || /USD|usd/.test(currencyCode);
       
+      // 영문 가맹점명으로 해외 결제 추정
+      const isEnglishMerchant = /^[A-Z0-9\s\*\.\,\-\/]+$/i.test(merchantName) && merchantName.length > 2;
+      const likelyOverseas = isOverseas || isEnglishMerchant;
+      
+      // 해외 결제 디버깅: 모든 금액 관련 필드를 로깅
+      if (likelyOverseas) {
+        console.log(`[Overseas TX Debug] merchant: ${merchantName}, resUsedAmount: ${tx.resUsedAmount}, resOverseasAmount: ${tx.resOverseasAmount}, resCurrencyCode: ${tx.resCurrencyCode}, resCountryCode: ${tx.resCountryCode}, resOverseasFlag: ${tx.resOverseasFlag}, resKrwAmount: ${tx.resKrwAmount}, resExchangeRate: ${tx.resExchangeRate}, resSettleAmount: ${tx.resSettleAmount}, ALL_KEYS: ${JSON.stringify(Object.keys(tx))}`);
+      }
+      
       // 해외 결제 시 현지 통화 금액(resOverseasAmount)과 원화 결제 금액(resUsedAmount) 구분
       const localAmount = tx.resOverseasAmount ? parseInt(tx.resOverseasAmount.replace(/,/g, "") || "0", 10) : 0;
       const krwAmount = parseInt(tx.resUsedAmount?.replace(/,/g, "") || "0", 10);
