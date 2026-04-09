@@ -687,36 +687,45 @@ async function handleGetTransactions(
 
     const rawTransactions = fulfilled.flatMap((r) => r.value.rawTransactions || []);
     
+    // 고정 환율 (USD→KRW) - CODEF 승인내역 API가 해외 결제 시 현지 통화 금액만 제공하므로 환율 적용
+    // TODO: 추후 실시간 환율 API 연동 시 교체
+    const USD_TO_KRW_RATE = 1450;
+    
     const transactions = rawTransactions.map((tx: any) => {
-      // 해외 결제 감지: resCurrencyCode, resCountryCode, 또는 상호명 패턴으로 판별
       const currencyCode = tx.resCurrencyCode || tx.resCountryCode || "";
       const merchantName = tx.resMemberStoreName || tx.resStoreName || "";
       const isOverseas = tx.resOverseasFlag === "1" || tx.resOverseasFlag === "Y"
         || (currencyCode && currencyCode !== "" && currencyCode !== "KRW" && currencyCode !== "410")
         || /USD|usd/.test(currencyCode);
       
-      // 영문 가맹점명으로 해외 결제 추정
-      const isEnglishMerchant = /^[A-Z0-9\s\*\.\,\-\/]+$/i.test(merchantName) && merchantName.length > 2;
-      const likelyOverseas = isOverseas || isEnglishMerchant;
+      const rawAmount = parseInt(tx.resUsedAmount?.replace(/,/g, "") || "0", 10);
       
-      // 해외 결제 디버깅: 모든 금액 관련 필드를 로깅
-      if (likelyOverseas) {
-        console.log(`[Overseas TX Debug] merchant: ${merchantName}, resUsedAmount: ${tx.resUsedAmount}, resOverseasAmount: ${tx.resOverseasAmount}, resCurrencyCode: ${tx.resCurrencyCode}, resCountryCode: ${tx.resCountryCode}, resOverseasFlag: ${tx.resOverseasFlag}, resKrwAmount: ${tx.resKrwAmount}, resExchangeRate: ${tx.resExchangeRate}, resSettleAmount: ${tx.resSettleAmount}, ALL_KEYS: ${JSON.stringify(Object.keys(tx))}`);
-      }
-      
-      // 해외 결제 시 현지 통화 금액(resOverseasAmount)과 원화 결제 금액(resUsedAmount) 구분
-      const localAmount = tx.resOverseasAmount ? parseInt(tx.resOverseasAmount.replace(/,/g, "") || "0", 10) : 0;
-      const krwAmount = parseInt(tx.resUsedAmount?.replace(/,/g, "") || "0", 10);
-      
-      // 통화 결정: Codef가 통화코드를 줄 경우 사용, 아니면 금액 크기로 추정
+      // 통화 결정
       let currency = "KRW";
       if (isOverseas) {
         currency = (currencyCode === "840" || /USD|usd/.test(currencyCode)) ? "USD" : (currencyCode || "USD");
-      } else if (krwAmount > 0 && krwAmount < 10000) {
-        // 금액이 너무 작고 상호명이 영문인 경우 해외 결제로 추정
+      } else if (rawAmount > 0 && rawAmount < 10000) {
         const isEnglishMerchant = /^[A-Z0-9\s\*\.\,\-\/]+$/i.test(merchantName) && merchantName.length > 2;
         if (isEnglishMerchant) {
           currency = "USD";
+        }
+      }
+      
+      // 해외 결제 시: amount = 원화 환산, localAmount = 현지 통화 원금
+      let krwAmount = rawAmount;
+      let localAmount: number | undefined = undefined;
+      
+      if (currency !== "KRW") {
+        const overseasAmt = tx.resOverseasAmount ? parseInt(tx.resOverseasAmount.replace(/,/g, "") || "0", 10) : 0;
+        if (overseasAmt > 0 && rawAmount > overseasAmt * 10) {
+          // resUsedAmount가 원화이고 resOverseasAmount가 달러인 경우
+          krwAmount = rawAmount;
+          localAmount = overseasAmt;
+        } else {
+          // resUsedAmount가 달러 원금인 경우 → 환율 적용
+          localAmount = rawAmount;
+          krwAmount = Math.round(rawAmount * USD_TO_KRW_RATE);
+          console.log(`[USD→KRW] ${merchantName}: $${rawAmount} → ₩${krwAmount} (rate: ${USD_TO_KRW_RATE})`);
         }
       }
       
@@ -733,7 +742,7 @@ async function handleGetTransactions(
         approvalNo: tx.resApprovalNo || "",
         installment: tx.resInstallmentCnt || "0",
         currency,
-        localAmount: isOverseas && localAmount > 0 ? localAmount : undefined,
+        localAmount,
         rawData: tx,
       };
     });
