@@ -546,24 +546,13 @@ export function useVoiceAgent() {
           }
           setVoiceStatus("listening");
           setMicMuted(false);
-        }, 600);
+        }, 1200);
       }
     }
   }, [conversation.status, conversation.isSpeaking, isConnecting]);
 
-  // --- 발화 중 주기적 볼륨 강제 적용 (SDK 내부 VAD에 의한 볼륨 저하 방지) ---
-  useEffect(() => {
-    if (conversation.status !== "connected" || interruptedRef.current) return;
-
-    const interval = setInterval(() => {
-      // 에이전트가 말하는 중이고 인터럽트 상태가 아닐 때만 볼륨 강제 적용
-      if (conversation.isSpeaking && !interruptedRef.current && sessionActiveRef.current) {
-        try { conversation.setVolume({ volume: volumeRef.current }); } catch (_) {}
-      }
-    }, 1500);
-
-    return () => clearInterval(interval);
-  }, [conversation.status]);
+  // --- 볼륨 강제 적용 제거: SDK 내부 오디오 스트림 간섭으로 끊김 유발 ---
+  // 인터럽트 후 볼륨 복원은 interruptedRef 해제 시점(488-501줄)에서 처리
 
   // --- Start session ---
   const startSession = useCallback(async () => {
@@ -589,14 +578,16 @@ export function useVoiceAgent() {
     messagesContextRef.current = [];
 
     try {
-      // 마이크 권한 확인 후 즉시 스트림 해제 (SDK가 자체 스트림 생성)
-      // ⚠️ 해제하지 않으면 스트림 2개가 열려 에코 발생
-      const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      permissionStream.getTracks().forEach(track => track.stop());
+      // 마이크 권한 + 토큰 요청을 병렬로 실행하여 초기 로딩 단축
+      const [micResult, tokenResult] = await Promise.all([
+        navigator.mediaDevices.getUserMedia({ audio: true }),
+        supabase.functions.invoke("elevenlabs-conversation-token"),
+      ]);
 
-      // Edge Function에서 토큰 가져오기
-      const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
+      // 마이크 스트림 즉시 해제 (SDK가 자체 스트림 생성, 해제 안 하면 에코)
+      micResult.getTracks().forEach(track => track.stop());
 
+      const { data, error } = tokenResult;
       if (error) throw new Error(error.message);
 
       const token = data?.token as string | undefined;
