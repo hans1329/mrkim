@@ -175,6 +175,9 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
     commitStrategy: CommitStrategy.VAD,
     languageCode: "kor",
     onCommittedTranscript: (data) => {
+      // action 타입 스텝에서는 음성으로 자동 진행하지 않음
+      const currentStepType = steps[currentStepRef.current]?.type;
+      if (currentStepType === "action") return;
       if (data.text?.trim() && advanceRef.current) {
         advanceRef.current(data.text.trim());
       }
