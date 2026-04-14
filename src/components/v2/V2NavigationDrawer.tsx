@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Home, BarChart3, Users, Wallet, Settings, User, FileText, HelpCircle } from "lucide-react";
+import { Home, BarChart3, Users, Wallet, Settings, User, FileText, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface V2NavigationDrawerProps {
@@ -54,16 +54,8 @@ export const V2NavigationDrawer = ({ isOpen, onClose }: V2NavigationDrawerProps)
               paddingTop: "env(safe-area-inset-top, 0px)",
             }}
           >
-            {/* Close button */}
-            <div className="flex justify-end px-4 pt-4">
-              <button
-                onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center rounded-lg"
-                style={{ background: "rgba(255,255,255,0.06)" }}
-              >
-                <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} />
-              </button>
-            </div>
+            {/* Spacer for header alignment */}
+            <div className="h-4" />
 
             {/* Logo / Brand */}
             <div className="px-6 pt-4 pb-6">

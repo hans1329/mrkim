@@ -1,7 +1,8 @@
 import { useRef, useEffect } from "react";
-import { Menu, Mic } from "lucide-react";
+import { Mic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useV2Voice } from "./V2VoiceContext";
+import { BentoMenuButton } from "./BentoMenuButton";
 
 // Reactive wave path for oscilloscope
 const ReactiveWavePath = ({
@@ -39,10 +40,11 @@ const ReactiveWavePath = ({
 };
 
 interface V2HeaderProps {
-  onMenuOpen: () => void;
+  isDrawerOpen: boolean;
+  onToggleDrawer: () => void;
 }
 
-export const V2Header = ({ onMenuOpen }: V2HeaderProps) => {
+export const V2Header = ({ isDrawerOpen, onToggleDrawer }: V2HeaderProps) => {
   const { isConnected, volumeRef, toggleVoice } = useV2Voice();
   const navigate = useNavigate();
 
@@ -54,14 +56,8 @@ export const V2Header = ({ onMenuOpen }: V2HeaderProps) => {
       className="relative z-20 flex items-center gap-3 px-4 pt-3 pb-2"
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
     >
-      {/* Hamburger */}
-      <button
-        onClick={onMenuOpen}
-        className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl"
-        style={{ background: "rgba(255,255,255,0.06)" }}
-      >
-        <Menu className="w-5 h-5" style={{ color: "rgba(255,255,255,0.7)" }} />
-      </button>
+      {/* Bento Menu */}
+      <BentoMenuButton isOpen={isDrawerOpen} onClick={onToggleDrawer} />
 
       {/* Oscilloscope area */}
       <div className="flex-1 h-8 overflow-hidden rounded-xl relative cursor-pointer" onClick={() => navigate("/secretary-settings")}>
