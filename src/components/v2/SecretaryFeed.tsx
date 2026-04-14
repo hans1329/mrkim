@@ -127,7 +127,7 @@ const HeroCard = ({ card }: { card: FeedCard }) => (
 
       {card.change && (
         <p className="text-sm font-semibold mt-2" style={{ color: "rgba(255,255,255,0.8)" }}>
-          전일 대비 {card.change.value} {card.change.positive ? "↑" : "↓"}
+          전일 대비 {card.change.value}
         </p>
       )}
 
