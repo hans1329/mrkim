@@ -589,14 +589,16 @@ export function useVoiceAgent() {
     messagesContextRef.current = [];
 
     try {
-      // 마이크 권한 확인 후 즉시 스트림 해제 (SDK가 자체 스트림 생성)
-      // ⚠️ 해제하지 않으면 스트림 2개가 열려 에코 발생
-      const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      permissionStream.getTracks().forEach(track => track.stop());
+      // 마이크 권한 + 토큰 요청을 병렬로 실행하여 초기 로딩 단축
+      const [micResult, tokenResult] = await Promise.all([
+        navigator.mediaDevices.getUserMedia({ audio: true }),
+        supabase.functions.invoke("elevenlabs-conversation-token"),
+      ]);
 
-      // Edge Function에서 토큰 가져오기
-      const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
+      // 마이크 스트림 즉시 해제 (SDK가 자체 스트림 생성, 해제 안 하면 에코)
+      micResult.getTracks().forEach(track => track.stop());
 
+      const { data, error } = tokenResult;
       if (error) throw new Error(error.message);
 
       const token = data?.token as string | undefined;
