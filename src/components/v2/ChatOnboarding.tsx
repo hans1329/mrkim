@@ -48,43 +48,95 @@ interface ChatOnboardingProps {
   secretaryAvatarUrl?: string | null;
 }
 
-// Ambient wave ring component
-const WaveRings = () => (
-  <div className="absolute bottom-48 left-1/2 -translate-x-1/2 pointer-events-none">
-    {[0, 1, 2].map((i) => (
-      <motion.div
-        key={i}
-        className="absolute rounded-full"
-        style={{
-          width: 80 + i * 50,
-          height: 80 + i * 50,
-          left: -(40 + i * 25),
-          top: -(40 + i * 25),
-          border: `1.5px solid rgba(88,86,214,${0.15 - i * 0.04})`,
-        }}
+// Oscilloscope-style colorful waveform component
+const OscilloscopeWave = () => (
+  <div className="absolute bottom-44 left-0 right-0 h-16 pointer-events-none overflow-hidden">
+    <svg
+      viewBox="0 0 390 64"
+      preserveAspectRatio="none"
+      className="w-full h-full"
+      style={{ filter: "blur(1px)" }}
+    >
+      <defs>
+        <linearGradient id="wave1Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#007AFF" stopOpacity="0" />
+          <stop offset="30%" stopColor="#007AFF" stopOpacity="0.6" />
+          <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
+          <stop offset="70%" stopColor="#AF52DE" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="#AF52DE" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="wave2Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0" />
+          <stop offset="25%" stopColor="#FF6B9D" stopOpacity="0.4" />
+          <stop offset="50%" stopColor="#007AFF" stopOpacity="0.5" />
+          <stop offset="75%" stopColor="#34C759" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#34C759" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="wave3Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#5856D6" stopOpacity="0" />
+          <stop offset="35%" stopColor="#AF52DE" stopOpacity="0.3" />
+          <stop offset="65%" stopColor="#FF9F0A" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#FF9F0A" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* Primary wave */}
+      <motion.path
+        d="M0,32 Q50,32 97,32 Q145,32 195,32 Q243,32 293,32 Q340,32 390,32"
+        fill="none"
+        stroke="url(#wave1Grad)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
         animate={{
-          scale: [1, 1.15, 1],
-          opacity: [0.4 - i * 0.1, 0.15 - i * 0.04, 0.4 - i * 0.1],
+          d: [
+            "M0,32 Q50,20 97,28 Q145,36 195,24 Q243,38 293,30 Q340,22 390,32",
+            "M0,32 Q50,38 97,26 Q145,18 195,36 Q243,20 293,34 Q340,40 390,32",
+            "M0,32 Q50,24 97,38 Q145,30 195,20 Q243,34 293,26 Q340,36 390,32",
+            "M0,32 Q50,20 97,28 Q145,36 195,24 Q243,38 293,30 Q340,22 390,32",
+          ],
         }}
-        transition={{
-          duration: 3,
-          delay: i * 0.6,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
-    ))}
-    {/* Center glow dot */}
-    <motion.div
-      className="absolute w-3 h-3 rounded-full"
+      {/* Secondary wave */}
+      <motion.path
+        d="M0,32 Q50,32 97,32 Q145,32 195,32 Q243,32 293,32 Q340,32 390,32"
+        fill="none"
+        stroke="url(#wave2Grad)"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        animate={{
+          d: [
+            "M0,32 Q50,36 97,22 Q145,40 195,28 Q243,18 293,36 Q340,28 390,32",
+            "M0,32 Q50,26 97,40 Q145,24 195,38 Q243,42 293,22 Q340,34 390,32",
+            "M0,32 Q50,42 97,28 Q145,34 195,42 Q243,26 293,38 Q340,20 390,32",
+            "M0,32 Q50,36 97,22 Q145,40 195,28 Q243,18 293,36 Q340,28 390,32",
+          ],
+        }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {/* Tertiary soft wave */}
+      <motion.path
+        d="M0,32 Q50,32 97,32 Q145,32 195,32 Q243,32 293,32 Q340,32 390,32"
+        fill="none"
+        stroke="url(#wave3Grad)"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        animate={{
+          d: [
+            "M0,32 Q50,28 97,36 Q145,26 195,40 Q243,30 293,24 Q340,38 390,32",
+            "M0,32 Q50,38 97,24 Q145,38 195,22 Q243,36 293,40 Q340,26 390,32",
+            "M0,32 Q50,22 97,34 Q145,42 195,30 Q243,22 293,36 Q340,30 390,32",
+            "M0,32 Q50,28 97,36 Q145,26 195,40 Q243,30 293,24 Q340,38 390,32",
+          ],
+        }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </svg>
+    {/* Glow backdrop */}
+    <div
+      className="absolute inset-0"
       style={{
-        left: -6,
-        top: -6,
-        background: "linear-gradient(135deg, #007AFF, #5856D6)",
-        boxShadow: "0 0 16px rgba(88,86,214,0.5)",
+        background: "radial-gradient(ellipse 60% 100% at 50% 50%, rgba(88,86,214,0.08) 0%, transparent 70%)",
       }}
-      animate={{ scale: [1, 1.3, 1], opacity: [0.8, 1, 0.8] }}
-      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
     />
   </div>
 );
@@ -187,8 +239,8 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         }}
       />
 
-      {/* Always-on wave rings — signals listening mode */}
-      {showInput && step.type !== "action" && <WaveRings />}
+      {/* Oscilloscope waveform — signals listening mode */}
+      {showInput && step.type !== "action" && <OscilloscopeWave />}
 
       {/* Skip */}
       <div className="relative z-10 flex justify-end px-5 pt-4">
