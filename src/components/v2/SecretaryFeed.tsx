@@ -1,60 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-
-interface FeedCard {
-  id: string;
-  type: "hero" | "standard";
-  title: string;
-  bigNumber?: string;
-  unit?: string;
-  change?: { value: string; positive: boolean };
-  body?: string;
-  action?: string;
-  time: string;
-  gradient?: string;
-}
-
-const mockCards: FeedCard[] = [
-  {
-    id: "1",
-    type: "hero",
-    title: "어제 카드매출",
-    bigNumber: "127",
-    unit: "만원",
-    change: { value: "+23%", positive: true },
-    action: "상세 보기",
-    time: "5분 전",
-    gradient: "linear-gradient(135deg, #007AFF 0%, #5856D6 100%)",
-  },
-  {
-    id: "2",
-    type: "standard",
-    title: "부가세 마감 D-3",
-    body: "지금 신고하면 가산세 없이 처리할 수 있어요.\n1분이면 끝나요!",
-    action: "바로 신고하기",
-    time: "1시간 전",
-  },
-  {
-    id: "3",
-    type: "standard",
-    title: "이번 주 재료비",
-    bigNumber: "89",
-    unit: "만원",
-    change: { value: "+15%", positive: false },
-    body: "지난주 대비 재료비 지출이 증가했어요",
-    action: "영수증 확인",
-    time: "3시간 전",
-  },
-  {
-    id: "4",
-    type: "standard",
-    title: "이번 달 최고 매출 갱신! 🎉",
-    bigNumber: "3,240",
-    unit: "만원",
-    body: "지난 달 대비 18% 증가했어요",
-    time: "어제",
-  },
-];
+import { useFeedCards, type FeedCard } from "@/hooks/useFeedCards";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
@@ -66,30 +13,110 @@ const cardVariants = {
 };
 
 export const SecretaryFeed = () => {
+  const { todayCards, historyCards, isLoading } = useFeedCards();
+
+  if (isLoading) {
+    return <FeedSkeleton />;
+  }
+
+  const hasToday = todayCards.length > 0;
+  const hasHistory = historyCards.length > 0;
+
   return (
     <div className="flex flex-col gap-4 px-4 pt-4 pb-32">
-      <div className="flex flex-col gap-4">
-        {mockCards.map((card, i) => (
-          <motion.div
-            key={card.id}
-            custom={i}
-            initial="hidden"
-            animate="visible"
-            variants={cardVariants}
-          >
-            {card.type === "hero" ? (
-              <HeroCard card={card} />
-            ) : (
-              <StandardCard card={card} />
-            )}
-          </motion.div>
-        ))}
-      </div>
+      {/* 오늘의 브리핑 */}
+      {hasToday && (
+        <section>
+          <SectionHeader label="오늘의 브리핑" accent />
+          <div className="flex flex-col gap-4 mt-3">
+            {todayCards.map((card, i) => (
+              <motion.div
+                key={card.id}
+                custom={i}
+                initial="hidden"
+                animate="visible"
+                variants={cardVariants}
+              >
+                {card.type === "hero" ? (
+                  <HeroCard card={card} />
+                ) : (
+                  <StandardCard card={card} />
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 데이터가 하나도 없을 때 */}
+      {!hasToday && !hasHistory && <EmptyFeed />}
+
+      {/* 지난 기록 */}
+      {hasHistory && (
+        <section className="mt-2">
+          <SectionHeader label="지난 기록" />
+          <div className="flex flex-col gap-3 mt-3">
+            {historyCards.map((card, i) => (
+              <motion.div
+                key={card.id}
+                custom={i}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-40px" }}
+                variants={cardVariants}
+              >
+                <StandardCard card={card} compact />
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 };
 
-// Hero card — full gradient background, big number
+// Section header
+const SectionHeader = ({ label, accent }: { label: string; accent?: boolean }) => (
+  <div className="flex items-center gap-2">
+    {accent && (
+      <span
+        className="w-1.5 h-1.5 rounded-full"
+        style={{ background: "#007AFF" }}
+      />
+    )}
+    <span
+      className="text-[13px] font-semibold tracking-wide"
+      style={{ color: accent ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.3)" }}
+    >
+      {label}
+    </span>
+  </div>
+);
+
+// Empty state
+const EmptyFeed = () => (
+  <div className="flex flex-col items-center justify-center py-20 gap-3">
+    <span className="text-4xl">📊</span>
+    <p className="text-[15px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+      데이터를 연동하면 비서가 브리핑을 시작해요
+    </p>
+    <p className="text-[13px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+      계좌 · 카드 · 홈택스를 연결해보세요
+    </p>
+  </div>
+);
+
+// Loading skeleton
+const FeedSkeleton = () => (
+  <div className="flex flex-col gap-4 px-4 pt-4 pb-32">
+    <Skeleton className="h-4 w-24 bg-white/5" />
+    <Skeleton className="h-40 w-full rounded-3xl bg-white/5" />
+    <Skeleton className="h-24 w-full rounded-2xl bg-white/5" />
+    <Skeleton className="h-24 w-full rounded-2xl bg-white/5" />
+  </div>
+);
+
+// Hero card
 const HeroCard = ({ card }: { card: FeedCard }) => (
   <div
     className="rounded-3xl overflow-hidden relative"
@@ -104,7 +131,6 @@ const HeroCard = ({ card }: { card: FeedCard }) => (
         backgroundImage: "radial-gradient(circle at 80% 20%, rgba(255,255,255,0.3) 0%, transparent 50%)",
       }}
     />
-
     <div className="relative px-6 pt-5 pb-5">
       <div className="flex items-center justify-between">
         <span className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.7)" }}>
@@ -127,7 +153,13 @@ const HeroCard = ({ card }: { card: FeedCard }) => (
 
       {card.change && (
         <p className="text-sm font-semibold mt-2" style={{ color: "rgba(255,255,255,0.8)" }}>
-          전일 대비 {card.change.value}
+          전월 대비 {card.change.value}
+        </p>
+      )}
+
+      {card.body && (
+        <p className="text-[13px] mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>
+          {card.body}
         </p>
       )}
 
@@ -147,18 +179,21 @@ const HeroCard = ({ card }: { card: FeedCard }) => (
   </div>
 );
 
-// Standard card — dark glass, clean layout
-const StandardCard = ({ card }: { card: FeedCard }) => (
+// Standard card
+const StandardCard = ({ card, compact }: { card: FeedCard; compact?: boolean }) => (
   <div
-    className="rounded-2xl overflow-hidden"
+    className={`overflow-hidden ${compact ? "rounded-xl" : "rounded-2xl"}`}
     style={{
-      background: "rgba(255,255,255,0.05)",
+      background: card.gradient || "rgba(255,255,255,0.05)",
       border: "1px solid rgba(255,255,255,0.07)",
     }}
   >
-    <div className="px-5 py-4">
+    <div className={compact ? "px-4 py-3" : "px-5 py-4"}>
       <div className="flex items-center justify-between">
-        <p className="text-[14px] font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
+        <p
+          className={`font-semibold ${compact ? "text-[13px]" : "text-[14px]"}`}
+          style={{ color: card.gradient ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.9)" }}
+        >
           {card.title}
         </p>
         <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.25)" }}>
@@ -171,7 +206,7 @@ const StandardCard = ({ card }: { card: FeedCard }) => (
           <span
             className="font-extrabold leading-none tracking-tight"
             style={{
-              fontSize: "36px",
+              fontSize: compact ? "28px" : "36px",
               color: "rgba(255,255,255,0.9)",
             }}
           >
@@ -192,7 +227,10 @@ const StandardCard = ({ card }: { card: FeedCard }) => (
       )}
 
       {card.body && (
-        <p className="text-[13px] mt-2 leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <p
+          className="text-[13px] mt-2 leading-relaxed"
+          style={{ color: card.gradient ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.4)" }}
+        >
           {card.body}
         </p>
       )}
