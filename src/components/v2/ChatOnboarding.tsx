@@ -99,14 +99,23 @@ const OscilloscopeWave = () => {
 
     const init = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
+        });
         audioCtx = new AudioContext();
+        if (audioCtx.state === "suspended") {
+          await audioCtx.resume();
+        }
         const source = audioCtx.createMediaStreamSource(stream);
         analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.85;
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.55;
         source.connect(analyser);
-        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        dataArray = new Uint8Array(analyser.fftSize);
       } catch {
         // mic unavailable
       }
@@ -114,10 +123,19 @@ const OscilloscopeWave = () => {
 
     const poll = () => {
       if (analyser && dataArray) {
-        analyser.getByteFrequencyData(dataArray);
-        const avg = dataArray.reduce((sum, v) => sum + v, 0) / dataArray.length;
-        // Smooth towards target
-        volumeRef.current += (avg / 255 - volumeRef.current) * 0.15;
+        analyser.getByteTimeDomainData(dataArray);
+
+        let sumSquares = 0;
+        for (let i = 0; i < dataArray.length; i += 1) {
+          const normalized = (dataArray[i] - 128) / 128;
+          sumSquares += normalized * normalized;
+        }
+
+        const rms = Math.sqrt(sumSquares / dataArray.length);
+        const boosted = Math.min(1, rms * 8);
+        volumeRef.current += (boosted - volumeRef.current) * 0.22;
+      } else {
+        volumeRef.current += (0 - volumeRef.current) * 0.08;
       }
       animFrameRef.current = requestAnimationFrame(poll);
     };
@@ -132,8 +150,8 @@ const OscilloscopeWave = () => {
   }, []);
 
   // Amplitude driven by volume — idle ~3px, speaking ~14px
-  const baseAmplitude = 3;
-  const maxBoost = 11;
+  const baseAmplitude = 2.5;
+  const maxBoost = 20;
 
   return (
     <div className="w-full h-10 pointer-events-none overflow-hidden mb-2">
