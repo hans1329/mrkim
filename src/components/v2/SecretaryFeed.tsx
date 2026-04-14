@@ -3,6 +3,7 @@ import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-m
 import { ArrowRight } from "lucide-react";
 import { useFeedCards, type FeedCard } from "@/hooks/useFeedCards";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TaxSavingCarousel } from "./TaxSavingCarousel";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
