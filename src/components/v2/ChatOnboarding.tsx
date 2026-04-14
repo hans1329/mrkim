@@ -54,70 +54,73 @@ const YarnBallAvatar = () => (
   <div className="w-8 h-8 flex-shrink-0 relative">
     <svg viewBox="0 0 32 32" className="w-full h-full">
       <defs>
+        <clipPath id="ballClip"><circle cx="16" cy="16" r="14" /></clipPath>
         <linearGradient id="yb1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#007AFF" />
-          <stop offset="100%" stopColor="#5856D6" />
+          <stop offset="0%" stopColor="#007AFF" /><stop offset="100%" stopColor="#5856D6" />
         </linearGradient>
         <linearGradient id="yb2" x1="100%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#AF52DE" />
-          <stop offset="100%" stopColor="#FF6B9D" />
+          <stop offset="0%" stopColor="#AF52DE" /><stop offset="100%" stopColor="#FF6B9D" />
         </linearGradient>
         <linearGradient id="yb3" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#34C759" />
-          <stop offset="100%" stopColor="#FF9F0A" />
+          <stop offset="0%" stopColor="#34C759" /><stop offset="100%" stopColor="#FF9F0A" />
+        </linearGradient>
+        <linearGradient id="yb4" x1="50%" y1="0%" x2="50%" y2="100%">
+          <stop offset="0%" stopColor="#FF6B9D" /><stop offset="100%" stopColor="#007AFF" />
         </linearGradient>
       </defs>
-      {/* Yarn strands as oscilloscope-style curves */}
-      <motion.path
-        d="M6,16 Q10,6 16,10 Q22,14 26,8"
-        fill="none" stroke="url(#yb1)" strokeWidth="2" strokeLinecap="round"
-        animate={{ d: [
-          "M6,16 Q10,6 16,10 Q22,14 26,8",
-          "M6,14 Q10,8 16,12 Q22,10 26,10",
-          "M6,16 Q10,6 16,10 Q22,14 26,8",
-        ]}}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.path
-        d="M8,22 Q12,14 16,18 Q20,22 24,16"
-        fill="none" stroke="url(#yb2)" strokeWidth="2" strokeLinecap="round"
-        animate={{ d: [
-          "M8,22 Q12,14 16,18 Q20,22 24,16",
-          "M8,20 Q12,16 16,20 Q20,18 24,18",
-          "M8,22 Q12,14 16,18 Q20,22 24,16",
-        ]}}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.path
-        d="M10,26 Q14,18 18,22 Q22,26 26,20"
-        fill="none" stroke="url(#yb3)" strokeWidth="1.5" strokeLinecap="round"
-        animate={{ d: [
-          "M10,26 Q14,18 18,22 Q22,26 26,20",
-          "M10,24 Q14,20 18,24 Q22,22 26,22",
-          "M10,26 Q14,18 18,22 Q22,26 26,20",
-        ]}}
-        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.path
-        d="M6,10 Q12,20 18,14 Q24,8 28,14"
-        fill="none" stroke="url(#yb1)" strokeWidth="1.5" strokeLinecap="round" opacity={0.6}
-        animate={{ d: [
-          "M6,10 Q12,20 18,14 Q24,8 28,14",
-          "M6,12 Q12,18 18,16 Q24,10 28,12",
-          "M6,10 Q12,20 18,14 Q24,8 28,14",
-        ]}}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.path
-        d="M4,18 Q8,24 14,16 Q20,8 28,18"
-        fill="none" stroke="url(#yb2)" strokeWidth="1.5" strokeLinecap="round" opacity={0.5}
-        animate={{ d: [
-          "M4,18 Q8,24 14,16 Q20,8 28,18",
-          "M4,16 Q8,22 14,18 Q20,10 28,16",
-          "M4,18 Q8,24 14,16 Q20,8 28,18",
-        ]}}
-        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-      />
+      <g clipPath="url(#ballClip)">
+        {/* Horizontal wrapping strands */}
+        <motion.path fill="none" stroke="url(#yb1)" strokeWidth="2" strokeLinecap="round"
+          animate={{ d: [
+            "M2,10 Q10,6 16,8 Q22,10 30,7",
+            "M2,11 Q10,7 16,10 Q22,8 30,9",
+            "M2,10 Q10,6 16,8 Q22,10 30,7",
+          ]}}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.path fill="none" stroke="url(#yb2)" strokeWidth="2.2" strokeLinecap="round"
+          animate={{ d: [
+            "M2,16 Q8,12 16,16 Q24,20 30,16",
+            "M2,17 Q8,20 16,15 Q24,12 30,17",
+            "M2,16 Q8,12 16,16 Q24,20 30,16",
+          ]}}
+          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.path fill="none" stroke="url(#yb3)" strokeWidth="2" strokeLinecap="round"
+          animate={{ d: [
+            "M2,22 Q10,26 16,22 Q22,18 30,23",
+            "M2,23 Q10,20 16,24 Q22,26 30,22",
+            "M2,22 Q10,26 16,22 Q22,18 30,23",
+          ]}}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        />
+        {/* Vertical/diagonal wrapping strands */}
+        <motion.path fill="none" stroke="url(#yb4)" strokeWidth="1.8" strokeLinecap="round"
+          animate={{ d: [
+            "M10,2 Q6,10 10,16 Q14,22 10,30",
+            "M11,2 Q8,10 12,16 Q16,22 11,30",
+            "M10,2 Q6,10 10,16 Q14,22 10,30",
+          ]}}
+          transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.path fill="none" stroke="url(#yb1)" strokeWidth="1.5" strokeLinecap="round" opacity={0.7}
+          animate={{ d: [
+            "M22,2 Q26,10 22,16 Q18,22 22,30",
+            "M21,2 Q24,10 20,16 Q16,22 21,30",
+            "M22,2 Q26,10 22,16 Q18,22 22,30",
+          ]}}
+          transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        {/* Diagonal cross strand */}
+        <motion.path fill="none" stroke="url(#yb2)" strokeWidth="1.5" strokeLinecap="round" opacity={0.5}
+          animate={{ d: [
+            "M4,4 Q12,14 20,16 Q28,18 28,28",
+            "M4,5 Q12,12 20,18 Q28,20 28,27",
+            "M4,4 Q12,14 20,16 Q28,18 28,28",
+          ]}}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </g>
     </svg>
   </div>
 );
