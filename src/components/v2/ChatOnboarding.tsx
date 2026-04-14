@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useCallback } from "react";
-import { Bot } from "lucide-react";
+import { Bot, Mic } from "lucide-react";
 
 interface OnboardingStep {
   id: string;
@@ -54,6 +54,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<{ from: "bot" | "user"; text: string }[]>([]);
   const [showInput, setShowInput] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   const step = steps[currentStep];
 
@@ -71,6 +72,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
     setMessages((prev) => [...prev, { from: "user", text: value }]);
     setShowInput(false);
     setInputValue("");
+    setIsListening(false);
 
     if (currentStep < steps.length - 1) {
       const nextIdx = currentStep + 1;
@@ -171,71 +173,140 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         </AnimatePresence>
       </div>
 
-      {/* Input area */}
+      {/* Input area — Voice first, text below */}
       <AnimatePresence>
         {showInput && step && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="relative z-10 px-4 pb-8 pt-3"
+            className="relative z-10 px-4 pb-8 pt-3 flex flex-col items-center gap-3"
           >
+            {/* Voice button — primary */}
             {step.type === "text" && (
-              <div
-                className="flex items-center gap-2 rounded-xl px-4 py-3"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                }}
-              >
-                <input
-                  autoFocus
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && inputValue.trim() && advance(inputValue.trim())}
-                  placeholder={step.placeholder}
-                  className="flex-1 bg-transparent outline-none text-[14px] placeholder:text-white/25"
-                  style={{ color: "rgba(255,255,255,0.9)" }}
-                />
-                <button
-                  onClick={() => inputValue.trim() && advance(inputValue.trim())}
-                  className="px-3 py-1.5 rounded-lg text-[13px] font-semibold"
+              <>
+                <motion.button
+                  className="w-16 h-16 rounded-full flex items-center justify-center relative"
                   style={{
-                    background: inputValue.trim()
-                      ? "linear-gradient(135deg, #007AFF, #5856D6)"
-                      : "rgba(255,255,255,0.06)",
-                    color: inputValue.trim()
-                      ? "rgba(255,255,255,0.95)"
-                      : "rgba(255,255,255,0.25)",
+                    background: isListening
+                      ? "linear-gradient(135deg, #007AFF, #5856D6, #AF52DE)"
+                      : "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    boxShadow: isListening
+                      ? "0 0 30px rgba(88,86,214,0.4), inset 0 1px 0 rgba(255,255,255,0.2)"
+                      : "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.3)",
+                  }}
+                  whileTap={{ scale: 1.1 }}
+                  onClick={() => setIsListening(!isListening)}
+                >
+                  <Mic size={24} style={{ color: isListening ? "#fff" : "rgba(255,255,255,0.5)" }} />
+                  {isListening && (
+                    <motion.div
+                      className="absolute inset-0 rounded-full"
+                      style={{ border: "2px solid rgba(88,86,214,0.3)" }}
+                      animate={{ scale: [1, 1.4, 1.4], opacity: [0.5, 0, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    />
+                  )}
+                </motion.button>
+
+                <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+                  {isListening ? "듣고 있어요..." : "탭하여 음성으로 답하기"}
+                </p>
+
+                {/* Divider */}
+                <div className="flex items-center gap-3 w-full max-w-[280px]">
+                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+                  <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>또는 입력</span>
+                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+                </div>
+
+                {/* Text input — secondary */}
+                <div
+                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 w-full"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
                 >
-                  확인
-                </button>
-              </div>
+                  <input
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && inputValue.trim() && advance(inputValue.trim())}
+                    placeholder={step.placeholder}
+                    className="flex-1 bg-transparent outline-none text-[13px] placeholder:text-white/20"
+                    style={{ color: "rgba(255,255,255,0.8)" }}
+                  />
+                  <button
+                    onClick={() => inputValue.trim() && advance(inputValue.trim())}
+                    className="px-2.5 py-1 rounded-lg text-[12px] font-semibold"
+                    style={{
+                      background: inputValue.trim()
+                        ? "linear-gradient(135deg, #007AFF, #5856D6)"
+                        : "rgba(255,255,255,0.04)",
+                      color: inputValue.trim()
+                        ? "rgba(255,255,255,0.95)"
+                        : "rgba(255,255,255,0.2)",
+                    }}
+                  >
+                    확인
+                  </button>
+                </div>
+              </>
             )}
 
             {step.type === "choice" && (
-              <div className="flex flex-wrap gap-2 justify-center">
-                {step.choices?.map((c) => (
-                  <motion.button
-                    key={c.value}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => advance(c.label)}
-                    className="px-4 py-2.5 rounded-xl text-[13px] font-medium"
-                    style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      color: "rgba(255,255,255,0.8)",
-                    }}
-                  >
-                    {c.label}
-                  </motion.button>
-                ))}
+              <div className="flex flex-col items-center gap-3 w-full">
+                {/* Voice option */}
+                <motion.button
+                  className="w-14 h-14 rounded-full flex items-center justify-center"
+                  style={{
+                    background: isListening
+                      ? "linear-gradient(135deg, #007AFF, #5856D6, #AF52DE)"
+                      : "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    boxShadow: isListening
+                      ? "0 0 30px rgba(88,86,214,0.4)"
+                      : "inset 0 1px 0 rgba(255,255,255,0.06)",
+                  }}
+                  whileTap={{ scale: 1.1 }}
+                  onClick={() => setIsListening(!isListening)}
+                >
+                  <Mic size={20} style={{ color: isListening ? "#fff" : "rgba(255,255,255,0.5)" }} />
+                </motion.button>
+                <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+                  {isListening ? "듣고 있어요..." : "음성으로 답하기"}
+                </p>
+
+                <div className="flex items-center gap-3 w-full max-w-[280px]">
+                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+                  <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>또는 선택</span>
+                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+                </div>
+
+                {/* Choice chips */}
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {step.choices?.map((c) => (
+                    <motion.button
+                      key={c.value}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => advance(c.label)}
+                      className="px-4 py-2.5 rounded-xl text-[13px] font-medium"
+                      style={{
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        color: "rgba(255,255,255,0.8)",
+                      }}
+                    >
+                      {c.label}
+                    </motion.button>
+                  ))}
+                </div>
               </div>
             )}
 
             {step.type === "action" && (
-              <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col items-center gap-3 w-full">
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={() => advance("연동 시작")}
