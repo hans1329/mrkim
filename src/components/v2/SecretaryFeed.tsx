@@ -83,6 +83,45 @@ export const SecretaryFeed = () => {
   );
 };
 
+// Swipe-to-dismiss wrapper
+const SWIPE_THRESHOLD = 120;
+
+const SwipeToDismiss = ({
+  cardId,
+  onDismiss,
+  children,
+}: {
+  cardId: string;
+  onDismiss: (id: string) => void;
+  children: React.ReactNode;
+}) => {
+  const x = useMotionValue(0);
+  const opacity = useTransform(x, [-SWIPE_THRESHOLD * 1.5, 0, SWIPE_THRESHOLD * 1.5], [0, 1, 0]);
+  const scale = useTransform(x, [-SWIPE_THRESHOLD * 1.5, 0, SWIPE_THRESHOLD * 1.5], [0.95, 1, 0.95]);
+
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    if (Math.abs(info.offset.x) > SWIPE_THRESHOLD) {
+      const direction = info.offset.x > 0 ? 400 : -400;
+      animate(x, direction, { duration: 0.25 }).then(() => onDismiss(cardId));
+    } else {
+      animate(x, 0, { type: "spring", stiffness: 500, damping: 30 });
+    }
+  };
+
+  return (
+    <motion.div
+      style={{ x, opacity, scale }}
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.6}
+      onDragEnd={handleDragEnd}
+      className="cursor-grab active:cursor-grabbing"
+    >
+      {children}
+    </motion.div>
+  );
+};
+
 // Section header
 const SectionHeader = ({ label, accent }: { label: string; accent?: boolean }) => (
   <div className="flex items-center gap-2">
