@@ -50,16 +50,16 @@ interface ChatOnboardingProps {
 
 // Ambient wave ring component
 const WaveRings = () => (
-  <div className="absolute bottom-32 left-1/2 -translate-x-1/2 pointer-events-none">
+  <div className="absolute bottom-48 left-1/2 -translate-x-1/2 pointer-events-none">
     {[0, 1, 2].map((i) => (
       <motion.div
         key={i}
         className="absolute rounded-full"
         style={{
-          width: 120 + i * 60,
-          height: 120 + i * 60,
-          left: -(60 + i * 30),
-          top: -(60 + i * 30),
+          width: 80 + i * 50,
+          height: 80 + i * 50,
+          left: -(40 + i * 25),
+          top: -(40 + i * 25),
           border: `1.5px solid rgba(88,86,214,${0.15 - i * 0.04})`,
         }}
         animate={{
