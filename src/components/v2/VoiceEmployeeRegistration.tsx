@@ -150,7 +150,7 @@ export const VoiceEmployeeRegistration = ({ onClose, onComplete }: VoiceEmployee
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
   const animFrameRef = useRef<number>();
 
   const step = steps[currentStep];
