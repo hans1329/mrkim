@@ -69,9 +69,9 @@ interface IntroSequenceProps {
 }
 
 const briefingItems = [
-  { label: "어제 매출", value: "127만원", change: "+23%" },
-  { label: "미처리", value: "2건", highlight: true },
-  { label: "절세 점수", value: "78점" },
+  { label: "어제 매출", value: "127만원", change: "+23%", color: "rgba(0,122,255,0.15)" },
+  { label: "미처리", value: "2건", highlight: true, color: "rgba(255,149,0,0.15)" },
+  { label: "절세 점수", value: "78점", color: "rgba(88,86,214,0.15)" },
 ];
 
 export const IntroSequence = ({
@@ -179,12 +179,12 @@ export const IntroSequence = ({
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.15, type: "spring" as const, stiffness: 300, damping: 30 }}
-                      className="flex items-center justify-between px-5 py-3 rounded-xl"
+                      className="flex items-center justify-between px-5 py-3.5 rounded-2xl"
                       style={{
-                        background: "rgba(255,255,255,0.05)",
-                        backdropFilter: "blur(16px)",
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+                        background: `linear-gradient(135deg, ${item.color}, rgba(255,255,255,0.04))`,
+                        backdropFilter: "blur(24px)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.2)",
                       }}
                     >
                       <span className="text-[13px]" style={{ color: "rgba(255,255,255,0.5)" }}>
