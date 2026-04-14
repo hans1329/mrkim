@@ -50,9 +50,9 @@ interface ChatOnboardingProps {
 
 // Oscilloscope-style colorful waveform component
 const OscilloscopeWave = () => (
-  <div className="absolute bottom-44 left-0 right-0 h-16 pointer-events-none overflow-hidden">
+  <div className="w-full h-10 pointer-events-none overflow-hidden mb-2">
     <svg
-      viewBox="0 0 390 64"
+      viewBox="0 0 390 40"
       preserveAspectRatio="none"
       className="w-full h-full"
       style={{ filter: "blur(1px)" }}
@@ -79,65 +79,43 @@ const OscilloscopeWave = () => (
           <stop offset="100%" stopColor="#FF9F0A" stopOpacity="0" />
         </linearGradient>
       </defs>
-      {/* Primary wave */}
       <motion.path
-        d="M0,32 Q50,32 97,32 Q145,32 195,32 Q243,32 293,32 Q340,32 390,32"
-        fill="none"
-        stroke="url(#wave1Grad)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
+        fill="none" stroke="url(#wave1Grad)" strokeWidth="2.5" strokeLinecap="round"
         animate={{
           d: [
-            "M0,32 Q50,20 97,28 Q145,36 195,24 Q243,38 293,30 Q340,22 390,32",
-            "M0,32 Q50,38 97,26 Q145,18 195,36 Q243,20 293,34 Q340,40 390,32",
-            "M0,32 Q50,24 97,38 Q145,30 195,20 Q243,34 293,26 Q340,36 390,32",
-            "M0,32 Q50,20 97,28 Q145,36 195,24 Q243,38 293,30 Q340,22 390,32",
+            "M0,20 Q50,12 97,18 Q145,24 195,14 Q243,26 293,18 Q340,12 390,20",
+            "M0,20 Q50,26 97,14 Q145,10 195,24 Q243,12 293,22 Q340,28 390,20",
+            "M0,20 Q50,14 97,26 Q145,18 195,10 Q243,22 293,16 Q340,24 390,20",
+            "M0,20 Q50,12 97,18 Q145,24 195,14 Q243,26 293,18 Q340,12 390,20",
           ],
         }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
-      {/* Secondary wave */}
       <motion.path
-        d="M0,32 Q50,32 97,32 Q145,32 195,32 Q243,32 293,32 Q340,32 390,32"
-        fill="none"
-        stroke="url(#wave2Grad)"
-        strokeWidth="1.8"
-        strokeLinecap="round"
+        fill="none" stroke="url(#wave2Grad)" strokeWidth="1.8" strokeLinecap="round"
         animate={{
           d: [
-            "M0,32 Q50,36 97,22 Q145,40 195,28 Q243,18 293,36 Q340,28 390,32",
-            "M0,32 Q50,26 97,40 Q145,24 195,38 Q243,42 293,22 Q340,34 390,32",
-            "M0,32 Q50,42 97,28 Q145,34 195,42 Q243,26 293,38 Q340,20 390,32",
-            "M0,32 Q50,36 97,22 Q145,40 195,28 Q243,18 293,36 Q340,28 390,32",
+            "M0,20 Q50,24 97,12 Q145,28 195,16 Q243,10 293,24 Q340,18 390,20",
+            "M0,20 Q50,16 97,28 Q145,14 195,26 Q243,30 293,12 Q340,22 390,20",
+            "M0,20 Q50,30 97,16 Q145,22 195,30 Q243,14 293,26 Q340,10 390,20",
+            "M0,20 Q50,24 97,12 Q145,28 195,16 Q243,10 293,24 Q340,18 390,20",
           ],
         }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       />
-      {/* Tertiary soft wave */}
       <motion.path
-        d="M0,32 Q50,32 97,32 Q145,32 195,32 Q243,32 293,32 Q340,32 390,32"
-        fill="none"
-        stroke="url(#wave3Grad)"
-        strokeWidth="1.2"
-        strokeLinecap="round"
+        fill="none" stroke="url(#wave3Grad)" strokeWidth="1.2" strokeLinecap="round"
         animate={{
           d: [
-            "M0,32 Q50,28 97,36 Q145,26 195,40 Q243,30 293,24 Q340,38 390,32",
-            "M0,32 Q50,38 97,24 Q145,38 195,22 Q243,36 293,40 Q340,26 390,32",
-            "M0,32 Q50,22 97,34 Q145,42 195,30 Q243,22 293,36 Q340,30 390,32",
-            "M0,32 Q50,28 97,36 Q145,26 195,40 Q243,30 293,24 Q340,38 390,32",
+            "M0,20 Q50,16 97,24 Q145,14 195,28 Q243,18 293,12 Q340,26 390,20",
+            "M0,20 Q50,26 97,12 Q145,26 195,10 Q243,24 293,28 Q340,14 390,20",
+            "M0,20 Q50,10 97,22 Q145,30 195,18 Q243,10 293,24 Q340,18 390,20",
+            "M0,20 Q50,16 97,24 Q145,14 195,28 Q243,18 293,12 Q340,26 390,20",
           ],
         }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
       />
     </svg>
-    {/* Glow backdrop */}
-    <div
-      className="absolute inset-0"
-      style={{
-        background: "radial-gradient(ellipse 60% 100% at 50% 50%, rgba(88,86,214,0.08) 0%, transparent 70%)",
-      }}
-    />
   </div>
 );
 
@@ -239,8 +217,6 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         }}
       />
 
-      {/* Oscilloscope waveform — signals listening mode */}
-      {showInput && step.type !== "action" && <OscilloscopeWave />}
 
       {/* Skip */}
       <div className="relative z-10 flex justify-end px-5 pt-4">
@@ -279,8 +255,10 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="relative z-10 px-4 pb-8 pt-3 flex flex-col items-center gap-2.5"
+            className="relative z-10 px-4 pb-8 pt-3 flex flex-col items-center gap-1"
           >
+            {/* Oscilloscope waveform — right above input */}
+            {step.type !== "action" && <OscilloscopeWave />}
             {/* Choice chips — for choice type */}
             {step.type === "choice" && (
               <>
