@@ -154,7 +154,6 @@ const StandardCard = ({ card }: { card: FeedCard }) => (
     className="rounded-2xl overflow-hidden"
     style={{
       background: "rgba(255,255,255,0.05)",
-      backdropFilter: "blur(24px)",
       border: "1px solid rgba(255,255,255,0.07)",
     }}
   >
