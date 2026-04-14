@@ -232,6 +232,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
       setTimeout(() => {
         setMessages((prev) => [...prev, { from: "bot", text: steps[nextIdx].question }]);
         setCurrentStep(nextIdx);
+        currentStepRef.current = nextIdx;
         setTimeout(() => setShowInput(true), 500);
         setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
       }, 600);
