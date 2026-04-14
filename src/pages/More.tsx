@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
+import { VersionBadge } from "@/components/version/VersionBadge";
 
 const menuItems = [
   { title: "데이터 연동", description: "홈택스·카드·계좌·배달앱", url: "#connection-hub", icon: LinkIcon },
@@ -77,8 +78,11 @@ export default function More() {
 
         <Card>
           <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">김비서 v1.0.0</p>
+            <div className="text-center space-y-1">
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="text-sm text-muted-foreground">김비서</span>
+                <VersionBadge />
+              </div>
               <p className="text-xs text-muted-foreground">© 2026 김비서. All rights reserved.</p>
             </div>
           </CardContent>
