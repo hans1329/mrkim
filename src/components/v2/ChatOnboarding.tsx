@@ -159,6 +159,7 @@ const OscilloscopeWave = () => (
 
 export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardingProps) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const currentStepRef = useRef(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<{ from: "bot" | "user"; text: string }[]>([]);
@@ -175,6 +176,9 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
     commitStrategy: CommitStrategy.VAD,
     languageCode: "kor",
     onCommittedTranscript: (data) => {
+      // action 타입 스텝에서는 음성으로 자동 진행하지 않음
+      const currentStepType = steps[currentStepRef.current]?.type;
+      if (currentStepType === "action") return;
       if (data.text?.trim() && advanceRef.current) {
         advanceRef.current(data.text.trim());
       }
@@ -228,6 +232,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
       setTimeout(() => {
         setMessages((prev) => [...prev, { from: "bot", text: steps[nextIdx].question }]);
         setCurrentStep(nextIdx);
+        currentStepRef.current = nextIdx;
         setTimeout(() => setShowInput(true), 500);
         setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
       }, 600);
