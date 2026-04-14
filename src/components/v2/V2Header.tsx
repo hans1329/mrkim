@@ -44,6 +44,7 @@ interface V2HeaderProps {
 
 export const V2Header = ({ onMenuOpen }: V2HeaderProps) => {
   const { isConnected, volumeRef, toggleVoice } = useV2Voice();
+  const navigate = useNavigate();
 
   const baseAmplitude = 2;
   const maxBoost = 14;
