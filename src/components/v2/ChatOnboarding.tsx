@@ -284,8 +284,50 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         }}
       />
 
-      {/* Skip */}
-      <div className="relative z-10 flex justify-end px-5 pt-4">
+      {/* Top bar: mic toggle + skip */}
+      <div className="relative z-10 flex items-center justify-end gap-2 px-5 pt-4">
+        {sttReady && (
+          <button
+            onClick={() => {
+              if (scribe.isConnected) {
+                scribe.disconnect();
+                setSttReady(false);
+              } else {
+                const reconnect = async () => {
+                  try {
+                    const { data } = await supabase.functions.invoke("elevenlabs-scribe-token");
+                    if (data?.token) {
+                      await scribe.connect({
+                        token: data.token,
+                        microphone: { echoCancellation: true, noiseSuppression: true },
+                      });
+                      setSttReady(true);
+                    }
+                  } catch {}
+                };
+                reconnect();
+              }
+            }}
+            className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-full transition-colors"
+            style={{
+              color: scribe.isConnected ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.35)",
+              background: scribe.isConnected ? "rgba(0,122,255,0.2)" : "rgba(255,255,255,0.05)",
+              border: scribe.isConnected ? "1px solid rgba(0,122,255,0.3)" : "1px solid transparent",
+            }}
+          >
+            {scribe.isConnected ? (
+              <>
+                <Mic className="w-3.5 h-3.5" />
+                음성 켜짐
+              </>
+            ) : (
+              <>
+                <MicOff className="w-3.5 h-3.5" />
+                음성 꺼짐
+              </>
+            )}
+          </button>
+        )}
         <button
           className="text-[12px] font-medium px-3 py-1.5 rounded-full"
           style={{
