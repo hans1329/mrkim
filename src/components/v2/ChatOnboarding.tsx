@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { Mic, MicOff } from "lucide-react";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useScribe, CommitStrategy } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
