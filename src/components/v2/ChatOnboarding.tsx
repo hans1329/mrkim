@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useCallback, useEffect } from "react";
-import { Bot } from "lucide-react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useScribe } from "@elevenlabs/react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OnboardingStep {
   id: string;
@@ -47,6 +48,79 @@ interface ChatOnboardingProps {
   onComplete: (data: Record<string, string>) => void;
   secretaryAvatarUrl?: string | null;
 }
+
+// Colorful oscilloscope yarn-ball avatar for bot
+const YarnBallAvatar = () => (
+  <div className="w-8 h-8 flex-shrink-0 relative">
+    <svg viewBox="0 0 32 32" className="w-full h-full">
+      <defs>
+        <linearGradient id="yb1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#007AFF" />
+          <stop offset="100%" stopColor="#5856D6" />
+        </linearGradient>
+        <linearGradient id="yb2" x1="100%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#AF52DE" />
+          <stop offset="100%" stopColor="#FF6B9D" />
+        </linearGradient>
+        <linearGradient id="yb3" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#34C759" />
+          <stop offset="100%" stopColor="#FF9F0A" />
+        </linearGradient>
+      </defs>
+      {/* Yarn strands as oscilloscope-style curves */}
+      <motion.path
+        d="M6,16 Q10,6 16,10 Q22,14 26,8"
+        fill="none" stroke="url(#yb1)" strokeWidth="2" strokeLinecap="round"
+        animate={{ d: [
+          "M6,16 Q10,6 16,10 Q22,14 26,8",
+          "M6,14 Q10,8 16,12 Q22,10 26,10",
+          "M6,16 Q10,6 16,10 Q22,14 26,8",
+        ]}}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.path
+        d="M8,22 Q12,14 16,18 Q20,22 24,16"
+        fill="none" stroke="url(#yb2)" strokeWidth="2" strokeLinecap="round"
+        animate={{ d: [
+          "M8,22 Q12,14 16,18 Q20,22 24,16",
+          "M8,20 Q12,16 16,20 Q20,18 24,18",
+          "M8,22 Q12,14 16,18 Q20,22 24,16",
+        ]}}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.path
+        d="M10,26 Q14,18 18,22 Q22,26 26,20"
+        fill="none" stroke="url(#yb3)" strokeWidth="1.5" strokeLinecap="round"
+        animate={{ d: [
+          "M10,26 Q14,18 18,22 Q22,26 26,20",
+          "M10,24 Q14,20 18,24 Q22,22 26,22",
+          "M10,26 Q14,18 18,22 Q22,26 26,20",
+        ]}}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.path
+        d="M6,10 Q12,20 18,14 Q24,8 28,14"
+        fill="none" stroke="url(#yb1)" strokeWidth="1.5" strokeLinecap="round" opacity={0.6}
+        animate={{ d: [
+          "M6,10 Q12,20 18,14 Q24,8 28,14",
+          "M6,12 Q12,18 18,16 Q24,10 28,12",
+          "M6,10 Q12,20 18,14 Q24,8 28,14",
+        ]}}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.path
+        d="M4,18 Q8,24 14,16 Q20,8 28,18"
+        fill="none" stroke="url(#yb2)" strokeWidth="1.5" strokeLinecap="round" opacity={0.5}
+        animate={{ d: [
+          "M4,18 Q8,24 14,16 Q20,8 28,18",
+          "M4,16 Q8,22 14,18 Q20,10 28,16",
+          "M4,18 Q8,24 14,16 Q20,8 28,18",
+        ]}}
+        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </svg>
+  </div>
+);
 
 // Oscilloscope-style colorful waveform component
 const OscilloscopeWave = () => (
@@ -126,19 +200,54 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
   const [messages, setMessages] = useState<{ from: "bot" | "user"; text: string }[]>([]);
   const [showInput, setShowInput] = useState(false);
   const [showTextFallback, setShowTextFallback] = useState(false);
+  const [sttReady, setSttReady] = useState(false);
+  const advanceRef = useRef<(value: string) => void>();
 
   const step = steps[currentStep];
+
+  // ElevenLabs Scribe (realtime STT)
+  const scribe = useScribe({
+    modelId: "scribe_v2_realtime",
+    commitStrategy: "vad",
+    onCommittedTranscript: (data) => {
+      if (data.text?.trim() && advanceRef.current) {
+        advanceRef.current(data.text.trim());
+      }
+    },
+  });
+
+  // Start STT on mount
+  useEffect(() => {
+    const initSTT = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("elevenlabs-scribe-token");
+        if (error || !data?.token) {
+          console.warn("STT token failed, text-only mode");
+          return;
+        }
+        await scribe.connect({
+          token: data.token,
+          microphone: { echoCancellation: true, noiseSuppression: true },
+        });
+        setSttReady(true);
+      } catch (e) {
+        console.warn("STT init failed:", e);
+      }
+    };
+    initSTT();
+    return () => { scribe.disconnect(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Show first question on mount
   useEffect(() => {
     const t = setTimeout(() => {
       setMessages([{ from: "bot", text: steps[0].question }]);
       setTimeout(() => setShowInput(true), 500);
-      // Show text fallback after a delay — user realizes voice isn't working
-      setTimeout(() => setShowTextFallback(true), 3000);
+      setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
     }, 300);
     return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const advance = useCallback((value: string) => {
@@ -155,27 +264,25 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         setMessages((prev) => [...prev, { from: "bot", text: steps[nextIdx].question }]);
         setCurrentStep(nextIdx);
         setTimeout(() => setShowInput(true), 500);
-        setTimeout(() => setShowTextFallback(true), 3000);
+        setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
       }, 600);
     } else {
+      scribe.disconnect();
       onComplete(newAnswers);
     }
-  }, [answers, currentStep, step, onComplete]);
+  }, [answers, currentStep, step, onComplete, sttReady, scribe]);
+
+  // Keep ref in sync for STT callback
+  useEffect(() => {
+    advanceRef.current = advance;
+  }, [advance]);
 
   const SecretaryBubble = ({ text }: { text: string }) => (
     <div className="flex items-start gap-2.5 mb-3">
       {secretaryAvatarUrl ? (
         <img src={secretaryAvatarUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
       ) : (
-        <div
-          className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center"
-          style={{
-            background: "linear-gradient(135deg, rgba(0,122,255,0.3), rgba(88,86,214,0.3))",
-            border: "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          <Bot size={14} style={{ color: "rgba(255,255,255,0.6)" }} />
-        </div>
+        <YarnBallAvatar />
       )}
       <div
         className="rounded-2xl rounded-tl-md px-4 py-3 max-w-[260px]"
@@ -217,7 +324,6 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         }}
       />
 
-
       {/* Skip */}
       <div className="relative z-10 flex justify-end px-5 pt-4">
         <button
@@ -226,7 +332,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
             color: "rgba(255,255,255,0.35)",
             background: "rgba(255,255,255,0.05)",
           }}
-          onClick={() => onComplete(answers)}
+          onClick={() => { scribe.disconnect(); onComplete(answers); }}
         >
           건너뛰기
         </button>
@@ -246,6 +352,24 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
             </motion.div>
           ))}
         </AnimatePresence>
+
+        {/* Live partial transcript */}
+        {scribe.partialTranscript && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex justify-end mb-3"
+          >
+            <div
+              className="rounded-2xl rounded-tr-md px-4 py-3 max-w-[240px]"
+              style={{ background: "linear-gradient(135deg, rgba(0,122,255,0.4), rgba(88,86,214,0.4))" }}
+            >
+              <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.6)" }}>
+                {scribe.partialTranscript}
+              </p>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Bottom input area */}
@@ -261,28 +385,26 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
             {step.type !== "action" && <OscilloscopeWave />}
             {/* Choice chips — for choice type */}
             {step.type === "choice" && (
-              <>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {step.choices?.map((c) => (
-                    <motion.button
-                      key={c.value}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => advance(c.label)}
-                      className="px-4 py-2.5 rounded-xl text-[13px] font-medium"
-                      style={{
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        color: "rgba(255,255,255,0.8)",
-                      }}
-                    >
-                      {c.label}
-                    </motion.button>
-                  ))}
-                </div>
-              </>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {step.choices?.map((c) => (
+                  <motion.button
+                    key={c.value}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => advance(c.label)}
+                    className="px-4 py-2.5 rounded-xl text-[13px] font-medium"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      color: "rgba(255,255,255,0.8)",
+                    }}
+                  >
+                    {c.label}
+                  </motion.button>
+                ))}
+              </div>
             )}
 
-            {/* Text fallback — appears after 3s delay for text steps */}
+            {/* Text fallback */}
             {step.type === "text" && (
               <AnimatePresence>
                 {showTextFallback && (
@@ -342,7 +464,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
                   {step.actionLabel}
                 </motion.button>
                 <button
-                  onClick={() => onComplete(answers)}
+                  onClick={() => { scribe.disconnect(); onComplete(answers); }}
                   className="text-[12px]"
                   style={{ color: "rgba(255,255,255,0.3)" }}
                 >
