@@ -219,6 +219,7 @@ export const IntroSequence = ({
                           </span>
                         )}
                       </div>
+                      </div>
                     </motion.div>
                   ))}
                 </div>
