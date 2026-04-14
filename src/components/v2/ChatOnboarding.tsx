@@ -49,51 +49,31 @@ interface ChatOnboardingProps {
   secretaryAvatarUrl?: string | null;
 }
 
-// Cloudy colorful glow-ball avatar for bot
+// Colorful cubic-ball avatar for bot — no border
 const YarnBallAvatar = () => (
-  <div className="w-8 h-8 flex-shrink-0 relative">
-    <svg viewBox="0 0 32 32" className="w-full h-full" style={{ filter: "blur(2.5px)" }}>
-      <defs>
-        <radialGradient id="ybg1" cx="35%" cy="40%" r="50%">
-          <stop offset="0%" stopColor="#007AFF" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#5856D6" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="ybg2" cx="65%" cy="35%" r="45%">
-          <stop offset="0%" stopColor="#AF52DE" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#FF6B9D" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="ybg3" cx="50%" cy="65%" r="45%">
-          <stop offset="0%" stopColor="#34C759" stopOpacity="0.7" />
-          <stop offset="100%" stopColor="#FF9F0A" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="ybg4" cx="40%" cy="55%" r="40%">
-          <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0.6" />
-          <stop offset="100%" stopColor="#007AFF" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      {/* Layered blurred color blobs */}
-      <motion.circle cx="11" cy="12" r="8" fill="url(#ybg1)"
-        animate={{ cx: [11, 13, 11], cy: [12, 10, 12], r: [8, 9, 8] }}
+  <div className="w-8 h-8 flex-shrink-0 overflow-hidden rounded-full" style={{ background: "#0A0A0F" }}>
+    <svg viewBox="0 0 32 32" className="w-full h-full" style={{ filter: "blur(3px) saturate(1.4)" }}>
+      <motion.circle cx="10" cy="10" r="9" fill="#007AFF" opacity={0.85}
+        animate={{ cx: [10, 13, 10], cy: [10, 8, 10] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
-      <motion.circle cx="21" cy="11" r="7" fill="url(#ybg2)"
-        animate={{ cx: [21, 19, 21], cy: [11, 13, 11], r: [7, 8, 7] }}
+      <motion.circle cx="22" cy="10" r="8" fill="#AF52DE" opacity={0.8}
+        animate={{ cx: [22, 19, 22], cy: [10, 12, 10] }}
         transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
       />
-      <motion.circle cx="16" cy="21" r="8" fill="url(#ybg3)"
-        animate={{ cx: [16, 18, 16], cy: [21, 19, 21], r: [8, 7, 8] }}
+      <motion.circle cx="16" cy="22" r="9" fill="#34C759" opacity={0.7}
+        animate={{ cx: [16, 18, 16], cy: [22, 19, 22] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       />
-      <motion.circle cx="13" cy="18" r="6" fill="url(#ybg4)"
-        animate={{ cx: [13, 15, 13], cy: [18, 16, 18], r: [6, 7, 6] }}
+      <motion.circle cx="12" cy="18" r="7" fill="#FF6B9D" opacity={0.6}
+        animate={{ cx: [12, 15, 12], cy: [18, 15, 18] }}
         transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
       />
+      <motion.circle cx="20" cy="20" r="6" fill="#FF9F0A" opacity={0.5}
+        animate={{ cx: [20, 17, 20], cy: [20, 17, 20] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      />
     </svg>
-    {/* Sharp circular edge */}
-    <div
-      className="absolute inset-0 rounded-full"
-      style={{ boxShadow: "inset 0 0 3px rgba(255,255,255,0.1), 0 0 8px rgba(88,86,214,0.3)" }}
-    />
   </div>
 );
 
