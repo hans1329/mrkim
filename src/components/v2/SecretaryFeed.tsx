@@ -150,10 +150,10 @@ const SectionHeader = ({ label, accent }: { label: string; accent?: boolean }) =
 const EmptyFeed = () => (
   <div className="flex flex-col items-center justify-center py-20 gap-4">
     <div
-      className="w-16 h-16 rounded-full"
+      className="w-20 h-20 rounded-full animate-pulse"
       style={{
-        background: "radial-gradient(circle, rgba(0,122,255,0.15) 0%, transparent 70%)",
-        boxShadow: "0 0 40px rgba(0,122,255,0.1)",
+        background: "radial-gradient(circle, rgba(0,122,255,0.4) 0%, rgba(88,86,214,0.2) 50%, transparent 75%)",
+        boxShadow: "0 0 60px rgba(0,122,255,0.25), 0 0 20px rgba(88,86,214,0.15)",
       }}
     />
     <p className="text-[15px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
