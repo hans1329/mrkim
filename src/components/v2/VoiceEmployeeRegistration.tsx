@@ -27,8 +27,7 @@ const steps: RegistrationStep[] = [
     choices: [
       { label: "정규직", value: "정규직" },
       { label: "계약직", value: "계약직" },
-      { label: "아르바이트", value: "아르바이트" },
-      { label: "일용직", value: "일용직" },
+      { label: "아르바이트", value: "알바" },
     ],
   },
   {
