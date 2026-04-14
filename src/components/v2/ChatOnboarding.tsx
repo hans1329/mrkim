@@ -239,8 +239,8 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         }}
       />
 
-      {/* Always-on wave rings — signals listening mode */}
-      {showInput && step.type !== "action" && <WaveRings />}
+      {/* Oscilloscope waveform — signals listening mode */}
+      {showInput && step.type !== "action" && <OscilloscopeWave />}
 
       {/* Skip */}
       <div className="relative z-10 flex justify-end px-5 pt-4">
