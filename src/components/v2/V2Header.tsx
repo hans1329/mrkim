@@ -64,7 +64,7 @@ export const V2Header = ({ onMenuOpen }: V2HeaderProps) => {
       </button>
 
       {/* Oscilloscope area */}
-      <div className="flex-1 h-8 overflow-hidden rounded-xl relative">
+      <div className="flex-1 h-8 overflow-hidden rounded-xl relative cursor-pointer" onClick={() => navigate("/secretary-settings")}>
         <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
           <defs>
             <linearGradient id="hwave1" x1="0%" y1="0%" x2="100%" y2="0%">
