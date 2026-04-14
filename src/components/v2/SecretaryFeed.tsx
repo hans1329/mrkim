@@ -67,7 +67,7 @@ const cardVariants = {
 
 export const SecretaryFeed = () => {
   return (
-    <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 no-scrollbar">
+    <div className="flex flex-col gap-4 px-4 pt-4 pb-32">
       <div className="flex flex-col gap-4">
         {mockCards.map((card, i) => (
           <motion.div
