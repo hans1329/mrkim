@@ -29,15 +29,8 @@ export const WeatherAnchor = () => {
       }}
     >
       <div className="relative px-5 py-4">
-        {/* Gradient accent line at top */}
-        <div
-          className="absolute top-0 left-4 right-4 h-[2px] rounded-full"
-          style={{
-            background: "linear-gradient(90deg, #007AFF, #5856D6, #AF52DE, #FF2D55)",
-          }}
-        />
 
-        <div className="flex items-center justify-between mt-1">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">{config.icon}</span>
             <div>
