@@ -120,7 +120,7 @@ export const IntroSequence = ({
             transition={{ type: "spring" as const, stiffness: 200, damping: 20 }}
             className="relative z-10 mb-6"
           >
-            <CubicBallAvatar size={80} />
+            <CubicBallAvatar size={120} />
           </motion.div>
 
           {/* Greeting text */}
