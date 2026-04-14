@@ -229,30 +229,9 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
             exit={{ opacity: 0, y: 20 }}
             className="relative z-10 px-4 pb-8 pt-3 flex flex-col items-center gap-2.5"
           >
-            {/* Listening indicator — always on for text/choice */}
-            {step.type !== "action" && (
-              <motion.p
-                className="text-[11px] font-medium"
-                style={{
-                  background: "linear-gradient(90deg, #007AFF, #AF52DE)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                듣고 있어요...
-              </motion.p>
-            )}
-
             {/* Choice chips — for choice type */}
             {step.type === "choice" && (
               <>
-                <div className="flex items-center gap-3 w-full max-w-[280px] mt-1">
-                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
-                  <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>또는 선택</span>
-                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
-                </div>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {step.choices?.map((c) => (
                     <motion.button
@@ -280,13 +259,8 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="w-full mt-1"
+                    className="w-full"
                   >
-                    <div className="flex items-center gap-3 w-full max-w-[280px] mx-auto mb-2">
-                      <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
-                      <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.15)" }}>직접 입력</span>
-                      <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
-                    </div>
                     <div
                       className="flex items-center gap-2 rounded-xl px-4 py-2.5 w-full"
                       style={{
