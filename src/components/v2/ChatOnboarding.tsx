@@ -53,32 +53,32 @@ interface ChatOnboardingProps {
 const YarnBallAvatar = () => (
   <div className="w-8 h-8 flex-shrink-0 overflow-hidden rounded-full" style={{ background: "#0A0A0F" }}>
     <svg viewBox="0 0 32 32" className="w-full h-full" style={{ filter: "blur(3px) saturate(1.4)" }}>
-      <motion.circle cx="10" cy="10" r="9" fill="#007AFF" opacity={0.85}
-        animate={{ cx: [10, 13, 10], cy: [10, 8, 10] }}
+      <motion.circle cx="13" cy="12" r="10" fill="#007AFF" opacity={0.85}
+        animate={{ cx: [13, 15, 13], cy: [12, 14, 12] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
-      <motion.circle cx="22" cy="10" r="8" fill="#AF52DE" opacity={0.8}
-        animate={{ cx: [22, 19, 22], cy: [10, 12, 10] }}
+      <motion.circle cx="19" cy="12" r="9" fill="#AF52DE" opacity={0.8}
+        animate={{ cx: [19, 17, 19], cy: [12, 14, 12] }}
         transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
       />
-      <motion.circle cx="16" cy="22" r="9" fill="#34C759" opacity={0.7}
-        animate={{ cx: [16, 18, 16], cy: [22, 19, 22] }}
+      <motion.circle cx="16" cy="19" r="10" fill="#34C759" opacity={0.7}
+        animate={{ cx: [16, 18, 16], cy: [19, 17, 19] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       />
-      <motion.circle cx="12" cy="18" r="7" fill="#FF6B9D" opacity={0.6}
-        animate={{ cx: [12, 15, 12], cy: [18, 15, 18] }}
+      <motion.circle cx="14" cy="17" r="8" fill="#FF6B9D" opacity={0.6}
+        animate={{ cx: [14, 16, 14], cy: [17, 15, 17] }}
         transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
       />
-      <motion.circle cx="20" cy="20" r="6" fill="#FF9F0A" opacity={0.5}
-        animate={{ cx: [20, 17, 20], cy: [20, 17, 20] }}
+      <motion.circle cx="18" cy="16" r="7" fill="#FF9F0A" opacity={0.5}
+        animate={{ cx: [18, 16, 18], cy: [16, 18, 16] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
       />
-      <motion.circle cx="8" cy="24" r="7" fill="#5856D6" opacity={0.65}
-        animate={{ cx: [8, 11, 8], cy: [24, 21, 24] }}
+      <motion.circle cx="12" cy="18" r="8" fill="#5856D6" opacity={0.65}
+        animate={{ cx: [12, 14, 12], cy: [18, 16, 18] }}
         transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
       />
-      <motion.circle cx="24" cy="14" r="6" fill="#FF375F" opacity={0.55}
-        animate={{ cx: [24, 21, 24], cy: [14, 17, 14] }}
+      <motion.circle cx="20" cy="14" r="7" fill="#FF375F" opacity={0.55}
+        animate={{ cx: [20, 18, 20], cy: [14, 16, 14] }}
         transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
       />
     </svg>
