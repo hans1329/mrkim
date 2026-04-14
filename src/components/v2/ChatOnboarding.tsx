@@ -172,6 +172,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
     commitStrategy: CommitStrategy.VAD,
+    languageCode: "kor",
     onCommittedTranscript: (data) => {
       if (data.text?.trim() && advanceRef.current) {
         advanceRef.current(data.text.trim());
