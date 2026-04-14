@@ -179,14 +179,19 @@ export const IntroSequence = ({
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.15, type: "spring" as const, stiffness: 300, damping: 30 }}
-                      className="flex items-center justify-between px-5 py-3.5 rounded-2xl"
+                      className="rounded-2xl p-[1px]"
                       style={{
-                        background: `linear-gradient(135deg, ${item.color}, rgba(255,255,255,0.04))`,
-                        backdropFilter: "blur(24px)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.2)",
+                        background: "linear-gradient(135deg, rgba(0,122,255,0.5), rgba(88,86,214,0.4), rgba(175,82,222,0.5), rgba(255,45,85,0.3))",
                       }}
                     >
+                      <div
+                        className="flex items-center justify-between px-5 py-3.5 rounded-[15px]"
+                        style={{
+                          background: `linear-gradient(135deg, ${item.color}, rgba(10,10,15,0.85))`,
+                          backdropFilter: "blur(24px)",
+                          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.2)",
+                        }}
+                      >
                       <span className="text-[13px]" style={{ color: "rgba(255,255,255,0.5)" }}>
                         {item.label}
                       </span>
