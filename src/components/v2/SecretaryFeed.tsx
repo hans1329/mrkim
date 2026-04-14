@@ -15,13 +15,19 @@ const cardVariants = {
 
 export const SecretaryFeed = () => {
   const { todayCards, historyCards, isLoading } = useFeedCards();
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+
+  const handleDismiss = useCallback((id: string) => {
+    setDismissed((prev) => new Set(prev).add(id));
+  }, []);
 
   if (isLoading) {
     return <FeedSkeleton />;
   }
 
   const hasToday = todayCards.length > 0;
-  const hasHistory = historyCards.length > 0;
+  const visibleHistory = historyCards.filter((c) => !dismissed.has(c.id));
+  const hasHistory = visibleHistory.length > 0;
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-4 pb-32">
@@ -57,17 +63,18 @@ export const SecretaryFeed = () => {
         <section className="mt-2">
           <SectionHeader label="지난 기록" />
           <div className="flex flex-col gap-3 mt-3">
-            {historyCards.map((card, i) => (
-              <motion.div
-                key={card.id}
-                custom={i}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-40px" }}
-                variants={cardVariants}
-              >
-                <StandardCard card={card} compact />
-              </motion.div>
+            {visibleHistory.map((card, i) => (
+              <SwipeToDismiss key={card.id} cardId={card.id} onDismiss={handleDismiss}>
+                <motion.div
+                  custom={i}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-40px" }}
+                  variants={cardVariants}
+                >
+                  <StandardCard card={card} compact />
+                </motion.div>
+              </SwipeToDismiss>
             ))}
           </div>
         </section>
