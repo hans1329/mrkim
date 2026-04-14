@@ -1,5 +1,15 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
+
+const getTimeGreeting = (): string => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 9) return "좋은 아침이에요 ☀️";
+  if (hour >= 9 && hour < 12) return "오전도 힘내세요 💪";
+  if (hour >= 12 && hour < 14) return "점심 맛있게 드세요 🍚";
+  if (hour >= 14 && hour < 18) return "오후도 화이팅이에요 🔥";
+  if (hour >= 18 && hour < 21) return "저녁 마무리 잘 하세요 🌇";
+  return "늦은 시간 고생하세요 🌙";
+};
 
 // Colorful cubic-ball avatar — no border, blur effect
 const CubicBallAvatar = ({ size = 80 }: { size?: number }) => (
@@ -71,6 +81,7 @@ export const IntroSequence = ({
   userName = "사장님",
 }: IntroSequenceProps) => {
   const [phase, setPhase] = useState<"greeting" | "briefing" | "exit">("greeting");
+  const timeGreeting = useMemo(() => getTimeGreeting(), []);
 
   const handleTap = () => {
     if (phase === "greeting") {
@@ -131,6 +142,12 @@ export const IntroSequence = ({
                   style={{ color: "rgba(255,255,255,0.95)" }}
                 >
                   안녕하세요, {userName}
+                </p>
+                <p
+                  className="text-[15px] mt-1"
+                  style={{ color: "rgba(255,255,255,0.5)" }}
+                >
+                  {timeGreeting}
                 </p>
                 <motion.div
                   className="mx-auto mt-4 h-[2px] rounded-full"
