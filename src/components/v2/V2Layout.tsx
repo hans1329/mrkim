@@ -5,9 +5,10 @@ import { V2NavigationDrawer } from "./V2NavigationDrawer";
 
 interface V2LayoutProps {
   children: ReactNode;
+  hideHeader?: boolean;
 }
 
-export const V2Layout = ({ children }: V2LayoutProps) => {
+export const V2Layout = ({ children, hideHeader = false }: V2LayoutProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
@@ -29,7 +30,7 @@ export const V2Layout = ({ children }: V2LayoutProps) => {
         />
 
         {/* Header */}
-        <V2Header isDrawerOpen={drawerOpen} onToggleDrawer={() => setDrawerOpen(prev => !prev)} />
+        {!hideHeader && <V2Header isDrawerOpen={drawerOpen} onToggleDrawer={() => setDrawerOpen(prev => !prev)} />}
 
         <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
           {children}

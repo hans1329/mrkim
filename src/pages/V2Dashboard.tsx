@@ -17,8 +17,10 @@ const V2Dashboard = () => {
     setStage("dashboard");
   }, []);
 
+  const hideHeader = stage === "intro" || stage === "onboarding";
+
   return (
-    <V2Layout>
+    <V2Layout hideHeader={hideHeader}>
       {stage === "intro" && (
         <IntroSequence onComplete={handleIntroComplete} />
       )}
