@@ -546,24 +546,13 @@ export function useVoiceAgent() {
           }
           setVoiceStatus("listening");
           setMicMuted(false);
-        }, 600);
+        }, 1200);
       }
     }
   }, [conversation.status, conversation.isSpeaking, isConnecting]);
 
-  // --- 발화 중 주기적 볼륨 강제 적용 (SDK 내부 VAD에 의한 볼륨 저하 방지) ---
-  useEffect(() => {
-    if (conversation.status !== "connected" || interruptedRef.current) return;
-
-    const interval = setInterval(() => {
-      // 에이전트가 말하는 중이고 인터럽트 상태가 아닐 때만 볼륨 강제 적용
-      if (conversation.isSpeaking && !interruptedRef.current && sessionActiveRef.current) {
-        try { conversation.setVolume({ volume: volumeRef.current }); } catch (_) {}
-      }
-    }, 1500);
-
-    return () => clearInterval(interval);
-  }, [conversation.status]);
+  // --- 볼륨 강제 적용 제거: SDK 내부 오디오 스트림 간섭으로 끊김 유발 ---
+  // 인터럽트 후 볼륨 복원은 interruptedRef 해제 시점(488-501줄)에서 처리
 
   // --- Start session ---
   const startSession = useCallback(async () => {
