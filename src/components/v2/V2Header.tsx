@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Menu, Mic } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useV2Voice } from "./V2VoiceContext";
 
 // Reactive wave path for oscilloscope
@@ -43,6 +44,7 @@ interface V2HeaderProps {
 
 export const V2Header = ({ onMenuOpen }: V2HeaderProps) => {
   const { isConnected, volumeRef, toggleVoice } = useV2Voice();
+  const navigate = useNavigate();
 
   const baseAmplitude = 2;
   const maxBoost = 14;
@@ -62,7 +64,7 @@ export const V2Header = ({ onMenuOpen }: V2HeaderProps) => {
       </button>
 
       {/* Oscilloscope area */}
-      <div className="flex-1 h-8 overflow-hidden rounded-xl relative">
+      <div className="flex-1 h-8 overflow-hidden rounded-xl relative cursor-pointer" onClick={() => navigate("/secretary-settings")}>
         <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
           <defs>
             <linearGradient id="hwave1" x1="0%" y1="0%" x2="100%" y2="0%">
