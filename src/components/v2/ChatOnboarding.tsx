@@ -86,113 +86,43 @@ const YarnBallAvatar = () => (
   </div>
 );
 
-// Reactive oscilloscope — responds to real microphone input via Web Audio API
+// Oscilloscope waveform — uses real mic input to modulate amplitude of smooth sine waves
 const OscilloscopeWave = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const volumeRef = useRef(0);
   const animFrameRef = useRef<number>();
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
     let audioCtx: AudioContext | null = null;
+    let analyser: AnalyserNode | null = null;
+    let dataArray: Uint8Array<ArrayBuffer> | null = null;
 
     const init = async () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         audioCtx = new AudioContext();
         const source = audioCtx.createMediaStreamSource(stream);
-        const analyser = audioCtx.createAnalyser();
+        analyser = audioCtx.createAnalyser();
         analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.7;
+        analyser.smoothingTimeConstant = 0.85;
         source.connect(analyser);
-        analyserRef.current = analyser;
-        dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
-        draw();
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
       } catch {
-        // Mic unavailable — show idle wave
-        drawIdle();
+        // mic unavailable
       }
     };
 
-    const draw = () => {
-      const canvas = canvasRef.current;
-      const analyser = analyserRef.current;
-      const dataArray = dataArrayRef.current;
-      if (!canvas || !analyser || !dataArray) return;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      const W = canvas.width;
-      const H = canvas.height;
-      const midY = H / 2;
-
-      analyser.getByteTimeDomainData(dataArray);
-
-      ctx.clearRect(0, 0, W, H);
-
-      // Draw 3 layered waves with different colors and offsets
-      const colors = [
-        { r: 0, g: 122, b: 255, alpha: 0.8, width: 2.5, offset: 0 },
-        { r: 175, g: 82, b: 222, alpha: 0.5, width: 1.8, offset: 0.15 },
-        { r: 52, g: 199, b: 89, alpha: 0.35, width: 1.2, offset: 0.3 },
-      ];
-
-      const len = dataArray.length;
-
-      for (const c of colors) {
-        ctx.beginPath();
-        ctx.strokeStyle = `rgba(${c.r},${c.g},${c.b},${c.alpha})`;
-        ctx.lineWidth = c.width;
-        ctx.lineJoin = "round";
-        ctx.lineCap = "round";
-
-        const phaseOffset = Math.floor(len * c.offset);
-
-        for (let i = 0; i < len; i++) {
-          const idx = (i + phaseOffset) % len;
-          const v = dataArray[idx] / 128.0; // normalize around 1.0
-          const y = midY + (v - 1.0) * midY * 1.8; // amplify
-
-          const x = (i / (len - 1)) * W;
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
+    const poll = () => {
+      if (analyser && dataArray) {
+        analyser.getByteFrequencyData(dataArray);
+        const avg = dataArray.reduce((sum, v) => sum + v, 0) / dataArray.length;
+        // Smooth towards target
+        volumeRef.current += (avg / 255 - volumeRef.current) * 0.15;
       }
-
-      animFrameRef.current = requestAnimationFrame(draw);
+      animFrameRef.current = requestAnimationFrame(poll);
     };
 
-    const drawIdle = () => {
-      // Fallback: flat line with subtle pulse
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      const W = canvas.width;
-      const H = canvas.height;
-      const midY = H / 2;
-
-      const idleDraw = () => {
-        ctx.clearRect(0, 0, W, H);
-        const t = Date.now() / 1000;
-        ctx.beginPath();
-        ctx.strokeStyle = "rgba(0,122,255,0.3)";
-        ctx.lineWidth = 2;
-        for (let x = 0; x < W; x++) {
-          const y = midY + Math.sin(x * 0.03 + t * 2) * 3;
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-        animFrameRef.current = requestAnimationFrame(idleDraw);
-      };
-      idleDraw();
-    };
-
-    init();
+    init().then(() => poll());
 
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
@@ -201,16 +131,128 @@ const OscilloscopeWave = () => {
     };
   }, []);
 
+  // Amplitude driven by volume — idle ~3px, speaking ~14px
+  const baseAmplitude = 3;
+  const maxBoost = 11;
+
   return (
     <div className="w-full h-10 pointer-events-none overflow-hidden mb-2">
-      <canvas
-        ref={canvasRef}
-        width={390}
-        height={40}
+      <svg
+        viewBox="0 0 390 40"
+        preserveAspectRatio="none"
         className="w-full h-full"
-        style={{ filter: "blur(0.5px)" }}
-      />
+        style={{ filter: "blur(1px)" }}
+      >
+        <defs>
+          <linearGradient id="wave1Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#007AFF" stopOpacity="0" />
+            <stop offset="30%" stopColor="#007AFF" stopOpacity="0.6" />
+            <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
+            <stop offset="70%" stopColor="#AF52DE" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#AF52DE" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="wave2Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0" />
+            <stop offset="25%" stopColor="#FF6B9D" stopOpacity="0.4" />
+            <stop offset="50%" stopColor="#007AFF" stopOpacity="0.5" />
+            <stop offset="75%" stopColor="#34C759" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#34C759" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="wave3Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#5856D6" stopOpacity="0" />
+            <stop offset="35%" stopColor="#AF52DE" stopOpacity="0.3" />
+            <stop offset="65%" stopColor="#FF9F0A" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#FF9F0A" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <ReactiveWavePath
+          volumeRef={volumeRef}
+          baseAmplitude={baseAmplitude}
+          maxBoost={maxBoost}
+          stroke="url(#wave1Grad)"
+          strokeWidth={2.5}
+          freq={0.016}
+          speed={1.8}
+          phase={0}
+        />
+        <ReactiveWavePath
+          volumeRef={volumeRef}
+          baseAmplitude={baseAmplitude * 0.7}
+          maxBoost={maxBoost * 0.6}
+          stroke="url(#wave2Grad)"
+          strokeWidth={1.8}
+          freq={0.022}
+          speed={2.3}
+          phase={1.5}
+        />
+        <ReactiveWavePath
+          volumeRef={volumeRef}
+          baseAmplitude={baseAmplitude * 0.5}
+          maxBoost={maxBoost * 0.4}
+          stroke="url(#wave3Grad)"
+          strokeWidth={1.2}
+          freq={0.028}
+          speed={2.8}
+          phase={3.0}
+        />
+      </svg>
     </div>
+  );
+};
+
+// Smooth sine wave path that reacts to volume
+const ReactiveWavePath = ({
+  volumeRef,
+  baseAmplitude,
+  maxBoost,
+  stroke,
+  strokeWidth,
+  freq,
+  speed,
+  phase,
+}: {
+  volumeRef: React.RefObject<number>;
+  baseAmplitude: number;
+  maxBoost: number;
+  stroke: string;
+  strokeWidth: number;
+  freq: number;
+  speed: number;
+  phase: number;
+}) => {
+  const pathRef = useRef<SVGPathElement>(null);
+  const animRef = useRef<number>();
+
+  useEffect(() => {
+    const animate = () => {
+      const el = pathRef.current;
+      if (!el) return;
+
+      const t = Date.now() / 1000;
+      const vol = volumeRef.current ?? 0;
+      const amp = baseAmplitude + vol * maxBoost;
+
+      const points: string[] = [];
+      for (let x = 0; x <= 390; x += 3) {
+        const y = 20 + Math.sin(x * freq + t * speed + phase) * amp
+                     + Math.sin(x * freq * 1.7 + t * speed * 0.7 + phase * 0.5) * amp * 0.3;
+        points.push(`${x === 0 ? "M" : "L"}${x},${y.toFixed(1)}`);
+      }
+      el.setAttribute("d", points.join(" "));
+      animRef.current = requestAnimationFrame(animate);
+    };
+    animate();
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, [volumeRef, baseAmplitude, maxBoost, freq, speed, phase]);
+
+  return (
+    <path
+      ref={pathRef}
+      fill="none"
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+    />
   );
 };
 
