@@ -2,17 +2,14 @@ import { useState, useCallback } from "react";
 import { WeatherAnchor } from "@/components/v2/WeatherAnchor";
 import { StickyActions } from "@/components/v2/StickyActions";
 import { SecretaryFeed } from "@/components/v2/SecretaryFeed";
-import { VoiceBubble } from "@/components/v2/VoiceBubble";
 import { V2Layout } from "@/components/v2/V2Layout";
 import { IntroSequence } from "@/components/v2/IntroSequence";
 import { ChatOnboarding } from "@/components/v2/ChatOnboarding";
 
 const V2Dashboard = () => {
-  // For demo: show intro → onboarding → dashboard
   const [stage, setStage] = useState<"intro" | "onboarding" | "dashboard">("intro");
 
   const handleIntroComplete = useCallback(() => {
-    // In production: check if user has completed onboarding
     setStage("onboarding");
   }, []);
 
@@ -36,7 +33,6 @@ const V2Dashboard = () => {
           <WeatherAnchor />
           <StickyActions />
           <SecretaryFeed />
-          <VoiceBubble />
         </>
       )}
     </V2Layout>
