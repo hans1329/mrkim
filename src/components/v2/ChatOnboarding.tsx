@@ -51,7 +51,7 @@ interface ChatOnboardingProps {
 
 // Colorful cubic-ball avatar for bot — no border
 const YarnBallAvatar = () => (
-  <div className="w-8 h-8 flex-shrink-0 overflow-hidden rounded-full" style={{ background: "#0A0A0F" }}>
+  <div className="w-8 h-8 flex-shrink-0 rounded-full">
     <svg viewBox="0 0 32 32" className="w-full h-full" style={{ filter: "blur(3px) saturate(1.4)" }}>
       <motion.circle cx="13" cy="12" r="10" fill="#007AFF" opacity={0.85}
         animate={{ cx: [13, 15, 13], cy: [12, 14, 12] }}
