@@ -11,13 +11,12 @@ import { useToast } from "@/hooks/use-toast";
 
 const EMPLOYEE_INTENTS = ["직원 등록", "직원 추가", "사람 등록", "알바 등록", "알바 추가", "직원등록", "직원추가"];
 
-const V2Dashboard = () => {
-  const [stage, setStage] = useState<"intro" | "onboarding" | "dashboard">("intro");
+/** Inner component that uses V2Voice context (must be inside V2VoiceProvider) */
+const DashboardContent = ({ stage }: { stage: "intro" | "onboarding" | "dashboard" }) => {
   const [showEmployeeReg, setShowEmployeeReg] = useState(false);
   const { onCommit } = useV2Voice();
   const { toast } = useToast();
 
-  // Listen for voice intents from header mic
   useEffect(() => {
     if (stage !== "dashboard") return;
 
@@ -30,6 +29,37 @@ const V2Dashboard = () => {
     });
   }, [stage, onCommit]);
 
+  const handleEmployeeRegComplete = useCallback((data: Record<string, string>) => {
+    setShowEmployeeReg(false);
+    toast({
+      title: "직원 등록 완료",
+      description: `${data.name}님이 등록되었습니다.`,
+    });
+  }, [toast]);
+
+  if (stage !== "dashboard") return null;
+
+  return (
+    <>
+      <div className="flex-1 overflow-y-auto no-scrollbar">
+        <WeatherAnchor />
+        <SecretaryFeed />
+      </div>
+      <AnimatePresence>
+        {showEmployeeReg && (
+          <VoiceEmployeeRegistration
+            onClose={() => setShowEmployeeReg(false)}
+            onComplete={handleEmployeeRegComplete}
+          />
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+const V2Dashboard = () => {
+  const [stage, setStage] = useState<"intro" | "onboarding" | "dashboard">("intro");
+
   const handleIntroComplete = useCallback(() => {
     setStage("onboarding");
   }, []);
@@ -38,14 +68,6 @@ const V2Dashboard = () => {
     console.log("Onboarding data:", data);
     setStage("dashboard");
   }, []);
-
-  const handleEmployeeRegComplete = useCallback((data: Record<string, string>) => {
-    setShowEmployeeReg(false);
-    toast({
-      title: "직원 등록 완료",
-      description: `${data.name}님이 등록되었습니다.`,
-    });
-  }, [toast]);
 
   const hideHeader = stage === "intro" || stage === "onboarding";
 
@@ -59,22 +81,7 @@ const V2Dashboard = () => {
         <ChatOnboarding onComplete={handleOnboardingComplete} />
       )}
 
-      {stage === "dashboard" && (
-        <div className="flex-1 overflow-y-auto no-scrollbar">
-          <WeatherAnchor />
-          <SecretaryFeed />
-        </div>
-      )}
-
-      {/* Voice Employee Registration Overlay */}
-      <AnimatePresence>
-        {showEmployeeReg && (
-          <VoiceEmployeeRegistration
-            onClose={() => setShowEmployeeReg(false)}
-            onComplete={handleEmployeeRegComplete}
-          />
-        )}
-      </AnimatePresence>
+      <DashboardContent stage={stage} />
     </V2Layout>
   );
 };
