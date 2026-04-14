@@ -69,6 +69,7 @@ const V2Dashboard = () => {
 
   const handleOnboardingComplete = useCallback((data: Record<string, string>) => {
     console.log("Onboarding data:", data);
+    localStorage.setItem("v2_onboarded", "true");
     setStage("dashboard");
   }, []);
 
