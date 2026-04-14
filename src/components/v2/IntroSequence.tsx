@@ -81,6 +81,7 @@ export const IntroSequence = ({
   userName = "사장님",
 }: IntroSequenceProps) => {
   const [phase, setPhase] = useState<"greeting" | "briefing" | "exit">("greeting");
+  const timeGreeting = useMemo(() => getTimeGreeting(), []);
 
   const handleTap = () => {
     if (phase === "greeting") {
