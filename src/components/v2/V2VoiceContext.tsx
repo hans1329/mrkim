@@ -19,7 +19,8 @@ export function V2VoiceProvider({ children }: { children: ReactNode }) {
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dataArrayRef = useRef<any>(null);
   const animFrameRef = useRef<number>();
 
   const scribe = useScribe({
@@ -58,7 +59,7 @@ export function V2VoiceProvider({ children }: { children: ReactNode }) {
         analyser.smoothingTimeConstant = 0.55;
         source.connect(analyser);
         analyserRef.current = analyser;
-        dataArrayRef.current = new Uint8Array(analyser.fftSize) as Uint8Array<ArrayBuffer>;
+        dataArrayRef.current = new Uint8Array(analyser.fftSize);
       } catch {}
     };
 
