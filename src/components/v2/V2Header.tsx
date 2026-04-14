@@ -88,10 +88,7 @@ export const V2Header = ({ isDrawerOpen, onToggleDrawer }: V2HeaderProps) => {
       {/* Mic toggle */}
       <button
         onClick={toggleVoice}
-        className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl transition-colors duration-200"
-        style={{
-          background: isConnected ? "rgba(0,122,255,0.2)" : "rgba(255,255,255,0.06)",
-        }}
+        className="flex-shrink-0 w-9 h-9 flex items-center justify-center transition-colors duration-200"
       >
         <Mic className="w-4.5 h-4.5" style={{ color: isConnected ? "#007AFF" : "rgba(255,255,255,0.35)" }} />
       </button>
