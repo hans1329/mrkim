@@ -73,6 +73,14 @@ const YarnBallAvatar = () => (
         animate={{ cx: [20, 17, 20], cy: [20, 17, 20] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
       />
+      <motion.circle cx="8" cy="24" r="7" fill="#5856D6" opacity={0.65}
+        animate={{ cx: [8, 11, 8], cy: [24, 21, 24] }}
+        transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.circle cx="24" cy="14" r="6" fill="#FF375F" opacity={0.55}
+        animate={{ cx: [24, 21, 24], cy: [14, 17, 14] }}
+        transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
+      />
     </svg>
   </div>
 );
@@ -234,11 +242,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
 
   const SecretaryBubble = ({ text }: { text: string }) => (
     <div className="flex items-start gap-2.5 mb-3">
-      {secretaryAvatarUrl ? (
-        <img src={secretaryAvatarUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-      ) : (
-        <YarnBallAvatar />
-      )}
+      <YarnBallAvatar />
       <div
         className="rounded-2xl rounded-tl-md px-4 py-3 max-w-[260px]"
         style={{
