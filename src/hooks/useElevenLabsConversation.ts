@@ -286,12 +286,15 @@ export function useElevenLabsConversation() {
       permissionStream.getTracks().forEach(track => track.stop());
 
       // Edge Function에서 WebRTC token(우선) 또는 signed URL(폴백) 가져오기
-      const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
+      const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token", {
+        body: { transport: "websocket" },
+      });
 
       if (error) {
         throw new Error(error.message);
       }
 
+      const preferredConnectionType = data?.preferredConnectionType as "webrtc" | "websocket" | undefined;
       const token = data?.token as string | undefined;
       const signedUrl = (data?.signedUrl || data?.signed_url) as string | undefined;
 
@@ -301,10 +304,16 @@ export function useElevenLabsConversation() {
 
       console.log(
         "Starting conversation",
-        token ? "(webrtc token)" : "(signed url websocket)",
+        preferredConnectionType === "websocket" || !token ? "(signed url websocket)" : "(webrtc token)",
       );
 
-      if (token) {
+      if ((preferredConnectionType === "websocket" || !token) && signedUrl) {
+        await conversation.startSession({
+          signedUrl: signedUrl!,
+          connectionType: "websocket",
+          overrides,
+        });
+      } else if (token) {
         await conversation.startSession({
           conversationToken: token,
           connectionType: "webrtc",

@@ -271,13 +271,23 @@ export function useServiceVoiceAgent(isOpen: boolean) {
   const connectWithFallback = useCallback(async (params: {
     token?: string;
     signedUrl?: string;
+    preferredConnectionType?: "webrtc" | "websocket";
     overrides: ReturnType<typeof buildSessionOverrides>;
   }) => {
-    const { token, signedUrl, overrides } = params;
+    const { token, signedUrl, preferredConnectionType, overrides } = params;
 
     connectingRef.current = true;
 
     try {
+      if (preferredConnectionType === "websocket" && signedUrl) {
+        await conversation.startSession({
+          signedUrl,
+          connectionType: "websocket",
+          overrides,
+        });
+        return;
+      }
+
       // WebRTC 우선 (비서와 동일 — 오디오 자동 재생 지원)
       if (token) {
         try {
@@ -353,15 +363,22 @@ export function useServiceVoiceAgent(isOpen: boolean) {
     setConversationHistory([]);
 
     try {
-      const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const [permissionStream, faqs, tokenResult] = await Promise.all([
+        navigator.mediaDevices.getUserMedia({ audio: true }),
+        loadServiceFaqs(),
+        supabase.functions.invoke("elevenlabs-conversation-token", {
+          body: { transport: "websocket" },
+        }),
+      ]);
+
       permissionStream.getTracks().forEach((track) => track.stop());
 
-      const faqs = await loadServiceFaqs();
       const sessionOverrides = buildSessionOverrides(faqs);
 
-      const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
+      const { data, error } = tokenResult;
       if (error) throw new Error(error.message);
 
+      const preferredConnectionType = data?.preferredConnectionType as "webrtc" | "websocket" | undefined;
       const token = data?.token as string | undefined;
       const signedUrl = (data?.signedUrl || data?.signed_url) as string | undefined;
 
@@ -369,7 +386,12 @@ export function useServiceVoiceAgent(isOpen: boolean) {
         throw new Error("연결 토큰을 가져오지 못했습니다.");
       }
 
-      await connectWithFallback({ token, signedUrl, overrides: sessionOverrides });
+      await connectWithFallback({
+        token,
+        signedUrl,
+        preferredConnectionType,
+        overrides: sessionOverrides,
+      });
     } catch (error: any) {
       console.error("[ServiceVoice] startSession error", error);
       hasStartedRef.current = false;
