@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 // Colorful cubic-ball avatar — no border, blur effect
 const CubicBallAvatar = ({ size = 80 }: { size?: number }) => (
   <div
-    className="overflow-hidden rounded-full"
-    style={{ width: size, height: size, background: "#0A0A0F" }}
+    className="rounded-full"
+    style={{ width: size, height: size }}
   >
     <svg
       viewBox="0 0 32 32"
@@ -72,12 +72,14 @@ export const IntroSequence = ({
 }: IntroSequenceProps) => {
   const [phase, setPhase] = useState<"greeting" | "briefing" | "exit">("greeting");
 
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase("briefing"), 2000);
-    const t2 = setTimeout(() => setPhase("exit"), 4500);
-    const t3 = setTimeout(() => onComplete(), 5200);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [onComplete]);
+  const handleTap = () => {
+    if (phase === "greeting") {
+      setPhase("briefing");
+    } else if (phase === "briefing") {
+      setPhase("exit");
+      setTimeout(onComplete, 600);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -89,7 +91,7 @@ export const IntroSequence = ({
           }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6 }}
-          onClick={() => { setPhase("exit"); setTimeout(onComplete, 600); }}
+          onClick={handleTap}
         >
           {/* Ambient glow */}
           <div
