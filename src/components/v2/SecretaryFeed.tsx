@@ -148,8 +148,14 @@ const SectionHeader = ({ label, accent }: { label: string; accent?: boolean }) =
 
 // Empty state
 const EmptyFeed = () => (
-  <div className="flex flex-col items-center justify-center py-20 gap-3">
-    <span className="text-4xl">📊</span>
+  <div className="flex flex-col items-center justify-center py-20 gap-4">
+    <div
+      className="w-16 h-16 rounded-full"
+      style={{
+        background: "radial-gradient(circle, rgba(0,122,255,0.15) 0%, transparent 70%)",
+        boxShadow: "0 0 40px rgba(0,122,255,0.1)",
+      }}
+    />
     <p className="text-[15px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
       데이터를 연동하면 비서가 브리핑을 시작해요
     </p>
