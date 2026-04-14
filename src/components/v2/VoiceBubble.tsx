@@ -21,8 +21,6 @@ export const VoiceBubble = () => {
               className="pointer-events-auto mb-3 rounded-2xl px-4 py-3"
               style={{
                 background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(24px)",
-                WebkitBackdropFilter: "blur(24px)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
               }}
@@ -60,8 +58,6 @@ export const VoiceBubble = () => {
               className="px-3.5 py-1.5 rounded-full text-[11px] font-medium"
               style={{
                 background: "rgba(255,255,255,0.06)",
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
                 border: "1px solid rgba(255,255,255,0.08)",
                 color: "rgba(255,255,255,0.6)",
               }}
@@ -79,8 +75,6 @@ export const VoiceBubble = () => {
               background: mode === "listening"
                 ? "linear-gradient(135deg, #007AFF, #5856D6, #AF52DE)"
                 : "rgba(255,255,255,0.08)",
-              backdropFilter: mode !== "listening" ? "blur(24px)" : undefined,
-              WebkitBackdropFilter: mode !== "listening" ? "blur(24px)" : undefined,
               border: "1px solid rgba(255,255,255,0.12)",
               boxShadow: mode === "listening"
                 ? "0 0 30px rgba(88,86,214,0.4), inset 0 1px 0 rgba(255,255,255,0.2)"

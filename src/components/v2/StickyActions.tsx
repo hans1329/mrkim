@@ -45,8 +45,6 @@ export const StickyActions = () => {
               className="relative flex-shrink-0 rounded-xl px-4 py-3 min-w-[140px] cursor-pointer"
               style={{
                 background: "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(16px)",
-                WebkitBackdropFilter: "blur(16px)",
                 border: "1px solid rgba(255,255,255,0.07)",
                 borderLeft: `3px solid ${urgencyColors[action.urgency]}`,
                 boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
