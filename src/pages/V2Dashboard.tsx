@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { WeatherAnchor } from "@/components/v2/WeatherAnchor";
-import { StickyActions } from "@/components/v2/StickyActions";
 import { SecretaryFeed } from "@/components/v2/SecretaryFeed";
 import { V2Layout } from "@/components/v2/V2Layout";
 import { IntroSequence } from "@/components/v2/IntroSequence";
@@ -31,7 +30,6 @@ const V2Dashboard = () => {
       {stage === "dashboard" && (
         <>
           <WeatherAnchor />
-          <StickyActions />
           <SecretaryFeed />
         </>
       )}
