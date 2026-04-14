@@ -58,7 +58,7 @@ export function V2VoiceProvider({ children }: { children: ReactNode }) {
         analyser.smoothingTimeConstant = 0.55;
         source.connect(analyser);
         analyserRef.current = analyser;
-        dataArrayRef.current = new Uint8Array(analyser.fftSize);
+        dataArrayRef.current = new Uint8Array(analyser.fftSize) as Uint8Array<ArrayBuffer>;
       } catch {}
     };
 
