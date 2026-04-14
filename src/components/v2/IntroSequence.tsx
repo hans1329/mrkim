@@ -1,6 +1,83 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Bot } from "lucide-react";
+
+// Colorful cubic-ball avatar — no border, blur effect
+const CubicBallAvatar = ({ size = 80 }: { size?: number }) => (
+  <div
+    className="overflow-hidden rounded-full"
+    style={{ width: size, height: size, background: "#0A0A0F" }}
+  >
+    <svg
+      viewBox="0 0 32 32"
+      className="w-full h-full"
+      style={{ filter: "blur(3px) saturate(1.4)" }}
+    >
+      <motion.circle
+        cx="10"
+        cy="10"
+        r="9"
+        fill="#007AFF"
+        opacity={0.85}
+        animate={{ cx: [10, 13, 10], cy: [10, 8, 10] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.circle
+        cx="22"
+        cy="10"
+        r="8"
+        fill="#AF52DE"
+        opacity={0.8}
+        animate={{ cx: [22, 19, 22], cy: [10, 12, 10] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.circle
+        cx="16"
+        cy="22"
+        r="9"
+        fill="#34C759"
+        opacity={0.7}
+        animate={{ cx: [16, 18, 16], cy: [22, 19, 22] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.circle
+        cx="12"
+        cy="18"
+        r="7"
+        fill="#FF6B9D"
+        opacity={0.6}
+        animate={{ cx: [12, 15, 12], cy: [18, 15, 18] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.circle
+        cx="20"
+        cy="20"
+        r="6"
+        fill="#FF9F0A"
+        opacity={0.5}
+        animate={{ cx: [20, 17, 20], cy: [20, 17, 20] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.circle
+        cx="8"
+        cy="24"
+        r="7"
+        fill="#5856D6"
+        opacity={0.65}
+        animate={{ cx: [8, 11, 8], cy: [24, 21, 24] }}
+        transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.circle
+        cx="24"
+        cy="14"
+        r="6"
+        fill="#FF375F"
+        opacity={0.55}
+        animate={{ cx: [24, 21, 24], cy: [14, 17, 14] }}
+        transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </svg>
+  </div>
+);
 
 interface IntroSequenceProps {
   onComplete: () => void;
@@ -51,35 +128,14 @@ export const IntroSequence = ({
             }}
           />
 
-          {/* Secretary avatar */}
+          {/* Secretary avatar - Cubic Ball */}
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring" as const, stiffness: 200, damping: 20 }}
             className="relative z-10 mb-6"
           >
-            {secretaryAvatarUrl ? (
-              <img
-                src={secretaryAvatarUrl}
-                alt={secretaryName}
-                className="w-20 h-20 rounded-full object-cover"
-                style={{
-                  border: "2px solid rgba(255,255,255,0.1)",
-                  boxShadow: "0 0 40px rgba(88,86,214,0.2)",
-                }}
-              />
-            ) : (
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center"
-                style={{
-                  background: "linear-gradient(135deg, rgba(0,122,255,0.2), rgba(88,86,214,0.2))",
-                  border: "2px solid rgba(255,255,255,0.1)",
-                  boxShadow: "0 0 40px rgba(88,86,214,0.2)",
-                }}
-              >
-                <Bot size={32} style={{ color: "rgba(255,255,255,0.6)" }} />
-              </div>
-            )}
+            <CubicBallAvatar size={80} />
           </motion.div>
 
           {/* Greeting text */}
