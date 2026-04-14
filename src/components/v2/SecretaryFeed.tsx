@@ -134,14 +134,13 @@ const HeroCard = ({ card }: { card: FeedCard }) => (
       {card.action && (
         <motion.button
           whileTap={{ scale: 0.97 }}
-          className="mt-4 w-full py-2.5 rounded-xl text-[13px] font-semibold flex items-center justify-center gap-1"
+          className="mt-4 w-full py-2.5 rounded-xl text-[13px] font-semibold flex items-center justify-center"
           style={{
             background: "rgba(255,255,255,0.18)",
             color: "rgba(255,255,255,0.95)",
           }}
         >
           {card.action}
-          <ArrowRight className="w-3.5 h-3.5" />
         </motion.button>
       )}
     </div>
