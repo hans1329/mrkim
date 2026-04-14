@@ -30,10 +30,10 @@ const V2Dashboard = () => {
       )}
 
       {stage === "dashboard" && (
-        <>
+        <div className="flex-1 overflow-y-auto no-scrollbar">
           <WeatherAnchor />
           <SecretaryFeed />
-        </>
+        </div>
       )}
     </V2Layout>
   );
