@@ -150,8 +150,8 @@ const OscilloscopeWave = () => {
   }, []);
 
   // Amplitude driven by volume — idle ~3px, speaking ~14px
-  const baseAmplitude = 3;
-  const maxBoost = 11;
+  const baseAmplitude = 2.5;
+  const maxBoost = 20;
 
   return (
     <div className="w-full h-10 pointer-events-none overflow-hidden mb-2">
