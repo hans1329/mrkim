@@ -29,7 +29,7 @@ export const V2Layout = ({ children }: V2LayoutProps) => {
         />
 
         {/* Header */}
-        <V2Header onMenuOpen={() => setDrawerOpen(true)} />
+        <V2Header isDrawerOpen={drawerOpen} onToggleDrawer={() => setDrawerOpen(prev => !prev)} />
 
         <div className="relative z-10 flex flex-col flex-1 overflow-hidden">
           {children}
