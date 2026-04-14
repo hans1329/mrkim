@@ -258,16 +258,17 @@ export const VoiceEmployeeRegistration = ({ onClose, onComplete }: VoiceEmployee
       const isHourly = data.pay_type === "hourly";
       const amount = Number(data.pay_amount) || 0;
 
-      const { error } = await supabase.from("employees").insert({
+      const employeeType = (data.employee_type || "정규직") as "정규직" | "계약직" | "알바";
+      const { error } = await supabase.from("employees").insert([{
         user_id: userData.user.id,
         name: data.name,
-        employee_type: (data.employee_type || "정규직") as "정규직" | "계약직" | "아르바이트" | "일용직",
+        employee_type: employeeType,
         monthly_salary: isHourly ? null : amount,
         hourly_rate: isHourly ? amount : null,
         weekly_hours: isHourly ? Number(data.weekly_hours) || null : null,
         phone: data.phone || null,
         source: "voice",
-      });
+      }]);
 
       if (error) throw error;
       setCompleted(true);
