@@ -1,13 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { Mic, MessageSquare, X } from "lucide-react";
+import { Mic, X } from "lucide-react";
 
-const contextChips = [
-  { label: "영수증", icon: "🧾" },
-  { label: "매출", icon: "💰" },
-  { label: "세금", icon: "📋" },
-  { label: "직원", icon: "👥" },
-];
+const contextChips = ["영수증", "매출", "세금", "직원"];
 
 export const VoiceBubble = () => {
   const [mode, setMode] = useState<"idle" | "text" | "listening">("idle");
@@ -25,8 +20,11 @@ export const VoiceBubble = () => {
               exit={{ opacity: 0, y: 20 }}
               className="pointer-events-auto mb-3 rounded-2xl px-4 py-3"
               style={{
-                background: "#FFFFFF",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.06)",
+                background: "rgba(255,255,255,0.08)",
+                backdropFilter: "blur(24px)",
+                WebkitBackdropFilter: "blur(24px)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
               }}
             >
               <div className="flex items-center gap-2">
@@ -35,8 +33,8 @@ export const VoiceBubble = () => {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="김비서에게 물어보세요..."
-                  className="flex-1 text-sm outline-none bg-transparent"
-                  style={{ color: "#222" }}
+                  className="flex-1 text-sm outline-none bg-transparent placeholder:text-white/30"
+                  style={{ color: "rgba(255,255,255,0.9)" }}
                   onKeyDown={(e) => {
                     if (e.key === "Escape") setMode("idle");
                   }}
@@ -44,9 +42,9 @@ export const VoiceBubble = () => {
                 <button
                   onClick={() => setMode("idle")}
                   className="p-1.5 rounded-full"
-                  style={{ background: "#F5F5F5" }}
+                  style={{ background: "rgba(255,255,255,0.08)" }}
                 >
-                  <X size={14} style={{ color: "#757575" }} />
+                  <X size={14} style={{ color: "rgba(255,255,255,0.5)" }} />
                 </button>
               </div>
             </motion.div>
@@ -55,20 +53,20 @@ export const VoiceBubble = () => {
 
         {/* Context chips */}
         <div className="pointer-events-auto flex items-center justify-center gap-2 mb-3">
-          {contextChips.map((chip) => (
+          {contextChips.map((label) => (
             <motion.button
-              key={chip.label}
+              key={label}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-medium"
+              className="px-3.5 py-1.5 rounded-full text-[11px] font-medium"
               style={{
-                background: "#FFFFFF",
-                border: "1px solid #EBEBEB",
-                color: "#222",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                background: "rgba(255,255,255,0.06)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.6)",
               }}
             >
-              <span className="text-xs">{chip.icon}</span>
-              {chip.label}
+              {label}
             </motion.button>
           ))}
         </div>
@@ -79,27 +77,22 @@ export const VoiceBubble = () => {
             className="relative w-14 h-14 rounded-full flex items-center justify-center"
             style={{
               background: mode === "listening"
-                ? "linear-gradient(135deg, #007AFF, #5856D6)"
-                : "#FFFFFF",
+                ? "linear-gradient(135deg, #007AFF, #5856D6, #AF52DE)"
+                : "rgba(255,255,255,0.08)",
+              backdropFilter: mode !== "listening" ? "blur(24px)" : undefined,
+              WebkitBackdropFilter: mode !== "listening" ? "blur(24px)" : undefined,
+              border: "1px solid rgba(255,255,255,0.12)",
               boxShadow: mode === "listening"
-                ? "0 0 20px rgba(0,122,255,0.3), 0 4px 12px rgba(0,0,0,0.06)"
-                : "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)",
-              border: mode === "idle" ? "1.5px solid transparent" : "none",
-              backgroundImage: mode === "idle"
-                ? "linear-gradient(#fff, #fff), linear-gradient(135deg, #007AFF, #5856D6, #AF52DE, #FF2D55)"
-                : undefined,
-              backgroundOrigin: "border-box",
-              backgroundClip: mode === "idle" ? "padding-box, border-box" : undefined,
+                ? "0 0 30px rgba(88,86,214,0.4), inset 0 1px 0 rgba(255,255,255,0.2)"
+                : "inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.3)",
             }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 1.15 }}
             onClick={() => {
               if (mode === "idle") setMode("text");
-              else if (mode === "text") setMode("idle");
               else setMode("idle");
             }}
             onPointerDown={(e) => {
-              // Long press for voice
               const timer = setTimeout(() => setMode("listening"), 400);
               const cleanup = () => {
                 clearTimeout(timer);
@@ -110,22 +103,21 @@ export const VoiceBubble = () => {
             }}
           >
             {mode === "listening" ? (
-              <Mic size={22} color="#FFFFFF" />
+              <Mic size={22} color="rgba(255,255,255,0.95)" />
             ) : (
-              <MessageSquare size={20} style={{
-                stroke: "url(#gradient)",
-                color: "#007AFF",
-              }} />
+              <div
+                className="w-5 h-0.5 rounded-full"
+                style={{
+                  background: "linear-gradient(90deg, #007AFF, #5856D6, #AF52DE, #FF2D55)",
+                }}
+              />
             )}
 
-            {/* Gradient ring animation when listening */}
             {mode === "listening" && (
               <motion.div
                 className="absolute inset-0 rounded-full"
-                style={{
-                  border: "2px solid rgba(0,122,255,0.3)",
-                }}
-                animate={{ scale: [1, 1.4, 1.4], opacity: [0.6, 0, 0] }}
+                style={{ border: "2px solid rgba(88,86,214,0.3)" }}
+                animate={{ scale: [1, 1.5, 1.5], opacity: [0.5, 0, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
               />
             )}

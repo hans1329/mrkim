@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Bot } from "lucide-react";
 
 interface FeedCard {
   id: string;
@@ -45,7 +46,7 @@ const mockCards: FeedCard[] = [
   {
     id: "4",
     type: "praise",
-    title: "🎉 이번 달 최고 매출 갱신!",
+    title: "이번 달 최고 매출 갱신!",
     bigNumber: "3,240",
     unit: "만원",
     body: "지난 달 대비 18% 증가했어요. 정말 대단하세요!",
@@ -64,7 +65,7 @@ const cardVariants = {
 
 export const SecretaryFeed = () => {
   return (
-    <div className="flex-1 overflow-y-auto px-4 pt-4 pb-28 no-scrollbar">
+    <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 no-scrollbar">
       <div className="flex flex-col gap-3">
         {mockCards.map((card, i) => (
           <motion.div
@@ -82,54 +83,74 @@ export const SecretaryFeed = () => {
   );
 };
 
+const SecretaryAvatar = () => (
+  <div
+    className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center"
+    style={{
+      background: "linear-gradient(135deg, rgba(0,122,255,0.3), rgba(88,86,214,0.3))",
+      border: "1px solid rgba(255,255,255,0.1)",
+    }}
+  >
+    <Bot size={16} style={{ color: "rgba(255,255,255,0.7)" }} />
+  </div>
+);
+
 const FeedCardItem = ({ card }: { card: FeedCard }) => {
   return (
     <div
-      className="rounded-2xl px-5 py-4 relative"
+      className="rounded-2xl px-5 py-4 relative overflow-hidden"
       style={{
-        background: "#FFFFFF",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)",
+        background: "rgba(255,255,255,0.05)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.2)",
       }}
     >
-      {/* Avatar & header */}
-      <div className="flex items-start gap-3">
+      {/* Subtle inner glow for special cards */}
+      {card.type === "praise" && (
         <div
-          className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            background: "linear-gradient(135deg, #007AFF, #5856D6)",
-            color: "#fff",
+            background: "radial-gradient(ellipse at top right, rgba(175,82,222,0.08) 0%, transparent 60%)",
           }}
-        >
-          비
-        </div>
+        />
+      )}
+
+      <div className="flex items-start gap-3 relative">
+        <SecretaryAvatar />
         <div className="flex-1 min-w-0">
-          <p className="text-[14px] leading-snug" style={{ color: "#222" }}>
+          <p className="text-[14px] leading-snug" style={{ color: "rgba(255,255,255,0.85)" }}>
             {card.title}
           </p>
 
-          {/* Big number */}
           {card.bigNumber && (
-            <div className="flex items-baseline gap-1 mt-2">
+            <div className="flex items-baseline gap-1.5 mt-2">
               <span
                 className="font-extrabold leading-none"
-                style={{ fontSize: "42px", color: "#222", letterSpacing: "-1px" }}
+                style={{
+                  fontSize: "42px",
+                  letterSpacing: "-1px",
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.7))",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
               >
                 {card.bigNumber}
               </span>
-              <span className="text-base font-medium" style={{ color: "#757575" }}>
+              <span className="text-base font-medium" style={{ color: "rgba(255,255,255,0.4)" }}>
                 {card.unit}
               </span>
             </div>
           )}
 
-          {/* Change indicator */}
           {card.change && (
             <p
               className="text-sm font-bold mt-1"
               style={{
                 background: card.change.positive
-                  ? "linear-gradient(135deg, #34C759, #30D158)"
-                  : "linear-gradient(135deg, #FF3B30, #FF2D55)",
+                  ? "linear-gradient(135deg, #30D158, #34C759)"
+                  : "linear-gradient(135deg, #FF453A, #FF2D55)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
@@ -138,17 +159,18 @@ const FeedCardItem = ({ card }: { card: FeedCard }) => {
             </p>
           )}
 
-          {/* Body text */}
           {card.body && (
-            <p className="text-[13px] mt-2 leading-relaxed" style={{ color: "#757575" }}>
+            <p className="text-[13px] mt-2 leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
               {card.body}
             </p>
           )}
 
-          {/* Action */}
           {card.action && (
             <>
-              <div className="h-px mt-3 mb-2" style={{ background: "#EBEBEB" }} />
+              <div
+                className="h-px mt-3 mb-2.5"
+                style={{ background: "rgba(255,255,255,0.06)" }}
+              />
               <button
                 className="text-[13px] font-semibold"
                 style={{
@@ -157,18 +179,14 @@ const FeedCardItem = ({ card }: { card: FeedCard }) => {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                📊 {card.action}
+                {card.action}
               </button>
             </>
           )}
         </div>
       </div>
 
-      {/* Timestamp */}
-      <p
-        className="text-[11px] mt-2 pl-11"
-        style={{ color: "#AEAEB2" }}
-      >
+      <p className="text-[11px] mt-2 pl-11" style={{ color: "rgba(255,255,255,0.2)" }}>
         {card.time}
       </p>
     </div>
