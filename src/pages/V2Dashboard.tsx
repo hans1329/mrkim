@@ -58,7 +58,10 @@ const DashboardContent = ({ stage }: { stage: "intro" | "onboarding" | "dashboar
 };
 
 const V2Dashboard = () => {
-  const [stage, setStage] = useState<"intro" | "onboarding" | "dashboard">("intro");
+  const [stage, setStage] = useState<"intro" | "onboarding" | "dashboard">(() => {
+    const saved = localStorage.getItem("v2_onboarded");
+    return saved === "true" ? "dashboard" : "intro";
+  });
 
   const handleIntroComplete = useCallback(() => {
     setStage("onboarding");
@@ -66,6 +69,7 @@ const V2Dashboard = () => {
 
   const handleOnboardingComplete = useCallback((data: Record<string, string>) => {
     console.log("Onboarding data:", data);
+    localStorage.setItem("v2_onboarded", "true");
     setStage("dashboard");
   }, []);
 
