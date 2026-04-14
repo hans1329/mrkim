@@ -159,6 +159,7 @@ const OscilloscopeWave = () => (
 
 export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardingProps) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const currentStepRef = useRef(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<{ from: "bot" | "user"; text: string }[]>([]);
