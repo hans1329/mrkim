@@ -61,7 +61,7 @@ export const SecretaryFeed = () => {
         <TaxSavingCarousel />
       </section>
 
-      {/* 데이터가 하나도 없을 때 */}
+      {/* 데이터가 하나도 없을 때 - 절세 캐러셀 아래에 안내 */}
       {!hasToday && !hasHistory && <EmptyFeed />}
 
       {/* 지난 기록 */}
