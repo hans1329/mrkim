@@ -96,6 +96,7 @@ const App = () => (
                       <Route path="/privacy" element={<PrivacyPolicy />} />
                       <Route path="/terms" element={<TermsOfService />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/v2" element={<V2Dashboard />} />
                       {/* Admin Routes */}
                       <Route path="/admin/login" element={<AdminLogin />} />
                       <Route path="/admin" element={<AdminDashboard />} />
