@@ -217,8 +217,6 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         }}
       />
 
-      {/* Oscilloscope waveform — signals listening mode */}
-      {showInput && step.type !== "action" && <OscilloscopeWave />}
 
       {/* Skip */}
       <div className="relative z-10 flex justify-end px-5 pt-4">
@@ -257,8 +255,10 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="relative z-10 px-4 pb-8 pt-3 flex flex-col items-center gap-2.5"
+            className="relative z-10 px-4 pb-8 pt-3 flex flex-col items-center gap-1"
           >
+            {/* Oscilloscope waveform — right above input */}
+            {step.type !== "action" && <OscilloscopeWave />}
             {/* Choice chips — for choice type */}
             {step.type === "choice" && (
               <>
