@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Sparkles, Receipt, Car, Coffee, Home, Wallet } from "lucide-react";
+import { Sparkles, Receipt, Car, Coffee, Home, Wallet } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -300,21 +300,6 @@ export const TaxSavingCarousel = () => {
           </motion.div>
         </AnimatePresence>
 
-        {/* Nav arrows */}
-        <button
-          onClick={() => paginate(-1)}
-          className="absolute left-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center z-10"
-          style={{ background: "rgba(255,255,255,0.08)" }}
-        >
-          <ChevronLeft className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.5)" }} />
-        </button>
-        <button
-          onClick={() => paginate(1)}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center z-10"
-          style={{ background: "rgba(255,255,255,0.08)" }}
-        >
-          <ChevronRight className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.5)" }} />
-        </button>
       </div>
 
       {/* Dots */}
