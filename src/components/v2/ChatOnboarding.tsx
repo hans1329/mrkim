@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useCallback } from "react";
-import { Bot, Mic } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { Bot } from "lucide-react";
 
 interface OnboardingStep {
   id: string;
@@ -48,31 +48,76 @@ interface ChatOnboardingProps {
   secretaryAvatarUrl?: string | null;
 }
 
+// Ambient wave ring component
+const WaveRings = () => (
+  <div className="absolute bottom-32 left-1/2 -translate-x-1/2 pointer-events-none">
+    {[0, 1, 2].map((i) => (
+      <motion.div
+        key={i}
+        className="absolute rounded-full"
+        style={{
+          width: 120 + i * 60,
+          height: 120 + i * 60,
+          left: -(60 + i * 30),
+          top: -(60 + i * 30),
+          border: `1.5px solid rgba(88,86,214,${0.15 - i * 0.04})`,
+        }}
+        animate={{
+          scale: [1, 1.15, 1],
+          opacity: [0.4 - i * 0.1, 0.15 - i * 0.04, 0.4 - i * 0.1],
+        }}
+        transition={{
+          duration: 3,
+          delay: i * 0.6,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+    ))}
+    {/* Center glow dot */}
+    <motion.div
+      className="absolute w-3 h-3 rounded-full"
+      style={{
+        left: -6,
+        top: -6,
+        background: "linear-gradient(135deg, #007AFF, #5856D6)",
+        boxShadow: "0 0 16px rgba(88,86,214,0.5)",
+      }}
+      animate={{ scale: [1, 1.3, 1], opacity: [0.8, 1, 0.8] }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+    />
+  </div>
+);
+
 export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardingProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<{ from: "bot" | "user"; text: string }[]>([]);
   const [showInput, setShowInput] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+  const [showTextFallback, setShowTextFallback] = useState(false);
 
   const step = steps[currentStep];
 
   // Show first question on mount
-  useState(() => {
-    setTimeout(() => {
+  useEffect(() => {
+    const t = setTimeout(() => {
       setMessages([{ from: "bot", text: steps[0].question }]);
       setTimeout(() => setShowInput(true), 500);
+      // Show text fallback after a delay — user realizes voice isn't working
+      setTimeout(() => setShowTextFallback(true), 3000);
     }, 300);
-  });
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const advance = useCallback((value: string) => {
     const newAnswers = { ...answers, [step.id]: value };
     setAnswers(newAnswers);
     setMessages((prev) => [...prev, { from: "user", text: value }]);
     setShowInput(false);
+    setShowTextFallback(false);
     setInputValue("");
-    setIsListening(false);
 
     if (currentStep < steps.length - 1) {
       const nextIdx = currentStep + 1;
@@ -80,6 +125,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         setMessages((prev) => [...prev, { from: "bot", text: steps[nextIdx].question }]);
         setCurrentStep(nextIdx);
         setTimeout(() => setShowInput(true), 500);
+        setTimeout(() => setShowTextFallback(true), 3000);
       }, 600);
     } else {
       onComplete(newAnswers);
@@ -120,9 +166,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
     <div className="flex justify-end mb-3">
       <div
         className="rounded-2xl rounded-tr-md px-4 py-3 max-w-[240px]"
-        style={{
-          background: "linear-gradient(135deg, #007AFF, #5856D6)",
-        }}
+        style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)" }}
       >
         <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.95)" }}>{text}</p>
       </div>
@@ -142,6 +186,9 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
           filter: "blur(60px)",
         }}
       />
+
+      {/* Always-on wave rings — signals listening mode */}
+      {showInput && step.type !== "action" && <WaveRings />}
 
       {/* Skip */}
       <div className="relative z-10 flex justify-end px-5 pt-4">
@@ -173,118 +220,39 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         </AnimatePresence>
       </div>
 
-      {/* Input area — Voice first, text below */}
+      {/* Bottom input area */}
       <AnimatePresence>
         {showInput && step && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="relative z-10 px-4 pb-8 pt-3 flex flex-col items-center gap-3"
+            className="relative z-10 px-4 pb-8 pt-3 flex flex-col items-center gap-2.5"
           >
-            {/* Voice button — primary */}
-            {step.type === "text" && (
-              <>
-                <motion.button
-                  className="w-16 h-16 rounded-full flex items-center justify-center relative"
-                  style={{
-                    background: isListening
-                      ? "linear-gradient(135deg, #007AFF, #5856D6, #AF52DE)"
-                      : "rgba(255,255,255,0.08)",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    boxShadow: isListening
-                      ? "0 0 30px rgba(88,86,214,0.4), inset 0 1px 0 rgba(255,255,255,0.2)"
-                      : "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.3)",
-                  }}
-                  whileTap={{ scale: 1.1 }}
-                  onClick={() => setIsListening(!isListening)}
-                >
-                  <Mic size={24} style={{ color: isListening ? "#fff" : "rgba(255,255,255,0.5)" }} />
-                  {isListening && (
-                    <motion.div
-                      className="absolute inset-0 rounded-full"
-                      style={{ border: "2px solid rgba(88,86,214,0.3)" }}
-                      animate={{ scale: [1, 1.4, 1.4], opacity: [0.5, 0, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    />
-                  )}
-                </motion.button>
-
-                <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.25)" }}>
-                  {isListening ? "듣고 있어요..." : "탭하여 음성으로 답하기"}
-                </p>
-
-                {/* Divider */}
-                <div className="flex items-center gap-3 w-full max-w-[280px]">
-                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
-                  <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>또는 입력</span>
-                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
-                </div>
-
-                {/* Text input — secondary */}
-                <div
-                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 w-full"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                  }}
-                >
-                  <input
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && inputValue.trim() && advance(inputValue.trim())}
-                    placeholder={step.placeholder}
-                    className="flex-1 bg-transparent outline-none text-[13px] placeholder:text-white/20"
-                    style={{ color: "rgba(255,255,255,0.8)" }}
-                  />
-                  <button
-                    onClick={() => inputValue.trim() && advance(inputValue.trim())}
-                    className="px-2.5 py-1 rounded-lg text-[12px] font-semibold"
-                    style={{
-                      background: inputValue.trim()
-                        ? "linear-gradient(135deg, #007AFF, #5856D6)"
-                        : "rgba(255,255,255,0.04)",
-                      color: inputValue.trim()
-                        ? "rgba(255,255,255,0.95)"
-                        : "rgba(255,255,255,0.2)",
-                    }}
-                  >
-                    확인
-                  </button>
-                </div>
-              </>
+            {/* Listening indicator — always on for text/choice */}
+            {step.type !== "action" && (
+              <motion.p
+                className="text-[11px] font-medium"
+                style={{
+                  background: "linear-gradient(90deg, #007AFF, #AF52DE)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                듣고 있어요...
+              </motion.p>
             )}
 
+            {/* Choice chips — for choice type */}
             {step.type === "choice" && (
-              <div className="flex flex-col items-center gap-3 w-full">
-                {/* Voice option */}
-                <motion.button
-                  className="w-14 h-14 rounded-full flex items-center justify-center"
-                  style={{
-                    background: isListening
-                      ? "linear-gradient(135deg, #007AFF, #5856D6, #AF52DE)"
-                      : "rgba(255,255,255,0.08)",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    boxShadow: isListening
-                      ? "0 0 30px rgba(88,86,214,0.4)"
-                      : "inset 0 1px 0 rgba(255,255,255,0.06)",
-                  }}
-                  whileTap={{ scale: 1.1 }}
-                  onClick={() => setIsListening(!isListening)}
-                >
-                  <Mic size={20} style={{ color: isListening ? "#fff" : "rgba(255,255,255,0.5)" }} />
-                </motion.button>
-                <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.25)" }}>
-                  {isListening ? "듣고 있어요..." : "음성으로 답하기"}
-                </p>
-
-                <div className="flex items-center gap-3 w-full max-w-[280px]">
+              <>
+                <div className="flex items-center gap-3 w-full max-w-[280px] mt-1">
                   <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
                   <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>또는 선택</span>
                   <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
                 </div>
-
-                {/* Choice chips */}
                 <div className="flex flex-wrap gap-2 justify-center">
                   {step.choices?.map((c) => (
                     <motion.button
@@ -302,9 +270,59 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
                     </motion.button>
                   ))}
                 </div>
-              </div>
+              </>
             )}
 
+            {/* Text fallback — appears after 3s delay for text steps */}
+            {step.type === "text" && (
+              <AnimatePresence>
+                {showTextFallback && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full mt-1"
+                  >
+                    <div className="flex items-center gap-3 w-full max-w-[280px] mx-auto mb-2">
+                      <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+                      <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.15)" }}>직접 입력</span>
+                      <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+                    </div>
+                    <div
+                      className="flex items-center gap-2 rounded-xl px-4 py-2.5 w-full"
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                      }}
+                    >
+                      <input
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && inputValue.trim() && advance(inputValue.trim())}
+                        placeholder={step.placeholder}
+                        className="flex-1 bg-transparent outline-none text-[13px] placeholder:text-white/20"
+                        style={{ color: "rgba(255,255,255,0.8)" }}
+                      />
+                      <button
+                        onClick={() => inputValue.trim() && advance(inputValue.trim())}
+                        className="px-2.5 py-1 rounded-lg text-[12px] font-semibold"
+                        style={{
+                          background: inputValue.trim()
+                            ? "linear-gradient(135deg, #007AFF, #5856D6)"
+                            : "rgba(255,255,255,0.04)",
+                          color: inputValue.trim()
+                            ? "rgba(255,255,255,0.95)"
+                            : "rgba(255,255,255,0.2)",
+                        }}
+                      >
+                        확인
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
+
+            {/* Action type */}
             {step.type === "action" && (
               <div className="flex flex-col items-center gap-3 w-full">
                 <motion.button
