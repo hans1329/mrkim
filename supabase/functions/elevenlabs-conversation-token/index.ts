@@ -25,47 +25,53 @@ serve(async (req) => {
 
     // Parse request body for overrides
     let overrides: Record<string, any> | undefined;
+    let transport: "webrtc" | "websocket" = "websocket";
     try {
       const body = await req.json();
       overrides = body.overrides;
+      if (body.transport === "webrtc" || body.transport === "websocket") {
+        transport = body.transport;
+      }
     } catch {
       // Body is optional
     }
 
-    // Prefer WebRTC token (more stable). Fallback to signed URL (WebSocket).
-    console.log("Requesting conversation token for agent:", ELEVENLABS_AGENT_ID);
+    if (transport === "webrtc") {
+      console.log("Requesting conversation token for agent:", ELEVENLABS_AGENT_ID);
 
-    const tokenRes = await fetch(
-      `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${ELEVENLABS_AGENT_ID}`,
-      {
-        method: "GET",
-        headers: {
-          "xi-api-key": ELEVENLABS_API_KEY,
-        },
-      }
-    );
-
-    if (tokenRes.ok) {
-      const tokenData = await tokenRes.json();
-
-      return new Response(
-        JSON.stringify({
-          token: tokenData.token,
-          agentId: ELEVENLABS_AGENT_ID,
-          overrides,
-        }),
+      const tokenRes = await fetch(
+        `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${ELEVENLABS_AGENT_ID}`,
         {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          method: "GET",
+          headers: {
+            "xi-api-key": ELEVENLABS_API_KEY,
+          },
         }
       );
-    }
 
-    const tokenErrorText = await tokenRes.text();
-    console.warn(
-      "Token endpoint failed, falling back to signed URL:",
-      tokenRes.status,
-      tokenErrorText,
-    );
+      if (tokenRes.ok) {
+        const tokenData = await tokenRes.json();
+
+        return new Response(
+          JSON.stringify({
+            token: tokenData.token,
+            agentId: ELEVENLABS_AGENT_ID,
+            overrides,
+            preferredConnectionType: "webrtc",
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const tokenErrorText = await tokenRes.text();
+      console.warn(
+        "Token endpoint failed, falling back to signed URL:",
+        tokenRes.status,
+        tokenErrorText,
+      );
+    }
 
     console.log("Requesting signed URL for agent:", ELEVENLABS_AGENT_ID);
 
@@ -98,6 +104,7 @@ serve(async (req) => {
         signedUrl: signedUrlData.signed_url,
         agentId: ELEVENLABS_AGENT_ID,
         overrides,
+        preferredConnectionType: "websocket",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -581,7 +581,9 @@ export function useVoiceAgent() {
       // 마이크 권한 + 토큰 요청을 병렬로 실행하여 초기 로딩 단축
       const [micResult, tokenResult] = await Promise.all([
         navigator.mediaDevices.getUserMedia({ audio: true }),
-        supabase.functions.invoke("elevenlabs-conversation-token"),
+        supabase.functions.invoke("elevenlabs-conversation-token", {
+          body: { transport: "websocket" },
+        }),
       ]);
 
       // 마이크 스트림 즉시 해제 (SDK가 자체 스트림 생성, 해제 안 하면 에코)
@@ -590,6 +592,7 @@ export function useVoiceAgent() {
       const { data, error } = tokenResult;
       if (error) throw new Error(error.message);
 
+      const preferredConnectionType = data?.preferredConnectionType as "webrtc" | "websocket" | undefined;
       const token = data?.token as string | undefined;
       const signedUrl = (data?.signedUrl || data?.signed_url) as string | undefined;
 
@@ -597,9 +600,18 @@ export function useVoiceAgent() {
         throw new Error("연결 토큰을 가져오지 못했습니다.");
       }
 
-      console.log("[Session] Starting conversation", token ? "(WebRTC)" : "(WebSocket)");
+      console.log(
+        "[Session] Starting conversation",
+        preferredConnectionType === "websocket" || !token ? "(WebSocket)" : "(WebRTC)",
+      );
 
-      if (token) {
+      if ((preferredConnectionType === "websocket" || !token) && signedUrl) {
+        await conversation.startSession({
+          signedUrl,
+          connectionType: "websocket",
+          overrides,
+        });
+      } else if (token) {
         await conversation.startSession({
           conversationToken: token,
           connectionType: "webrtc",
