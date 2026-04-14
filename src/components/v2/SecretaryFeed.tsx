@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useState, useCallback } from "react";
+import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useFeedCards, type FeedCard } from "@/hooks/useFeedCards";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,13 +15,19 @@ const cardVariants = {
 
 export const SecretaryFeed = () => {
   const { todayCards, historyCards, isLoading } = useFeedCards();
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+
+  const handleDismiss = useCallback((id: string) => {
+    setDismissed((prev) => new Set(prev).add(id));
+  }, []);
 
   if (isLoading) {
     return <FeedSkeleton />;
   }
 
   const hasToday = todayCards.length > 0;
-  const hasHistory = historyCards.length > 0;
+  const visibleHistory = historyCards.filter((c) => !dismissed.has(c.id));
+  const hasHistory = visibleHistory.length > 0;
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-4 pb-32">
@@ -56,22 +63,62 @@ export const SecretaryFeed = () => {
         <section className="mt-2">
           <SectionHeader label="지난 기록" />
           <div className="flex flex-col gap-3 mt-3">
-            {historyCards.map((card, i) => (
-              <motion.div
-                key={card.id}
-                custom={i}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-40px" }}
-                variants={cardVariants}
-              >
-                <StandardCard card={card} compact />
-              </motion.div>
+            {visibleHistory.map((card, i) => (
+              <SwipeToDismiss key={card.id} cardId={card.id} onDismiss={handleDismiss}>
+                <motion.div
+                  custom={i}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-40px" }}
+                  variants={cardVariants}
+                >
+                  <StandardCard card={card} compact />
+                </motion.div>
+              </SwipeToDismiss>
             ))}
           </div>
         </section>
       )}
     </div>
+  );
+};
+
+// Swipe-to-dismiss wrapper
+const SWIPE_THRESHOLD = 120;
+
+const SwipeToDismiss = ({
+  cardId,
+  onDismiss,
+  children,
+}: {
+  cardId: string;
+  onDismiss: (id: string) => void;
+  children: React.ReactNode;
+}) => {
+  const x = useMotionValue(0);
+  const opacity = useTransform(x, [-SWIPE_THRESHOLD * 1.5, 0, SWIPE_THRESHOLD * 1.5], [0, 1, 0]);
+  const scale = useTransform(x, [-SWIPE_THRESHOLD * 1.5, 0, SWIPE_THRESHOLD * 1.5], [0.95, 1, 0.95]);
+
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    if (Math.abs(info.offset.x) > SWIPE_THRESHOLD) {
+      const direction = info.offset.x > 0 ? 400 : -400;
+      animate(x, direction, { duration: 0.25 }).then(() => onDismiss(cardId));
+    } else {
+      animate(x, 0, { type: "spring", stiffness: 500, damping: 30 });
+    }
+  };
+
+  return (
+    <motion.div
+      style={{ x, opacity, scale }}
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.6}
+      onDragEnd={handleDragEnd}
+      className="cursor-grab active:cursor-grabbing"
+    >
+      {children}
+    </motion.div>
   );
 };
 
