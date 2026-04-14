@@ -50,38 +50,17 @@ interface ChatOnboardingProps {
   secretaryAvatarUrl?: string | null;
 }
 
-// Colorful cubic-ball avatar for bot — no border
+// Static colorful cubic-ball avatar for bot
 const YarnBallAvatar = () => (
   <div className="w-8 h-8 flex-shrink-0 rounded-full">
     <svg viewBox="0 0 32 32" className="w-full h-full" style={{ filter: "blur(3px) saturate(1.4)" }}>
-      <motion.circle cx="13" cy="12" r="10" fill="#007AFF" opacity={0.85}
-        animate={{ cx: [13, 15, 13], cy: [12, 14, 12] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.circle cx="19" cy="12" r="9" fill="#AF52DE" opacity={0.8}
-        animate={{ cx: [19, 17, 19], cy: [12, 14, 12] }}
-        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.circle cx="16" cy="19" r="10" fill="#34C759" opacity={0.7}
-        animate={{ cx: [16, 18, 16], cy: [19, 17, 19] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.circle cx="14" cy="17" r="8" fill="#FF6B9D" opacity={0.6}
-        animate={{ cx: [14, 16, 14], cy: [17, 15, 17] }}
-        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.circle cx="18" cy="16" r="7" fill="#FF9F0A" opacity={0.5}
-        animate={{ cx: [18, 16, 18], cy: [16, 18, 16] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.circle cx="12" cy="18" r="8" fill="#5856D6" opacity={0.65}
-        animate={{ cx: [12, 14, 12], cy: [18, 16, 18] }}
-        transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.circle cx="20" cy="14" r="7" fill="#FF375F" opacity={0.55}
-        animate={{ cx: [20, 18, 20], cy: [14, 16, 14] }}
-        transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
-      />
+      <circle cx="13" cy="12" r="10" fill="#007AFF" opacity={0.85} />
+      <circle cx="19" cy="12" r="9" fill="#AF52DE" opacity={0.8} />
+      <circle cx="16" cy="19" r="10" fill="#34C759" opacity={0.7} />
+      <circle cx="14" cy="17" r="8" fill="#FF6B9D" opacity={0.6} />
+      <circle cx="18" cy="16" r="7" fill="#FF9F0A" opacity={0.5} />
+      <circle cx="12" cy="18" r="8" fill="#5856D6" opacity={0.65} />
+      <circle cx="20" cy="14" r="7" fill="#FF375F" opacity={0.55} />
     </svg>
   </div>
 );
@@ -407,7 +386,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         }}
       />
 
-      {/* Top bar: mic toggle (left) + skip (right) */}
+      {/* Top bar: mic icon + toggle (left) + skip (right) */}
       <div className="relative z-10 flex items-center justify-between px-5 pt-4">
         <button
           onClick={() => {
@@ -429,24 +408,26 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
               reconnect();
             }
           }}
-          className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-full transition-colors"
-          style={{
-            color: scribe.isConnected ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.35)",
-            background: scribe.isConnected ? "rgba(0,122,255,0.2)" : "rgba(255,255,255,0.05)",
-            border: scribe.isConnected ? "1px solid rgba(0,122,255,0.3)" : "1px solid rgba(255,255,255,0.08)",
-          }}
+          className="flex items-center gap-2"
         >
-          {scribe.isConnected ? (
-            <>
-              <Mic className="w-3.5 h-3.5" />
-              음성 켜짐
-            </>
-          ) : (
-            <>
-              <MicOff className="w-3.5 h-3.5" />
-              음성 꺼짐
-            </>
-          )}
+          <Mic className="w-4 h-4" style={{ color: scribe.isConnected ? "#007AFF" : "rgba(255,255,255,0.3)" }} />
+          {/* Toggle track */}
+          <div
+            className="relative w-10 h-[22px] rounded-full transition-colors duration-200"
+            style={{
+              background: scribe.isConnected ? "#007AFF" : "rgba(255,255,255,0.12)",
+            }}
+          >
+            {/* Toggle thumb */}
+            <div
+              className="absolute top-[2px] w-[18px] h-[18px] rounded-full transition-transform duration-200"
+              style={{
+                background: "#fff",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                transform: scribe.isConnected ? "translateX(20px)" : "translateX(2px)",
+              }}
+            />
+          </div>
         </button>
         <button
           className="text-[12px] font-medium px-3 py-1.5 rounded-full"
