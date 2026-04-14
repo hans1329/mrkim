@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Menu, Mic } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useV2Voice } from "./V2VoiceContext";
 
 // Reactive wave path for oscilloscope
