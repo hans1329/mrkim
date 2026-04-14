@@ -86,76 +86,133 @@ const YarnBallAvatar = () => (
   </div>
 );
 
-// Oscilloscope-style colorful waveform component
-const OscilloscopeWave = () => (
-  <div className="w-full h-10 pointer-events-none overflow-hidden mb-2">
-    <svg
-      viewBox="0 0 390 40"
-      preserveAspectRatio="none"
-      className="w-full h-full"
-      style={{ filter: "blur(1px)" }}
-    >
-      <defs>
-        <linearGradient id="wave1Grad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#007AFF" stopOpacity="0" />
-          <stop offset="30%" stopColor="#007AFF" stopOpacity="0.6" />
-          <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
-          <stop offset="70%" stopColor="#AF52DE" stopOpacity="0.6" />
-          <stop offset="100%" stopColor="#AF52DE" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id="wave2Grad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0" />
-          <stop offset="25%" stopColor="#FF6B9D" stopOpacity="0.4" />
-          <stop offset="50%" stopColor="#007AFF" stopOpacity="0.5" />
-          <stop offset="75%" stopColor="#34C759" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#34C759" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id="wave3Grad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#5856D6" stopOpacity="0" />
-          <stop offset="35%" stopColor="#AF52DE" stopOpacity="0.3" />
-          <stop offset="65%" stopColor="#FF9F0A" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#FF9F0A" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <motion.path
-        fill="none" stroke="url(#wave1Grad)" strokeWidth="2.5" strokeLinecap="round"
-        animate={{
-          d: [
-            "M0,20 Q50,12 97,18 Q145,24 195,14 Q243,26 293,18 Q340,12 390,20",
-            "M0,20 Q50,26 97,14 Q145,10 195,24 Q243,12 293,22 Q340,28 390,20",
-            "M0,20 Q50,14 97,26 Q145,18 195,10 Q243,22 293,16 Q340,24 390,20",
-            "M0,20 Q50,12 97,18 Q145,24 195,14 Q243,26 293,18 Q340,12 390,20",
-          ],
-        }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+// Reactive oscilloscope — responds to real microphone input via Web Audio API
+const OscilloscopeWave = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animFrameRef = useRef<number>();
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
+
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    let audioCtx: AudioContext | null = null;
+
+    const init = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioCtx = new AudioContext();
+        const source = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.7;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+        dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
+        draw();
+      } catch {
+        // Mic unavailable — show idle wave
+        drawIdle();
+      }
+    };
+
+    const draw = () => {
+      const canvas = canvasRef.current;
+      const analyser = analyserRef.current;
+      const dataArray = dataArrayRef.current;
+      if (!canvas || !analyser || !dataArray) return;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const W = canvas.width;
+      const H = canvas.height;
+      const midY = H / 2;
+
+      analyser.getByteTimeDomainData(dataArray);
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Draw 3 layered waves with different colors and offsets
+      const colors = [
+        { r: 0, g: 122, b: 255, alpha: 0.8, width: 2.5, offset: 0 },
+        { r: 175, g: 82, b: 222, alpha: 0.5, width: 1.8, offset: 0.15 },
+        { r: 52, g: 199, b: 89, alpha: 0.35, width: 1.2, offset: 0.3 },
+      ];
+
+      const len = dataArray.length;
+
+      for (const c of colors) {
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(${c.r},${c.g},${c.b},${c.alpha})`;
+        ctx.lineWidth = c.width;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+
+        const phaseOffset = Math.floor(len * c.offset);
+
+        for (let i = 0; i < len; i++) {
+          const idx = (i + phaseOffset) % len;
+          const v = dataArray[idx] / 128.0; // normalize around 1.0
+          const y = midY + (v - 1.0) * midY * 1.8; // amplify
+
+          const x = (i / (len - 1)) * W;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      animFrameRef.current = requestAnimationFrame(draw);
+    };
+
+    const drawIdle = () => {
+      // Fallback: flat line with subtle pulse
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const W = canvas.width;
+      const H = canvas.height;
+      const midY = H / 2;
+
+      const idleDraw = () => {
+        ctx.clearRect(0, 0, W, H);
+        const t = Date.now() / 1000;
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(0,122,255,0.3)";
+        ctx.lineWidth = 2;
+        for (let x = 0; x < W; x++) {
+          const y = midY + Math.sin(x * 0.03 + t * 2) * 3;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        animFrameRef.current = requestAnimationFrame(idleDraw);
+      };
+      idleDraw();
+    };
+
+    init();
+
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (stream) stream.getTracks().forEach((t) => t.stop());
+      if (audioCtx) audioCtx.close();
+    };
+  }, []);
+
+  return (
+    <div className="w-full h-10 pointer-events-none overflow-hidden mb-2">
+      <canvas
+        ref={canvasRef}
+        width={390}
+        height={40}
+        className="w-full h-full"
+        style={{ filter: "blur(0.5px)" }}
       />
-      <motion.path
-        fill="none" stroke="url(#wave2Grad)" strokeWidth="1.8" strokeLinecap="round"
-        animate={{
-          d: [
-            "M0,20 Q50,24 97,12 Q145,28 195,16 Q243,10 293,24 Q340,18 390,20",
-            "M0,20 Q50,16 97,28 Q145,14 195,26 Q243,30 293,12 Q340,22 390,20",
-            "M0,20 Q50,30 97,16 Q145,22 195,30 Q243,14 293,26 Q340,10 390,20",
-            "M0,20 Q50,24 97,12 Q145,28 195,16 Q243,10 293,24 Q340,18 390,20",
-          ],
-        }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.path
-        fill="none" stroke="url(#wave3Grad)" strokeWidth="1.2" strokeLinecap="round"
-        animate={{
-          d: [
-            "M0,20 Q50,16 97,24 Q145,14 195,28 Q243,18 293,12 Q340,26 390,20",
-            "M0,20 Q50,26 97,12 Q145,26 195,10 Q243,24 293,28 Q340,14 390,20",
-            "M0,20 Q50,10 97,22 Q145,30 195,18 Q243,10 293,24 Q340,18 390,20",
-            "M0,20 Q50,16 97,24 Q145,14 195,28 Q243,18 293,12 Q340,26 390,20",
-          ],
-        }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-      />
-    </svg>
-  </div>
-);
+    </div>
+  );
+};
 
 export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardingProps) => {
   const [currentStep, setCurrentStep] = useState(0);
