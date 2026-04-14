@@ -38,6 +38,7 @@ import TaxAccountant from "./pages/TaxAccountant";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import ResetPassword from "./pages/ResetPassword";
+import V2Dashboard from "./pages/V2Dashboard";
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
