@@ -218,13 +218,26 @@ export function useFeedCards() {
     // 7. 오늘 지출이 크면 알림
     if (stats && stats.todayExpense > 0) {
       const fmt = formatMoney(stats.todayExpense);
+      // 오늘 지출 개별 내역 구성
+      const todayExpenses = (recentTx?.data || [])
+        .filter((tx) => tx.transaction_date === td && tx.type !== "income" && tx.type !== "transfer_in")
+        .sort((a, b) => Number(b.amount) - Number(a.amount));
+      const expenseLines = todayExpenses.slice(0, 10).map((tx) => {
+        const m = formatMoney(Number(tx.amount));
+        return `• ${tx.description || "기타"} — ${m.number}${m.unit}`;
+      });
+      const remaining = todayExpenses.length - expenseLines.length;
+      let detailText = expenseLines.join("\n");
+      if (remaining > 0) detailText += `\n외 ${remaining}건`;
+      if (!detailText) detailText = `오늘 총 ${fmt.number}${fmt.unit}의 지출이 발생했습니다.`;
+
       today.push({
         id: "today-expense",
         type: "standard",
         title: "오늘 지출",
         bigNumber: fmt.number,
         unit: fmt.unit,
-        detail: `오늘 총 ${fmt.number}${fmt.unit}의 지출이 발생했습니다. 거래 내역에서 상세 내역을 확인하고 비용 분류를 완료하세요.`,
+        detail: detailText,
         time: "실시간",
         date: td,
         priority: 6,
