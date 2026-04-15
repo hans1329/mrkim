@@ -258,15 +258,6 @@ export const IntroSequence = ({
             )}
           </AnimatePresence>
 
-          {/* Skip hint */}
-          <motion.p
-            className="absolute bottom-10 text-[11px]"
-            style={{ color: "rgba(255,255,255,0.2)" }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-          >
-            탭하여 건너뛰기
           </motion.p>
         </motion.div>
       ) : null}
