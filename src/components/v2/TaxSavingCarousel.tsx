@@ -167,25 +167,52 @@ export const TaxSavingCarousel = () => {
       });
     }
 
-    return [...list, ...STATIC_TIPS];
+    // For infinite loop, we duplicate the cards array
+    const allCards = [...list, ...STATIC_TIPS];
+    // Return with clones: [last item, ...all, first item]
+    // This allows seamless infinite scrolling
+    return [
+      allCards[allCards.length - 1],
+      ...allCards,
+      allCards[0],
+    ];
   }, [settlement]);
 
-  // Track current slide via scroll position
+  // Track current slide via scroll position with infinite loop detection
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const idx = Math.round(el.scrollLeft / el.clientWidth);
-    setCurrent(idx);
-  }, []);
+    
+    // Handle infinite loop: reset position without animation when at boundaries
+    if (idx >= cards.length) {
+      el.scrollTo({ left: el.clientWidth, behavior: "auto" });
+      setCurrent(0);
+    } else if (idx < 0) {
+      el.scrollTo({ left: cards.length * el.clientWidth, behavior: "auto" });
+      setCurrent(cards.length - 1);
+    } else {
+      setCurrent(idx);
+    }
+  }, [cards.length]);
 
   const scrollTo = useCallback((idx: number) => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTo({ left: idx * el.clientWidth, behavior: "smooth" });
+    // Add 1 to offset because cards array has clone at index 0
+    el.scrollTo({ left: (idx + 1) * el.clientWidth, behavior: "smooth" });
   }, []);
 
+  // Set initial scroll position (skip the clone at index 0)
   useEffect(() => {
-    if (current >= cards.length) setCurrent(0);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ left: scrollRef.current.clientWidth, behavior: "auto" });
+    }
+  }, []);
+
+  // Adjust current index when cards change
+  useEffect(() => {
+    if (current >= cards.length - 1) setCurrent(0);
   }, [cards.length, current]);
 
   if (isLoading) {
@@ -204,7 +231,8 @@ export const TaxSavingCarousel = () => {
     );
   }
 
-  const activeCard = cards[current] || cards[0];
+  // activeCard offset by 1 because cards array has clone at index 0
+  const activeCard = cards[current + 1] || cards[1];
 
   return (
     <div className="relative">
@@ -231,7 +259,7 @@ export const TaxSavingCarousel = () => {
               {settlement && current === 0 ? "정산 알림" : "절세 포인트"}
             </span>
             <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.25)" }}>
-              {current + 1} / {cards.length}
+              {current + 1} / {settlement ? STATIC_TIPS.length + 1 : STATIC_TIPS.length}
             </span>
           </div>
 
@@ -310,20 +338,25 @@ export const TaxSavingCarousel = () => {
 
           {/* Dot indicators */}
           <div className="relative flex items-center justify-center gap-1.5 pb-4">
-            {cards.map((c, i) => (
-              <button
-                key={c.id}
-                onClick={() => scrollTo(i)}
-                className="rounded-full transition-all duration-300"
-                style={{
-                  width: i === current ? 18 : 5,
-                  height: 5,
-                  background: i === current
-                    ? "rgba(255,255,255,0.7)"
-                    : "rgba(255,255,255,0.12)",
-                }}
-              />
-            ))}
+            {cards.map((c, i) => {
+              // Skip rendering clones in dot indicators
+              if (i === 0 || i === cards.length - 1) return null;
+              const originalIdx = i - 1;
+              return (
+                <button
+                  key={`${c.id}-${i}`}
+                  onClick={() => scrollTo(originalIdx)}
+                  className="rounded-full transition-all duration-300"
+                  style={{
+                    width: originalIdx === current ? 18 : 5,
+                    height: 5,
+                    background: originalIdx === current
+                      ? "rgba(255,255,255,0.7)"
+                      : "rgba(255,255,255,0.12)",
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
