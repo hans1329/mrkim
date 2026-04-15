@@ -258,7 +258,7 @@ export const IntroSequence = ({
             )}
           </AnimatePresence>
 
-          </motion.p>
+          
         </motion.div>
       ) : null}
     </AnimatePresence>
