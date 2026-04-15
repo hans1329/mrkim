@@ -6,11 +6,13 @@ import { V2Layout } from "@/components/v2/V2Layout";
 import { IntroSequence } from "@/components/v2/IntroSequence";
 import { ChatOnboarding } from "@/components/v2/ChatOnboarding";
 import { VoiceEmployeeRegistration } from "@/components/v2/VoiceEmployeeRegistration";
+import { UrgentEventSplash } from "@/components/v2/UrgentEventSplash";
 import { useV2Voice } from "@/components/v2/V2VoiceContext";
 import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useFeedCards } from "@/hooks/useFeedCards";
 
 const EMPLOYEE_INTENTS = ["직원 등록", "직원 추가", "사람 등록", "알바 등록", "알바 추가", "직원등록", "직원추가"];
 
@@ -28,7 +30,6 @@ function profileToOnboardingData(profile: Record<string, unknown> | null): Recor
   if (profile.name) data.name = String(profile.name);
   if (profile.business_type) data.business_type = String(profile.business_type);
   if (profile.business_registration_number) data.business_number = String(profile.business_registration_number);
-  // "connect" step has no DB field — check connection flags
   if (profile.account_connected || profile.card_connected || profile.hometax_connected) {
     data.connect = "연동 완료";
   }
@@ -41,10 +42,12 @@ function isOnboarded(profile: Record<string, unknown> | null): boolean {
 }
 
 /** Inner component that uses V2Voice context (must be inside V2VoiceProvider) */
-const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onboarding" | "dashboard"; onStartOnboarding: () => void }) => {
+const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onboarding" | "dashboard" | "loading"; onStartOnboarding: () => void }) => {
   const [showEmployeeReg, setShowEmployeeReg] = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
   const { onCommit } = useV2Voice();
   const { toast } = useToast();
+  const { todayCards, isLoading: feedLoading } = useFeedCards();
 
   useEffect(() => {
     if (stage !== "dashboard") return;
@@ -67,6 +70,16 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
   }, [toast]);
 
   if (stage !== "dashboard") return null;
+
+  // Show splash for urgent events before dashboard renders
+  if (!splashDone && !feedLoading && todayCards.length > 0) {
+    return (
+      <UrgentEventSplash
+        feedCards={todayCards}
+        onComplete={() => setSplashDone(true)}
+      />
+    );
+  }
 
   return (
     <>
@@ -125,7 +138,6 @@ const V2Dashboard = () => {
   }, []);
 
   const handleOnboardingComplete = useCallback(async (data: Record<string, string>) => {
-    // Save to Supabase profiles
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const updates: Record<string, unknown> = {};
@@ -142,7 +154,6 @@ const V2Dashboard = () => {
       }
     }
 
-    // Merge existing data
     const merged = { ...existingData, ...data };
     setExistingData(merged);
     setStage("dashboard");
