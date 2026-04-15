@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { motion } from "framer-motion";
 import { Receipt, Car, Coffee, Home, Wallet, TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -144,7 +144,7 @@ const STATIC_TIPS: CarouselCard[] = [
 export const TaxSavingCarousel = () => {
   const { data: settlement, isLoading } = useSettlementForecast();
   const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const cards: CarouselCard[] = useMemo(() => {
     const list: CarouselCard[] = [];
@@ -170,15 +170,19 @@ export const TaxSavingCarousel = () => {
     return [...list, ...STATIC_TIPS];
   }, [settlement]);
 
-  const paginate = useCallback((newDirection: number) => {
-    setDirection(newDirection);
-    setCurrent((prev) => {
-      const next = prev + newDirection;
-      if (next < 0) return cards.length - 1;
-      if (next >= cards.length) return 0;
-      return next;
-    });
-  }, [cards.length]);
+  // Track current slide via scroll position
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    setCurrent(idx);
+  }, []);
+
+  const scrollTo = useCallback((idx: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ left: idx * el.clientWidth, behavior: "smooth" });
+  }, []);
 
   useEffect(() => {
     if (current >= cards.length) setCurrent(0);
