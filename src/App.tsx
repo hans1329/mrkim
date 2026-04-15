@@ -39,6 +39,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import ResetPassword from "./pages/ResetPassword";
 import V2Dashboard from "./pages/V2Dashboard";
+import V2Transactions from "./pages/V2Transactions";
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -97,6 +98,7 @@ const App = () => (
                       <Route path="/terms" element={<TermsOfService />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/v2" element={<V2Dashboard />} />
+                      <Route path="/v2/transactions" element={<V2Transactions />} />
                       {/* Admin Routes */}
                       <Route path="/admin/login" element={<AdminLogin />} />
                       <Route path="/admin" element={<AdminDashboard />} />
