@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 const EMPLOYEE_INTENTS = ["직원 등록", "직원 추가", "사람 등록", "알바 등록", "알바 추가", "직원등록", "직원추가"];
 
 /** Inner component that uses V2Voice context (must be inside V2VoiceProvider) */
-const DashboardContent = ({ stage }: { stage: "intro" | "onboarding" | "dashboard" }) => {
+const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onboarding" | "dashboard"; onStartOnboarding: () => void }) => {
   const [showEmployeeReg, setShowEmployeeReg] = useState(false);
   const { onCommit } = useV2Voice();
   const { toast } = useToast();
@@ -47,7 +47,7 @@ const DashboardContent = ({ stage }: { stage: "intro" | "onboarding" | "dashboar
         <div className="px-4 pt-3">
           <TaxSavingCarousel />
         </div>
-        <SecretaryFeed />
+        <SecretaryFeed onStartOnboarding={onStartOnboarding} />
       </div>
       <AnimatePresence>
         {showEmployeeReg && (
@@ -89,7 +89,10 @@ const V2Dashboard = () => {
         <ChatOnboarding onComplete={handleOnboardingComplete} />
       )}
 
-      <DashboardContent stage={stage} />
+      <DashboardContent stage={stage} onStartOnboarding={() => {
+        localStorage.removeItem("v2_onboarded");
+        setStage("onboarding");
+      }} />
     </V2Layout>
   );
 };
