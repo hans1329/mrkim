@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-motion";
-import { ArrowRight, Link2 } from "lucide-react";
+import { ArrowRight, Link2, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useFeedCards, type FeedCard } from "@/hooks/useFeedCards";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -17,6 +18,7 @@ const cardVariants = {
 export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () => void }) => {
   const { todayCards, historyCards, isLoading } = useFeedCards();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
 
   const handleDismiss = useCallback((id: string) => {
     setDismissed((prev) => new Set(prev).add(id));
@@ -62,7 +64,7 @@ export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () =>
       {/* 지난 기록 */}
       {hasHistory && (
         <section className="mt-2">
-          <SectionHeader label="지난 기록" />
+          <SectionHeader label="지난 기록" actionLabel="매출/매입 전체보기" onAction={() => navigate("/v2/transactions")} />
           <div className="flex flex-col gap-3 mt-3">
             {visibleHistory.map((card, i) => (
               <SwipeToDismiss key={card.id} cardId={card.id} onDismiss={handleDismiss}>
@@ -124,20 +126,33 @@ const SwipeToDismiss = ({
 };
 
 // Section header
-const SectionHeader = ({ label, accent }: { label: string; accent?: boolean }) => (
-  <div className="flex items-center gap-2">
-    {accent && (
+const SectionHeader = ({ label, accent, actionLabel, onAction }: { label: string; accent?: boolean; actionLabel?: string; onAction?: () => void }) => (
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-2">
+      {accent && (
+        <span
+          className="w-1.5 h-1.5 rounded-full"
+          style={{ background: "#007AFF" }}
+        />
+      )}
       <span
-        className="w-1.5 h-1.5 rounded-full"
-        style={{ background: "#007AFF" }}
-      />
+        className="text-[13px] font-semibold tracking-wide"
+        style={{ color: accent ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.3)" }}
+      >
+        {label}
+      </span>
+    </div>
+    {actionLabel && onAction && (
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        onClick={onAction}
+        className="flex items-center gap-0.5 text-[11px] font-medium"
+        style={{ color: "rgba(255,255,255,0.25)" }}
+      >
+        {actionLabel}
+        <ChevronRight className="w-3 h-3" />
+      </motion.button>
     )}
-    <span
-      className="text-[13px] font-semibold tracking-wide"
-      style={{ color: accent ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.3)" }}
-    >
-      {label}
-    </span>
   </div>
 );
 
