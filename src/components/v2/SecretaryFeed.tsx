@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-motion";
 import { ArrowRight, Link2 } from "lucide-react";
-import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
 import { useFeedCards, type FeedCard } from "@/hooks/useFeedCards";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -15,7 +14,7 @@ const cardVariants = {
   }),
 };
 
-export const SecretaryFeed = () => {
+export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () => void }) => {
   const { todayCards, historyCards, isLoading } = useFeedCards();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
@@ -58,7 +57,7 @@ export const SecretaryFeed = () => {
       )}
 
       {/* 데이터가 하나도 없을 때 */}
-      {!hasToday && !hasHistory && <EmptyFeed />}
+      {!hasToday && !hasHistory && <EmptyFeed onStartOnboarding={onStartOnboarding} />}
 
       {/* 지난 기록 */}
       {hasHistory && (
@@ -143,9 +142,7 @@ const SectionHeader = ({ label, accent }: { label: string; accent?: boolean }) =
 );
 
 // Empty state
-const EmptyFeed = () => {
-  const { openDrawer } = useConnectionDrawer();
-
+const EmptyFeed = ({ onStartOnboarding }: { onStartOnboarding?: () => void }) => {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-5">
       <p className="text-[15px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
@@ -153,7 +150,7 @@ const EmptyFeed = () => {
       </p>
       <motion.button
         whileTap={{ scale: 0.96 }}
-        onClick={() => openDrawer()}
+        onClick={() => onStartOnboarding?.()}
         className="flex items-center gap-2 px-6 py-3 rounded-2xl text-[14px] font-semibold"
         style={{
           background: "linear-gradient(135deg, rgba(0,122,255,0.15) 0%, rgba(88,86,214,0.1) 100%)",
