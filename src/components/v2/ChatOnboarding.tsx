@@ -579,9 +579,48 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = 
         )}
       </div>
 
+      {/* Badge action buttons */}
+      <AnimatePresence>
+        {badgeMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="relative z-10 px-4 pb-8 pt-3 flex gap-3 justify-center"
+          >
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleBadgeAction("redo")}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl text-[13px] font-semibold"
+              style={{
+                background: "rgba(0,122,255,0.12)",
+                border: "1px solid rgba(0,122,255,0.25)",
+                color: "#007AFF",
+              }}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              다시 입력
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleBadgeAction("delete")}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl text-[13px] font-semibold"
+              style={{
+                background: "rgba(255,69,58,0.1)",
+                border: "1px solid rgba(255,69,58,0.2)",
+                color: "#FF453A",
+              }}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              삭제
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Bottom input area */}
       <AnimatePresence>
-        {showInput && step && (
+        {showInput && step && !badgeMode && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
