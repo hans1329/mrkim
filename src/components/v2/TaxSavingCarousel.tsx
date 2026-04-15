@@ -376,5 +376,8 @@ export const TaxSavingCarousel = () => {
         </div>
       </div>
     </div>
+
+    <SettlementDetailSheet open={settlementOpen} onClose={() => setSettlementOpen(false)} />
+    </>
   );
 };
