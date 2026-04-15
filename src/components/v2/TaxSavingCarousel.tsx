@@ -5,6 +5,7 @@ import baeminLogo from "@/assets/baemin-logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SettlementDetailSheet } from "./SettlementDetailSheet";
 
 interface CarouselCard {
   id: string;
