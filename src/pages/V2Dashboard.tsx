@@ -73,6 +73,10 @@ const V2Dashboard = () => {
 
   const handleOnboardingComplete = useCallback((data: Record<string, string>) => {
     console.log("Onboarding data:", data);
+    // Merge with existing data (in case of partial redo)
+    const existing = JSON.parse(localStorage.getItem("v2_onboarding_data") || "{}");
+    const merged = { ...existing, ...data };
+    localStorage.setItem("v2_onboarding_data", JSON.stringify(merged));
     localStorage.setItem("v2_onboarded", "true");
     setStage("dashboard");
   }, []);
@@ -86,7 +90,10 @@ const V2Dashboard = () => {
       )}
 
       {stage === "onboarding" && (
-        <ChatOnboarding onComplete={handleOnboardingComplete} />
+        <ChatOnboarding
+          onComplete={handleOnboardingComplete}
+          existingData={JSON.parse(localStorage.getItem("v2_onboarding_data") || "{}")}
+        />
       )}
 
       <DashboardContent stage={stage} onStartOnboarding={() => {
