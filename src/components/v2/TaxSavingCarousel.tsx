@@ -5,6 +5,7 @@ import baeminLogo from "@/assets/baemin-logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SettlementDetailSheet } from "./SettlementDetailSheet";
 
 interface CarouselCard {
   id: string;
@@ -145,6 +146,7 @@ const STATIC_TIPS: CarouselCard[] = [
 export const TaxSavingCarousel = () => {
   const { data: settlement, isLoading } = useSettlementForecast();
   const [current, setCurrent] = useState(0);
+  const [settlementOpen, setSettlementOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const cards: CarouselCard[] = useMemo(() => {
@@ -241,6 +243,7 @@ export const TaxSavingCarousel = () => {
   const activeCard = cards[current + 1] || cards[1];
 
   return (
+    <>
     <div className="relative">
       {/* Gradient border + glow */}
       <div
@@ -332,6 +335,9 @@ export const TaxSavingCarousel = () => {
                 {card.action && (
                   <motion.button
                     whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      if (card.id === "settlement-forecast") setSettlementOpen(true);
+                    }}
                     className="w-full py-3 rounded-xl text-[13px] font-semibold"
                     style={{
                       background: "rgba(255,255,255,0.07)",
@@ -371,5 +377,8 @@ export const TaxSavingCarousel = () => {
         </div>
       </div>
     </div>
+
+    <SettlementDetailSheet open={settlementOpen} onClose={() => setSettlementOpen(false)} />
+    </>
   );
 };
