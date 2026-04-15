@@ -396,7 +396,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = 
       const newAnswers = { ...answers };
       delete newAnswers[stepId];
       setAnswers(newAnswers);
-      localStorage.setItem("v2_onboarding_data", JSON.stringify(newAnswers));
+      // DB deletion handled by parent via onComplete
       setMessages((prev) => [
         ...prev,
         { from: "user", text: "삭제할게요" },
