@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff } from "lucide-react";
+import { Mic, X, RotateCcw, Trash2 } from "lucide-react";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useScribe, CommitStrategy } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +48,7 @@ const steps: OnboardingStep[] = [
 interface ChatOnboardingProps {
   onComplete: (data: Record<string, string>) => void;
   secretaryAvatarUrl?: string | null;
+  existingData?: Record<string, string>;
 }
 
 // Static colorful cubic-ball avatar for bot
@@ -253,16 +254,30 @@ const ReactiveWavePath = ({
   );
 };
 
-export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardingProps) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const currentStepRef = useRef(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+const STEP_LABELS: Record<string, string> = {
+  name: "이름",
+  business_type: "업종",
+  business_number: "사업자번호",
+  connect: "연동",
+};
+
+export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = {} }: ChatOnboardingProps) => {
+  const hasExisting = Object.keys(existingData).length > 0;
+  // Find the first incomplete step
+  const firstIncomplete = steps.findIndex((s) => !existingData[s.id]);
+  const startStep = hasExisting && firstIncomplete >= 0 ? firstIncomplete : 0;
+
+  const [currentStep, setCurrentStep] = useState(startStep);
+  const currentStepRef = useRef(startStep);
+  const [answers, setAnswers] = useState<Record<string, string>>(existingData);
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<{ from: "bot" | "user"; text: string }[]>([]);
   const [showInput, setShowInput] = useState(false);
   const [showTextFallback, setShowTextFallback] = useState(false);
   const [sttReady, setSttReady] = useState(false);
   const advanceRef = useRef<(value: string) => void>();
+  // Badge interaction state
+  const [badgeMode, setBadgeMode] = useState<{ stepId: string } | null>(null);
 
   const step = steps[currentStep];
 
