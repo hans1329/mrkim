@@ -232,7 +232,7 @@ export function useFeedCards() {
       for (const tx of recentTx.data) {
         if (tx.transaction_date === td) continue; // skip today
         const existing = byDate.get(tx.transaction_date) || { income: 0, expense: 0, count: 0, topIncome: [], topExpense: [] };
-        if (tx.type === "income" || (tx.type as string) === "transfer_in") {
+        if (tx.type === "income" || tx.type === "transfer_in") {
           existing.income += Number(tx.amount);
           if (tx.description && existing.topIncome.length < 3 && !existing.topIncome.includes(tx.description)) {
             existing.topIncome.push(tx.description);

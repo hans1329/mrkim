@@ -126,7 +126,7 @@ interface Transaction {
   id: string;
   description: string;
   amount: number;
-  type: "income" | "expense";
+  type: "income" | "expense" | "transfer_in";
   category: string | null;
   source_type: string;
   transaction_date: string;
