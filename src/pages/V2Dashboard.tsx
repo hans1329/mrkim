@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { WeatherAnchor } from "@/components/v2/WeatherAnchor";
 import { SecretaryFeed } from "@/components/v2/SecretaryFeed";
+import { TaxSavingCarousel } from "@/components/v2/TaxSavingCarousel";
 import { V2Layout } from "@/components/v2/V2Layout";
 import { IntroSequence } from "@/components/v2/IntroSequence";
 import { ChatOnboarding } from "@/components/v2/ChatOnboarding";
@@ -43,6 +44,9 @@ const DashboardContent = ({ stage }: { stage: "intro" | "onboarding" | "dashboar
     <>
       <div className="flex-1 overflow-y-auto no-scrollbar">
         <WeatherAnchor />
+        <div className="px-4 pt-3">
+          <TaxSavingCarousel />
+        </div>
         <SecretaryFeed />
       </div>
       <AnimatePresence>

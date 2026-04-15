@@ -3,7 +3,7 @@ import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-m
 import { ArrowRight } from "lucide-react";
 import { useFeedCards, type FeedCard } from "@/hooks/useFeedCards";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TaxSavingCarousel } from "./TaxSavingCarousel";
+
 
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
@@ -56,12 +56,7 @@ export const SecretaryFeed = () => {
         </section>
       )}
 
-      {/* 절세 포인트 캐러셀 */}
-      <section className="px-0">
-        <TaxSavingCarousel />
-      </section>
-
-      {/* 데이터가 하나도 없을 때 - 절세 캐러셀 아래에 안내 */}
+      {/* 데이터가 하나도 없을 때 */}
       {!hasToday && !hasHistory && <EmptyFeed />}
 
       {/* 지난 기록 */}
