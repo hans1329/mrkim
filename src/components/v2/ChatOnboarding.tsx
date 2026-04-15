@@ -322,9 +322,25 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = 
   // Show first question on mount
   useEffect(() => {
     const t = setTimeout(() => {
-      setMessages([{ from: "bot", text: steps[0].question }]);
-      setTimeout(() => setShowInput(true), 500);
-      setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
+      if (hasExisting) {
+        const completedLabels = steps
+          .filter((s) => existingData[s.id])
+          .map((s) => STEP_LABELS[s.id])
+          .join(", ");
+        setMessages([
+          { from: "bot", text: `다시 오셨네요! ${completedLabels} 정보가 등록되어 있어요.\n상단 뱃지를 눌러 수정하거나, 이어서 진행하세요.` },
+        ]);
+        // If all steps done, don't show input
+        if (firstIncomplete >= 0) {
+          setMessages((prev) => [...prev, { from: "bot", text: steps[firstIncomplete].question }]);
+          setTimeout(() => setShowInput(true), 500);
+          setTimeout(() => setShowTextFallback(true), 2000);
+        }
+      } else {
+        setMessages([{ from: "bot", text: steps[0].question }]);
+        setTimeout(() => setShowInput(true), 500);
+        setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
+      }
     }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
