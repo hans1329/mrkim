@@ -203,12 +203,15 @@ export const TaxSavingCarousel = () => {
     el.scrollTo({ left: (idx + 1) * el.clientWidth, behavior: "smooth" });
   }, []);
 
-  // Set initial scroll position (skip the clone at index 0)
+  // Set initial scroll position (skip the clone at index 0) — re-run when cards change (e.g. settlement loads)
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({ left: scrollRef.current.clientWidth, behavior: "auto" });
+    const el = scrollRef.current;
+    if (el) {
+      requestAnimationFrame(() => {
+        el.scrollTo({ left: el.clientWidth, behavior: "auto" });
+      });
     }
-  }, []);
+  }, [cards]);
 
   // Adjust current index when cards change
   useEffect(() => {
@@ -273,9 +276,9 @@ export const TaxSavingCarousel = () => {
               WebkitOverflowScrolling: "touch",
             }}
           >
-            {cards.map((card) => (
+            {cards.map((card, idx) => (
               <div
-                key={card.id}
+                key={`${card.id}-${idx}`}
                 className="w-full shrink-0 px-5 pb-4"
                 style={{ scrollSnapAlign: "start" }}
               >
