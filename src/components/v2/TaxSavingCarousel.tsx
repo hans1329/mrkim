@@ -334,6 +334,9 @@ export const TaxSavingCarousel = () => {
                 {card.action && (
                   <motion.button
                     whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      if (card.id === "settlement-forecast") setSettlementOpen(true);
+                    }}
                     className="w-full py-3 rounded-xl text-[13px] font-semibold"
                     style={{
                       background: "rgba(255,255,255,0.07)",
