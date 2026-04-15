@@ -220,49 +220,53 @@ export const TaxSavingCarousel = () => {
         style={{ background: card.glowColor, opacity: 0.25 }}
       />
 
+      {/* Gradient border wrapper */}
       <div
-        className="rounded-3xl overflow-hidden relative"
-        style={{
-          background: "rgba(255,255,255,0.05)",
-          border: "1px solid rgba(255,255,255,0.1)",
-        }}
+        className="rounded-3xl p-[1px] relative"
+        style={{ background: card.gradient }}
       >
-        {/* Gradient accent line at top */}
         <div
-          className="h-[2px] w-full"
-          style={{ background: card.gradient }}
-        />
+          className="rounded-3xl overflow-hidden relative"
+          style={{ background: "#0A0A0F" }}
+        >
+          {/* Inner subtle fill */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: "rgba(255,255,255,0.04)" }}
+          />
 
-        {/* Header */}
-        <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-          <span className="text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.6)" }}>
-            {settlement && current === 0 ? "정산 알림" : "절세 포인트"}
-          </span>
-          <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.25)" }}>
-            {current + 1} / {cards.length}
-          </span>
-        </div>
+          {/* Header */}
+          <div className="relative px-5 pt-4 pb-2 flex items-center justify-between">
+            <span className="text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.6)" }}>
+              {settlement && current === 0 ? "정산 알림" : "절세 포인트"}
+            </span>
+            <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.25)" }}>
+              {current + 1} / {cards.length}
+            </span>
+          </div>
 
-        {/* Carousel Content */}
-        <div className="relative h-[190px] overflow-hidden touch-pan-y">
-          <AnimatePresence custom={direction} mode="popLayout">
-            <motion.div
-              key={card.id}
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ type: "spring", stiffness: 280, damping: 28 }}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.18}
-              onDragEnd={(_, info) => {
-                if (info.offset.x < -80) paginate(1);
-                else if (info.offset.x > 80) paginate(-1);
-              }}
-              className="absolute inset-0 px-5 pb-4 cursor-grab active:cursor-grabbing"
-            >
+          {/* Carousel Content */}
+          <div className="relative h-[190px] overflow-hidden" style={{ touchAction: "pan-y" }}>
+            <AnimatePresence custom={direction} mode="popLayout">
+              <motion.div
+                key={card.id}
+                custom={direction}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ type: "spring", stiffness: 280, damping: 28 }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.18}
+                dragDirectionLock
+                onDragEnd={(_, info) => {
+                  if (info.offset.x < -60) paginate(1);
+                  else if (info.offset.x > 60) paginate(-1);
+                }}
+                className="absolute inset-0 px-5 pb-4 cursor-grab active:cursor-grabbing"
+                style={{ touchAction: "pan-y" }}
+              >
               {/* Icon + Title + Badge */}
               <div className="flex items-center gap-3 mb-3">
                 <div
@@ -337,6 +341,9 @@ export const TaxSavingCarousel = () => {
             />
           ))}
         </div>
+        {/* close inner bg div */}
+      </div>
+      {/* close gradient border wrapper */}
       </div>
     </div>
   );
