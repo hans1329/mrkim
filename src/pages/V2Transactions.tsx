@@ -80,7 +80,7 @@ export default function V2Transactions() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "#0A0A0F" }}>
+    <div className="min-h-screen overflow-y-auto" style={{ background: "#0A0A0F" }}>
       {/* Header */}
       <div className="sticky top-0 z-30 px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3"
         style={{ background: "rgba(10,10,15,0.85)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
