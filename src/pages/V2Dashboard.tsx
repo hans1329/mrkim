@@ -9,8 +9,36 @@ import { VoiceEmployeeRegistration } from "@/components/v2/VoiceEmployeeRegistra
 import { useV2Voice } from "@/components/v2/V2VoiceContext";
 import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const EMPLOYEE_INTENTS = ["직원 등록", "직원 추가", "사람 등록", "알바 등록", "알바 추가", "직원등록", "직원추가"];
+
+// Map onboarding step IDs → profiles columns
+const ONBOARDING_TO_PROFILE: Record<string, string> = {
+  name: "name",
+  business_type: "business_type",
+  business_number: "business_registration_number",
+};
+
+/** Build existingData from profile row */
+function profileToOnboardingData(profile: Record<string, unknown> | null): Record<string, string> {
+  if (!profile) return {};
+  const data: Record<string, string> = {};
+  if (profile.name) data.name = String(profile.name);
+  if (profile.business_type) data.business_type = String(profile.business_type);
+  if (profile.business_registration_number) data.business_number = String(profile.business_registration_number);
+  // "connect" step has no DB field — check connection flags
+  if (profile.account_connected || profile.card_connected || profile.hometax_connected) {
+    data.connect = "연동 완료";
+  }
+  return data;
+}
+
+/** Check if user has completed onboarding (has name at minimum) */
+function isOnboarded(profile: Record<string, unknown> | null): boolean {
+  return !!profile?.name;
+}
 
 /** Inner component that uses V2Voice context (must be inside V2VoiceProvider) */
 const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onboarding" | "dashboard"; onStartOnboarding: () => void }) => {
@@ -62,26 +90,77 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
 };
 
 const V2Dashboard = () => {
-  const [stage, setStage] = useState<"intro" | "onboarding" | "dashboard">(() => {
-    const saved = localStorage.getItem("v2_onboarded");
-    return saved === "true" ? "dashboard" : "intro";
-  });
+  const [stage, setStage] = useState<"intro" | "onboarding" | "dashboard" | "loading">("loading");
+  const [existingData, setExistingData] = useState<Record<string, string>>({});
+
+  // Load profile on mount to determine stage
+  useEffect(() => {
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setStage("intro");
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name, business_type, business_registration_number, account_connected, card_connected, hometax_connected")
+        .eq("user_id", user.id)
+        .single();
+
+      const onboardingData = profileToOnboardingData(profile);
+      setExistingData(onboardingData);
+
+      if (isOnboarded(profile)) {
+        setStage("dashboard");
+      } else {
+        setStage("intro");
+      }
+    };
+    load();
+  }, []);
 
   const handleIntroComplete = useCallback(() => {
     setStage("onboarding");
   }, []);
 
-  const handleOnboardingComplete = useCallback((data: Record<string, string>) => {
-    console.log("Onboarding data:", data);
-    // Merge with existing data (in case of partial redo)
-    const existing = JSON.parse(localStorage.getItem("v2_onboarding_data") || "{}");
-    const merged = { ...existing, ...data };
-    localStorage.setItem("v2_onboarding_data", JSON.stringify(merged));
-    localStorage.setItem("v2_onboarded", "true");
-    setStage("dashboard");
-  }, []);
+  const handleOnboardingComplete = useCallback(async (data: Record<string, string>) => {
+    // Save to Supabase profiles
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const updates: Record<string, unknown> = {};
+      for (const [stepId, value] of Object.entries(data)) {
+        const col = ONBOARDING_TO_PROFILE[stepId];
+        if (col) updates[col] = value;
+      }
 
-  const hideHeader = stage === "intro" || stage === "onboarding";
+      if (Object.keys(updates).length > 0) {
+        await supabase
+          .from("profiles")
+          .update(updates)
+          .eq("user_id", user.id);
+      }
+    }
+
+    // Merge existing data
+    const merged = { ...existingData, ...data };
+    setExistingData(merged);
+    setStage("dashboard");
+  }, [existingData]);
+
+  const hideHeader = stage === "intro" || stage === "onboarding" || stage === "loading";
+
+  if (stage === "loading") {
+    return (
+      <V2Layout hideHeader>
+        <div className="flex-1 flex flex-col gap-4 px-4 pt-16">
+          <Skeleton className="h-32 w-full rounded-3xl bg-white/5" />
+          <Skeleton className="h-48 w-full rounded-3xl bg-white/5" />
+          <Skeleton className="h-24 w-full rounded-2xl bg-white/5" />
+        </div>
+      </V2Layout>
+    );
+  }
 
   return (
     <V2Layout hideHeader={hideHeader}>
@@ -92,12 +171,11 @@ const V2Dashboard = () => {
       {stage === "onboarding" && (
         <ChatOnboarding
           onComplete={handleOnboardingComplete}
-          existingData={JSON.parse(localStorage.getItem("v2_onboarding_data") || "{}")}
+          existingData={existingData}
         />
       )}
 
       <DashboardContent stage={stage} onStartOnboarding={() => {
-        localStorage.removeItem("v2_onboarded");
         setStage("onboarding");
       }} />
     </V2Layout>
