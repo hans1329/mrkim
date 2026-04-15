@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff } from "lucide-react";
+import { Mic, X, RotateCcw, Trash2 } from "lucide-react";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useScribe, CommitStrategy } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +48,7 @@ const steps: OnboardingStep[] = [
 interface ChatOnboardingProps {
   onComplete: (data: Record<string, string>) => void;
   secretaryAvatarUrl?: string | null;
+  existingData?: Record<string, string>;
 }
 
 // Static colorful cubic-ball avatar for bot
@@ -253,16 +254,30 @@ const ReactiveWavePath = ({
   );
 };
 
-export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardingProps) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const currentStepRef = useRef(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+const STEP_LABELS: Record<string, string> = {
+  name: "이름",
+  business_type: "업종",
+  business_number: "사업자번호",
+  connect: "연동",
+};
+
+export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = {} }: ChatOnboardingProps) => {
+  const hasExisting = Object.keys(existingData).length > 0;
+  // Find the first incomplete step
+  const firstIncomplete = steps.findIndex((s) => !existingData[s.id]);
+  const startStep = hasExisting && firstIncomplete >= 0 ? firstIncomplete : 0;
+
+  const [currentStep, setCurrentStep] = useState(startStep);
+  const currentStepRef = useRef(startStep);
+  const [answers, setAnswers] = useState<Record<string, string>>(existingData);
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<{ from: "bot" | "user"; text: string }[]>([]);
   const [showInput, setShowInput] = useState(false);
   const [showTextFallback, setShowTextFallback] = useState(false);
   const [sttReady, setSttReady] = useState(false);
   const advanceRef = useRef<(value: string) => void>();
+  // Badge interaction state
+  const [badgeMode, setBadgeMode] = useState<{ stepId: string } | null>(null);
 
   const step = steps[currentStep];
 
@@ -307,9 +322,25 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
   // Show first question on mount
   useEffect(() => {
     const t = setTimeout(() => {
-      setMessages([{ from: "bot", text: steps[0].question }]);
-      setTimeout(() => setShowInput(true), 500);
-      setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
+      if (hasExisting) {
+        const completedLabels = steps
+          .filter((s) => existingData[s.id])
+          .map((s) => STEP_LABELS[s.id])
+          .join(", ");
+        setMessages([
+          { from: "bot", text: `다시 오셨네요! ${completedLabels} 정보가 등록되어 있어요.\n상단 뱃지를 눌러 수정하거나, 이어서 진행하세요.` },
+        ]);
+        // If all steps done, don't show input
+        if (firstIncomplete >= 0) {
+          setMessages((prev) => [...prev, { from: "bot", text: steps[firstIncomplete].question }]);
+          setTimeout(() => setShowInput(true), 500);
+          setTimeout(() => setShowTextFallback(true), 2000);
+        }
+      } else {
+        setMessages([{ from: "bot", text: steps[0].question }]);
+        setTimeout(() => setShowInput(true), 500);
+        setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
+      }
     }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -342,6 +373,65 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
   useEffect(() => {
     advanceRef.current = advance;
   }, [advance]);
+
+  // Badge click → ask via chat to redo or delete
+  const handleBadgeClick = useCallback((stepId: string) => {
+    const label = STEP_LABELS[stepId] || stepId;
+    const value = answers[stepId];
+    setBadgeMode({ stepId });
+    setShowInput(false);
+    setMessages((prev) => [
+      ...prev,
+      { from: "bot", text: `"${label}: ${value}" 항목을 어떻게 할까요?` },
+    ]);
+  }, [answers]);
+
+  // Handle badge action choice
+  const handleBadgeAction = useCallback((action: "redo" | "delete") => {
+    if (!badgeMode) return;
+    const { stepId } = badgeMode;
+    const label = STEP_LABELS[stepId] || stepId;
+
+    if (action === "delete") {
+      const newAnswers = { ...answers };
+      delete newAnswers[stepId];
+      setAnswers(newAnswers);
+      localStorage.setItem("v2_onboarding_data", JSON.stringify(newAnswers));
+      setMessages((prev) => [
+        ...prev,
+        { from: "user", text: "삭제할게요" },
+        { from: "bot", text: `${label} 정보가 삭제되었어요.` },
+      ]);
+      setBadgeMode(null);
+      // Resume normal flow after a beat
+      setTimeout(() => {
+        const stepIdx = steps.findIndex((s) => s.id === stepId);
+        if (stepIdx >= 0) {
+          setCurrentStep(stepIdx);
+          currentStepRef.current = stepIdx;
+          setMessages((prev) => [...prev, { from: "bot", text: steps[stepIdx].question }]);
+          setTimeout(() => setShowInput(true), 400);
+          setTimeout(() => setShowTextFallback(true), 2000);
+        }
+      }, 800);
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        { from: "user", text: "다시 입력할게요" },
+      ]);
+      setBadgeMode(null);
+      const stepIdx = steps.findIndex((s) => s.id === stepId);
+      if (stepIdx >= 0) {
+        setTimeout(() => {
+          setCurrentStep(stepIdx);
+          currentStepRef.current = stepIdx;
+          setMessages((prev) => [...prev, { from: "bot", text: steps[stepIdx].question }]);
+          setTimeout(() => setShowInput(true), 400);
+          setTimeout(() => setShowTextFallback(true), 2000);
+        }, 500);
+      }
+    }
+  }, [badgeMode, answers]);
 
   const SecretaryBubble = ({ text }: { text: string }) => (
     <div className="flex items-start gap-2.5 mb-3">
@@ -441,6 +531,36 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         </button>
       </div>
 
+      {/* Existing onboarding badges */}
+      {hasExisting && (
+        <div className="relative z-10 flex items-center gap-2 px-5 pt-3 overflow-x-auto no-scrollbar">
+          {steps.map((s) => {
+            const val = answers[s.id];
+            if (!val) return null;
+            return (
+              <motion.button
+                key={s.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleBadgeClick(s.id)}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium"
+                style={{
+                  background: badgeMode?.stepId === s.id
+                    ? "rgba(0,122,255,0.15)"
+                    : "rgba(255,255,255,0.06)",
+                  border: badgeMode?.stepId === s.id
+                    ? "1px solid rgba(0,122,255,0.3)"
+                    : "1px solid rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.7)",
+                }}
+              >
+                <span style={{ color: "rgba(255,255,255,0.4)" }}>{STEP_LABELS[s.id]}</span>
+                <span style={{ color: "rgba(255,255,255,0.9)" }}>{val.length > 8 ? val.slice(0, 8) + "…" : val}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto px-4 pt-8 pb-4 relative z-10 no-scrollbar">
         <AnimatePresence>
@@ -475,9 +595,48 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl }: ChatOnboardin
         )}
       </div>
 
+      {/* Badge action buttons */}
+      <AnimatePresence>
+        {badgeMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="relative z-10 px-4 pb-8 pt-3 flex gap-3 justify-center"
+          >
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleBadgeAction("redo")}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl text-[13px] font-semibold"
+              style={{
+                background: "rgba(0,122,255,0.12)",
+                border: "1px solid rgba(0,122,255,0.25)",
+                color: "#007AFF",
+              }}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              다시 입력
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleBadgeAction("delete")}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl text-[13px] font-semibold"
+              style={{
+                background: "rgba(255,69,58,0.1)",
+                border: "1px solid rgba(255,69,58,0.2)",
+                color: "#FF453A",
+              }}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              삭제
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Bottom input area */}
       <AnimatePresence>
-        {showInput && step && (
+        {showInput && step && !badgeMode && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
