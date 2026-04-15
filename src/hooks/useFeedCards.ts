@@ -15,6 +15,7 @@ export interface FeedCard {
   date: string; // YYYY-MM-DD
   gradient?: string;
   priority: number; // lower = higher priority
+  detail?: string; // 상세 요약 (모달에 표시)
 }
 
 function formatMoney(amount: number): { number: string; unit: string } {
