@@ -18,6 +18,7 @@ const cardVariants = {
 export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () => void }) => {
   const { todayCards, historyCards, isLoading } = useFeedCards();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [selectedCard, setSelectedCard] = useState<FeedCard | null>(null);
   const navigate = useNavigate();
 
   const handleDismiss = useCallback((id: string) => {
@@ -46,6 +47,8 @@ export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () =>
                 initial="hidden"
                 animate="visible"
                 variants={cardVariants}
+                onClick={() => setSelectedCard(card)}
+                className="cursor-pointer"
               >
                 {card.type === "hero" ? (
                   <HeroCard card={card} />
@@ -82,6 +85,9 @@ export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () =>
           </div>
         </section>
       )}
+
+      {/* 상세 요약 모달 */}
+      <CardDetailModal card={selectedCard} onClose={() => setSelectedCard(null)} />
     </div>
   );
 };
