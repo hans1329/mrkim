@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-motion";
-import { ArrowRight, Link2, ChevronRight } from "lucide-react";
+import { motion, useMotionValue, useTransform, animate, PanInfo, AnimatePresence } from "framer-motion";
+import { ArrowRight, Link2, ChevronRight, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useFeedCards, type FeedCard } from "@/hooks/useFeedCards";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +18,7 @@ const cardVariants = {
 export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () => void }) => {
   const { todayCards, historyCards, isLoading } = useFeedCards();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [selectedCard, setSelectedCard] = useState<FeedCard | null>(null);
   const navigate = useNavigate();
 
   const handleDismiss = useCallback((id: string) => {
@@ -46,6 +47,8 @@ export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () =>
                 initial="hidden"
                 animate="visible"
                 variants={cardVariants}
+                onClick={() => setSelectedCard(card)}
+                className="cursor-pointer"
               >
                 {card.type === "hero" ? (
                   <HeroCard card={card} />
@@ -82,6 +85,9 @@ export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () =>
           </div>
         </section>
       )}
+
+      {/* 상세 요약 모달 */}
+      <CardDetailModal card={selectedCard} onClose={() => setSelectedCard(null)} />
     </div>
   );
 };
@@ -323,3 +329,112 @@ const StandardCard = ({ card, compact }: { card: FeedCard; compact?: boolean }) 
     </div>
   </div>
 );
+
+// Card detail modal
+const CardDetailModal = ({ card, onClose }: { card: FeedCard | null; onClose: () => void }) => {
+  const navigate = useNavigate();
+
+  return (
+    <AnimatePresence>
+      {card && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          {/* backdrop */}
+          <motion.div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+
+          {/* sheet */}
+          <motion.div
+            className="relative w-full max-w-lg mx-4 mb-6 rounded-3xl overflow-hidden"
+            style={{
+              background: card.gradient || "linear-gradient(180deg, rgba(30,30,40,0.98) 0%, rgba(20,20,28,0.99) 100%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              boxShadow: "0 -8px 40px rgba(0,0,0,0.4)",
+            }}
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* close button */}
+            <button
+              onClick={onClose}
+              className="absolute right-4 top-4 w-8 h-8 rounded-full flex items-center justify-center z-10"
+              style={{ background: "rgba(255,255,255,0.15)" }}
+            >
+              <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.7)" }} />
+            </button>
+
+            <div className="px-6 pt-6 pb-5">
+              {/* header */}
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+                  style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)" }}>
+                  {card.time}
+                </span>
+              </div>
+
+              <h3 className="text-[18px] font-bold mt-3" style={{ color: "rgba(255,255,255,0.95)" }}>
+                {card.title}
+              </h3>
+
+              {/* big number */}
+              {card.bigNumber && (
+                <div className="flex items-baseline gap-2 mt-3">
+                  <span className="font-black leading-none tracking-tight"
+                    style={{ fontSize: "44px", color: "rgba(255,255,255,0.95)" }}>
+                    {card.bigNumber}
+                  </span>
+                  <span className="text-lg font-medium" style={{ color: "rgba(255,255,255,0.4)" }}>
+                    {card.unit}
+                  </span>
+                  {card.change && (
+                    <span className="text-[13px] font-bold ml-1"
+                      style={{ color: card.change.positive ? "#30D158" : "#FF453A" }}>
+                      {card.change.value} {card.change.positive ? "↑" : "↓"}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* detail text */}
+              <p className="text-[14px] leading-relaxed mt-4"
+                style={{ color: "rgba(255,255,255,0.6)" }}>
+                {card.detail || card.body || "상세 정보가 없습니다."}
+              </p>
+            </div>
+
+            {/* action button */}
+            {card.actionRoute && (
+              <div className="px-6 pb-6">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => { onClose(); navigate(card.actionRoute!); }}
+                  className="w-full py-3 rounded-2xl text-[14px] font-semibold flex items-center justify-center gap-1.5"
+                  style={{
+                    background: "rgba(255,255,255,0.12)",
+                    color: "rgba(255,255,255,0.9)",
+                  }}
+                >
+                  {card.action || "자세히 보기"}
+                  <ArrowRight className="w-4 h-4" />
+                </motion.button>
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};

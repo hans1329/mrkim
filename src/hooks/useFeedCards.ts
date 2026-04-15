@@ -15,6 +15,7 @@ export interface FeedCard {
   date: string; // YYYY-MM-DD
   gradient?: string;
   priority: number; // lower = higher priority
+  detail?: string; // 상세 요약 (모달에 표시)
 }
 
 function formatMoney(amount: number): { number: string; unit: string } {
@@ -78,6 +79,7 @@ export function useFeedCards() {
           bigNumber: fmt.number,
           unit: fmt.unit,
           body: `이번 달 누적 ${monthFmt.number}${monthFmt.unit}`,
+          detail: `오늘 총 매출은 ${fmt.number}${fmt.unit}이며, 이번 달 누적 매출은 ${monthFmt.number}${monthFmt.unit}입니다. 매출 추이를 확인하고 전월 대비 성과를 점검해보세요.`,
           action: "상세 보기",
           actionRoute: "/transactions",
           time: "실시간",
@@ -95,6 +97,7 @@ export function useFeedCards() {
             title: "이번 달 매출",
             bigNumber: fmt.number,
             unit: fmt.unit,
+            detail: `이번 달 현재까지 누적 매출은 ${fmt.number}${fmt.unit}입니다. 아직 오늘 매출이 발생하지 않았습니다.`,
             action: "상세 보기",
             actionRoute: "/transactions",
             time: "오늘 기준",
@@ -120,6 +123,7 @@ export function useFeedCards() {
           unit: fmt.unit,
           change: { value: `${pct > 0 ? "+" : ""}${pct}%`, positive: pct > 0 },
           body: `지난 달 동기간 대비 ${pct > 0 ? "증가" : "감소"}했어요`,
+          detail: `이번 달 매출 ${fmt.number}${fmt.unit}은 지난 달 동기간 대비 ${pct > 0 ? "+" : ""}${pct}% ${pct > 0 ? "증가" : "감소"}했습니다. 지난 달 동기간 매출은 ${formatMoney(actionData.lastMonthIncome).number}${formatMoney(actionData.lastMonthIncome).unit}이었습니다.`,
           time: "오늘 기준",
           date: td,
           priority: 3,
@@ -136,6 +140,7 @@ export function useFeedCards() {
         bigNumber: String(actionData.unclassifiedCount),
         unit: "건",
         body: "분류하면 세금 신고가 더 정확해져요",
+        detail: `현재 ${actionData.unclassifiedCount}건의 거래가 미분류 상태입니다. 비용을 올바른 계정과목으로 분류하면 부가세 공제와 소득세 경비 처리에 유리합니다.`,
         action: "분류하기",
         actionRoute: "/transactions",
         time: "지금",
@@ -158,6 +163,7 @@ export function useFeedCards() {
             bigNumber: fmt.number,
             unit: fmt.unit,
             body: `${dayGroup.count}명 급여 지급 예정`,
+            detail: `${dayGroup.day}일 급여일까지 ${daysLeft}일 남았습니다. ${dayGroup.count}명에게 총 ${fmt.number}${fmt.unit}을 지급할 예정이에요. 계좌 잔액을 미리 확인해주세요.`,
             action: "직원 관리",
             actionRoute: "/employees",
             time: "알림",
@@ -181,6 +187,7 @@ export function useFeedCards() {
         bigNumber: fmt.number,
         unit: fmt.unit,
         body: actionData.todayAutoTransfers.names.join(", "),
+        detail: `오늘 ${actionData.todayAutoTransfers.count}건의 자동이체가 예정되어 있습니다. 총 ${fmt.number}${fmt.unit} (${actionData.todayAutoTransfers.names.join(", ")})`,
         time: "오늘",
         date: td,
         priority: 2,
@@ -197,6 +204,7 @@ export function useFeedCards() {
         body: vat.dDay <= 3
           ? "지금 신고하면 가산세 없이 처리할 수 있어요"
           : `${vat.label} 신고 마감이 다가오고 있어요`,
+        detail: `부가세 ${vat.label} 신고 마감까지 ${vat.dDay}일 남았습니다. ${vat.dDay <= 3 ? "기한 내 미신고 시 가산세가 부과됩니다. 세무사에게 자료를 전달하거나 직접 홈택스에서 신고를 완료하세요." : "미리 자료를 준비해두면 마감일에 여유롭게 처리할 수 있습니다."}`,
         action: "바로 신고하기",
         time: vat.dDay <= 3 ? "긴급" : "알림",
         date: td,
@@ -216,6 +224,7 @@ export function useFeedCards() {
         title: "오늘 지출",
         bigNumber: fmt.number,
         unit: fmt.unit,
+        detail: `오늘 총 ${fmt.number}${fmt.unit}의 지출이 발생했습니다. 거래 내역에서 상세 내역을 확인하고 비용 분류를 완료하세요.`,
         time: "실시간",
         date: td,
         priority: 6,
