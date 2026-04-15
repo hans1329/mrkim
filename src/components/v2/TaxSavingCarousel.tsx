@@ -259,7 +259,7 @@ export const TaxSavingCarousel = () => {
               {settlement && current === 0 ? "정산 알림" : "절세 포인트"}
             </span>
             <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.25)" }}>
-              {current + 1} / {cards.length}
+              {current + 1} / {settlement ? STATIC_TIPS.length + 1 : STATIC_TIPS.length}
             </span>
           </div>
 
