@@ -7,7 +7,7 @@ const getTimeGreeting = (): string => {
   if (hour >= 9 && hour < 12) return "오전도 힘내세요 💪";
   if (hour >= 12 && hour < 14) return "점심 맛있게 드세요 🍚";
   if (hour >= 14 && hour < 18) return "오후도 화이팅이에요 🔥";
-  if (hour >= 18 && hour < 21) return "저녁 마무리 잘 하세요 🌇";
+  if (hour >= 18 && hour < 21) return "저녁 마무리 잘 하세요";
   return "늦은 시간 고생하세요 🌙";
 };
 
