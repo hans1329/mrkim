@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 const getTimeGreeting = (): string => {
   const hour = new Date().getHours();
@@ -81,7 +81,35 @@ export const IntroSequence = ({
   userName = "사장님",
 }: IntroSequenceProps) => {
   const [phase, setPhase] = useState<"greeting" | "briefing" | "exit">("greeting");
+  const [progress, setProgress] = useState(0);
   const timeGreeting = useMemo(() => getTimeGreeting(), []);
+
+  // Auto-advance greeting phase with progress bar
+  useEffect(() => {
+    if (phase !== "greeting") return;
+    const duration = 2500; // ms
+    const interval = 30;
+    let elapsed = 0;
+    const timer = setInterval(() => {
+      elapsed += interval;
+      setProgress(Math.min((elapsed / duration) * 100, 100));
+      if (elapsed >= duration) {
+        clearInterval(timer);
+        setPhase("briefing");
+      }
+    }, interval);
+    return () => clearInterval(timer);
+  }, [phase]);
+
+  // Auto-advance briefing phase
+  useEffect(() => {
+    if (phase !== "briefing") return;
+    const timer = setTimeout(() => {
+      setPhase("exit");
+      setTimeout(onComplete, 600);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [phase, onComplete]);
 
   const handleTap = () => {
     if (phase === "greeting") {
@@ -150,14 +178,17 @@ export const IntroSequence = ({
                   {timeGreeting}
                 </p>
                 <motion.div
-                  className="mx-auto mt-4 h-[2px] rounded-full"
-                  style={{
-                    background: "linear-gradient(90deg, #007AFF, #5856D6, #AF52DE, #FF2D55)",
-                  }}
-                  initial={{ width: 0 }}
-                  animate={{ width: 120 }}
-                  transition={{ duration: 1.2, ease: "easeOut" }}
-                />
+                  className="mx-auto mt-4 h-[2px] rounded-full overflow-hidden"
+                  style={{ width: 120, background: "rgba(255,255,255,0.1)" }}
+                >
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${progress}%`,
+                      background: "linear-gradient(90deg, #007AFF, #5856D6, #AF52DE, #FF2D55)",
+                    }}
+                  />
+                </motion.div>
               </motion.div>
             )}
 
@@ -227,16 +258,7 @@ export const IntroSequence = ({
             )}
           </AnimatePresence>
 
-          {/* Skip hint */}
-          <motion.p
-            className="absolute bottom-10 text-[11px]"
-            style={{ color: "rgba(255,255,255,0.2)" }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-          >
-            탭하여 건너뛰기
-          </motion.p>
+          
         </motion.div>
       ) : null}
     </AnimatePresence>
