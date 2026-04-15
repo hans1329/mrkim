@@ -101,15 +101,7 @@ export const IntroSequence = ({
     return () => clearInterval(timer);
   }, [phase]);
 
-  // Auto-advance briefing phase
-  useEffect(() => {
-    if (phase !== "briefing") return;
-    const timer = setTimeout(() => {
-      setPhase("exit");
-      setTimeout(onComplete, 600);
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, [phase, onComplete]);
+  // Briefing phase requires manual tap to continue
 
   const handleTap = () => {
     if (phase === "greeting") {
