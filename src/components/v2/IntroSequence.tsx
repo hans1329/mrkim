@@ -178,14 +178,17 @@ export const IntroSequence = ({
                   {timeGreeting}
                 </p>
                 <motion.div
-                  className="mx-auto mt-4 h-[2px] rounded-full"
-                  style={{
-                    background: "linear-gradient(90deg, #007AFF, #5856D6, #AF52DE, #FF2D55)",
-                  }}
-                  initial={{ width: 0 }}
-                  animate={{ width: 120 }}
-                  transition={{ duration: 1.2, ease: "easeOut" }}
-                />
+                  className="mx-auto mt-4 h-[2px] rounded-full overflow-hidden"
+                  style={{ width: 120, background: "rgba(255,255,255,0.1)" }}
+                >
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${progress}%`,
+                      background: "linear-gradient(90deg, #007AFF, #5856D6, #AF52DE, #FF2D55)",
+                    }}
+                  />
+                </motion.div>
               </motion.div>
             )}
 
