@@ -231,7 +231,8 @@ export const TaxSavingCarousel = () => {
     );
   }
 
-  const activeCard = cards[current] || cards[0];
+  // activeCard offset by 1 because cards array has clone at index 0
+  const activeCard = cards[current + 1] || cards[1];
 
   return (
     <div className="relative">
