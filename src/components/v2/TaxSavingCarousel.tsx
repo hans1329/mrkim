@@ -341,8 +341,9 @@ export const TaxSavingCarousel = () => {
             />
           ))}
         </div>
-        </div>
-        </div>
+        {/* close inner bg div */}
+      </div>
+      {/* close gradient border wrapper */}
       </div>
     </div>
   );
