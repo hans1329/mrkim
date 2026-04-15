@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Receipt, Car, Coffee, Home, Wallet, TrendingUp } from "lucide-react";
+import { Receipt, Car, Coffee, Home, TrendingUp } from "lucide-react";
+import baeminLogo from "@/assets/baemin-logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -152,7 +153,7 @@ export const TaxSavingCarousel = () => {
     if (settlement) {
       list.push({
         id: "settlement-forecast",
-        icon: <Wallet className="w-5 h-5" />,
+        icon: <img src={baeminLogo} alt="배민" className="w-11 h-11 rounded-xl object-cover" />,
         title: settlement.daysLeft <= 0 ? "배민 정산 오늘 입금" : `배민 정산 D-${settlement.daysLeft}`,
         subtitle: settlement.daysLeft <= 0
           ? `오늘 입금 예정 · ${settlement.nextCount}건`
@@ -286,15 +287,19 @@ export const TaxSavingCarousel = () => {
               >
                 {/* Icon + Title + Badge */}
                 <div className="flex items-center gap-3 mb-3">
-                  <div
-                    className="w-11 h-11 rounded-2xl flex items-center justify-center"
-                    style={{
-                      background: card.gradient,
-                      boxShadow: `0 4px 20px ${card.glowColor}`,
-                    }}
-                  >
-                    <span style={{ color: "rgba(255,255,255,0.95)" }}>{card.icon}</span>
-                  </div>
+                  {card.id === "settlement-forecast" ? (
+                    <span>{card.icon}</span>
+                  ) : (
+                    <div
+                      className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                      style={{
+                        background: card.gradient,
+                        boxShadow: `0 4px 20px ${card.glowColor}`,
+                      }}
+                    >
+                      <span style={{ color: "rgba(255,255,255,0.95)" }}>{card.icon}</span>
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-[15px] font-bold truncate" style={{ color: "rgba(255,255,255,0.95)" }}>
                       {card.title}
