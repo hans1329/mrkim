@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Receipt, Car, Coffee, Home, Wallet } from "lucide-react";
+import { Receipt, Car, Coffee, Home, Wallet, TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +15,7 @@ interface CarouselCard {
   badgeBg?: string;
   description: string;
   gradient: string;
+  glowColor: string;
   action?: string;
 }
 
@@ -28,7 +29,6 @@ function useSettlementForecast() {
 
       const today = new Date();
       const todayStr = today.toISOString().split("T")[0].replace(/-/g, "");
-      // 향후 14일 내 정산 예정 주문 조회
       const futureStr = new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0].replace(/-/g, "");
 
       const { data: orders } = await supabase
@@ -41,7 +41,6 @@ function useSettlementForecast() {
 
       if (!orders || orders.length === 0) return null;
 
-      // 정산일별 그룹핑
       const byDate = new Map<string, { total: number; count: number; platform: string }>();
       for (const o of orders) {
         if (!o.settle_dt) continue;
@@ -51,19 +50,16 @@ function useSettlementForecast() {
         byDate.set(o.settle_dt, existing);
       }
 
-      // 가장 가까운 정산일
       const sorted = Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]));
       if (sorted.length === 0) return null;
 
       const [nextDate, nextInfo] = sorted[0];
-      // YYYYMMDD -> Date
       const y = nextDate.slice(0, 4);
       const m = nextDate.slice(4, 6);
       const d = nextDate.slice(6, 8);
       const settleDate = new Date(`${y}-${m}-${d}`);
       const daysLeft = Math.ceil((settleDate.getTime() - today.getTime()) / 86400000);
 
-      // 전체 미정산 합계
       const totalPending = sorted.reduce((sum, [, info]) => sum + info.total, 0);
 
       return {
@@ -96,6 +92,7 @@ const STATIC_TIPS: CarouselCard[] = [
     badge: "최대 47만원",
     description: "AI가 미분류 거래를 분석해 경비로 잡을 수 있는 항목을 찾아드려요",
     gradient: "linear-gradient(135deg, #007AFF 0%, #5856D6 100%)",
+    glowColor: "rgba(0,122,255,0.4)",
     action: "경비 분류하기",
   },
   {
@@ -106,6 +103,7 @@ const STATIC_TIPS: CarouselCard[] = [
     badge: "연 최대 1,500만원",
     description: "주유비·보험·수리비를 업무사용 비율로 경비 처리하면 절세할 수 있어요",
     gradient: "linear-gradient(135deg, #30D158 0%, #34C759 100%)",
+    glowColor: "rgba(48,209,88,0.4)",
     action: "차량 경비 등록",
   },
   {
@@ -116,6 +114,7 @@ const STATIC_TIPS: CarouselCard[] = [
     badge: "월 20만원 비과세",
     description: "직원 식대는 월 20만원까지 비과세, 접대비와 분리하면 더 절세돼요",
     gradient: "linear-gradient(135deg, #FF9500 0%, #FF6B00 100%)",
+    glowColor: "rgba(255,149,0,0.4)",
     action: "복리후생 설정",
   },
   {
@@ -126,16 +125,18 @@ const STATIC_TIPS: CarouselCard[] = [
     badge: "부가세 환급 가능",
     description: "사업장 임차료의 부가세는 매입세액 공제가 가능해요. 세금계산서를 꼭 받으세요",
     gradient: "linear-gradient(135deg, #AF52DE 0%, #5856D6 100%)",
+    glowColor: "rgba(175,82,222,0.4)",
     action: "세금계산서 확인",
   },
   {
     id: "quarterly-vat",
-    icon: <Sparkles className="w-5 h-5" />,
+    icon: <TrendingUp className="w-5 h-5" />,
     title: "부가세 예정신고",
     subtitle: "분기별 환급 전략",
     badge: "현금흐름 개선",
     description: "매입이 많은 달에 예정신고하면 환급금을 미리 받아 현금흐름을 개선할 수 있어요",
     gradient: "linear-gradient(135deg, #FF375F 0%, #FF453A 100%)",
+    glowColor: "rgba(255,55,95,0.4)",
     action: "신고 일정 보기",
   },
 ];
@@ -145,7 +146,6 @@ export const TaxSavingCarousel = () => {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
 
-  // 동적 정산 카드를 맨 앞에 삽입
   const cards: CarouselCard[] = useMemo(() => {
     const list: CarouselCard[] = [];
 
@@ -159,9 +159,10 @@ export const TaxSavingCarousel = () => {
         badgeColor: "#007AFF",
         badgeBg: "rgba(0,122,255,0.15)",
         description: settlement.totalDates > 1
-          ? `총 ${settlement.totalDates}회, ${formatAmount(settlement.totalPending)} 정산 대기 중이에요. 현금흐름 계획에 참고하세요`
+          ? `총 ${settlement.totalDates}회, ${formatAmount(settlement.totalPending)} 정산 대기 중이에요`
           : `정산금이 곧 입금돼요. 현금흐름 계획에 참고하세요`,
         gradient: "linear-gradient(135deg, #2AC1BC 0%, #007AFF 100%)",
+        glowColor: "rgba(42,193,188,0.4)",
         action: "정산 내역 보기",
       });
     }
@@ -179,8 +180,6 @@ export const TaxSavingCarousel = () => {
     });
   }, [cards.length]);
 
-
-  // Clamp current if cards length changed
   useEffect(() => {
     if (current >= cards.length) setCurrent(0);
   }, [cards.length, current]);
@@ -188,14 +187,14 @@ export const TaxSavingCarousel = () => {
   if (isLoading) {
     return (
       <div className="rounded-3xl overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="px-5 pt-4 pb-2">
+        <div className="px-5 pt-5 pb-3">
           <Skeleton className="h-4 w-20 bg-white/5" />
         </div>
-        <div className="px-5 pb-4">
-          <Skeleton className="h-10 w-10 rounded-2xl bg-white/5 mb-3" />
-          <Skeleton className="h-4 w-3/4 bg-white/5 mb-2" />
+        <div className="px-5 pb-5">
+          <Skeleton className="h-12 w-12 rounded-2xl bg-white/5 mb-3" />
+          <Skeleton className="h-5 w-3/4 bg-white/5 mb-2" />
           <Skeleton className="h-3 w-full bg-white/5 mb-2" />
-          <Skeleton className="h-10 w-full rounded-xl bg-white/5" />
+          <Skeleton className="h-11 w-full rounded-xl bg-white/5" />
         </div>
       </div>
     );
@@ -204,121 +203,140 @@ export const TaxSavingCarousel = () => {
   const card = cards[current];
 
   const variants = {
-    enter: (d: number) => ({ x: d > 0 ? 200 : -200, opacity: 0, scale: 0.95 }),
+    enter: (d: number) => ({ x: d > 0 ? 220 : -220, opacity: 0, scale: 0.92 }),
     center: { x: 0, opacity: 1, scale: 1 },
-    exit: (d: number) => ({ x: d > 0 ? -200 : 200, opacity: 0, scale: 0.95 }),
+    exit: (d: number) => ({ x: d > 0 ? -220 : 220, opacity: 0, scale: 0.92 }),
   };
 
   return (
-    <div
-      className="rounded-3xl overflow-hidden relative"
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        backdropFilter: "blur(20px)",
-      }}
-    >
-      {/* Header */}
-      <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>
+    <div className="relative">
+      {/* Ambient glow behind card */}
+      <motion.div
+        key={`glow-${card.id}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="absolute -inset-2 rounded-[28px] blur-2xl pointer-events-none"
+        style={{ background: card.glowColor, opacity: 0.25 }}
+      />
+
+      <div
+        className="rounded-3xl overflow-hidden relative"
+        style={{
+          background: "rgba(255,255,255,0.05)",
+          border: "1px solid rgba(255,255,255,0.1)",
+        }}
+      >
+        {/* Gradient accent line at top */}
+        <div
+          className="h-[2px] w-full"
+          style={{ background: card.gradient }}
+        />
+
+        {/* Header */}
+        <div className="px-5 pt-4 pb-2 flex items-center justify-between">
+          <span className="text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.6)" }}>
             {settlement && current === 0 ? "정산 알림" : "절세 포인트"}
           </span>
+          <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.25)" }}>
+            {current + 1} / {cards.length}
+          </span>
         </div>
-        <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.3)" }}>
-          {current + 1} / {cards.length}
-        </span>
-      </div>
 
-      {/* Carousel Content - Manual Swipe */}
-      <div className="relative h-[180px] overflow-hidden touch-pan-y">
-        <AnimatePresence custom={direction} mode="popLayout">
-          <motion.div
-            key={card.id}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={(_, info) => {
-              if (info.offset.x < -80) paginate(1);
-              else if (info.offset.x > 80) paginate(-1);
-            }}
-            className="absolute inset-0 px-5 pb-4 cursor-grab active:cursor-grabbing"
-          >
-            {/* Icon + Badge */}
-            <div className="flex items-center gap-3 mb-3">
-              <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center"
-                style={{ background: card.gradient }}
-              >
-                <span style={{ color: "rgba(255,255,255,0.95)" }}>{card.icon}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[15px] font-bold truncate" style={{ color: "rgba(255,255,255,0.95)" }}>
-                  {card.title}
-                </p>
-                <p className="text-[12px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
-                  {card.subtitle}
-                </p>
-              </div>
-              <div
-                className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold"
-                style={{
-                  background: card.badgeBg || "rgba(48,209,88,0.15)",
-                  color: card.badgeColor || "#30D158",
-                }}
-              >
-                {card.badge}
-              </div>
-            </div>
-
-            {/* Description */}
-            <p
-              className="text-[13px] leading-relaxed mb-3"
-              style={{ color: "rgba(255,255,255,0.5)" }}
+        {/* Carousel Content */}
+        <div className="relative h-[190px] overflow-hidden touch-pan-y">
+          <AnimatePresence custom={direction} mode="popLayout">
+            <motion.div
+              key={card.id}
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: "spring", stiffness: 280, damping: 28 }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.18}
+              onDragEnd={(_, info) => {
+                if (info.offset.x < -80) paginate(1);
+                else if (info.offset.x > 80) paginate(-1);
+              }}
+              className="absolute inset-0 px-5 pb-4 cursor-grab active:cursor-grabbing"
             >
-              {card.description}
-            </p>
+              {/* Icon + Title + Badge */}
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg"
+                  style={{
+                    background: card.gradient,
+                    boxShadow: `0 4px 20px ${card.glowColor}`,
+                  }}
+                >
+                  <span style={{ color: "rgba(255,255,255,0.95)" }}>{card.icon}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-bold truncate" style={{ color: "rgba(255,255,255,0.95)" }}>
+                    {card.title}
+                  </p>
+                  <p className="text-[12px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
+                    {card.subtitle}
+                  </p>
+                </div>
+                <div
+                  className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight"
+                  style={{
+                    background: card.badgeBg || "rgba(48,209,88,0.12)",
+                    color: card.badgeColor || "#30D158",
+                    border: `1px solid ${card.badgeColor || "rgba(48,209,88,0.2)"}`,
+                  }}
+                >
+                  {card.badge}
+                </div>
+              </div>
 
-            {/* Action */}
-            {card.action && (
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                className="w-full py-2.5 rounded-xl text-[13px] font-semibold"
-                style={{
-                  background: "rgba(255,255,255,0.08)",
-                  color: "rgba(255,255,255,0.8)",
-                }}
+              {/* Description */}
+              <p
+                className="text-[13px] leading-[1.6] mb-4"
+                style={{ color: "rgba(255,255,255,0.5)" }}
               >
-                {card.action}
-              </motion.button>
-            )}
-          </motion.div>
-        </AnimatePresence>
+                {card.description}
+              </p>
 
-      </div>
+              {/* Action Button */}
+              {card.action && (
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full py-3 rounded-xl text-[13px] font-semibold transition-colors"
+                  style={{
+                    background: "rgba(255,255,255,0.07)",
+                    color: "rgba(255,255,255,0.85)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}
+                >
+                  {card.action}
+                </motion.button>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
-      {/* Dots */}
-      <div className="flex items-center justify-center gap-1.5 pb-4">
-        {cards.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
-            className="rounded-full transition-all duration-300"
-            style={{
-              width: i === current ? 16 : 5,
-              height: 5,
-              background: i === current
-                ? (i === 0 && settlement ? "#007AFF" : "#FFD60A")
-                : "rgba(255,255,255,0.15)",
-            }}
-          />
-        ))}
+        {/* Dot indicators */}
+        <div className="flex items-center justify-center gap-1.5 pb-4">
+          {cards.map((c, i) => (
+            <button
+              key={c.id}
+              onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
+              className="rounded-full transition-all duration-300"
+              style={{
+                width: i === current ? 18 : 5,
+                height: 5,
+                background: i === current
+                  ? "rgba(255,255,255,0.7)"
+                  : "rgba(255,255,255,0.12)",
+              }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
