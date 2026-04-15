@@ -153,8 +153,10 @@ export const TaxSavingCarousel = () => {
       list.push({
         id: "settlement-forecast",
         icon: <Wallet className="w-5 h-5" />,
-        title: `배민 정산 D-${settlement.daysLeft}`,
-        subtitle: `${settlement.nextDate} 입금 예정 · ${settlement.nextCount}건`,
+        title: settlement.daysLeft <= 0 ? "배민 정산 오늘 입금" : `배민 정산 D-${settlement.daysLeft}`,
+        subtitle: settlement.daysLeft <= 0
+          ? `오늘 입금 예정 · ${settlement.nextCount}건`
+          : `${settlement.nextDate} 입금 예정 · ${settlement.nextCount}건`,
         badge: formatAmount(settlement.nextAmount),
         badgeColor: "#007AFF",
         badgeBg: "rgba(0,122,255,0.15)",
