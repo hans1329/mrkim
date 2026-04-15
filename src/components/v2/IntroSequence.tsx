@@ -81,7 +81,35 @@ export const IntroSequence = ({
   userName = "사장님",
 }: IntroSequenceProps) => {
   const [phase, setPhase] = useState<"greeting" | "briefing" | "exit">("greeting");
+  const [progress, setProgress] = useState(0);
   const timeGreeting = useMemo(() => getTimeGreeting(), []);
+
+  // Auto-advance greeting phase with progress bar
+  useEffect(() => {
+    if (phase !== "greeting") return;
+    const duration = 2500; // ms
+    const interval = 30;
+    let elapsed = 0;
+    const timer = setInterval(() => {
+      elapsed += interval;
+      setProgress(Math.min((elapsed / duration) * 100, 100));
+      if (elapsed >= duration) {
+        clearInterval(timer);
+        setPhase("briefing");
+      }
+    }, interval);
+    return () => clearInterval(timer);
+  }, [phase]);
+
+  // Auto-advance briefing phase
+  useEffect(() => {
+    if (phase !== "briefing") return;
+    const timer = setTimeout(() => {
+      setPhase("exit");
+      setTimeout(onComplete, 600);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [phase, onComplete]);
 
   const handleTap = () => {
     if (phase === "greeting") {
