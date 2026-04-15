@@ -179,11 +179,6 @@ export const TaxSavingCarousel = () => {
     });
   }, [cards.length]);
 
-  // Auto-advance every 5s
-  useEffect(() => {
-    const timer = setInterval(() => paginate(1), 5000);
-    return () => clearInterval(timer);
-  }, [paginate]);
 
   // Clamp current if cards length changed
   useEffect(() => {
@@ -226,7 +221,6 @@ export const TaxSavingCarousel = () => {
       {/* Header */}
       <div className="px-5 pt-4 pb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4" style={{ color: "#FFD60A" }} />
           <span className="text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>
             {settlement && current === 0 ? "정산 알림" : "절세 포인트"}
           </span>
@@ -236,8 +230,8 @@ export const TaxSavingCarousel = () => {
         </span>
       </div>
 
-      {/* Carousel Content */}
-      <div className="relative h-[180px] overflow-hidden">
+      {/* Carousel Content - Manual Swipe */}
+      <div className="relative h-[180px] overflow-hidden touch-pan-y">
         <AnimatePresence custom={direction} mode="popLayout">
           <motion.div
             key={card.id}
@@ -247,7 +241,14 @@ export const TaxSavingCarousel = () => {
             animate="center"
             exit="exit"
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="absolute inset-0 px-5 pb-4"
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(_, info) => {
+              if (info.offset.x < -80) paginate(1);
+              else if (info.offset.x > 80) paginate(-1);
+            }}
+            className="absolute inset-0 px-5 pb-4 cursor-grab active:cursor-grabbing"
           >
             {/* Icon + Badge */}
             <div className="flex items-center gap-3 mb-3">
