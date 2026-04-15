@@ -167,7 +167,15 @@ export const TaxSavingCarousel = () => {
       });
     }
 
-    return [...list, ...STATIC_TIPS];
+    // For infinite loop, we duplicate the cards array
+    const allCards = [...list, ...STATIC_TIPS];
+    // Return with clones: [last item, ...all, first item]
+    // This allows seamless infinite scrolling
+    return [
+      allCards[allCards.length - 1],
+      ...allCards,
+      allCards[0],
+    ];
   }, [settlement]);
 
   // Track current slide via scroll position with infinite loop detection
@@ -191,11 +199,20 @@ export const TaxSavingCarousel = () => {
   const scrollTo = useCallback((idx: number) => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTo({ left: idx * el.clientWidth, behavior: "smooth" });
+    // Add 1 to offset because cards array has clone at index 0
+    el.scrollTo({ left: (idx + 1) * el.clientWidth, behavior: "smooth" });
   }, []);
 
+  // Set initial scroll position (skip the clone at index 0)
   useEffect(() => {
-    if (current >= cards.length) setCurrent(0);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ left: scrollRef.current.clientWidth, behavior: "auto" });
+    }
+  }, []);
+
+  // Adjust current index when cards change
+  useEffect(() => {
+    if (current >= cards.length - 1) setCurrent(0);
   }, [cards.length, current]);
 
   if (isLoading) {
@@ -320,20 +337,25 @@ export const TaxSavingCarousel = () => {
 
           {/* Dot indicators */}
           <div className="relative flex items-center justify-center gap-1.5 pb-4">
-            {cards.map((c, i) => (
-              <button
-                key={c.id}
-                onClick={() => scrollTo(i)}
-                className="rounded-full transition-all duration-300"
-                style={{
-                  width: i === current ? 18 : 5,
-                  height: 5,
-                  background: i === current
-                    ? "rgba(255,255,255,0.7)"
-                    : "rgba(255,255,255,0.12)",
-                }}
-              />
-            ))}
+            {cards.map((c, i) => {
+              // Skip rendering clones in dot indicators
+              if (i === 0 || i === cards.length - 1) return null;
+              const originalIdx = i - 1;
+              return (
+                <button
+                  key={`${c.id}-${i}`}
+                  onClick={() => scrollTo(originalIdx)}
+                  className="rounded-full transition-all duration-300"
+                  style={{
+                    width: originalIdx === current ? 18 : 5,
+                    height: 5,
+                    background: originalIdx === current
+                      ? "rgba(255,255,255,0.7)"
+                      : "rgba(255,255,255,0.12)",
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
