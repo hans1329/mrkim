@@ -276,9 +276,9 @@ export const TaxSavingCarousel = () => {
               WebkitOverflowScrolling: "touch",
             }}
           >
-            {cards.map((card) => (
+            {cards.map((card, idx) => (
               <div
-                key={card.id}
+                key={`${card.id}-${idx}`}
                 className="w-full shrink-0 px-5 pb-4"
                 style={{ scrollSnapAlign: "start" }}
               >
