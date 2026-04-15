@@ -153,7 +153,7 @@ export const TaxSavingCarousel = () => {
     if (settlement) {
       list.push({
         id: "settlement-forecast",
-        icon: <Wallet className="w-5 h-5" />,
+        icon: <img src={baeminLogo} alt="배민" className="w-11 h-11 rounded-xl object-cover" />,
         title: settlement.daysLeft <= 0 ? "배민 정산 오늘 입금" : `배민 정산 D-${settlement.daysLeft}`,
         subtitle: settlement.daysLeft <= 0
           ? `오늘 입금 예정 · ${settlement.nextCount}건`
