@@ -409,10 +409,10 @@ const CardDetailModal = ({ card, onClose }: { card: FeedCard | null; onClose: ()
               )}
 
               {/* detail text */}
-              <p className="text-[14px] leading-relaxed mt-4"
+              <div className="text-[14px] leading-relaxed mt-4 whitespace-pre-line"
                 style={{ color: "rgba(255,255,255,0.6)" }}>
                 {card.detail || card.body || "상세 정보가 없습니다."}
-              </p>
+              </div>
             </div>
 
             {/* action button */}
