@@ -136,13 +136,19 @@ async function fetchRecentTransactions(): Promise<{ data: Transaction[]; hasReal
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
+  // Fetch last 14 days of transactions for richer history cards
+  const twoWeeksAgo = new Date();
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+  const startDate = twoWeeksAgo.toISOString().split("T")[0];
+
   const { data, error } = await supabase
     .from("transactions")
     .select("id, description, amount, type, category, source_type, transaction_date, currency")
     .eq("user_id", user.id)
+    .gte("transaction_date", startDate)
     .order("transaction_date", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(5);
+    .limit(200);
 
   if (error) throw error;
 
@@ -158,7 +164,6 @@ export function useRecentTransactions(enabled = true) {
     queryKey: ["dashboard-recent-transactions"],
     queryFn: fetchRecentTransactions,
     enabled,
-    // 기본 캐싱 설정 사용
   });
 }
 
