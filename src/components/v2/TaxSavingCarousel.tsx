@@ -210,20 +210,13 @@ export const TaxSavingCarousel = () => {
 
   return (
     <div className="relative">
-      {/* Ambient glow behind card */}
-      <motion.div
-        key={`glow-${card.id}`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="absolute -inset-2 rounded-[28px] blur-2xl pointer-events-none"
-        style={{ background: card.glowColor, opacity: 0.25 }}
-      />
-
-      {/* Gradient border wrapper */}
+      {/* Gradient border wrapper with glow via box-shadow */}
       <div
         className="rounded-3xl p-[1px] relative"
-        style={{ background: card.gradient }}
+        style={{
+          background: card.gradient,
+          boxShadow: `0 0 30px ${card.glowColor}, 0 0 60px ${card.glowColor}`,
+        }}
       >
         <div
           className="rounded-3xl overflow-hidden relative"
@@ -247,7 +240,7 @@ export const TaxSavingCarousel = () => {
 
           {/* Carousel Content */}
           <div className="relative h-[190px] overflow-hidden" style={{ touchAction: "pan-y" }}>
-            <AnimatePresence custom={direction} mode="popLayout">
+            <AnimatePresence custom={direction} mode="wait">
               <motion.div
                 key={card.id}
                 custom={direction}
@@ -255,18 +248,22 @@ export const TaxSavingCarousel = () => {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ type: "spring", stiffness: 280, damping: 28 }}
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.18}
-                dragDirectionLock
-                onDragEnd={(_, info) => {
-                  if (info.offset.x < -60) paginate(1);
-                  else if (info.offset.x > 60) paginate(-1);
-                }}
-                className="absolute inset-0 px-5 pb-4 cursor-grab active:cursor-grabbing"
-                style={{ touchAction: "pan-y" }}
+                transition={{ type: "tween", duration: 0.25, ease: "easeInOut" }}
+                className="absolute inset-0 px-5 pb-4"
               >
+                {/* Swipe capture layer */}
+                <motion.div
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.15}
+                  dragDirectionLock
+                  onDragEnd={(_, info) => {
+                    if (info.offset.x < -50) paginate(1);
+                    else if (info.offset.x > 50) paginate(-1);
+                  }}
+                  className="h-full cursor-grab active:cursor-grabbing"
+                  style={{ touchAction: "pan-y" }}
+                >
               {/* Icon + Title + Badge */}
               <div className="flex items-center gap-3 mb-3">
                 <div
