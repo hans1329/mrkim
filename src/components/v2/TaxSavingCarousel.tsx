@@ -317,7 +317,8 @@ export const TaxSavingCarousel = () => {
                   {card.action}
                 </motion.button>
               )}
-            </motion.div>
+                </motion.div>
+              </motion.div>
           </AnimatePresence>
         </div>
 
