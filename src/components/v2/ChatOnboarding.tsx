@@ -358,6 +358,65 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = 
     advanceRef.current = advance;
   }, [advance]);
 
+  // Badge click → ask via chat to redo or delete
+  const handleBadgeClick = useCallback((stepId: string) => {
+    const label = STEP_LABELS[stepId] || stepId;
+    const value = answers[stepId];
+    setBadgeMode({ stepId });
+    setShowInput(false);
+    setMessages((prev) => [
+      ...prev,
+      { from: "bot", text: `"${label}: ${value}" 항목을 어떻게 할까요?` },
+    ]);
+  }, [answers]);
+
+  // Handle badge action choice
+  const handleBadgeAction = useCallback((action: "redo" | "delete") => {
+    if (!badgeMode) return;
+    const { stepId } = badgeMode;
+    const label = STEP_LABELS[stepId] || stepId;
+
+    if (action === "delete") {
+      const newAnswers = { ...answers };
+      delete newAnswers[stepId];
+      setAnswers(newAnswers);
+      localStorage.setItem("v2_onboarding_data", JSON.stringify(newAnswers));
+      setMessages((prev) => [
+        ...prev,
+        { from: "user", text: "삭제할게요" },
+        { from: "bot", text: `${label} 정보가 삭제되었어요.` },
+      ]);
+      setBadgeMode(null);
+      // Resume normal flow after a beat
+      setTimeout(() => {
+        const stepIdx = steps.findIndex((s) => s.id === stepId);
+        if (stepIdx >= 0) {
+          setCurrentStep(stepIdx);
+          currentStepRef.current = stepIdx;
+          setMessages((prev) => [...prev, { from: "bot", text: steps[stepIdx].question }]);
+          setTimeout(() => setShowInput(true), 400);
+          setTimeout(() => setShowTextFallback(true), 2000);
+        }
+      }, 800);
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        { from: "user", text: "다시 입력할게요" },
+      ]);
+      setBadgeMode(null);
+      const stepIdx = steps.findIndex((s) => s.id === stepId);
+      if (stepIdx >= 0) {
+        setTimeout(() => {
+          setCurrentStep(stepIdx);
+          currentStepRef.current = stepIdx;
+          setMessages((prev) => [...prev, { from: "bot", text: steps[stepIdx].question }]);
+          setTimeout(() => setShowInput(true), 400);
+          setTimeout(() => setShowTextFallback(true), 2000);
+        }, 500);
+      }
+    }
+  }, [badgeMode, answers]);
+
   const SecretaryBubble = ({ text }: { text: string }) => (
     <div className="flex items-start gap-2.5 mb-3">
       <YarnBallAvatar />
