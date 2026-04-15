@@ -170,13 +170,23 @@ export const TaxSavingCarousel = () => {
     return [...list, ...STATIC_TIPS];
   }, [settlement]);
 
-  // Track current slide via scroll position
+  // Track current slide via scroll position with infinite loop detection
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const idx = Math.round(el.scrollLeft / el.clientWidth);
-    setCurrent(idx);
-  }, []);
+    
+    // Handle infinite loop: reset position without animation when at boundaries
+    if (idx >= cards.length) {
+      el.scrollTo({ left: el.clientWidth, behavior: "auto" });
+      setCurrent(0);
+    } else if (idx < 0) {
+      el.scrollTo({ left: cards.length * el.clientWidth, behavior: "auto" });
+      setCurrent(cards.length - 1);
+    } else {
+      setCurrent(idx);
+    }
+  }, [cards.length]);
 
   const scrollTo = useCallback((idx: number) => {
     const el = scrollRef.current;
