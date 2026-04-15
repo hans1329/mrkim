@@ -225,31 +225,45 @@ export function useFeedCards() {
     // Sort today cards by priority
     today.sort((a, b) => a.priority - b.priority);
 
-    // === HISTORY CARDS (from recent transactions) ===
+    // === HISTORY CARDS (from recent transactions — last 14 days) ===
     if (recentTx?.hasRealData && recentTx.data.length > 0) {
-      // Group by date, create summary cards for past dates
-      const byDate = new Map<string, { income: number; expense: number; count: number }>();
+      // Group by date
+      const byDate = new Map<string, { income: number; expense: number; count: number; topIncome: string[]; topExpense: string[] }>();
       for (const tx of recentTx.data) {
         if (tx.transaction_date === td) continue; // skip today
-        const existing = byDate.get(tx.transaction_date) || { income: 0, expense: 0, count: 0 };
-        if (tx.type === "income") existing.income += Number(tx.amount);
-        else existing.expense += Number(tx.amount);
+        const existing = byDate.get(tx.transaction_date) || { income: 0, expense: 0, count: 0, topIncome: [], topExpense: [] };
+        if (tx.type === "income" || tx.type === "transfer_in") {
+          existing.income += Number(tx.amount);
+          if (tx.description && existing.topIncome.length < 3 && !existing.topIncome.includes(tx.description)) {
+            existing.topIncome.push(tx.description);
+          }
+        } else {
+          existing.expense += Number(tx.amount);
+          if (tx.description && existing.topExpense.length < 3 && !existing.topExpense.includes(tx.description)) {
+            existing.topExpense.push(tx.description);
+          }
+        }
         existing.count++;
         byDate.set(tx.transaction_date, existing);
       }
 
       const sortedDates = Array.from(byDate.entries()).sort((a, b) => b[0].localeCompare(a[0]));
-      for (const [date, summary] of sortedDates) {
+      // Show up to 7 days of history
+      for (const [date, summary] of sortedDates.slice(0, 7)) {
         const d = new Date(date);
         const label = `${d.getMonth() + 1}/${d.getDate()}`;
         if (summary.income > 0) {
           const fmt = formatMoney(summary.income);
+          const merchants = summary.topIncome.length > 0
+            ? summary.topIncome.join(", ") + (summary.count > summary.topIncome.length ? ` 외` : "")
+            : undefined;
           history.push({
             id: `hist-income-${date}`,
             type: "standard",
             title: `${label} 매출`,
             bigNumber: fmt.number,
             unit: fmt.unit,
+            body: merchants,
             time: formatRelativeDate(date),
             date,
             priority: 1,
@@ -257,12 +271,16 @@ export function useFeedCards() {
         }
         if (summary.expense > 0) {
           const fmt = formatMoney(summary.expense);
+          const merchants = summary.topExpense.length > 0
+            ? summary.topExpense.join(", ") + (summary.count > summary.topExpense.length ? ` 외` : "")
+            : undefined;
           history.push({
             id: `hist-expense-${date}`,
             type: "standard",
             title: `${label} 지출`,
             bigNumber: fmt.number,
             unit: fmt.unit,
+            body: merchants,
             time: formatRelativeDate(date),
             date,
             priority: 2,
