@@ -456,6 +456,36 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = 
         </button>
       </div>
 
+      {/* Existing onboarding badges */}
+      {hasExisting && (
+        <div className="relative z-10 flex items-center gap-2 px-5 pt-3 overflow-x-auto no-scrollbar">
+          {steps.map((s) => {
+            const val = answers[s.id];
+            if (!val) return null;
+            return (
+              <motion.button
+                key={s.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleBadgeClick(s.id)}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium"
+                style={{
+                  background: badgeMode?.stepId === s.id
+                    ? "rgba(0,122,255,0.15)"
+                    : "rgba(255,255,255,0.06)",
+                  border: badgeMode?.stepId === s.id
+                    ? "1px solid rgba(0,122,255,0.3)"
+                    : "1px solid rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.7)",
+                }}
+              >
+                <span style={{ color: "rgba(255,255,255,0.4)" }}>{STEP_LABELS[s.id]}</span>
+                <span style={{ color: "rgba(255,255,255,0.9)" }}>{val.length > 8 ? val.slice(0, 8) + "…" : val}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto px-4 pt-8 pb-4 relative z-10 no-scrollbar">
         <AnimatePresence>
