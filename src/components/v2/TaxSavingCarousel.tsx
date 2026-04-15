@@ -213,7 +213,7 @@ export const TaxSavingCarousel = () => {
         className="rounded-3xl p-[1px] relative transition-shadow duration-500"
         style={{
           background: activeCard.gradient,
-          boxShadow: `0 0 30px ${activeCard.glowColor}, 0 0 60px ${activeCard.glowColor}`,
+          boxShadow: `0 0 12px ${activeCard.glowColor}`,
         }}
       >
         <div
