@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-motion";
-import { ArrowRight, Link2, ChevronRight } from "lucide-react";
+import { motion, useMotionValue, useTransform, animate, PanInfo, AnimatePresence } from "framer-motion";
+import { ArrowRight, Link2, ChevronRight, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useFeedCards, type FeedCard } from "@/hooks/useFeedCards";
 import { Skeleton } from "@/components/ui/skeleton";
