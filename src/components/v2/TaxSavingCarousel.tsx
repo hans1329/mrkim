@@ -204,29 +204,22 @@ export const TaxSavingCarousel = () => {
     );
   }
 
-  const card = cards[current];
-
-  const variants = {
-    enter: (d: number) => ({ x: d > 0 ? 220 : -220, opacity: 0, scale: 0.92 }),
-    center: { x: 0, opacity: 1, scale: 1 },
-    exit: (d: number) => ({ x: d > 0 ? -220 : 220, opacity: 0, scale: 0.92 }),
-  };
+  const activeCard = cards[current] || cards[0];
 
   return (
     <div className="relative">
-      {/* Gradient border wrapper with glow via box-shadow */}
+      {/* Gradient border + glow */}
       <div
-        className="rounded-3xl p-[1px] relative"
+        className="rounded-3xl p-[1px] relative transition-shadow duration-500"
         style={{
-          background: card.gradient,
-          boxShadow: `0 0 30px ${card.glowColor}, 0 0 60px ${card.glowColor}`,
+          background: activeCard.gradient,
+          boxShadow: `0 0 30px ${activeCard.glowColor}, 0 0 60px ${activeCard.glowColor}`,
         }}
       >
         <div
           className="rounded-3xl overflow-hidden relative"
           style={{ background: "#0A0A0F" }}
         >
-          {/* Inner subtle fill */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{ background: "rgba(255,255,255,0.04)" }}
@@ -242,110 +235,97 @@ export const TaxSavingCarousel = () => {
             </span>
           </div>
 
-          {/* Carousel Content */}
-          <div className="relative h-[190px] overflow-hidden" style={{ touchAction: "pan-y" }}>
-            <AnimatePresence custom={direction} mode="wait">
-              <motion.div
+          {/* Native scroll-snap carousel */}
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex overflow-x-auto no-scrollbar"
+            style={{
+              scrollSnapType: "x mandatory",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            {cards.map((card) => (
+              <div
                 key={card.id}
-                custom={direction}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ type: "tween", duration: 0.25, ease: "easeInOut" }}
-                className="absolute inset-0 px-5 pb-4"
+                className="w-full shrink-0 px-5 pb-4"
+                style={{ scrollSnapAlign: "start" }}
               >
-                {/* Swipe capture layer */}
-                <motion.div
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={0.15}
-                  dragDirectionLock
-                  onDragEnd={(_, info) => {
-                    if (info.offset.x < -50) paginate(1);
-                    else if (info.offset.x > 50) paginate(-1);
-                  }}
-                  className="h-full cursor-grab active:cursor-grabbing"
-                  style={{ touchAction: "pan-y" }}
-                >
-              {/* Icon + Title + Badge */}
-              <div className="flex items-center gap-3 mb-3">
-                <div
-                  className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg"
-                  style={{
-                    background: card.gradient,
-                    boxShadow: `0 4px 20px ${card.glowColor}`,
-                  }}
-                >
-                  <span style={{ color: "rgba(255,255,255,0.95)" }}>{card.icon}</span>
+                {/* Icon + Title + Badge */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                    style={{
+                      background: card.gradient,
+                      boxShadow: `0 4px 20px ${card.glowColor}`,
+                    }}
+                  >
+                    <span style={{ color: "rgba(255,255,255,0.95)" }}>{card.icon}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-bold truncate" style={{ color: "rgba(255,255,255,0.95)" }}>
+                      {card.title}
+                    </p>
+                    <p className="text-[12px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      {card.subtitle}
+                    </p>
+                  </div>
+                  <div
+                    className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight"
+                    style={{
+                      background: card.badgeBg || "rgba(48,209,88,0.12)",
+                      color: card.badgeColor || "#30D158",
+                      border: `1px solid ${card.badgeColor || "rgba(48,209,88,0.2)"}`,
+                    }}
+                  >
+                    {card.badge}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-bold truncate" style={{ color: "rgba(255,255,255,0.95)" }}>
-                    {card.title}
-                  </p>
-                  <p className="text-[12px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
-                    {card.subtitle}
-                  </p>
-                </div>
-                <div
-                  className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight"
-                  style={{
-                    background: card.badgeBg || "rgba(48,209,88,0.12)",
-                    color: card.badgeColor || "#30D158",
-                    border: `1px solid ${card.badgeColor || "rgba(48,209,88,0.2)"}`,
-                  }}
+
+                {/* Description */}
+                <p
+                  className="text-[13px] leading-[1.6] mb-4"
+                  style={{ color: "rgba(255,255,255,0.5)" }}
                 >
-                  {card.badge}
-                </div>
+                  {card.description}
+                </p>
+
+                {/* Action Button */}
+                {card.action && (
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    className="w-full py-3 rounded-xl text-[13px] font-semibold"
+                    style={{
+                      background: "rgba(255,255,255,0.07)",
+                      color: "rgba(255,255,255,0.85)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                    }}
+                  >
+                    {card.action}
+                  </motion.button>
+                )}
               </div>
+            ))}
+          </div>
 
-              {/* Description */}
-              <p
-                className="text-[13px] leading-[1.6] mb-4"
-                style={{ color: "rgba(255,255,255,0.5)" }}
-              >
-                {card.description}
-              </p>
-
-              {/* Action Button */}
-              {card.action && (
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  className="w-full py-3 rounded-xl text-[13px] font-semibold transition-colors"
-                  style={{
-                    background: "rgba(255,255,255,0.07)",
-                    color: "rgba(255,255,255,0.85)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                  }}
-                >
-                  {card.action}
-                </motion.button>
-              )}
-                </motion.div>
-              </motion.div>
-          </AnimatePresence>
+          {/* Dot indicators */}
+          <div className="relative flex items-center justify-center gap-1.5 pb-4">
+            {cards.map((c, i) => (
+              <button
+                key={c.id}
+                onClick={() => scrollTo(i)}
+                className="rounded-full transition-all duration-300"
+                style={{
+                  width: i === current ? 18 : 5,
+                  height: 5,
+                  background: i === current
+                    ? "rgba(255,255,255,0.7)"
+                    : "rgba(255,255,255,0.12)",
+                }}
+              />
+            ))}
+          </div>
         </div>
-
-        {/* Dot indicators */}
-        <div className="flex items-center justify-center gap-1.5 pb-4">
-          {cards.map((c, i) => (
-            <button
-              key={c.id}
-              onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
-              className="rounded-full transition-all duration-300"
-              style={{
-                width: i === current ? 18 : 5,
-                height: 5,
-                background: i === current
-                  ? "rgba(255,255,255,0.7)"
-                  : "rgba(255,255,255,0.12)",
-              }}
-            />
-          ))}
-        </div>
-        {/* close inner bg div */}
-      </div>
-      {/* close gradient border wrapper */}
       </div>
     </div>
   );
