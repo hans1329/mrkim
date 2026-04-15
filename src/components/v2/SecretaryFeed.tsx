@@ -153,7 +153,7 @@ const EmptyFeed = () => {
       </p>
       <motion.button
         whileTap={{ scale: 0.96 }}
-        onClick={openDrawer}
+        onClick={() => openDrawer()}
         className="flex items-center gap-2 px-6 py-3 rounded-2xl text-[14px] font-semibold"
         style={{
           background: "linear-gradient(135deg, rgba(0,122,255,0.15) 0%, rgba(88,86,214,0.1) 100%)",
