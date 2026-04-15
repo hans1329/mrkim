@@ -66,69 +66,40 @@ export function useFeedCards() {
 
     // === TODAY CARDS ===
 
-    // 1. Hero: 어제 매출 (or 오늘 매출)
+    // 1. Hero: 오늘 매출 (항상 표시, 0원이어도)
     if (stats) {
       const income = stats.todayIncome;
-      if (income > 0) {
-        const fmt = formatMoney(income);
-        const monthFmt = formatMoney(stats.monthlyIncome);
-        today.push({
-          id: "today-income",
-          type: "hero",
-          title: "오늘 매출",
-          bigNumber: fmt.number,
-          unit: fmt.unit,
-          body: `이번 달 누적 ${monthFmt.number}${monthFmt.unit}`,
-          detail: `오늘 총 매출은 ${fmt.number}${fmt.unit}이며, 이번 달 누적 매출은 ${monthFmt.number}${monthFmt.unit}입니다. 매출 추이를 확인하고 전월 대비 성과를 점검해보세요.`,
-          action: "상세 보기",
-          actionRoute: "/transactions",
-          time: "실시간",
-          date: td,
-          gradient: "linear-gradient(135deg, #007AFF 0%, #5856D6 100%)",
-          priority: 1,
-        });
-      } else {
-        // 매출이 아직 없으면 이번 달 누적 표시
-        if (stats.monthlyIncome > 0) {
-          const fmt = formatMoney(stats.monthlyIncome);
-          today.push({
-            id: "month-income",
-            type: "hero",
-            title: "이번 달 매출",
-            bigNumber: fmt.number,
-            unit: fmt.unit,
-            detail: `이번 달 현재까지 누적 매출은 ${fmt.number}${fmt.unit}입니다. 아직 오늘 매출이 발생하지 않았습니다.`,
-            action: "상세 보기",
-            actionRoute: "/transactions",
-            time: "오늘 기준",
-            date: td,
-            gradient: "linear-gradient(135deg, #007AFF 0%, #5856D6 100%)",
-            priority: 1,
-          });
+      const fmt = formatMoney(income);
+      const monthFmt = formatMoney(stats.monthlyIncome);
+
+      // 전월 대비 증감률 계산 (통합)
+      let changeInfo: { value: string; positive: boolean } | undefined;
+      let comparisonBody = `이번 달 누적 ${monthFmt.number}${monthFmt.unit}`;
+      if (actionData && actionData.lastMonthIncome > 0) {
+        const diff = actionData.thisMonthIncome - actionData.lastMonthIncome;
+        const pct = Math.round((diff / actionData.lastMonthIncome) * 100);
+        if (Math.abs(pct) >= 5) {
+          changeInfo = { value: `${pct > 0 ? "+" : ""}${pct}%`, positive: pct > 0 };
+          comparisonBody = `이번 달 누적 ${monthFmt.number}${monthFmt.unit} · 전월 대비 ${pct > 0 ? "증가" : "감소"}`;
         }
       }
-    }
 
-    // 2. 매출 비교 (이번 달 vs 지난 달)
-    if (actionData && actionData.lastMonthIncome > 0) {
-      const diff = actionData.thisMonthIncome - actionData.lastMonthIncome;
-      const pct = Math.round((diff / actionData.lastMonthIncome) * 100);
-      if (Math.abs(pct) >= 5) {
-        const fmt = formatMoney(actionData.thisMonthIncome);
-        today.push({
-          id: "month-comparison",
-          type: "standard",
-          title: "이번 달 매출 추이",
-          bigNumber: fmt.number,
-          unit: fmt.unit,
-          change: { value: `${pct > 0 ? "+" : ""}${pct}%`, positive: pct > 0 },
-          body: `지난 달 동기간 대비 ${pct > 0 ? "증가" : "감소"}했어요`,
-          detail: `이번 달 매출 ${fmt.number}${fmt.unit}은 지난 달 동기간 대비 ${pct > 0 ? "+" : ""}${pct}% ${pct > 0 ? "증가" : "감소"}했습니다. 지난 달 동기간 매출은 ${formatMoney(actionData.lastMonthIncome).number}${formatMoney(actionData.lastMonthIncome).unit}이었습니다.`,
-          time: "오늘 기준",
-          date: td,
-          priority: 3,
-        });
-      }
+      today.push({
+        id: "today-income",
+        type: "hero",
+        title: "오늘 매출",
+        bigNumber: fmt.number,
+        unit: fmt.unit,
+        change: changeInfo,
+        body: comparisonBody,
+        detail: `오늘 총 매출은 ${fmt.number}${fmt.unit}이며, 이번 달 누적 매출은 ${monthFmt.number}${monthFmt.unit}입니다.${changeInfo ? ` 지난 달 동기간 대비 ${changeInfo.value} 변동했습니다.` : ""} 매출 추이를 확인하고 전월 대비 성과를 점검해보세요.`,
+        action: "상세 보기",
+        actionRoute: "/transactions",
+        time: "실시간",
+        date: td,
+        gradient: "linear-gradient(135deg, #007AFF 0%, #5856D6 100%)",
+        priority: 1,
+      });
     }
 
     // 3. 미분류 거래
