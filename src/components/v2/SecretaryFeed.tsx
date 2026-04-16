@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useV2PC } from "./V2PCContext";
+import { SettlementDetailSheet } from "./SettlementDetailSheet";
 
 
 const cardVariants = {
@@ -107,6 +108,9 @@ export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () =>
 
       {/* 상세 요약 모달 */}
       <CardDetailModal card={selectedCard} onClose={() => setSelectedCard(null)} />
+
+      {/* 배민 정산 상세 시트 */}
+      <SettlementDetailSheet open={settlementOpen} onClose={() => setSettlementOpen(false)} />
     </div>
   );
 };
