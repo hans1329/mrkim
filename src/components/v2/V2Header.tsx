@@ -92,24 +92,31 @@ export const V2Header = ({ isDrawerOpen, onToggleDrawer }: V2HeaderProps) => {
         <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
           <defs>
             <linearGradient id="hwave1" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#007AFF" stopOpacity="0" />
-              <stop offset="30%" stopColor="#007AFF" stopOpacity="0.6" />
+              <stop offset="0%" stopColor="#007AFF" stopOpacity="0.6" />
               <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
-              <stop offset="70%" stopColor="#AF52DE" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#AF52DE" stopOpacity="0" />
+              <stop offset="100%" stopColor="#AF52DE" stopOpacity="0.6" />
             </linearGradient>
             <linearGradient id="hwave2" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0" />
-              <stop offset="25%" stopColor="#FF6B9D" stopOpacity="0.35" />
+              <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0.35" />
               <stop offset="50%" stopColor="#007AFF" stopOpacity="0.4" />
-              <stop offset="75%" stopColor="#34C759" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#34C759" stopOpacity="0" />
+              <stop offset="100%" stopColor="#34C759" stopOpacity="0.35" />
             </linearGradient>
+            <linearGradient id="hfade-mask" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#000" />
+              <stop offset="15%" stopColor="#fff" />
+              <stop offset="85%" stopColor="#fff" />
+              <stop offset="100%" stopColor="#000" />
+            </linearGradient>
+            <mask id="hfade" maskUnits="userSpaceOnUse">
+              <rect x="0" y="0" width="260" height="32" fill="url(#hfade-mask)" />
+            </mask>
           </defs>
-          <ReactiveWavePath volumeRef={volumeRef} baseAmplitude={baseAmplitude} maxBoost={maxBoost}
-            stroke="url(#hwave1)" strokeWidth={2} freq={0.024} speed={1.8} phase={0} />
-          <ReactiveWavePath volumeRef={volumeRef} baseAmplitude={baseAmplitude * 0.6} maxBoost={maxBoost * 0.5}
-            stroke="url(#hwave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
+          <g mask="url(#hfade)">
+            <ReactiveWavePath volumeRef={volumeRef} baseAmplitude={baseAmplitude} maxBoost={maxBoost}
+              stroke="url(#hwave1)" strokeWidth={2} freq={0.024} speed={1.8} phase={0} />
+            <ReactiveWavePath volumeRef={volumeRef} baseAmplitude={baseAmplitude * 0.6} maxBoost={maxBoost * 0.5}
+              stroke="url(#hwave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
+          </g>
         </svg>
       </div>
 
