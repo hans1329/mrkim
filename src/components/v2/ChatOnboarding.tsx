@@ -861,7 +861,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       }
 
       // ─── 2차: 정규식 + 동의어 기반 입력 검증 ───
-      let validation = validateStepInput(step, value);
+      let validation = validateStepInput(step, cleanValue);
 
       // ─── 3차: AI 폴백 (ASK_STEPS에서 정규식이 실패한 경우만 단 1회) ───
       // choice 단계(card_select 등)는 normalizeChoiceValue가 처리하므로 AI 호출 안 함
