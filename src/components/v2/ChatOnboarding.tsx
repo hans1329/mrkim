@@ -458,7 +458,8 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     let stream: MediaStream | null = null;
     let audioCtx: AudioContext | null = null;
     let analyser: AnalyserNode | null = null;
-    let dataArray: Uint8Array | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let dataArray: any = null;
     let animFrame: number;
     let cancelled = false;
 
