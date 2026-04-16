@@ -956,6 +956,14 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
 
   useEffect(() => { advanceRef.current = (value: string) => { void advance(value); }; }, [advance]);
 
+  // Auto-scroll chat to bottom when new messages, transcript, input, or badge area appears
+  useEffect(() => {
+    const t = setTimeout(() => {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [messages, partialTranscript, showInput, badgeMode, step?.id]);
+
   // Wire voice commits → advance the current step
   useEffect(() => {
     onCommit((rawText) => {
