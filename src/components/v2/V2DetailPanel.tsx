@@ -10,7 +10,7 @@ export const V2DetailPanel = () => {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-white/5">
+      <div className="px-4 py-3">
         <span className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
           상세 데이터
         </span>
