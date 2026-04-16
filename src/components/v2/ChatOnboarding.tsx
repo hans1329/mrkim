@@ -40,7 +40,7 @@ interface ValidationResult {
 const BASIC_STEPS: StepDef[] = [
   { id: "name", question: "반갑습니다! 어떻게 불러드릴까요?", type: "text", placeholder: "예: 홍길동" },
   {
-    id: "business_type", question: "어떤 사업을 하고 계세요?", type: "choice",
+    id: "business_type", question: "사업체에 대해 알려주세요!\n어떤 업종이세요?", type: "choice",
     choices: [
       { label: "음식점", value: "restaurant" },
       { label: "카페", value: "cafe" },
@@ -48,7 +48,7 @@ const BASIC_STEPS: StepDef[] = [
       { label: "기타", value: "other" },
     ],
   },
-  { id: "business_number", question: "사업자등록번호를 알려주시면\n세무 현황을 바로 확인해드릴게요.", type: "text", placeholder: "000-00-00000" },
+  { id: "business_number", question: "마지막이에요! 사업자등록번호 알려주시면\n바로 세무 현황을 확인해드릴게요 ✨", type: "text", placeholder: "000-00-00000" },
 ];
 
 const CONNECTION_STEPS: StepDef[] = [
