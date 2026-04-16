@@ -18,6 +18,7 @@ export interface FeedCard {
   gradient?: string;
   priority: number; // lower = higher priority
   detail?: string; // 상세 요약 (모달에 표시)
+  iconUrl?: string; // 아이콘 이미지 URL
 }
 
 function formatMoney(amount: number): { number: string; unit: string } {
