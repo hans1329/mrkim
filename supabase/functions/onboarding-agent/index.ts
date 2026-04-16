@@ -194,16 +194,58 @@ serve(async (req) => {
 
     const systemPrompt = buildSystemPrompt(state);
 
+    // 1차: 정보 추출 전용 호출 (도구 강제). 사용자의 마지막 발화에서 저장/연동/스킵을 추출.
+    const lastUser = [...messages].reverse().find((m) => m.role === "user");
+    const collectedToolResults: ChatMessage[] = [];
+    if (lastUser && lastUser.content) {
+      try {
+        const extractRes = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: {
+              role: "system",
+              parts: [{
+                text: `당신은 정보 추출기입니다. 사용자의 한국어 발화에서 다음을 추출하면 해당 도구를 즉시 호출하세요. 추출할 정보가 전혀 없으면 아무 도구도 호출하지 마세요.\n- 이름/호칭 → save_user_name (예: "한석이라고 불러"→name=한석)\n- 업종 → save_business_type ("치킨집해"→치킨집)\n- 10자리 숫자(사업자번호) → save_business_number\n- 연동/연결 동의 → start_connection\n- 스킵/나중에 → skip_step\n\n현재 이미 수집된 항목(다시 호출 금지): 이름=${state.name || "X"}, 업종=${state.business_type || "X"}, 사업자번호=${state.business_number || "X"}.\n\n반드시 functionCall만 발행하고 텍스트는 출력하지 마세요.`
+              }],
+            },
+            contents: [{ role: "user", parts: [{ text: lastUser.content }] }],
+            tools: [{ functionDeclarations: TOOLS }],
+            toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: ["save_user_name", "save_business_type", "save_business_number", "start_connection", "skip_step"] } },
+            generationConfig: { temperature: 0, maxOutputTokens: 200 },
+          }),
+        });
+        if (extractRes.ok) {
+          const extractData = await extractRes.json();
+          const parts = extractData?.candidates?.[0]?.content?.parts || [];
+          for (const p of parts) {
+            if (p.functionCall?.name) {
+              collectedToolResults.push({
+                role: "assistant",
+                content: "",
+                toolName: p.functionCall.name,
+              });
+              // 도구 호출 자체를 호출자(프론트)가 실행하도록 별도 필드로 반환
+              (collectedToolResults[collectedToolResults.length - 1] as any).args = p.functionCall.args || {};
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("extract phase failed:", e);
+      }
+    }
+
+    // 2차: 응답 생성용 호출 (도구 정보 없이 자연스러운 안내만)
+    const extractedSummary = collectedToolResults.length > 0
+      ? `\n\n# 방금 시스템이 자동 저장한 정보\n${collectedToolResults.map((c: any) => `- ${c.toolName}(${JSON.stringify(c.args || {})})`).join("\n")}\n이 저장은 이미 완료되었으니 "저장했어요"라고 자연스럽게 인사하고 다음 단계 한 가지만 안내하세요.`
+      : "";
+
     const payload = {
       systemInstruction: {
         role: "system",
-        parts: [{ text: systemPrompt }],
+        parts: [{ text: systemPrompt + extractedSummary }],
       },
       contents: toGeminiContents(messages),
-      tools: [{ functionDeclarations: TOOLS }],
-      toolConfig: {
-        functionCallingConfig: { mode: "AUTO" },
-      },
       generationConfig: {
         temperature: 0.4,
         maxOutputTokens: 400,
@@ -247,7 +289,10 @@ serve(async (req) => {
     const parts = candidate?.content?.parts || [];
 
     let replyText = "";
-    const toolCalls: { name: string; args: Record<string, unknown> }[] = [];
+    const toolCalls: { name: string; args: Record<string, unknown> }[] = collectedToolResults.map((c: any) => ({
+      name: c.toolName as string,
+      args: c.args || {},
+    }));
 
     for (const p of parts) {
       if (typeof p.text === "string" && p.text.trim()) {
