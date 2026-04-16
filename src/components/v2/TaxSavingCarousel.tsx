@@ -150,38 +150,15 @@ export const TaxSavingCarousel = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const cards: CarouselCard[] = useMemo(() => {
-    const list: CarouselCard[] = [];
-
-    if (settlement) {
-      list.push({
-        id: "settlement-forecast",
-        icon: <img src={baeminLogo} alt="배민" className="w-11 h-11 rounded-xl object-cover" />,
-        title: settlement.daysLeft <= 0 ? "배민 정산 오늘 입금" : `배민 정산 D-${settlement.daysLeft}`,
-        subtitle: settlement.daysLeft <= 0
-          ? `오늘 입금 예정 · ${settlement.nextCount}건`
-          : `${settlement.nextDate} 입금 예정 · ${settlement.nextCount}건`,
-        badge: formatAmount(settlement.nextAmount),
-        badgeColor: "#007AFF",
-        badgeBg: "rgba(0,122,255,0.15)",
-        description: settlement.totalDates > 1
-          ? `총 ${settlement.totalDates}회, ${formatAmount(settlement.totalPending)} 정산 대기 중이에요`
-          : `정산금이 곧 입금돼요. 현금흐름 계획에 참고하세요`,
-        gradient: "linear-gradient(135deg, #2AC1BC 0%, #007AFF 100%)",
-        glowColor: "rgba(42,193,188,0.4)",
-        action: "정산 내역 보기",
-      });
-    }
-
     // For infinite loop, we duplicate the cards array
-    const allCards = [...list, ...STATIC_TIPS];
+    const allCards = [...STATIC_TIPS];
     // Return with clones: [last item, ...all, first item]
-    // This allows seamless infinite scrolling
     return [
       allCards[allCards.length - 1],
       ...allCards,
       allCards[0],
     ];
-  }, [settlement]);
+  }, []);
 
   // Track current slide via scroll position with infinite loop detection
   const handleScroll = useCallback(() => {
@@ -265,10 +242,10 @@ export const TaxSavingCarousel = () => {
           {/* Header */}
           <div className="relative px-5 pt-4 pb-2 flex items-center justify-between">
             <span className="text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.6)" }}>
-              {settlement && current === 0 ? "정산 알림" : "절세 포인트"}
+              절세 포인트
             </span>
             <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.25)" }}>
-              {current + 1} / {settlement ? STATIC_TIPS.length + 1 : STATIC_TIPS.length}
+              {current + 1} / {STATIC_TIPS.length}
             </span>
           </div>
 
