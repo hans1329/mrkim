@@ -204,6 +204,27 @@ const CHOICE_SYNONYMS: Partial<Record<StepId, Record<string, string>>> = {
   },
 };
 
+// Intent patterns for ask-style steps (yes/skip questions)
+// 자연어 응답을 폭넓게 잡기 위한 정규식
+const YES_PATTERN = /(연동|연결|등록|진행|시작|할게|해줘|해주세|^해$|좋아|좋|그래|그러|^네$|^예$|^응$|^어$|오케|오케이|ok|yes|^가자$|^콜$)/i;
+const SKIP_PATTERN = /(건너|스킵|패스|나중|넘어|생략|취소|아니|안할|안함|싫|괜찮|됐|필요없|^노$|않을|않아|^no$|pass|skip|later)/i;
+const ASK_STEPS: StepId[] = ["hometax_ask", "card_ask", "bank_ask"];
+
+function fuzzyIntentMatch(stepDef: StepDef, compact: string, trimmed: string): string | null {
+  if (ASK_STEPS.includes(stepDef.id)) {
+    const skipMatch = SKIP_PATTERN.test(compact) || SKIP_PATTERN.test(trimmed);
+    const yesMatch = YES_PATTERN.test(compact) || YES_PATTERN.test(trimmed);
+    if (skipMatch && !yesMatch) return "건너뛸게요";
+    if (yesMatch) return "연동할게요";
+  }
+  if (stepDef.id === "delivery_ask") {
+    if (/배민|배달의민족|baemin/i.test(compact)) return "배민 연동";
+    if (/쿠팡|coupang/i.test(compact)) return "쿠팡이츠 연동";
+    if (SKIP_PATTERN.test(compact) || SKIP_PATTERN.test(trimmed)) return "건너뛸게요";
+  }
+  return null;
+}
+
 function normalizeChoiceValue(stepDef: StepDef, rawValue: string): string | null {
   const compact = rawValue.replace(/\s/g, "");
   const trimmed = rawValue.trim();
@@ -213,9 +234,8 @@ function normalizeChoiceValue(stepDef: StepDef, rawValue: string): string | null
   const matchedSynonym = synonyms?.[compact] || synonyms?.[trimmed];
   if (matchedSynonym) return matchedSynonym;
 
-  // 2) Substring/contains match on synonym keys (e.g. "카페를 하고 있다고" contains "카페")
+  // 2) Substring/contains match on synonym keys
   if (synonyms) {
-    // Sort keys longest-first to prefer more specific matches
     const sortedKeys = Object.keys(synonyms).sort((a, b) => b.length - a.length);
     for (const key of sortedKeys) {
       if (compact.includes(key) || trimmed.includes(key)) {
@@ -236,7 +256,10 @@ function normalizeChoiceValue(stepDef: StepDef, rawValue: string): string | null
     const labelCompact = choice.label.replace(/\s/g, "");
     return compact.includes(labelCompact) || trimmed.includes(choice.label);
   });
-  return substringChoice?.label || null;
+  if (substringChoice) return substringChoice.label;
+
+  // 5) Fuzzy intent matching (broad natural language fallback)
+  return fuzzyIntentMatch(stepDef, compact, trimmed);
 }
 
 function validateStepInput(stepDef: StepDef, rawValue: string): ValidationResult {
