@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCountUp } from "@/hooks/useCountUp";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useV2PC } from "./V2PCContext";
+import { SettlementDetailSheet } from "./SettlementDetailSheet";
 
 
 const cardVariants = {
@@ -23,11 +24,16 @@ export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () =>
   const { todayCards, historyCards, isLoading } = useFeedCards();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [selectedCard, setSelectedCard] = useState<FeedCard | null>(null);
+  const [settlementOpen, setSettlementOpen] = useState(false);
   const isMobile = useIsMobile();
   const v2pc = useV2PC();
   const navigate = useNavigate();
 
   const handleCardClick = useCallback((card: FeedCard) => {
+    if (card.id === "settlement-forecast") {
+      setSettlementOpen(true);
+      return;
+    }
     if (isMobile) {
       setSelectedCard(card);
     } else {
@@ -102,6 +108,9 @@ export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () =>
 
       {/* 상세 요약 모달 */}
       <CardDetailModal card={selectedCard} onClose={() => setSelectedCard(null)} />
+
+      {/* 배민 정산 상세 시트 */}
+      <SettlementDetailSheet open={settlementOpen} onClose={() => setSettlementOpen(false)} />
     </div>
   );
 };
@@ -242,27 +251,27 @@ const HeroCard = ({ card, index }: { card: FeedCard; index: number }) => {
       />
       <div className="relative px-6 pt-5 pb-5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {card.iconUrl && (
-              <img src={card.iconUrl} alt="" className="w-7 h-7 rounded-lg object-cover" />
-            )}
-            <span className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.7)" }}>
-              {card.title}
-            </span>
-          </div>
+          <span className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.7)" }}>
+            {card.title}
+          </span>
           <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>{card.time}</span>
         </div>
 
-        <div className="flex items-baseline gap-2 mt-3">
-          <span
-            className="font-black leading-none tracking-tight"
-            style={{ fontSize: "52px", color: "rgba(255,255,255,0.95)" }}
-          >
-            {rawNum > 0 ? displayNum : card.bigNumber}
-          </span>
-          <span className="text-lg font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
-            {card.unit}
-          </span>
+        <div className="flex items-center gap-3 mt-3">
+          {card.iconUrl && (
+            <img src={card.iconUrl} alt="" className="w-11 h-11 rounded-xl object-cover" />
+          )}
+          <div className="flex items-baseline gap-2">
+            <span
+              className="font-black leading-none tracking-tight"
+              style={{ fontSize: "52px", color: "rgba(255,255,255,0.95)" }}
+            >
+              {rawNum > 0 ? displayNum : card.bigNumber}
+            </span>
+            <span className="text-lg font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+              {card.unit}
+            </span>
+          </div>
         </div>
 
         {card.change && (
