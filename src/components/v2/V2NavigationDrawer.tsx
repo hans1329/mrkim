@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, BarChart3, Users, Wallet, Settings, User, FileText, HelpCircle } from "lucide-react";
+import { Home, BarChart3, Users, Wallet, Settings, User, FileText, HelpCircle, PlugZap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface V2NavigationDrawerProps {
@@ -9,6 +9,7 @@ interface V2NavigationDrawerProps {
 
 const menuItems = [
   { icon: Home, label: "홈", path: "/v2" },
+  { icon: PlugZap, label: "연동하기", path: "/v2?onboarding=connect" },
   { icon: BarChart3, label: "매출 분석", path: "/reports" },
   { icon: FileText, label: "매출/매입", path: "/transactions" },
   { icon: Users, label: "직원 관리", path: "/employees" },
