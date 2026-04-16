@@ -649,9 +649,14 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
 
   const handleCardConnect = useCallback(async () => {
     const cardCompany = answers.card_select;
-    const id = answers.card_id;
-    const pw = answers.card_pw;
-    if (!cardCompany || !id || !pw) return;
+    const useCert = answers.card_method === "공동인증서";
+
+    if (!cardCompany) return;
+    if (useCert) {
+      if (!certFile || !certPassword) return;
+    } else {
+      if (!answers.card_id || !answers.card_pw) return;
+    }
 
     setIsConnecting(true);
     goToStep("card_connecting");
@@ -661,29 +666,47 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       const mid = brn.length >= 5 ? parseInt(brn.substring(3, 5), 10) : 0;
       const clientType = mid >= 81 ? "B" : "P";
 
-      const connectedId = await registerCardAccount(cardCompany, id, pw, undefined, clientType);
+      let connectedId: string | null = null;
+      if (useCert) {
+        const certFileBase64 = await fileToBase64(certFile!);
+        const keyFileBase64 = keyFile ? await fileToBase64(keyFile) : undefined;
+        connectedId = await registerCardAccount(
+          cardCompany, "", "",
+          { loginType: "0", certFile: certFileBase64, certPassword, keyFile: keyFileBase64 },
+          clientType,
+        );
+      } else {
+        connectedId = await registerCardAccount(cardCompany, answers.card_id, answers.card_pw, undefined, clientType);
+      }
+
       if (connectedId) {
         await connectService(`codef_card_${cardCompany}`, connectedId);
         setMessages(prev => [...prev, { from: "bot", text: "✅ 카드 연동 완료! 지출 내역을 자동으로 가져올게요." }]);
         setAnswers(prev => ({ ...prev, card: "connected" }));
+        setCertFile(null); setKeyFile(null); setCertPassword("");
         setTimeout(() => goToStep("bank_ask"), 800);
       } else {
-        setMessages(prev => [...prev, { from: "bot", text: "❌ 카드사 연결에 실패했어요.\n아이디와 비밀번호를 확인해주세요." }]);
-        goToStep("card_id");
+        setMessages(prev => [...prev, { from: "bot", text: useCert ? "❌ 인증서 연동에 실패했어요.\n인증서와 비밀번호를 확인해주세요." : "❌ 카드사 연결에 실패했어요.\n아이디와 비밀번호를 확인해주세요." }]);
+        goToStep(useCert ? "card_cert" : "card_id");
       }
     } catch (err) {
       setMessages(prev => [...prev, { from: "bot", text: "❌ 연결 중 오류가 발생했어요. 다시 시도해주세요." }]);
-      goToStep("card_id");
+      goToStep(useCert ? "card_cert" : "card_id");
     } finally {
       setIsConnecting(false);
     }
-  }, [answers, registerCardAccount, connectService, goToStep]);
+  }, [answers, certFile, keyFile, certPassword, registerCardAccount, connectService, goToStep]);
 
   const handleBankConnect = useCallback(async () => {
     const bankId = answers.bank_select;
-    const id = answers.bank_id;
-    const pw = answers.bank_pw;
-    if (!bankId || !id || !pw) return;
+    const useCert = answers.bank_method === "공동인증서";
+
+    if (!bankId) return;
+    if (useCert) {
+      if (!certFile || !certPassword) return;
+    } else {
+      if (!answers.bank_id || !answers.bank_pw) return;
+    }
 
     setIsConnecting(true);
     goToStep("bank_connecting");
@@ -693,23 +716,36 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       const mid = brn.length >= 5 ? parseInt(brn.substring(3, 5), 10) : 0;
       const clientType = mid >= 81 ? "B" : "P";
 
-      const connectedId = await registerBankAccount(bankId, id, pw, undefined, clientType);
+      let connectedId: string | null = null;
+      if (useCert) {
+        const certFileBase64 = await fileToBase64(certFile!);
+        const keyFileBase64 = keyFile ? await fileToBase64(keyFile) : undefined;
+        connectedId = await registerBankAccount(
+          bankId, "", "",
+          { loginType: "0", certFile: certFileBase64, certPassword, keyFile: keyFileBase64 },
+          clientType,
+        );
+      } else {
+        connectedId = await registerBankAccount(bankId, answers.bank_id, answers.bank_pw, undefined, clientType);
+      }
+
       if (connectedId) {
         await connectService(`codef_bank_${bankId}`, connectedId);
         setMessages(prev => [...prev, { from: "bot", text: "✅ 은행 연동 완료! 입출금 내역을 자동으로 관리할게요." }]);
         setAnswers(prev => ({ ...prev, bank: "connected" }));
+        setCertFile(null); setKeyFile(null); setCertPassword("");
         setTimeout(() => goToStep("delivery_ask"), 800);
       } else {
-        setMessages(prev => [...prev, { from: "bot", text: "❌ 은행 연결에 실패했어요.\n아이디와 비밀번호를 확인해주세요." }]);
-        goToStep("bank_id");
+        setMessages(prev => [...prev, { from: "bot", text: useCert ? "❌ 인증서 연동에 실패했어요.\n인증서와 비밀번호를 확인해주세요." : "❌ 은행 연결에 실패했어요.\n아이디와 비밀번호를 확인해주세요." }]);
+        goToStep(useCert ? "bank_cert" : "bank_id");
       }
     } catch (err) {
       setMessages(prev => [...prev, { from: "bot", text: "❌ 연결 중 오류가 발생했어요. 다시 시도해주세요." }]);
-      goToStep("bank_id");
+      goToStep(useCert ? "bank_cert" : "bank_id");
     } finally {
       setIsConnecting(false);
     }
-  }, [answers, registerBankAccount, connectService, goToStep]);
+  }, [answers, certFile, keyFile, certPassword, registerBankAccount, connectService, goToStep]);
 
   const handleDeliveryConnect = useCallback(async () => {
     const platform = selectedDeliveryPlatform;
