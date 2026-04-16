@@ -375,8 +375,18 @@ async function syncHometaxInvoices(
   // connectedId 확인 - 간편인증 완료된 인스턴스만 세금계산서 조회 가능
   const connectedId = instance.connected_id;
   if (!connectedId) {
-    // connectedId가 없으면 간편인증 미완료 → 사업자 확인만 된 상태
-    console.log(`[hometax] Instance ${instance.id}: connectedId 없음, 간편인증 필요`);
+    // connectedId가 없으면 인증서 미등록 → 세금계산서 조회 불가
+    console.log(`[hometax] Instance ${instance.id}: connectedId 없음, 공동인증서 등록 필요`);
+    
+    // 상태 메시지를 업데이트하여 사용자에게 인증서 등록이 필요함을 알림
+    await supabase
+      .from("connector_instances")
+      .update({
+        status: "pending",
+        status_message: "공동인증서 등록이 필요합니다",
+      })
+      .eq("id", instance.id);
+    
     return { recordsFetched: 0, recordsSaved: 0 };
   }
 

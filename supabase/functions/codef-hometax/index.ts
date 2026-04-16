@@ -196,16 +196,14 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
     organization: "0002",
     loginType: "2",  // 홈택스 공동인증서는 loginType "2"
     id: encryptedEmptyId,
-    password: encryptedEmptyPw,
-    certPassword: encryptedPassword,
+    password: encryptedPassword,
     identity: cleanedNumber,
   };
 
   if (keyFileBase64) {
     accountEntry.reqCertFile = certFileBase64;
     accountEntry.reqKeyFile = keyFileBase64;
-    accountEntry.certType = "1";
-    console.log("Using DER+KEY separate cert files for hometax (certType: 1)");
+    console.log("Using DER+KEY separate cert files for hometax");
   } else {
     accountEntry.certFile = certFileBase64;
     accountEntry.certType = "pfx";
