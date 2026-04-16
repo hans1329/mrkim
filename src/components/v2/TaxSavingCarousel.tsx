@@ -183,19 +183,15 @@ export const TaxSavingCarousel = () => {
               >
                 {/* Icon + Title + Badge */}
                 <div className="flex items-center gap-3 mb-3">
-                  {card.id === "settlement-forecast" ? (
-                    <span>{card.icon}</span>
-                  ) : (
-                    <div
-                      className="w-11 h-11 rounded-2xl flex items-center justify-center"
-                      style={{
-                        background: card.gradient,
-                        boxShadow: `0 4px 20px ${card.glowColor}`,
-                      }}
-                    >
-                      <span style={{ color: "rgba(255,255,255,0.95)" }}>{card.icon}</span>
-                    </div>
-                  )}
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                    style={{
+                      background: card.gradient,
+                      boxShadow: `0 4px 20px ${card.glowColor}`,
+                    }}
+                  >
+                    <span style={{ color: "rgba(255,255,255,0.95)" }}>{card.icon}</span>
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[15px] font-bold truncate" style={{ color: "rgba(255,255,255,0.95)" }}>
                       {card.title}
@@ -228,9 +224,6 @@ export const TaxSavingCarousel = () => {
                 {card.action && (
                   <motion.button
                     whileTap={{ scale: 0.97 }}
-                    onClick={() => {
-                      if (card.id === "settlement-forecast") setSettlementOpen(true);
-                    }}
                     className="w-full py-3 rounded-xl text-[13px] font-semibold"
                     style={{
                       background: "rgba(255,255,255,0.07)",
