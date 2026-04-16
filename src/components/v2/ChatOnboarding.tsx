@@ -1000,7 +1000,11 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         setTimeout(() => goToNext(), 600);
         break;
     }
-  }, [answers, goToNext, goToStep, handleBankConnect, handleCardConnect, handleDeliveryConnect, isConnected, onComplete, onProgress, step, toggleVoice]);
+    } finally {
+      // 다음 입력 받을 수 있도록 가드 해제 (약간의 딜레이로 연속 transcript 이벤트 차단)
+      setTimeout(() => { isAdvancingRef.current = false; }, 300);
+    }
+  }, [answers, goToNext, goToStep, handleBankConnect, handleCardConnect, handleDeliveryConnect, isConnected, onComplete, onProgress, step, toggleVoice, classifyIntentAI]);
 
   useEffect(() => { advanceRef.current = (value: string) => { void advance(value); }; }, [advance]);
 
