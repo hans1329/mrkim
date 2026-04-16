@@ -419,7 +419,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     return flow;
   }, [existingData]);
 
-  const [stepFlow] = useState<StepDef[]>(buildStepFlow);
+  const [stepFlow, setStepFlow] = useState<StepDef[]>(buildStepFlow);
   const [currentIdx, setCurrentIdx] = useState(0);
   const currentIdxRef = useRef(0);
   const [answers, setAnswers] = useState<Record<string, string>>(existingData);
