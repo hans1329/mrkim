@@ -74,7 +74,7 @@ export const V2Header = ({ isDrawerOpen, onToggleDrawer }: V2HeaderProps) => {
         >
           <Search size={14} style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
           <input
-            placeholder="김비서에게 물어보세요..."
+            placeholder="주요 기능 찾기"
             className="flex-1 text-xs bg-transparent outline-none placeholder:text-white/25 min-w-0"
             style={{ color: "rgba(255,255,255,0.8)" }}
             onFocus={() => setSearchFocused(true)}
