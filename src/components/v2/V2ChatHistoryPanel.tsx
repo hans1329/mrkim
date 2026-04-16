@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Bot } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAIChat } from "@/hooks/useAIChat";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ReactMarkdown from "react-markdown";
 import { DataVisualization } from "@/components/chat/DataVisualization";
 import { useProfileQuery } from "@/hooks/useProfileQuery";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const quickPrompts = [
   "오늘 매출 얼마야?",
@@ -21,11 +22,7 @@ export const V2ChatHistoryPanel = () => {
     sendMessage,
   } = useAIChat();
   const { profile } = useProfileQuery();
-  const secretaryAvatarUrl = profile?.secretary_avatar_url || null;
-  const avatarUrl = secretaryAvatarUrl || "/images/icc-5.webp";
-  const avatarClassName = secretaryAvatarUrl
-    ? "rounded-full object-cover"
-    : "rounded-full object-contain";
+  const secretaryAvatarUrl = profile?.secretary_avatar_url || "";
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -46,26 +43,30 @@ export const V2ChatHistoryPanel = () => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <img src={avatarUrl} alt="" className={`w-7 h-7 ${avatarClassName}`} />
+          <Avatar className="h-7 w-7 border border-white/10">
+            <AvatarImage src={secretaryAvatarUrl} className="object-cover" />
+            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground">
+              <Bot className="h-4 w-4" />
+            </AvatarFallback>
+          </Avatar>
           <span className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
             김비서 대화
           </span>
         </div>
       </div>
 
-      {/* Messages */}
       <ScrollArea className="flex-1">
         <div ref={scrollRef} className="px-3 py-3 space-y-3">
           {!hasMessages && (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <img
-                src={avatarUrl}
-                alt="김비서"
-                className={`w-16 h-16 ${avatarClassName}`}
-              />
+              <Avatar className="h-16 w-16 border-2 border-primary/20">
+                <AvatarImage src={secretaryAvatarUrl} className="object-cover" />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground">
+                  <Bot className="h-8 w-8" />
+                </AvatarFallback>
+              </Avatar>
               <p className="text-[13px] text-center" style={{ color: "rgba(255,255,255,0.3)" }}>
                 김비서에게 무엇이든 물어보세요
               </p>
@@ -141,7 +142,6 @@ export const V2ChatHistoryPanel = () => {
         </div>
       </ScrollArea>
 
-      {/* Input */}
       <div className="px-3 py-3">
         <div
           className="flex items-center gap-2 rounded-2xl px-3 py-2"
