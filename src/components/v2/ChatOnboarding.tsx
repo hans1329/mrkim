@@ -848,7 +848,15 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         break;
 
       case "card_select":
-        setTimeout(() => goToStep("card_id"), 600);
+        setTimeout(() => goToStep("card_method"), 600);
+        break;
+
+      case "card_method":
+        if (normalizedValue === "공동인증서") {
+          setTimeout(() => goToStep("card_cert"), 600);
+        } else {
+          setTimeout(() => goToStep("card_id"), 600);
+        }
         break;
 
       case "card_id":
@@ -868,7 +876,15 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         break;
 
       case "bank_select":
-        setTimeout(() => goToStep("bank_id"), 600);
+        setTimeout(() => goToStep("bank_method"), 600);
+        break;
+
+      case "bank_method":
+        if (normalizedValue === "공동인증서") {
+          setTimeout(() => goToStep("bank_cert"), 600);
+        } else {
+          setTimeout(() => goToStep("bank_id"), 600);
+        }
         break;
 
       case "bank_id":
