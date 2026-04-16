@@ -452,56 +452,9 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
   const advanceRef = useRef<(value: string) => void>();
   const [badgeMode, setBadgeMode] = useState<{ stepId: string } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const headerVolumeRef = useRef(0);
+  const { volumeRef: headerVolumeRef } = useV2Voice();
 
-  // Audio analysis for header oscilloscope
-  useEffect(() => {
-    let stream: MediaStream | null = null;
-    let audioCtx: AudioContext | null = null;
-    let analyser: AnalyserNode | null = null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let dataArray: any = null;
-    let animFrame: number;
-    let cancelled = false;
 
-    const init = async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } });
-        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
-        audioCtx = new AudioContext();
-        if (audioCtx.state === "suspended") await audioCtx.resume();
-        const source = audioCtx.createMediaStreamSource(stream);
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 512;
-        analyser.smoothingTimeConstant = 0.55;
-        source.connect(analyser);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        dataArray = new Uint8Array(analyser.fftSize) as any;
-      } catch {}
-    };
-
-    const poll = () => {
-      if (cancelled) return;
-      if (analyser && dataArray) {
-        analyser.getByteTimeDomainData(dataArray);
-        let sum = 0;
-        for (let i = 0; i < dataArray.length; i++) { const n = (dataArray[i] - 128) / 128; sum += n * n; }
-        const rms = Math.sqrt(sum / dataArray.length);
-        headerVolumeRef.current += (Math.min(1, rms * 8) - headerVolumeRef.current) * 0.22;
-      } else {
-        headerVolumeRef.current += (0 - headerVolumeRef.current) * 0.08;
-      }
-      animFrame = requestAnimationFrame(poll);
-    };
-
-    init().then(() => { if (!cancelled) poll(); });
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(animFrame);
-      stream?.getTracks().forEach(t => t.stop());
-      audioCtx?.close();
-    };
-  }, []);
 
   // Connection state
   const [certFile, setCertFile] = useState<File | null>(null);
