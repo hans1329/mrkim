@@ -77,7 +77,6 @@ const STATIC_TIPS: CarouselCard[] = [
 
 export const TaxSavingCarousel = () => {
   const [current, setCurrent] = useState(0);
-  const [settlementOpen, setSettlementOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const cards: CarouselCard[] = useMemo(() => {
