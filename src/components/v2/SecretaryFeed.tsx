@@ -242,9 +242,14 @@ const HeroCard = ({ card, index }: { card: FeedCard; index: number }) => {
       />
       <div className="relative px-6 pt-5 pb-5">
         <div className="flex items-center justify-between">
-          <span className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.7)" }}>
-            {card.title}
-          </span>
+          <div className="flex items-center gap-2">
+            {card.iconUrl && (
+              <img src={card.iconUrl} alt="" className="w-7 h-7 rounded-lg object-cover" />
+            )}
+            <span className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.7)" }}>
+              {card.title}
+            </span>
+          </div>
           <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>{card.time}</span>
         </div>
 
