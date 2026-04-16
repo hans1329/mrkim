@@ -875,7 +875,10 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       //   (a) 정규식이 실패했거나
       //   (b) 발화가 충분히 길어서 메타 명령일 가능성이 있는 경우
       // cert_upload/password/inline_loading/connecting 단계는 음성 잡음 영향이 크니 제외
-      const skipAIStepTypes = step.type === "cert_upload" || step.type === "password" || step.type === "inline_loading";
+      const skipAIStepTypes =
+        (step.type as string) === "cert_upload" ||
+        (step.type as string) === "password" ||
+        (step.type as string) === "inline_loading";
       const looksLikeMeta = isVoiceInput && trimmedRaw.length >= 4 && /(다시|바꾸|수정|뒤로|이전|돌아|처음|리셋|초기화|도와|뭐|모르)/.test(trimmedRaw);
       const shouldCallAI = !skipAIStepTypes && trimmedRaw.length > 1 && (!validation.isValid || looksLikeMeta);
 
