@@ -21,9 +21,9 @@ export const V2ChatHistoryPanel = () => {
     sendMessage,
   } = useAIChat();
   const { profile } = useProfileQuery();
-  const userAvatarUrl = profile?.avatar_url || null;
-  const avatarUrl = userAvatarUrl || "/images/icc-5.webp";
-  const avatarClassName = userAvatarUrl
+  const secretaryAvatarUrl = profile?.secretary_avatar_url || null;
+  const avatarUrl = secretaryAvatarUrl || "/images/icc-5.webp";
+  const avatarClassName = secretaryAvatarUrl
     ? "rounded-full object-cover"
     : "rounded-full object-contain";
   const [input, setInput] = useState("");
