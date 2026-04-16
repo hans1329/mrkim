@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useDashboardStats, useActionData, useRecentTransactions } from "./useDashboardStats";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import baeminLogo from "@/assets/baemin-logo.png";
 
 export interface FeedCard {
   id: string;
@@ -18,6 +19,7 @@ export interface FeedCard {
   gradient?: string;
   priority: number; // lower = higher priority
   detail?: string; // 상세 요약 (모달에 표시)
+  iconUrl?: string; // 아이콘 이미지 URL
 }
 
 function formatMoney(amount: number): { number: string; unit: string } {
@@ -180,6 +182,7 @@ export function useFeedCards() {
         time: isToday ? "오늘" : "알림",
         date: td,
         gradient: "linear-gradient(135deg, #2AC1BC 0%, #007AFF 100%)",
+        iconUrl: baeminLogo,
         priority: isToday ? 2 : 3,
       });
     }
