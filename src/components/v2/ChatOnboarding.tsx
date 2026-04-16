@@ -907,104 +907,121 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       setMessages(prev => [...prev, { from: "user", text: displayValue }]);
     }
 
+    // Acknowledgment helper: friendly confirmation + next-step guidance
+    const ackThenGo = (ackText: string, nextFn: () => void, delay = 900) => {
+      setMessages(prev => [...prev, { from: "bot", text: ackText }]);
+      setTimeout(() => nextFn(), delay);
+    };
+
     // Route based on step
     switch (step.id) {
       case "name": {
-        const greeting = `반가워요, ${normalizedValue}님! 😊`;
-        setMessages(prev => [...prev, { from: "bot", text: greeting }]);
-        setTimeout(() => goToNext(), 900);
+        ackThenGo(`반가워요, ${normalizedValue}님! 😊\n이제 사업체에 대해 여쭤볼게요.`, () => goToNext());
+        break;
+      }
+
+      case "business_type": {
+        ackThenGo(`${normalizedValue} 운영 중이시군요! 👍\n마지막으로 사업자번호만 알려주세요.`, () => goToNext());
+        break;
+      }
+
+      case "business_number": {
+        ackThenGo(`사업자번호 확인했어요! ✨\n기본 정보 등록이 끝났어요.`, () => goToNext());
         break;
       }
 
       case "connect_intro":
         if (normalizedValue === "skip") {
-          if (isConnected) void toggleVoice();
-          onComplete(newAnswers);
+          setMessages(prev => [...prev, { from: "bot", text: "알겠어요. 연동은 나중에 하셔도 돼요!" }]);
+          setTimeout(() => {
+            if (isConnected) void toggleVoice();
+            onComplete(newAnswers);
+          }, 800);
           return;
         }
-        setTimeout(() => goToStep("hometax_ask"), 600);
+        ackThenGo("좋아요! 하나씩 차근차근 연동해볼게요. 🚀", () => goToStep("hometax_ask"));
         break;
 
       case "hometax_ask":
         if (normalizedValue === "건너뛸게요") {
-          setTimeout(() => goToStep("card_ask"), 600);
+          ackThenGo("국세청은 건너뛸게요. 다음으로 카드를 안내해드릴게요.", () => goToStep("card_ask"));
         } else {
-          setTimeout(() => goToStep("hometax_cert"), 600);
+          ackThenGo("좋아요! 공동인증서로 안전하게 연결해드릴게요.", () => goToStep("hometax_cert"));
         }
         break;
 
       case "card_ask":
         if (normalizedValue === "건너뛸게요") {
-          setTimeout(() => goToStep("bank_ask"), 600);
+          ackThenGo("카드는 건너뛸게요. 다음으로 은행 계좌를 안내해드릴게요.", () => goToStep("bank_ask"));
         } else {
-          setTimeout(() => goToStep("card_select"), 600);
+          ackThenGo("좋아요! 어떤 카드사를 사용하시는지 여쭤볼게요.", () => goToStep("card_select"));
         }
         break;
 
       case "card_select":
-        setTimeout(() => goToStep("card_method"), 600);
+        ackThenGo(`${normalizedValue} 선택하셨어요. 로그인 방식을 골라주세요.`, () => goToStep("card_method"));
         break;
 
       case "card_method":
         if (normalizedValue === "공동인증서") {
-          setTimeout(() => goToStep("card_cert"), 600);
+          ackThenGo("공동인증서로 진행할게요. 인증서 파일을 준비해주세요.", () => goToStep("card_cert"));
         } else {
-          setTimeout(() => goToStep("card_id"), 600);
+          ackThenGo("아이디/비밀번호로 진행할게요. 먼저 아이디를 알려주세요.", () => goToStep("card_id"));
         }
         break;
 
       case "card_id":
-        setTimeout(() => goToStep("card_pw"), 600);
+        ackThenGo("아이디 확인했어요. 이어서 비밀번호를 입력해주세요.", () => goToStep("card_pw"));
         break;
 
       case "card_pw":
-        setTimeout(() => handleCardConnect(), 300);
+        ackThenGo("비밀번호 확인했어요. 카드사에 연결할게요!", () => handleCardConnect(), 600);
         break;
 
       case "bank_ask":
         if (normalizedValue === "건너뛸게요") {
-          setTimeout(() => goToStep("delivery_ask"), 600);
+          ackThenGo("계좌는 건너뛸게요. 다음으로 배달앱을 안내해드릴게요.", () => goToStep("delivery_ask"));
         } else {
-          setTimeout(() => goToStep("bank_select"), 600);
+          ackThenGo("좋아요! 어떤 은행을 사용하시는지 여쭤볼게요.", () => goToStep("bank_select"));
         }
         break;
 
       case "bank_select":
-        setTimeout(() => goToStep("bank_method"), 600);
+        ackThenGo(`${normalizedValue} 선택하셨어요. 로그인 방식을 골라주세요.`, () => goToStep("bank_method"));
         break;
 
       case "bank_method":
         if (normalizedValue === "공동인증서") {
-          setTimeout(() => goToStep("bank_cert"), 600);
+          ackThenGo("공동인증서로 진행할게요. 인증서 파일을 준비해주세요.", () => goToStep("bank_cert"));
         } else {
-          setTimeout(() => goToStep("bank_id"), 600);
+          ackThenGo("아이디/비밀번호로 진행할게요. 먼저 아이디를 알려주세요.", () => goToStep("bank_id"));
         }
         break;
 
       case "bank_id":
-        setTimeout(() => goToStep("bank_pw"), 600);
+        ackThenGo("아이디 확인했어요. 이어서 비밀번호를 입력해주세요.", () => goToStep("bank_pw"));
         break;
 
       case "bank_pw":
-        setTimeout(() => handleBankConnect(), 300);
+        ackThenGo("비밀번호 확인했어요. 은행에 연결할게요!", () => handleBankConnect(), 600);
         break;
 
       case "delivery_ask":
         if (normalizedValue === "건너뛸게요") {
-          setTimeout(() => goToStep("complete"), 600);
+          ackThenGo("배달앱은 건너뛸게요. 마무리할게요!", () => goToStep("complete"));
         } else {
           const selectedPlatform = step.choices?.find(choice => choice.label === normalizedValue)?.value || normalizedValue;
           setSelectedDeliveryPlatform(selectedPlatform);
-          setTimeout(() => goToStep("delivery_id"), 600);
+          ackThenGo(`${normalizedValue} 진행할게요. 아이디를 알려주세요.`, () => goToStep("delivery_id"));
         }
         break;
 
       case "delivery_id":
-        setTimeout(() => goToStep("delivery_pw"), 600);
+        ackThenGo("아이디 확인했어요. 이어서 비밀번호를 입력해주세요.", () => goToStep("delivery_pw"));
         break;
 
       case "delivery_pw":
-        setTimeout(() => handleDeliveryConnect(), 300);
+        ackThenGo("비밀번호 확인했어요. 배달앱에 연결할게요!", () => handleDeliveryConnect(), 600);
         break;
 
       case "complete":
