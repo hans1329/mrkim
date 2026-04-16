@@ -206,17 +206,37 @@ const CHOICE_SYNONYMS: Partial<Record<StepId, Record<string, string>>> = {
 
 function normalizeChoiceValue(stepDef: StepDef, rawValue: string): string | null {
   const compact = rawValue.replace(/\s/g, "");
+  const trimmed = rawValue.trim();
   const synonyms = CHOICE_SYNONYMS[stepDef.id];
 
-  const matchedSynonym = synonyms?.[compact] || synonyms?.[rawValue.trim()];
+  // 1) Exact match on synonyms
+  const matchedSynonym = synonyms?.[compact] || synonyms?.[trimmed];
   if (matchedSynonym) return matchedSynonym;
 
+  // 2) Substring/contains match on synonym keys (e.g. "카페를 하고 있다고" contains "카페")
+  if (synonyms) {
+    // Sort keys longest-first to prefer more specific matches
+    const sortedKeys = Object.keys(synonyms).sort((a, b) => b.length - a.length);
+    for (const key of sortedKeys) {
+      if (compact.includes(key) || trimmed.includes(key)) {
+        return synonyms[key];
+      }
+    }
+  }
+
+  // 3) Exact match on choice labels/values
   const matchedChoice = stepDef.choices?.find((choice) => {
     const labelCompact = choice.label.replace(/\s/g, "");
-    return labelCompact === compact || choice.label === rawValue.trim() || choice.value === rawValue.trim();
+    return labelCompact === compact || choice.label === trimmed || choice.value === trimmed;
   });
+  if (matchedChoice) return matchedChoice.label;
 
-  return matchedChoice?.label || null;
+  // 4) Substring match on choice labels
+  const substringChoice = stepDef.choices?.find((choice) => {
+    const labelCompact = choice.label.replace(/\s/g, "");
+    return compact.includes(labelCompact) || trimmed.includes(choice.label);
+  });
+  return substringChoice?.label || null;
 }
 
 function validateStepInput(stepDef: StepDef, rawValue: string): ValidationResult {
