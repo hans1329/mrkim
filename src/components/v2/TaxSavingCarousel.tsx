@@ -1,10 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Receipt, Car, Coffee, Home, TrendingUp } from "lucide-react";
-import baeminLogo from "@/assets/baemin-logo.png";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Skeleton } from "@/components/ui/skeleton";
 import { SettlementDetailSheet } from "./SettlementDetailSheet";
 
 interface CarouselCard {
