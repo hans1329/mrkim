@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { useV2Voice } from "./V2VoiceContext";
 import { Mic, X, RotateCcw, Trash2, Upload, FileKey, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useScribe, CommitStrategy } from "@elevenlabs/react";
