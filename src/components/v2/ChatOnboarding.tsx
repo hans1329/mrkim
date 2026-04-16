@@ -473,7 +473,8 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         analyser.fftSize = 512;
         analyser.smoothingTimeConstant = 0.55;
         source.connect(analyser);
-        dataArray = new Uint8Array(analyser.fftSize);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        dataArray = new Uint8Array(analyser.fftSize) as any;
       } catch {}
     };
 
