@@ -1255,10 +1255,30 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
 
                 {/* Submit + skip */}
                 <div className="flex gap-2">
-                  <motion.button whileTap={{ scale: 0.97 }} onClick={handleHometaxConnect} disabled={!certFile || !certPassword || (isDerMode && !keyFile)} className="flex-1 py-3 rounded-xl text-[13px] font-semibold disabled:opacity-30" style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)", color: "rgba(255,255,255,0.95)" }}>
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      if (step.id === "card_cert") handleCardConnect();
+                      else if (step.id === "bank_cert") handleBankConnect();
+                      else handleHometaxConnect();
+                    }}
+                    disabled={!certFile || !certPassword || (isDerMode && !keyFile)}
+                    className="flex-1 py-3 rounded-xl text-[13px] font-semibold disabled:opacity-30"
+                    style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)", color: "rgba(255,255,255,0.95)" }}
+                  >
                     연동하기
                   </motion.button>
-                  <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setMessages(prev => [...prev, { from: "user", text: "건너뛸게요" }]); setTimeout(() => goToStep("card_ask"), 600); }} className="px-4 py-3 rounded-xl text-[13px]" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      const nextStep: StepId = step.id === "card_cert" ? "bank_ask" : step.id === "bank_cert" ? "delivery_ask" : "card_ask";
+                      setMessages(prev => [...prev, { from: "user", text: "건너뛸게요" }]);
+                      setCertFile(null); setKeyFile(null); setCertPassword("");
+                      setTimeout(() => goToStep(nextStep), 600);
+                    }}
+                    className="px-4 py-3 rounded-xl text-[13px]"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}
+                  >
                     건너뛰기
                   </motion.button>
                 </div>
