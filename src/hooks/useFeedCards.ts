@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useDashboardStats, useActionData, useRecentTransactions } from "./useDashboardStats";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import baeminLogo from "@/assets/baemin-logo.png";
 
 export interface FeedCard {
   id: string;
