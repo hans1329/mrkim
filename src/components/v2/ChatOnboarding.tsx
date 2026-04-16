@@ -828,8 +828,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     try {
       const trimmedRaw = value.trim();
       const compactRaw = trimmedRaw.replace(/\s/g, "");
-      const isVoiceInput = !value.startsWith("__BUTTON__:");
-      const cleanedValue = value.startsWith("__BUTTON__:") ? value.slice("__BUTTON__:".length) : value;
+      const isVoiceInput = isListening;
 
       // ─── 1차: 정규식 SKIP 감지 (연결 단계만) ───
       const isConnectionStep =
