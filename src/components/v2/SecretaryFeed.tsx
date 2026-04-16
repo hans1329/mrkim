@@ -23,7 +23,17 @@ export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () =>
   const { todayCards, historyCards, isLoading } = useFeedCards();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [selectedCard, setSelectedCard] = useState<FeedCard | null>(null);
+  const isMobile = useIsMobile();
+  const v2pc = useV2PC();
   const navigate = useNavigate();
+
+  const handleCardClick = useCallback((card: FeedCard) => {
+    if (isMobile) {
+      setSelectedCard(card);
+    } else {
+      v2pc.selectCard(card);
+    }
+  }, [isMobile, v2pc]);
 
   const handleDismiss = useCallback((id: string) => {
     setDismissed((prev) => new Set(prev).add(id));
