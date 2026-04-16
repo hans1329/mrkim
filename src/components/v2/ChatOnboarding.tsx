@@ -94,6 +94,14 @@ const CONNECTION_STEPS: StepDef[] = [
       { label: "카카오뱅크", value: "kakao" }, { label: "토스뱅크", value: "toss" },
     ],
   },
+  {
+    id: "bank_method", question: "어떻게 로그인하실까요?", type: "choice",
+    choices: [
+      { label: "아이디/비밀번호", value: "id" },
+      { label: "공동인증서", value: "cert" },
+    ],
+  },
+  { id: "bank_cert", question: "공동인증서 파일을 업로드해주세요.\n(.pfx, .p12, .der 형식)", type: "cert_upload" },
   { id: "bank_id", question: "은행 아이디를 입력해주세요.", type: "text", placeholder: "인터넷뱅킹 ID" },
   { id: "bank_pw", question: "은행 비밀번호를 입력해주세요.", type: "password", placeholder: "인터넷뱅킹 비밀번호" },
   { id: "bank_connecting", question: "은행에 연결하고 있어요...", type: "inline_loading" },
