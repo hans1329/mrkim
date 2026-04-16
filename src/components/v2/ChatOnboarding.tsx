@@ -909,6 +909,13 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
 
     // Route based on step
     switch (step.id) {
+      case "name": {
+        const greeting = `반가워요, ${normalizedValue}님! 😊`;
+        setMessages(prev => [...prev, { from: "bot", text: greeting }]);
+        setTimeout(() => goToNext(), 900);
+        break;
+      }
+
       case "connect_intro":
         if (normalizedValue === "skip") {
           if (isConnected) void toggleVoice();
