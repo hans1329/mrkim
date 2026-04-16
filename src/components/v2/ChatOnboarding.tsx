@@ -314,10 +314,54 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
 
   const visibleMessages = useMemo(() => messages.filter((m) => !m.hidden && (m.role === "user" || m.role === "assistant")), [messages]);
 
+  // 저장 완료 항목 배지 (DB/상태에 저장된 핵심 정보 + 연동 상태)
+  const savedBadges = useMemo(() => {
+    const items: { key: string; label: string }[] = [];
+    if (state.name) items.push({ key: "name", label: `이름 · ${state.name}` });
+    if (state.business_type) items.push({ key: "biz_type", label: `업종 · ${state.business_type}` });
+    if (state.business_number) items.push({ key: "biz_no", label: `사업자 · ${state.business_number}` });
+    if (state.hometax_connected) items.push({ key: "hometax", label: "홈택스 연동" });
+    if (state.card_connected) items.push({ key: "card", label: "카드 연동" });
+    if (state.account_connected) items.push({ key: "account", label: "계좌 연동" });
+    if (state.delivery_connected) items.push({ key: "delivery", label: "배달앱 연동" });
+    return items;
+  }, [state]);
+
   // ─── 렌더 ──────────────────────────────────────────────────
 
   return (
     <div className="relative z-10 flex flex-1 flex-col">
+      {/* 저장 완료 배지 바 */}
+      {savedBadges.length > 0 && (
+        <div className="relative z-10 px-4 pt-3 pb-1">
+          <div className="flex flex-wrap gap-1.5">
+            {savedBadges.map((b) => (
+              <motion.div
+                key={b.key}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2 }}
+                className="inline-flex items-center gap-1 rounded-full pl-1.5 pr-2.5 py-1"
+                style={{
+                  background: "rgba(52, 199, 89, 0.14)",
+                  border: "1px solid rgba(52, 199, 89, 0.32)",
+                }}
+              >
+                <span
+                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center"
+                  style={{ background: "#34C759" }}
+                >
+                  <Check className="w-2.5 h-2.5" style={{ color: "white" }} strokeWidth={3} />
+                </span>
+                <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.92)" }}>
+                  {b.label}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-4">
         {visibleMessages.map((m, idx) =>
