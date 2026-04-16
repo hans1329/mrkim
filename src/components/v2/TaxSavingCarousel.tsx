@@ -17,13 +17,6 @@ interface CarouselCard {
   action?: string;
 }
 
-function formatAmount(amount: number): string {
-  if (amount >= 10_000) {
-    return `${Math.round(amount / 10_000).toLocaleString()}만원`;
-  }
-  return `${amount.toLocaleString()}원`;
-}
-
 const STATIC_TIPS: CarouselCard[] = [
   {
     id: "unclassified",
