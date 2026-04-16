@@ -956,26 +956,18 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
   // ─── Render ──────────────────────────────────────────────
 
   return (
-    <div className="absolute inset-0 z-40 flex flex-col" style={{ background: "linear-gradient(180deg, #0A0A0F 0%, #12121A 100%)" }}>
+    <div className="absolute inset-x-0 top-0 bottom-0 z-30 flex flex-col" style={{ background: "linear-gradient(180deg, #0A0A0F 0%, #12121A 100%)" }}>
       {/* Ambient glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(88,86,214,0.1) 0%, transparent 70%)", filter: "blur(60px)" }} />
 
-      {/* Top bar */}
-      <div className="relative z-10 flex items-center justify-between px-5 pt-4">
-        <button onClick={() => { if (scribe.isConnected) scribe.disconnect(); else { (async () => { try { const { data } = await supabase.functions.invoke("elevenlabs-scribe-token"); if (data?.token) { await scribe.connect({ token: data.token, microphone: { echoCancellation: true, noiseSuppression: true } }); setSttReady(true); } } catch {} })(); } }} className="flex items-center gap-2">
-          <Mic className="w-4 h-4" style={{ color: scribe.isConnected ? "#007AFF" : "rgba(255,255,255,0.3)" }} />
-          <div className="relative w-10 h-[22px] rounded-full transition-colors duration-200" style={{ background: scribe.isConnected ? "#007AFF" : "rgba(255,255,255,0.12)" }}>
-            <div className="absolute top-[2px] w-[18px] h-[18px] rounded-full transition-transform duration-200" style={{ background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.3)", transform: scribe.isConnected ? "translateX(20px)" : "translateX(2px)" }} />
-          </div>
+      {/* Top bar - close & skip only */}
+      <div className="relative z-10 flex items-center justify-end gap-2 px-5 pt-4">
+        <button className="text-[12px] font-medium px-3 py-1.5 rounded-full" style={{ color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.05)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
+          건너뛰기
         </button>
-        <div className="flex items-center gap-2">
-          <button className="text-[12px] font-medium px-3 py-1.5 rounded-full" style={{ color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.05)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
-            건너뛰기
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
-            <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} />
-          </button>
-        </div>
+        <button className="w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
+          <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} />
+        </button>
       </div>
 
       {/* Existing onboarding badges */}
