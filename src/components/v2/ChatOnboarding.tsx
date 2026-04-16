@@ -826,7 +826,9 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     isAdvancingRef.current = true;
 
     try {
-      const trimmedRaw = value.trim();
+      const isVoiceInput = value.startsWith("__VOICE__:");
+      const cleanValue = isVoiceInput ? value.slice("__VOICE__:".length) : value;
+      const trimmedRaw = cleanValue.trim();
       const compactRaw = trimmedRaw.replace(/\s/g, "");
 
       // ─── 1차: 정규식 SKIP 감지 (연결 단계만) ───
@@ -835,6 +837,13 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         step.type === "password" ||
         ["card_id", "bank_id", "delivery_id", "card_select", "bank_select", "card_method", "bank_method"].includes(step.id);
       const SKIP_VOICE = SKIP_PATTERN.test(compactRaw) || SKIP_PATTERN.test(trimmedRaw);
+
+      // ─── cert_upload / password 단계: 음성으로 SKIP 외에는 진행 불가 ───
+      // (파일 업로드/비밀번호 입력은 명시적 UI 액션으로만 처리)
+      if (isVoiceInput && (step.type === "cert_upload" || step.type === "password") && !SKIP_VOICE) {
+        console.log("Voice ignored on cert_upload/password step (use button)");
+        return;
+      }
 
       if (SKIP_VOICE && isConnectionStep) {
         setShowInput(false);
@@ -852,7 +861,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       }
 
       // ─── 2차: 정규식 + 동의어 기반 입력 검증 ───
-      let validation = validateStepInput(step, value);
+      let validation = validateStepInput(step, cleanValue);
 
       // ─── 3차: AI 폴백 (ASK_STEPS에서 정규식이 실패한 경우만 단 1회) ───
       // choice 단계(card_select 등)는 normalizeChoiceValue가 처리하므로 AI 호출 안 함
@@ -880,7 +889,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         return;
       }
 
-    const normalizedValue = validation.normalizedValue ?? value.trim();
+    const normalizedValue = validation.normalizedValue ?? cleanValue.trim();
     const newAnswers = { ...answers, [step.id]: normalizedValue };
     setAnswers(newAnswers);
     setShowInput(false);
@@ -1023,7 +1032,8 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       if (!text || text.length < 1) return;
       // Filter common Korean filler/noise tokens
       if (/^(음+|어+|아+|네\.?|음\.+)$/.test(text)) return;
-      advanceRef.current?.(text);
+      // 음성 입력은 __VOICE__: 프리픽스로 마킹 (cert_upload/password에서 자동 진행 방지)
+      advanceRef.current?.(`__VOICE__:${text}`);
     });
   }, [onCommit]);
 
