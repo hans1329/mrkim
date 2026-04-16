@@ -23,11 +23,16 @@ export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () =>
   const { todayCards, historyCards, isLoading } = useFeedCards();
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [selectedCard, setSelectedCard] = useState<FeedCard | null>(null);
+  const [settlementOpen, setSettlementOpen] = useState(false);
   const isMobile = useIsMobile();
   const v2pc = useV2PC();
   const navigate = useNavigate();
 
   const handleCardClick = useCallback((card: FeedCard) => {
+    if (card.id === "settlement-forecast") {
+      setSettlementOpen(true);
+      return;
+    }
     if (isMobile) {
       setSelectedCard(card);
     } else {
