@@ -1031,8 +1031,8 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
                 <stop offset="100%" stopColor="#34C759" stopOpacity="0" />
               </linearGradient>
             </defs>
-            <OnbReactiveWavePath baseAmplitude={2} maxBoost={14} stroke="url(#onb-wave1)" strokeWidth={2} freq={0.024} speed={1.8} phase={0} />
-            <OnbReactiveWavePath baseAmplitude={1.2} maxBoost={7} stroke="url(#onb-wave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
+            <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={2} maxBoost={14} stroke="url(#onb-wave1)" strokeWidth={2} freq={0.024} speed={1.8} phase={0} />
+            <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={1.2} maxBoost={7} stroke="url(#onb-wave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
           </svg>
         </div>
 
