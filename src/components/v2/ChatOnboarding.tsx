@@ -787,6 +787,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
   // ─── Main advance function ──────────────────────────────
 
   // ─── AI 폴백 의도 분류 (정규식이 못잡은 애매한 발화용) ───
+  // 호출 조건: ASK_STEPS(yes/skip 질문) 단계에서 정규식이 실패한 경우에만 단 1회
   const classifyIntentAI = useCallback(async (
     utterance: string,
     stepDef: StepDef,
@@ -804,7 +805,6 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       if (error || !data) return "unclear";
       const intent = data.intent as "yes" | "skip" | "choice" | "unclear";
       const confidence = typeof data.confidence === "number" ? data.confidence : 0;
-      // 신뢰도 0.6 미만은 unclear로 처리해서 재질문 유도
       if (confidence < 0.6) return "unclear";
       return intent;
     } catch (e) {
@@ -813,69 +813,72 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     }
   }, []);
 
+  // 동시 실행 가드 (음성 transcript와 버튼 클릭이 겹치는 것 방지)
+  const isAdvancingRef = useRef(false);
+
   const advance = useCallback(async (value: string) => {
     if (!step) return;
-
-    // Ignore voice input while a connection is in-progress (loading state)
     if (step.type === "inline_loading") return;
-
-    // Allow voice "skip/later" intent on cert_upload / password / connection-related text steps
-    const trimmedRaw = value.trim();
-    const compactRaw = trimmedRaw.replace(/\s/g, "");
-    let SKIP_VOICE = SKIP_PATTERN.test(compactRaw) || SKIP_PATTERN.test(trimmedRaw);
-    const isConnectionStep =
-      step.type === "cert_upload" ||
-      step.type === "password" ||
-      ["card_id", "bank_id", "delivery_id", "card_select", "bank_select", "card_method", "bank_method"].includes(step.id);
-
-    // 정규식 미스 + 연결 단계에서 음성 입력이면 AI 폴백으로 의도 재확인
-    const isVoiceInput = step.type !== "cert_upload" && step.type !== "password" && step.type !== "text";
-    if (!SKIP_VOICE && isConnectionStep && isVoiceInput && trimmedRaw.length > 1) {
-      const aiIntent = await classifyIntentAI(trimmedRaw, step);
-      if (aiIntent === "skip") SKIP_VOICE = true;
-    }
-
-    if (SKIP_VOICE && isConnectionStep) {
-      setShowInput(false);
-      setShowTextFallback(false);
-      setInputValue("");
-      setCertFile(null); setKeyFile(null); setCertPassword("");
-      setMessages(prev => [...prev, { from: "user", text: "나중에 할게요" }]);
-      // Route to next major section
-      const nextStep: StepId =
-        step.id.startsWith("hometax") ? "card_ask" :
-        step.id.startsWith("card") ? "bank_ask" :
-        step.id.startsWith("bank") ? "delivery_ask" :
-        "complete";
-      setTimeout(() => goToStep(nextStep), 500);
+    if (isAdvancingRef.current) {
+      console.warn("advance already in progress, skipping duplicate call");
       return;
     }
+    isAdvancingRef.current = true;
 
-    let validation = validateStepInput(step, value);
+    try {
+      const trimmedRaw = value.trim();
+      const compactRaw = trimmedRaw.replace(/\s/g, "");
 
-    // 정규식 검증 실패 + ask_steps(yes/skip 질문) 단계면 AI 폴백 시도
-    if (!validation.isValid && (ASK_STEPS.includes(step.id) || step.id === "delivery_ask")) {
-      const aiIntent = await classifyIntentAI(trimmedRaw, step);
-      if (aiIntent === "skip") {
-        validation = { isValid: true, normalizedValue: "건너뛸게요" };
-      } else if (aiIntent === "yes") {
-        validation = { isValid: true, normalizedValue: "연동할게요" };
+      // ─── 1차: 정규식 SKIP 감지 (연결 단계만) ───
+      const isConnectionStep =
+        step.type === "cert_upload" ||
+        step.type === "password" ||
+        ["card_id", "bank_id", "delivery_id", "card_select", "bank_select", "card_method", "bank_method"].includes(step.id);
+      const SKIP_VOICE = SKIP_PATTERN.test(compactRaw) || SKIP_PATTERN.test(trimmedRaw);
+
+      if (SKIP_VOICE && isConnectionStep) {
+        setShowInput(false);
+        setShowTextFallback(false);
+        setInputValue("");
+        setCertFile(null); setKeyFile(null); setCertPassword("");
+        setMessages(prev => [...prev, { from: "user", text: "나중에 할게요" }]);
+        const nextStep: StepId =
+          step.id.startsWith("hometax") ? "card_ask" :
+          step.id.startsWith("card") ? "bank_ask" :
+          step.id.startsWith("bank") ? "delivery_ask" :
+          "complete";
+        setTimeout(() => goToStep(nextStep), 500);
+        return;
       }
-    }
 
-    if (!validation.isValid) {
-      setShowInput(false);
-      setShowTextFallback(false);
-      setInputValue("");
-      setMessages(prev => [
-        ...prev,
-        { from: "bot", text: validation.retryMessage || "잘 못 들었어요. 다시 말씀해주시겠어요?" },
-        { from: "bot", text: step.question },
-      ]);
-      setTimeout(() => setShowInput(true), 400);
-      setTimeout(() => setShowTextFallback(true), 1600);
-      return;
-    }
+      // ─── 2차: 정규식 + 동의어 기반 입력 검증 ───
+      let validation = validateStepInput(step, value);
+
+      // ─── 3차: AI 폴백 (ASK_STEPS에서 정규식이 실패한 경우만 단 1회) ───
+      // choice 단계(card_select 등)는 normalizeChoiceValue가 처리하므로 AI 호출 안 함
+      const isAskStep = ASK_STEPS.includes(step.id) || step.id === "delivery_ask";
+      if (!validation.isValid && isAskStep && trimmedRaw.length > 1) {
+        const aiIntent = await classifyIntentAI(trimmedRaw, step);
+        if (aiIntent === "skip") {
+          validation = { isValid: true, normalizedValue: "건너뛸게요" };
+        } else if (aiIntent === "yes") {
+          validation = { isValid: true, normalizedValue: "연동할게요" };
+        }
+      }
+
+      if (!validation.isValid) {
+        setShowInput(false);
+        setShowTextFallback(false);
+        setInputValue("");
+        setMessages(prev => [
+          ...prev,
+          { from: "bot", text: validation.retryMessage || "잘 못 들었어요. 다시 말씀해주시겠어요?" },
+          { from: "bot", text: step.question },
+        ]);
+        setTimeout(() => setShowInput(true), 400);
+        setTimeout(() => setShowTextFallback(true), 1600);
+        return;
+      }
 
     const normalizedValue = validation.normalizedValue ?? value.trim();
     const newAnswers = { ...answers, [step.id]: normalizedValue };
@@ -997,7 +1000,11 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         setTimeout(() => goToNext(), 600);
         break;
     }
-  }, [answers, goToNext, goToStep, handleBankConnect, handleCardConnect, handleDeliveryConnect, isConnected, onComplete, onProgress, step, toggleVoice]);
+    } finally {
+      // 다음 입력 받을 수 있도록 가드 해제 (약간의 딜레이로 연속 transcript 이벤트 차단)
+      setTimeout(() => { isAdvancingRef.current = false; }, 300);
+    }
+  }, [answers, goToNext, goToStep, handleBankConnect, handleCardConnect, handleDeliveryConnect, isConnected, onComplete, onProgress, step, toggleVoice, classifyIntentAI]);
 
   useEffect(() => { advanceRef.current = (value: string) => { void advance(value); }; }, [advance]);
 
