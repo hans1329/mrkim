@@ -2,7 +2,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useV2Voice } from "./V2VoiceContext";
 import { Mic, X, RotateCcw, Trash2, Upload, FileKey, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useScribe, CommitStrategy } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCardConnection } from "@/hooks/useCardConnection";
 import { useAccountConnection } from "@/hooks/useAccountConnection";
@@ -452,82 +451,34 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
   const advanceRef = useRef<(value: string) => void>();
   const [badgeMode, setBadgeMode] = useState<{ stepId: string } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const { volumeRef: headerVolumeRef } = useV2Voice();
+  const {
+    volumeRef: headerVolumeRef,
+    isConnected,
+    partialTranscript,
+    toggleVoice,
+    onCommit,
+  } = useV2Voice();
 
-
-
-  // Connection state
-  const [certFile, setCertFile] = useState<File | null>(null);
-  const [keyFile, setKeyFile] = useState<File | null>(null);
-  const [certPassword, setCertPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const certFileInputRef = useRef<HTMLInputElement>(null);
-  const keyFileInputRef = useRef<HTMLInputElement>(null);
-
-  // Delivery platform selection
-  const [selectedDeliveryPlatform, setSelectedDeliveryPlatform] = useState<string>("");
-
-  // Hooks
-  const { registerCardAccount } = useCardConnection();
-  const { registerBankAccount } = useAccountConnection();
-  const { connectService } = useConnection();
-
-  const step = stepFlow[currentIdx];
-
-  // Auto-scroll to bottom
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, showInput]);
-
-  // ElevenLabs Scribe
-  const scribe = useScribe({
-    modelId: "scribe_v2_realtime",
-    commitStrategy: CommitStrategy.VAD,
-    languageCode: "kor",
-    onCommittedTranscript: (data) => {
+    onCommit((rawText) => {
       const cStep = stepFlow[currentIdxRef.current];
       if (cStep?.type === "action" || cStep?.type === "cert_upload" || cStep?.type === "inline_loading" || cStep?.type === "password") return;
-      const text = data.text?.trim();
-      if (!text || text.length < 2) return; // 너무 짧은 노이즈 무시
-      // 의미 없는 필러/노이즈 패턴 무시
+      const text = rawText.trim();
+      if (!text || text.length < 2) return;
       const NOISE_PATTERNS = /^(음+|어+|아+|으+|응+|흠+|에+|ㅎ+|\.+|…+)$/;
       if (NOISE_PATTERNS.test(text)) return;
       if (advanceRef.current) advanceRef.current(text);
-    },
-  });
+    });
+  }, [onCommit, stepFlow]);
 
   useEffect(() => {
-    const initSTT = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("elevenlabs-scribe-token");
-        if (error || !data?.token) return;
-        await scribe.connect({ token: data.token, microphone: { echoCancellation: true, noiseSuppression: true } });
-        setSttReady(true);
-      } catch {}
-    };
-    initSTT();
-    return () => { scribe.disconnect(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (isConnected) {
+      setSttReady(true);
+      return;
+    }
 
-  // Show first question
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (hasExisting) {
-        const completedLabels = BASIC_STEPS.filter(s => existingData[s.id]).map(s => STEP_LABELS[s.id]).join(", ");
-        setMessages([{ from: "bot", text: `다시 오셨네요! ${completedLabels} 정보가 등록되어 있어요.` }]);
-        if (stepFlow[0]) {
-          setMessages(prev => [...prev, { from: "bot", text: stepFlow[0].question }]);
-          setTimeout(() => setShowInput(true), 500);
-          setTimeout(() => setShowTextFallback(true), 2000);
-        }
-      } else if (stepFlow[0]) {
-        setMessages([{ from: "bot", text: stepFlow[0].question }]);
-        setTimeout(() => setShowInput(true), 500);
-        setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
-      }
-    }, 300);
+    void toggleVoice().then(() => setSttReady(true));
+  }, [isConnected, toggleVoice]);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -750,93 +701,27 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     }
 
     // Route based on step
-    switch (step.id) {
-      case "connect_intro":
-        if (normalizedValue === "skip") {
-          scribe.disconnect();
+      switch (step.id) {
+        case "connect_intro":
+          if (normalizedValue === "skip") {
+            if (isConnected) void toggleVoice();
+            onComplete(newAnswers);
+            return;
+          }
+          setTimeout(() => goToStep("hometax_ask"), 600);
+          break;
+...
+        case "complete":
+          if (isConnected) void toggleVoice();
           onComplete(newAnswers);
-          return;
-        }
-        setTimeout(() => goToStep("hometax_ask"), 600);
-        break;
-
-      case "hometax_ask":
-        if (normalizedValue === "건너뛸게요") {
-          setTimeout(() => goToStep("card_ask"), 600);
-        } else {
-          setTimeout(() => goToStep("hometax_cert"), 600);
-        }
-        break;
-
-      case "card_ask":
-        if (normalizedValue === "건너뛸게요") {
-          setTimeout(() => goToStep("bank_ask"), 600);
-        } else {
-          setTimeout(() => goToStep("card_select"), 600);
-        }
-        break;
-
-      case "card_select":
-        setTimeout(() => goToStep("card_id"), 600);
-        break;
-
-      case "card_id":
-        setTimeout(() => goToStep("card_pw"), 600);
-        break;
-
-      case "card_pw":
-        setTimeout(() => handleCardConnect(), 300);
-        break;
-
-      case "bank_ask":
-        if (normalizedValue === "건너뛸게요") {
-          setTimeout(() => goToStep("delivery_ask"), 600);
-        } else {
-          setTimeout(() => goToStep("bank_select"), 600);
-        }
-        break;
-
-      case "bank_select":
-        setTimeout(() => goToStep("bank_id"), 600);
-        break;
-
-      case "bank_id":
-        setTimeout(() => goToStep("bank_pw"), 600);
-        break;
-
-      case "bank_pw":
-        setTimeout(() => handleBankConnect(), 300);
-        break;
-
-      case "delivery_ask":
-        if (normalizedValue === "건너뛸게요") {
-          setTimeout(() => goToStep("complete"), 600);
-        } else {
-          const selectedPlatform = step.choices?.find(choice => choice.label === normalizedValue)?.value || normalizedValue;
-          setSelectedDeliveryPlatform(selectedPlatform);
-          setTimeout(() => goToStep("delivery_id"), 600);
-        }
-        break;
-
-      case "delivery_id":
-        setTimeout(() => goToStep("delivery_pw"), 600);
-        break;
-
-      case "delivery_pw":
-        setTimeout(() => handleDeliveryConnect(), 300);
-        break;
-
-      case "complete":
-        scribe.disconnect();
-        onComplete(newAnswers);
-        break;
+          break;
 
       default:
         // Basic steps - go to next
         setTimeout(() => goToNext(), 600);
         break;
     }
-  }, [answers, goToNext, goToStep, handleBankConnect, handleCardConnect, handleDeliveryConnect, onComplete, onProgress, scribe, step]);
+  }, [answers, goToNext, goToStep, handleBankConnect, handleCardConnect, handleDeliveryConnect, isConnected, onComplete, onProgress, step, toggleVoice]);
 
   useEffect(() => { advanceRef.current = (value: string) => { void advance(value); }; }, [advance]);
 
@@ -990,64 +875,22 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
               <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={1.2} maxBoost={7} stroke="url(#onb-wave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
             </svg>
           </div>
-          <button
-            onClick={() => {
-              if (scribe.isConnected) scribe.disconnect();
-              else {
-                (async () => {
-                  try {
-                    const { data } = await supabase.functions.invoke("elevenlabs-scribe-token");
-                    if (data?.token) {
-                      await scribe.connect({ token: data.token, microphone: { echoCancellation: true, noiseSuppression: true } });
-                      setSttReady(true);
-                    }
-                  } catch {}
-                })();
-              }
-            }}
-            className="flex-shrink-0 w-9 h-9 flex items-center justify-center"
-          >
-            <Mic className="w-4.5 h-4.5" style={{ color: scribe.isConnected ? "#007AFF" : "rgba(255,255,255,0.35)" }} />
+          <button onClick={() => { void toggleVoice(); }} className="flex-shrink-0 w-9 h-9 flex items-center justify-center">
+            <Mic className="w-4.5 h-4.5" style={{ color: isConnected ? "#007AFF" : "rgba(255,255,255,0.35)" }} />
           </button>
         </div>
 
         {/* Close */}
-        <button className="absolute right-3 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
+        <button className="absolute right-3 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { if (isConnected) void toggleVoice(); onComplete(answers); }}>
           <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} />
         </button>
       </div>
-
-      {/* Existing onboarding badges */}
-      {hasExisting && (
-        <div className="relative z-10 flex items-center gap-2 px-5 pt-3 overflow-x-auto no-scrollbar">
-          {BASIC_STEPS.map(s => {
-            const val = answers[s.id];
-            if (!val) return null;
-            return (
-              <motion.button key={s.id} whileTap={{ scale: 0.95 }} onClick={() => handleBadgeClick(s.id)} className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium" style={{ background: badgeMode?.stepId === s.id ? "rgba(0,122,255,0.15)" : "rgba(255,255,255,0.06)", border: badgeMode?.stepId === s.id ? "1px solid rgba(0,122,255,0.3)" : "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}>
-                <span style={{ color: "rgba(255,255,255,0.4)" }}>{STEP_LABELS[s.id]}</span>
-                <span style={{ color: "rgba(255,255,255,0.9)" }}>{val.length > 8 ? val.slice(0, 8) + "…" : val}</span>
-              </motion.button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Chat area */}
-      <div className="flex-1 overflow-y-auto px-4 pt-8 pb-4 relative z-10 no-scrollbar">
-        <AnimatePresence>
-          {messages.map((msg, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-              {msg.from === "bot" ? <SecretaryBubble text={msg.text} /> : <UserBubble text={msg.text} />}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-
+...
         {/* Live partial transcript */}
-        {scribe.partialTranscript && (
+        {partialTranscript && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-end mb-3">
             <div className="rounded-2xl rounded-tr-md px-4 py-3 max-w-[240px]" style={{ background: "linear-gradient(135deg, rgba(0,122,255,0.4), rgba(88,86,214,0.4))" }}>
-              <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.6)" }}>{scribe.partialTranscript}</p>
+              <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.6)" }}>{partialTranscript}</p>
             </div>
           </motion.div>
         )}
