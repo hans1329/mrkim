@@ -337,6 +337,18 @@ function normalizeChoiceValue(stepDef: StepDef, rawValue: string): string | null
   return fuzzyIntentMatch(stepDef, compact, trimmed);
 }
 
+function extractNameCandidate(rawValue: string): string {
+  return rawValue
+    .trim()
+    .replace(/^(제|내)?\s*(이름|성함)(은|는)?\s*/g, "")
+    .replace(/^(저는|전|저|나는|난)\s+/g, "")
+    .replace(/\s*(이라고|라고)\s*(불러(줘|주세요)?|불러요|불러|부르(면|세요)?|해주세요|해줘)\s*$/g, "")
+    .replace(/\s*(입니다|이에요|예요|이야|라고요)\s*$/g, "")
+    .replace(/[^가-힣a-zA-Z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function validateStepInput(stepDef: StepDef, rawValue: string): ValidationResult {
   const trimmed = rawValue.trim();
   if (!trimmed) {
@@ -363,7 +375,7 @@ function validateStepInput(stepDef: StepDef, rawValue: string): ValidationResult
 
   switch (stepDef.id) {
     case "name": {
-      const cleanedName = trimmed.replace(/[^가-힣a-zA-Z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+      const cleanedName = extractNameCandidate(trimmed);
       if (cleanedName.length < 2) {
         return {
           isValid: false,
@@ -1025,7 +1037,9 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
 
           // 6) text 단계에서 AI가 정제한 answer 사용 (이름 등)
           if (!validation.isValid && step.type === "text" && ai.intent === "answer" && ai.value) {
-            const cleaned = ai.value.trim();
+            const cleaned = step.id === "name"
+              ? extractNameCandidate(ai.value)
+              : ai.value.trim();
             if (cleaned) validation = { isValid: true, normalizedValue: cleaned };
           }
 
