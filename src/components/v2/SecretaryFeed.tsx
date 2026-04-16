@@ -61,7 +61,7 @@ export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () =>
                 initial="hidden"
                 animate="visible"
                 variants={cardVariants}
-                onClick={() => setSelectedCard(card)}
+                onClick={() => handleCardClick(card)}
                 className="cursor-pointer"
               >
                 {card.type === "hero" ? (
