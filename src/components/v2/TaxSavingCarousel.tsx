@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Receipt, Car, Coffee, Home, TrendingUp } from "lucide-react";
-import { SettlementDetailSheet } from "./SettlementDetailSheet";
+
 
 interface CarouselCard {
   id: string;
@@ -262,8 +262,5 @@ export const TaxSavingCarousel = () => {
         </div>
       </div>
     </div>
-
-    <SettlementDetailSheet open={settlementOpen} onClose={() => setSettlementOpen(false)} />
-    </>
   );
 };
