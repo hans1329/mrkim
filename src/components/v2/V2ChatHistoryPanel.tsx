@@ -44,13 +44,7 @@ export const V2ChatHistoryPanel = () => {
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Avatar className="h-7 w-7 border border-white/10">
-            <AvatarImage src={secretaryAvatarUrl} className="object-cover" />
-            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground">
-              <Bot className="h-4 w-4" />
-            </AvatarFallback>
-          </Avatar>
+        <div className="flex items-center">
           <span className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
             김비서 대화
           </span>
