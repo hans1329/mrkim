@@ -4,23 +4,17 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Vary": "Accept-Encoding",
 };
 
 const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
-/**
- * 온보딩 총괄 에이전트
- * - 모든 사용자 발화(자연어/음성) 해석 + 응답 생성 + 도구 호출 결정 담당
- * - 정규식/사전 분기 없이 LLM 단일 책임
- * - 응답: { reply: string, toolCalls: { name, args }[], done: boolean }
- */
-
 type ChatRole = "user" | "assistant" | "tool";
 interface ClientMessage {
   role: ChatRole;
   content: string;
-  toolName?: string; // role=tool 일 때 사용
+  toolName?: string;
 }
 
 interface OnboardingState {
@@ -37,118 +31,93 @@ const TOOLS = [
   {
     name: "save_user_name",
     description:
-      "대표님의 호칭(이름)을 추출해 저장합니다. 사용자가 이름을 직간접적으로 말하면 즉시 호출. 예) '한석이라고 불러' -> name='한석'",
+      "대표님의 호칭(이름)을 추출해 저장합니다. '한석이라고 불러' -> name='한석'",
     parameters: {
       type: "OBJECT",
-      properties: {
-        name: { type: "STRING", description: "조사·어미를 제거한 순수 이름" },
-      },
+      properties: { name: { type: "STRING", description: "조사·어미를 제거한 순수 이름" } },
       required: ["name"],
     },
   },
   {
     name: "save_business_type",
-    description:
-      "업종을 저장합니다. 사용자가 자유 발화로 업종을 알려주면(예: '치킨집해', '미용실', '카페') 표준 카테고리(음식점/카페/소매·유통/기타) 또는 사용자가 말한 업종 그대로 저장.",
+    description: "업종을 저장합니다. '치킨집해'→치킨집, '카페해요'→카페.",
     parameters: {
       type: "OBJECT",
-      properties: {
-        business_type: { type: "STRING", description: "업종 명" },
-      },
+      properties: { business_type: { type: "STRING" } },
       required: ["business_type"],
     },
   },
   {
     name: "save_business_number",
-    description: "사업자등록번호(10자리)를 저장. 숫자만 추출해서 전달.",
+    description: "사업자등록번호 10자리를 숫자만 추출해 저장.",
     parameters: {
       type: "OBJECT",
-      properties: {
-        business_number: {
-          type: "STRING",
-          description: "하이픈 제거한 10자리 숫자",
-        },
-      },
+      properties: { business_number: { type: "STRING", description: "하이픈 제거 10자리" } },
       required: ["business_number"],
     },
   },
   {
     name: "start_connection",
-    description:
-      "특정 서비스 연동 화면을 엽니다. 사용자가 '연동할게', '카드 연결해줘' 등 의사를 보이면 호출.",
+    description: "특정 서비스 연동 화면을 엽니다.",
     parameters: {
       type: "OBJECT",
       properties: {
-        service: {
-          type: "STRING",
-          enum: ["hometax", "card", "account", "baemin", "coupangeats"],
-        },
+        service: { type: "STRING", enum: ["hometax", "card", "account", "baemin", "coupangeats"] },
       },
       required: ["service"],
     },
   },
   {
     name: "skip_step",
-    description:
-      "현재 단계 또는 특정 연동을 건너뜁니다. 사용자가 '나중에', '건너뛸게' 등을 말하면 호출.",
+    description: "현재 단계 또는 특정 연동을 건너뜁니다.",
     parameters: {
       type: "OBJECT",
       properties: {
-        target: {
-          type: "STRING",
-          enum: ["hometax", "card", "account", "delivery", "current"],
-        },
+        target: { type: "STRING", enum: ["hometax", "card", "account", "delivery", "current"] },
       },
       required: ["target"],
     },
   },
   {
     name: "finish_onboarding",
-    description:
-      "기본 정보가 모두 수집되고 사용자가 더 이상 연동을 원치 않을 때 온보딩을 종료.",
+    description: "기본 정보가 모두 수집되고 사용자가 더 이상 연동을 원치 않을 때 종료.",
     parameters: { type: "OBJECT", properties: {} },
   },
 ];
 
 function buildSystemPrompt(state: OnboardingState): string {
-  return `당신은 '김비서'라는 이름의 AI 온보딩 비서입니다. 사장님(=대표님)을 모시는 전문 비서로서 사장님이 김비서 서비스를 처음 사용할 수 있게 안내합니다.
+  return `당신은 '김비서'라는 이름의 AI 온보딩 비서입니다. 사장님(=대표님)이 처음 사용할 수 있게 안내합니다.
 
 # 절대 규칙
 - 사용자를 반드시 "대표님"이라 호칭. '사장님', '고객님', '회원님' 금지.
-- 모든 응답은 (1) 직전 입력에 대한 짧은 반응 한 줄 + (2) 다음에 필요한 단 하나의 안내 한 줄. 두 줄 이내로 매우 간결하게.
-- 한 번에 한 가지만 묻습니다.
-- 사용자가 자연어로 흘려 말한 정보(예: "한석이라고 불러", "치킨집해", "사업자번호 1234567890")라도 즉시 해당 도구로 저장하고 다음 단계로 진행.
-- 이미 수집된 정보는 다시 묻지 않습니다.
-- "처음부터", "다시", "뒤로", "건너뛰자", "이름 다시 입력" 등 메타 명령도 자연스럽게 해석.
-- 이모지는 한 응답에 최대 1개만, 과한 격식체("~드립니다") 대신 친근한 ~해요체.
-- 절대 길게 설명하지 말 것. 사용자가 답하기 쉽게 짧게.
-- JSON·마크다운·코드블록 출력 금지. 평문 한국어만.
+- 모든 응답은 (1) 직전 입력에 대한 짧은 반응 + (2) 다음 단계 한 가지만. 두 줄 이내, 매우 간결.
+- 한 번에 한 가지만 묻고, 이미 수집된 정보는 다시 묻지 않습니다.
+- 이모지는 한 응답에 최대 1개. 친근한 ~해요체. JSON·마크다운·코드블록 금지.
 
-# 도구 호출 의무 (매우 중요)
-- 다음 정보 중 하나라도 사용자 발화에서 추출 가능하면 같은 턴에서 반드시 functionCall을 발행합니다. 절대 reply만 보내고 끝내지 마세요.
-  · 사용자의 호칭/이름이 발화에 등장 → save_user_name (예: "한석이라고 불러", "내 이름은 박철수야", "철수입니다")
-  · 업종 표현 → save_business_type ("치킨집해", "카페 해요", "옷가게 운영 중")
-  · 10자리 숫자(연속/하이픈) → save_business_number
-  · 연동/연결/하자 등 동의 → start_connection
-  · 스킵/나중/안할래 → skip_step
-  · 모든 진행이 끝나고 사용자가 더 원치 않으면 → finish_onboarding
-- 도구 호출 없이 "저장했어요"라고 말하지 마세요. 실제로는 저장되지 않습니다.
+# 도구 호출 의무 (텍스트와 함께 같은 턴에 발행)
+- 사용자 발화에서 추출 가능하면 같은 응답에서 즉시 functionCall도 함께 발행하세요.
+  · 이름/호칭 → save_user_name
+  · 업종 → save_business_type
+  · 10자리 숫자(사업자번호) → save_business_number
+  · 연동 동의 → start_connection
+  · 스킵/나중에 → skip_step
+  · 모두 끝나면 → finish_onboarding
+- 도구 호출 없이 "저장했어요"라고 말하지 마세요. 실제 저장이 안 됩니다.
+- 추출한 도구 호출과 함께 반드시 다음 안내 텍스트도 한 번에 출력하세요. (한 라운드에 모든 것 처리)
 
-# 진행 순서 (이미 수집된 항목은 건너뛰기)
-1. 이름 (name) — "어떻게 불러드릴까요?"
-2. 업종 (business_type) — 음식점/카페/소매·유통/기타 중 또는 자유 입력
-3. 사업자등록번호 (business_number) — 10자리
-4. 연동 안내 — 홈택스 → 카드 → 계좌 → 배달앱 순으로 한 번에 하나만 권유
-5. 모든 안내가 끝나면 finish_onboarding 호출
+# 진행 순서 (이미 수집된 항목 건너뛰기)
+1. 이름 → 2. 업종(음식점/카페/소매·유통/기타) → 3. 사업자등록번호 10자리
+4. 연동 안내 — 홈택스 → 카드 → 계좌 → 배달앱, 한 번에 하나만 권유
+5. 모두 끝나면 finish_onboarding
 
 # 현재 수집 상태 (이미 채워진 값은 다시 묻지 말 것)
 - 이름: ${state.name || "(미수집)"}
 - 업종: ${state.business_type || "(미수집)"}
 - 사업자번호: ${state.business_number || "(미수집)"}
-- 홈택스 연동: ${state.hometax_connected ? "완료" : "미완료"}
-- 카드 연동: ${state.card_connected ? "완료" : "미완료"}
-- 계좌 연동: ${state.account_connected ? "완료" : "미완료"}
-- 배달앱 연동: ${state.delivery_connected ? "완료" : "미완료"}
+- 홈택스: ${state.hometax_connected ? "완료" : "미완료"}
+- 카드: ${state.card_connected ? "완료" : "미완료"}
+- 계좌: ${state.account_connected ? "완료" : "미완료"}
+- 배달앱: ${state.delivery_connected ? "완료" : "미완료"}
 `;
 }
 
@@ -160,21 +129,39 @@ function toGeminiContents(messages: ClientMessage[]) {
     } else if (m.role === "assistant") {
       out.push({ role: "model", parts: [{ text: m.content }] });
     } else if (m.role === "tool") {
-      // 툴 실행 결과를 다음 user 턴으로 주입 (gemini functionResponse 형태)
       out.push({
         role: "user",
-        parts: [
-          {
-            functionResponse: {
-              name: m.toolName || "tool",
-              response: { result: m.content },
-            },
+        parts: [{
+          functionResponse: {
+            name: m.toolName || "tool",
+            response: { result: m.content },
           },
-        ],
+        }],
       });
     }
   }
   return out;
+}
+
+function acceptsGzip(req: Request): boolean {
+  const ae = req.headers.get("accept-encoding") || "";
+  return ae.toLowerCase().includes("gzip");
+}
+
+async function gzipBody(text: string): Promise<Uint8Array> {
+  const stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
+  const buf = await new Response(stream).arrayBuffer();
+  return new Uint8Array(buf);
+}
+
+async function jsonResponse(req: Request, obj: unknown, status = 200): Promise<Response> {
+  const text = JSON.stringify(obj);
+  const baseHeaders: Record<string, string> = { ...corsHeaders, "Content-Type": "application/json" };
+  if (acceptsGzip(req) && text.length > 512) {
+    const gz = await gzipBody(text);
+    return new Response(gz, { status, headers: { ...baseHeaders, "Content-Encoding": "gzip" } });
+  }
+  return new Response(text, { status, headers: baseHeaders });
 }
 
 serve(async (req) => {
@@ -186,70 +173,25 @@ serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not configured");
 
-    const body = await req.json();
-    const messages: ClientMessage[] = Array.isArray(body?.messages)
-      ? body.messages
-      : [];
+    const body = await req.json().catch(() => ({}));
+
+    // 워밍업 핑: 비싼 작업 없이 바로 OK
+    if (body?.warmup === true) {
+      return await jsonResponse(req, { ok: true, warmed: true });
+    }
+
+    const messages: ClientMessage[] = Array.isArray(body?.messages) ? body.messages : [];
     const state: OnboardingState = body?.state || {};
 
     const systemPrompt = buildSystemPrompt(state);
 
-    // 1차: 정보 추출 전용 호출 (도구 강제). 사용자의 마지막 발화에서 저장/연동/스킵을 추출.
-    const lastUser = [...messages].reverse().find((m) => m.role === "user");
-    const collectedToolResults: ChatMessage[] = [];
-    if (lastUser && lastUser.content) {
-      try {
-        const extractRes = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            systemInstruction: {
-              role: "system",
-              parts: [{
-                text: `당신은 정보 추출기입니다. 사용자의 한국어 발화에서 다음을 추출하면 해당 도구를 즉시 호출하세요. 추출할 정보가 전혀 없으면 아무 도구도 호출하지 마세요.\n- 이름/호칭 → save_user_name (예: "한석이라고 불러"→name=한석)\n- 업종 → save_business_type ("치킨집해"→치킨집)\n- 10자리 숫자(사업자번호) → save_business_number\n- 연동/연결 동의 → start_connection\n- 스킵/나중에 → skip_step\n\n현재 이미 수집된 항목(다시 호출 금지): 이름=${state.name || "X"}, 업종=${state.business_type || "X"}, 사업자번호=${state.business_number || "X"}.\n\n반드시 functionCall만 발행하고 텍스트는 출력하지 마세요.`
-              }],
-            },
-            contents: [{ role: "user", parts: [{ text: lastUser.content }] }],
-            tools: [{ functionDeclarations: TOOLS }],
-            toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: ["save_user_name", "save_business_type", "save_business_number", "start_connection", "skip_step"] } },
-            generationConfig: { temperature: 0, maxOutputTokens: 200 },
-          }),
-        });
-        if (extractRes.ok) {
-          const extractData = await extractRes.json();
-          const parts = extractData?.candidates?.[0]?.content?.parts || [];
-          for (const p of parts) {
-            if (p.functionCall?.name) {
-              collectedToolResults.push({
-                role: "assistant",
-                content: "",
-                toolName: p.functionCall.name,
-              });
-              // 도구 호출 자체를 호출자(프론트)가 실행하도록 별도 필드로 반환
-              (collectedToolResults[collectedToolResults.length - 1] as any).args = p.functionCall.args || {};
-            }
-          }
-        }
-      } catch (e) {
-        console.warn("extract phase failed:", e);
-      }
-    }
-
-    // 2차: 응답 생성용 호출 (도구 정보 없이 자연스러운 안내만)
-    const extractedSummary = collectedToolResults.length > 0
-      ? `\n\n# 방금 시스템이 자동 저장한 정보\n${collectedToolResults.map((c: any) => `- ${c.toolName}(${JSON.stringify(c.args || {})})`).join("\n")}\n이 저장은 이미 완료되었으니 "저장했어요"라고 자연스럽게 인사하고 다음 단계 한 가지만 안내하세요.`
-      : "";
-
+    // 단일 패스: 텍스트 + functionCall을 한 번에 받기 (mode AUTO)
     const payload = {
-      systemInstruction: {
-        role: "system",
-        parts: [{ text: systemPrompt + extractedSummary }],
-      },
+      systemInstruction: { role: "system", parts: [{ text: systemPrompt }] },
       contents: toGeminiContents(messages),
-      generationConfig: {
-        temperature: 0.4,
-        maxOutputTokens: 400,
-      },
+      tools: [{ functionDeclarations: TOOLS }],
+      toolConfig: { functionCallingConfig: { mode: "AUTO" } },
+      generationConfig: { temperature: 0.3, maxOutputTokens: 350 },
     };
 
     const controller = new AbortController();
@@ -270,65 +212,37 @@ serve(async (req) => {
     if (!response.ok) {
       const t = await response.text();
       console.error("Gemini error:", response.status, t);
-      return new Response(
-        JSON.stringify({
-          reply: "잠시 후 다시 말씀해주시겠어요?",
-          toolCalls: [],
-          done: false,
-          error: `gemini_${response.status}`,
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return await jsonResponse(req, {
+        reply: "잠시 후 다시 말씀해주시겠어요?",
+        toolCalls: [],
+        done: false,
+        error: `gemini_${response.status}`,
+      });
     }
 
     const data = await response.json();
-    const candidate = data?.candidates?.[0];
-    const parts = candidate?.content?.parts || [];
+    const parts = data?.candidates?.[0]?.content?.parts || [];
 
     let replyText = "";
-    const toolCalls: { name: string; args: Record<string, unknown> }[] = collectedToolResults.map((c: any) => ({
-      name: c.toolName as string,
-      args: c.args || {},
-    }));
-
+    const toolCalls: { name: string; args: Record<string, unknown> }[] = [];
     for (const p of parts) {
       if (typeof p.text === "string" && p.text.trim()) {
         replyText += (replyText ? "\n" : "") + p.text.trim();
       }
       if (p.functionCall?.name) {
-        toolCalls.push({
-          name: p.functionCall.name,
-          args: p.functionCall.args || {},
-        });
+        toolCalls.push({ name: p.functionCall.name, args: p.functionCall.args || {} });
       }
     }
 
     const done = toolCalls.some((c) => c.name === "finish_onboarding");
-
-    return new Response(
-      JSON.stringify({
-        reply: replyText || "",
-        toolCalls,
-        done,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return await jsonResponse(req, { reply: replyText || "", toolCalls, done });
   } catch (e) {
     console.error("onboarding-agent error:", e);
-    return new Response(
-      JSON.stringify({
-        reply: "지금 잠깐 신호가 약하네요. 한 번만 다시 말씀해주시겠어요?",
-        toolCalls: [],
-        done: false,
-        error: e instanceof Error ? e.message : "unknown",
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return await jsonResponse(req, {
+      reply: "지금 잠깐 신호가 약하네요. 한 번만 다시 말씀해주시겠어요?",
+      toolCalls: [],
+      done: false,
+      error: e instanceof Error ? e.message : "unknown",
+    });
   }
 });
