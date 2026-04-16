@@ -889,7 +889,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         return;
       }
 
-    const normalizedValue = validation.normalizedValue ?? value.trim();
+    const normalizedValue = validation.normalizedValue ?? cleanValue.trim();
     const newAnswers = { ...answers, [step.id]: normalizedValue };
     setAnswers(newAnswers);
     setShowInput(false);
