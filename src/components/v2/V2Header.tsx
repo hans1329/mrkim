@@ -67,7 +67,7 @@ export const V2Header = ({ isDrawerOpen, onToggleDrawer }: V2HeaderProps) => {
       {/* Oscilloscope area — constrained on PC */}
       <div
         className="h-8 overflow-hidden rounded-xl relative cursor-pointer flex-shrink-0"
-        style={{ width: isMobile ? undefined, flex: isMobile ? "1" : undefined, maxWidth: isMobile ? undefined : "360px", minWidth: isMobile ? undefined : "200px" }}
+        style={{ width: isMobile ? undefined : undefined, flex: isMobile ? "1" : "0 0 360px", maxWidth: isMobile ? undefined : "360px", minWidth: isMobile ? undefined : "200px" }}
         onClick={() => navigate("/secretary-settings")}
       >
         <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
