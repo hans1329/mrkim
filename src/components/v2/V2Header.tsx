@@ -1,8 +1,9 @@
-import { useRef, useEffect } from "react";
-import { Mic } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
+import { Mic, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useV2Voice } from "./V2VoiceContext";
 import { BentoMenuButton } from "./BentoMenuButton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Reactive wave path for oscilloscope
 const ReactiveWavePath = ({
@@ -39,6 +40,8 @@ const ReactiveWavePath = ({
   return <path ref={pathRef} fill="none" stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" />;
 };
 
+const quickPrompts = ["오늘 매출", "정산 확인", "경비 분류", "직원 급여"];
+
 interface V2HeaderProps {
   isDrawerOpen: boolean;
   onToggleDrawer: () => void;
@@ -47,6 +50,8 @@ interface V2HeaderProps {
 export const V2Header = ({ isDrawerOpen, onToggleDrawer }: V2HeaderProps) => {
   const { isConnected, volumeRef, toggleVoice } = useV2Voice();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const baseAmplitude = 2;
   const maxBoost = 14;
@@ -59,8 +64,12 @@ export const V2Header = ({ isDrawerOpen, onToggleDrawer }: V2HeaderProps) => {
       {/* Bento Menu */}
       <BentoMenuButton isOpen={isDrawerOpen} onClick={onToggleDrawer} />
 
-      {/* Oscilloscope area */}
-      <div className="flex-1 h-8 overflow-hidden rounded-xl relative cursor-pointer" onClick={() => navigate("/secretary-settings")}>
+      {/* Oscilloscope area — constrained on PC */}
+      <div
+        className="h-8 overflow-hidden rounded-xl relative cursor-pointer flex-shrink-0"
+        style={{ width: isMobile ? undefined, flex: isMobile ? "1" : undefined, maxWidth: isMobile ? undefined : "360px", minWidth: isMobile ? undefined : "200px" }}
+        onClick={() => navigate("/secretary-settings")}
+      >
         <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
           <defs>
             <linearGradient id="hwave1" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -84,6 +93,52 @@ export const V2Header = ({ isDrawerOpen, onToggleDrawer }: V2HeaderProps) => {
             stroke="url(#hwave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
         </svg>
       </div>
+
+      {/* PC only: Search + Quick Prompts */}
+      {!isMobile && (
+        <div className="flex-1 flex items-center gap-2 min-w-0">
+          {/* Search input */}
+          <div
+            className="flex items-center gap-2 px-3 h-8 rounded-xl transition-all duration-200"
+            style={{
+              background: searchFocused ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.05)",
+              border: `1px solid ${searchFocused ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)"}`,
+              minWidth: "180px",
+              maxWidth: "260px",
+              flex: "0 1 240px",
+            }}
+          >
+            <Search size={14} style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+            <input
+              placeholder="김비서에게 물어보세요..."
+              className="flex-1 text-xs bg-transparent outline-none placeholder:text-white/25 min-w-0"
+              style={{ color: "rgba(255,255,255,0.8)" }}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+            />
+          </div>
+
+          {/* Quick prompt chips */}
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            {quickPrompts.map((label) => (
+              <button
+                key={label}
+                className="px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-colors hover:bg-white/10"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  color: "rgba(255,255,255,0.45)",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile: fill remaining space */}
+      {isMobile && <div className="flex-1" />}
 
       {/* Mic toggle */}
       <button
