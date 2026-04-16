@@ -470,23 +470,10 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
         className="relative z-10 flex items-center gap-2 px-3 pb-4 pt-2"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
       >
-        <button
-          type="button"
-          onClick={() => toggleVoice()}
-          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{
-            background: voiceConnected
-              ? "linear-gradient(135deg, #FF375F, #FF6B9D)"
-              : "rgba(255,255,255,0.08)",
-          }}
-          aria-label="음성 토글"
-        >
-          <Mic className="w-5 h-5" style={{ color: "rgba(255,255,255,0.95)" }} />
-        </button>
         <input
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          placeholder={voiceConnected ? "말씀하시거나 직접 입력하세요" : "메시지를 입력하세요"}
+          placeholder="메시지를 입력하세요"
           className="flex-1 h-11 rounded-full px-4 text-[14px] outline-none"
           style={{
             background: "rgba(255,255,255,0.07)",
