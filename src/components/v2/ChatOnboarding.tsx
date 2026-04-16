@@ -205,45 +205,24 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
       let history: ChatMessage[] = [...messages, { role: "user", content: text }];
       setMessages(history);
 
-      // 최대 4번까지 도구 호출 라운드 허용 (저장→안내 동시 처리, 무한루프 방지)
-      for (let round = 0; round < 4; round++) {
-        const res = await callAgent(history, stateRef.current);
+      // 단일 라운드: 한 번의 에이전트 호출에서 도구 호출 + 안내 텍스트를 동시에 받음
+      const res = await callAgent(history, stateRef.current);
+      if (res.error) console.warn("agent error:", res.error);
 
-        if (res.error) {
-          console.warn("agent error:", res.error);
+      if (res.toolCalls && res.toolCalls.length > 0) {
+        const toolResults: ChatMessage[] = [];
+        for (const call of res.toolCalls) {
+          const result = await executeTool(call);
+          toolResults.push({ role: "tool", toolName: call.name, content: result, hidden: true });
+          if (call.name === "finish_onboarding") setCompleted(true);
         }
-
-        // 도구 실행
-        if (res.toolCalls && res.toolCalls.length > 0) {
-          const toolResults: ChatMessage[] = [];
-          for (const call of res.toolCalls) {
-            const result = await executeTool(call);
-            toolResults.push({
-              role: "tool",
-              toolName: call.name,
-              content: result,
-              hidden: true,
-            });
-            if (call.name === "finish_onboarding") {
-              setCompleted(true);
-            }
-          }
-          history = [...history, ...toolResults];
-        }
-
-        // 텍스트 답변이 있으면 메시지로 추가하고 라운드 종료
-        if (res.reply && res.reply.trim()) {
-          history = [...history, { role: "assistant", content: res.reply.trim() }];
-          setMessages(history);
-          break;
-        }
-
-        // 텍스트가 없는데 도구만 호출됐다면 다음 라운드에서 안내 받기
-        if (!res.toolCalls || res.toolCalls.length === 0) {
-          break;
-        }
-        setMessages(history);
+        history = [...history, ...toolResults];
       }
+
+      if (res.reply && res.reply.trim()) {
+        history = [...history, { role: "assistant", content: res.reply.trim() }];
+      }
+      setMessages(history);
 
       // 종료 조건
       if (stateRef.current && completed) {
@@ -263,6 +242,9 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
+
+    // 콜드스타트 방지: 에이전트 워밍업 핑 (응답 무시)
+    void supabase.functions.invoke("onboarding-agent", { body: { warmup: true } }).catch(() => {});
 
     // 음성 자동 연결
     if (!voiceConnected) toggleVoice();
