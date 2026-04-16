@@ -789,6 +789,34 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
   const advance = useCallback(async (value: string) => {
     if (!step) return;
 
+    // Ignore voice input while a connection is in-progress (loading state)
+    if (step.type === "inline_loading") return;
+
+    // Allow voice "skip/later" intent on cert_upload / password / connection-related text steps
+    const trimmedRaw = value.trim();
+    const compactRaw = trimmedRaw.replace(/\s/g, "");
+    const SKIP_VOICE = SKIP_PATTERN.test(compactRaw) || SKIP_PATTERN.test(trimmedRaw);
+    const isConnectionStep =
+      step.type === "cert_upload" ||
+      step.type === "password" ||
+      ["card_id", "bank_id", "delivery_id", "card_select", "bank_select", "card_method", "bank_method"].includes(step.id);
+
+    if (SKIP_VOICE && isConnectionStep) {
+      setShowInput(false);
+      setShowTextFallback(false);
+      setInputValue("");
+      setCertFile(null); setKeyFile(null); setCertPassword("");
+      setMessages(prev => [...prev, { from: "user", text: "나중에 할게요" }]);
+      // Route to next major section
+      const nextStep: StepId =
+        step.id.startsWith("hometax") ? "card_ask" :
+        step.id.startsWith("card") ? "bank_ask" :
+        step.id.startsWith("bank") ? "delivery_ask" :
+        "complete";
+      setTimeout(() => goToStep(nextStep), 500);
+      return;
+    }
+
     const validation = validateStepInput(step, value);
     if (!validation.isValid) {
       setShowInput(false);
