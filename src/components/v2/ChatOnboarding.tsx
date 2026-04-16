@@ -1034,8 +1034,6 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         {showInput && step && !badgeMode && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="relative z-10 px-4 pb-8 pt-3 flex flex-col items-center gap-1">
 
-            {/* Oscilloscope for text/choice steps */}
-            {(step.type === "text" || step.type === "password") && <OscilloscopeWave />}
 
             {/* Choice chips */}
             {step.type === "choice" && (
