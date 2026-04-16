@@ -14,8 +14,8 @@ type StepId =
   | "name" | "business_type" | "business_number"
   | "connect_intro"
   | "hometax_ask" | "hometax_cert" | "hometax_connecting"
-  | "card_ask" | "card_select" | "card_id" | "card_pw" | "card_connecting"
-  | "bank_ask" | "bank_select" | "bank_id" | "bank_pw" | "bank_connecting"
+  | "card_ask" | "card_select" | "card_method" | "card_cert" | "card_id" | "card_pw" | "card_connecting"
+  | "bank_ask" | "bank_select" | "bank_method" | "bank_cert" | "bank_id" | "bank_pw" | "bank_connecting"
   | "delivery_ask" | "delivery_select" | "delivery_id" | "delivery_pw" | "delivery_connecting"
   | "complete";
 
@@ -71,6 +71,14 @@ const CONNECTION_STEPS: StepDef[] = [
       { label: "NH농협카드", value: "nh" },
     ],
   },
+  {
+    id: "card_method", question: "어떻게 로그인하실까요?", type: "choice",
+    choices: [
+      { label: "아이디/비밀번호", value: "id" },
+      { label: "공동인증서", value: "cert" },
+    ],
+  },
+  { id: "card_cert", question: "공동인증서 파일을 업로드해주세요.\n(.pfx, .p12, .der 형식)", type: "cert_upload" },
   { id: "card_id", question: "카드사 아이디를 입력해주세요.", type: "text", placeholder: "카드사 로그인 ID" },
   { id: "card_pw", question: "카드사 비밀번호를 입력해주세요.", type: "password", placeholder: "카드사 로그인 비밀번호" },
   { id: "card_connecting", question: "카드사에 연결하고 있어요...", type: "inline_loading" },
@@ -86,6 +94,14 @@ const CONNECTION_STEPS: StepDef[] = [
       { label: "카카오뱅크", value: "kakao" }, { label: "토스뱅크", value: "toss" },
     ],
   },
+  {
+    id: "bank_method", question: "어떻게 로그인하실까요?", type: "choice",
+    choices: [
+      { label: "아이디/비밀번호", value: "id" },
+      { label: "공동인증서", value: "cert" },
+    ],
+  },
+  { id: "bank_cert", question: "공동인증서 파일을 업로드해주세요.\n(.pfx, .p12, .der 형식)", type: "cert_upload" },
   { id: "bank_id", question: "은행 아이디를 입력해주세요.", type: "text", placeholder: "인터넷뱅킹 ID" },
   { id: "bank_pw", question: "은행 비밀번호를 입력해주세요.", type: "password", placeholder: "인터넷뱅킹 비밀번호" },
   { id: "bank_connecting", question: "은행에 연결하고 있어요...", type: "inline_loading" },
@@ -201,6 +217,28 @@ const CHOICE_SYNONYMS: Partial<Record<StepId, Record<string, string>>> = {
     IBK기업은행: "IBK기업은행",
     카카오뱅크: "카카오뱅크",
     토스뱅크: "토스뱅크",
+  },
+  card_method: {
+    아이디: "아이디/비밀번호",
+    아이디비번: "아이디/비밀번호",
+    아이디비밀번호: "아이디/비밀번호",
+    비번: "아이디/비밀번호",
+    비밀번호: "아이디/비밀번호",
+    공동인증서: "공동인증서",
+    인증서: "공동인증서",
+    공인인증서: "공동인증서",
+    인증: "공동인증서",
+  },
+  bank_method: {
+    아이디: "아이디/비밀번호",
+    아이디비번: "아이디/비밀번호",
+    아이디비밀번호: "아이디/비밀번호",
+    비번: "아이디/비밀번호",
+    비밀번호: "아이디/비밀번호",
+    공동인증서: "공동인증서",
+    인증서: "공동인증서",
+    공인인증서: "공동인증서",
+    인증: "공동인증서",
   },
 };
 
@@ -611,9 +649,14 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
 
   const handleCardConnect = useCallback(async () => {
     const cardCompany = answers.card_select;
-    const id = answers.card_id;
-    const pw = answers.card_pw;
-    if (!cardCompany || !id || !pw) return;
+    const useCert = answers.card_method === "공동인증서";
+
+    if (!cardCompany) return;
+    if (useCert) {
+      if (!certFile || !certPassword) return;
+    } else {
+      if (!answers.card_id || !answers.card_pw) return;
+    }
 
     setIsConnecting(true);
     goToStep("card_connecting");
@@ -623,29 +666,47 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       const mid = brn.length >= 5 ? parseInt(brn.substring(3, 5), 10) : 0;
       const clientType = mid >= 81 ? "B" : "P";
 
-      const connectedId = await registerCardAccount(cardCompany, id, pw, undefined, clientType);
+      let connectedId: string | null = null;
+      if (useCert) {
+        const certFileBase64 = await fileToBase64(certFile!);
+        const keyFileBase64 = keyFile ? await fileToBase64(keyFile) : undefined;
+        connectedId = await registerCardAccount(
+          cardCompany, "", "",
+          { loginType: "0", certFile: certFileBase64, certPassword, keyFile: keyFileBase64 },
+          clientType,
+        );
+      } else {
+        connectedId = await registerCardAccount(cardCompany, answers.card_id, answers.card_pw, undefined, clientType);
+      }
+
       if (connectedId) {
         await connectService(`codef_card_${cardCompany}`, connectedId);
         setMessages(prev => [...prev, { from: "bot", text: "✅ 카드 연동 완료! 지출 내역을 자동으로 가져올게요." }]);
         setAnswers(prev => ({ ...prev, card: "connected" }));
+        setCertFile(null); setKeyFile(null); setCertPassword("");
         setTimeout(() => goToStep("bank_ask"), 800);
       } else {
-        setMessages(prev => [...prev, { from: "bot", text: "❌ 카드사 연결에 실패했어요.\n아이디와 비밀번호를 확인해주세요." }]);
-        goToStep("card_id");
+        setMessages(prev => [...prev, { from: "bot", text: useCert ? "❌ 인증서 연동에 실패했어요.\n인증서와 비밀번호를 확인해주세요." : "❌ 카드사 연결에 실패했어요.\n아이디와 비밀번호를 확인해주세요." }]);
+        goToStep(useCert ? "card_cert" : "card_id");
       }
     } catch (err) {
       setMessages(prev => [...prev, { from: "bot", text: "❌ 연결 중 오류가 발생했어요. 다시 시도해주세요." }]);
-      goToStep("card_id");
+      goToStep(useCert ? "card_cert" : "card_id");
     } finally {
       setIsConnecting(false);
     }
-  }, [answers, registerCardAccount, connectService, goToStep]);
+  }, [answers, certFile, keyFile, certPassword, registerCardAccount, connectService, goToStep]);
 
   const handleBankConnect = useCallback(async () => {
     const bankId = answers.bank_select;
-    const id = answers.bank_id;
-    const pw = answers.bank_pw;
-    if (!bankId || !id || !pw) return;
+    const useCert = answers.bank_method === "공동인증서";
+
+    if (!bankId) return;
+    if (useCert) {
+      if (!certFile || !certPassword) return;
+    } else {
+      if (!answers.bank_id || !answers.bank_pw) return;
+    }
 
     setIsConnecting(true);
     goToStep("bank_connecting");
@@ -655,23 +716,36 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       const mid = brn.length >= 5 ? parseInt(brn.substring(3, 5), 10) : 0;
       const clientType = mid >= 81 ? "B" : "P";
 
-      const connectedId = await registerBankAccount(bankId, id, pw, undefined, clientType);
+      let connectedId: string | null = null;
+      if (useCert) {
+        const certFileBase64 = await fileToBase64(certFile!);
+        const keyFileBase64 = keyFile ? await fileToBase64(keyFile) : undefined;
+        connectedId = await registerBankAccount(
+          bankId, "", "",
+          { loginType: "0", certFile: certFileBase64, certPassword, keyFile: keyFileBase64 },
+          clientType,
+        );
+      } else {
+        connectedId = await registerBankAccount(bankId, answers.bank_id, answers.bank_pw, undefined, clientType);
+      }
+
       if (connectedId) {
         await connectService(`codef_bank_${bankId}`, connectedId);
         setMessages(prev => [...prev, { from: "bot", text: "✅ 은행 연동 완료! 입출금 내역을 자동으로 관리할게요." }]);
         setAnswers(prev => ({ ...prev, bank: "connected" }));
+        setCertFile(null); setKeyFile(null); setCertPassword("");
         setTimeout(() => goToStep("delivery_ask"), 800);
       } else {
-        setMessages(prev => [...prev, { from: "bot", text: "❌ 은행 연결에 실패했어요.\n아이디와 비밀번호를 확인해주세요." }]);
-        goToStep("bank_id");
+        setMessages(prev => [...prev, { from: "bot", text: useCert ? "❌ 인증서 연동에 실패했어요.\n인증서와 비밀번호를 확인해주세요." : "❌ 은행 연결에 실패했어요.\n아이디와 비밀번호를 확인해주세요." }]);
+        goToStep(useCert ? "bank_cert" : "bank_id");
       }
     } catch (err) {
       setMessages(prev => [...prev, { from: "bot", text: "❌ 연결 중 오류가 발생했어요. 다시 시도해주세요." }]);
-      goToStep("bank_id");
+      goToStep(useCert ? "bank_cert" : "bank_id");
     } finally {
       setIsConnecting(false);
     }
-  }, [answers, registerBankAccount, connectService, goToStep]);
+  }, [answers, certFile, keyFile, certPassword, registerBankAccount, connectService, goToStep]);
 
   const handleDeliveryConnect = useCallback(async () => {
     const platform = selectedDeliveryPlatform;
@@ -774,7 +848,15 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         break;
 
       case "card_select":
-        setTimeout(() => goToStep("card_id"), 600);
+        setTimeout(() => goToStep("card_method"), 600);
+        break;
+
+      case "card_method":
+        if (normalizedValue === "공동인증서") {
+          setTimeout(() => goToStep("card_cert"), 600);
+        } else {
+          setTimeout(() => goToStep("card_id"), 600);
+        }
         break;
 
       case "card_id":
@@ -794,7 +876,15 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         break;
 
       case "bank_select":
-        setTimeout(() => goToStep("bank_id"), 600);
+        setTimeout(() => goToStep("bank_method"), 600);
+        break;
+
+      case "bank_method":
+        if (normalizedValue === "공동인증서") {
+          setTimeout(() => goToStep("bank_cert"), 600);
+        } else {
+          setTimeout(() => goToStep("bank_id"), 600);
+        }
         break;
 
       case "bank_id":
@@ -1165,10 +1255,30 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
 
                 {/* Submit + skip */}
                 <div className="flex gap-2">
-                  <motion.button whileTap={{ scale: 0.97 }} onClick={handleHometaxConnect} disabled={!certFile || !certPassword || (isDerMode && !keyFile)} className="flex-1 py-3 rounded-xl text-[13px] font-semibold disabled:opacity-30" style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)", color: "rgba(255,255,255,0.95)" }}>
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      if (step.id === "card_cert") handleCardConnect();
+                      else if (step.id === "bank_cert") handleBankConnect();
+                      else handleHometaxConnect();
+                    }}
+                    disabled={!certFile || !certPassword || (isDerMode && !keyFile)}
+                    className="flex-1 py-3 rounded-xl text-[13px] font-semibold disabled:opacity-30"
+                    style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)", color: "rgba(255,255,255,0.95)" }}
+                  >
                     연동하기
                   </motion.button>
-                  <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setMessages(prev => [...prev, { from: "user", text: "건너뛸게요" }]); setTimeout(() => goToStep("card_ask"), 600); }} className="px-4 py-3 rounded-xl text-[13px]" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      const nextStep: StepId = step.id === "card_cert" ? "bank_ask" : step.id === "bank_cert" ? "delivery_ask" : "card_ask";
+                      setMessages(prev => [...prev, { from: "user", text: "건너뛸게요" }]);
+                      setCertFile(null); setKeyFile(null); setCertPassword("");
+                      setTimeout(() => goToStep(nextStep), 600);
+                    }}
+                    className="px-4 py-3 rounded-xl text-[13px]"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}
+                  >
                     건너뛰기
                   </motion.button>
                 </div>
