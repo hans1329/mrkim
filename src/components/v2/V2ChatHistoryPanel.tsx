@@ -51,90 +51,92 @@ export const V2ChatHistoryPanel = () => {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 flex items-center justify-center">
-        <div ref={scrollRef} className={`px-3 py-3 space-y-3 ${!hasMessages ? 'flex items-center justify-center min-h-full' : ''}`}>
-          {!hasMessages && (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <Avatar className="h-16 w-16 border-2 border-primary/20">
-                <AvatarImage src={secretaryAvatarUrl} className="object-cover" />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground">
-                  <Bot className="h-8 w-8" />
-                </AvatarFallback>
-              </Avatar>
-              <p className="text-[13px] text-center" style={{ color: "rgba(255,255,255,0.3)" }}>
-                김비서에게 무엇이든 물어보세요
-              </p>
-              <div className="flex flex-wrap gap-1.5 justify-center mt-2">
-                {quickPrompts.map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => { setInput(""); sendMessage(p); }}
-                    className="text-[11px] px-2.5 py-1.5 rounded-full transition-colors"
-                    style={{
-                      background: "rgba(255,255,255,0.06)",
-                      color: "rgba(255,255,255,0.5)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                    }}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
+      {!hasMessages ? (
+        <div className="flex-1 flex items-center justify-center px-3 py-3">
+          <div className="flex flex-col items-center justify-center gap-3">
+            <Avatar className="h-16 w-16 border-2 border-primary/20">
+              <AvatarImage src={secretaryAvatarUrl} className="object-cover" />
+              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground">
+                <Bot className="h-8 w-8" />
+              </AvatarFallback>
+            </Avatar>
+            <p className="text-[13px] text-center" style={{ color: "rgba(255,255,255,0.3)" }}>
+              김비서에게 무엇이든 물어보세요
+            </p>
+            <div className="flex flex-wrap gap-1.5 justify-center mt-2">
+              {quickPrompts.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => { setInput(""); sendMessage(p); }}
+                  className="text-[11px] px-2.5 py-1.5 rounded-full transition-colors"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.5)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                >
+                  {p}
+                </button>
+              ))}
             </div>
-          )}
-
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
+          </div>
+        </div>
+      ) : (
+        <ScrollArea className="flex-1">
+          <div ref={scrollRef} className="px-3 py-3 space-y-3">
+            {messages.map((msg) => (
               <div
-                className="max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed"
-                style={{
-                  background: msg.role === "user"
-                    ? "rgba(0,122,255,0.25)"
-                    : "rgba(255,255,255,0.06)",
-                  color: "rgba(255,255,255,0.85)",
-                }}
-              >
-                {msg.role === "assistant" ? (
-                  <div className="prose prose-invert prose-sm max-w-none">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    {msg.visualization && (
-                      <div className="mt-2">
-                        <DataVisualization data={msg.visualization} />
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  msg.content
-                )}
-              </div>
-            </div>
-          ))}
-
-          <AnimatePresence>
-            {isLoading && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex justify-start"
+                key={msg.id}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className="rounded-2xl px-3 py-2 flex items-center gap-2"
-                  style={{ background: "rgba(255,255,255,0.06)" }}
+                  className="max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed"
+                  style={{
+                    background: msg.role === "user"
+                      ? "rgba(0,122,255,0.25)"
+                      : "rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.85)",
+                  }}
                 >
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: "rgba(255,255,255,0.4)" }} />
-                  <span className="text-[12px]" style={{ color: "rgba(255,255,255,0.4)" }}>
-                    생각 중...
-                  </span>
+                  {msg.role === "assistant" ? (
+                    <div className="prose prose-invert prose-sm max-w-none">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      {msg.visualization && (
+                        <div className="mt-2">
+                          <DataVisualization data={msg.visualization} />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    msg.content
+                  )}
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </ScrollArea>
+              </div>
+            ))}
+
+            <AnimatePresence>
+              {isLoading && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex justify-start"
+                >
+                  <div
+                    className="rounded-2xl px-3 py-2 flex items-center gap-2"
+                    style={{ background: "rgba(255,255,255,0.06)" }}
+                  >
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: "rgba(255,255,255,0.4)" }} />
+                    <span className="text-[12px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      생각 중...
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </ScrollArea>
+      )}
 
       <div className="px-3 py-3">
         <div
