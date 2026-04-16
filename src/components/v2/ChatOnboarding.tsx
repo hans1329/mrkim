@@ -479,16 +479,12 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
   const step = stepFlow[currentIdx];
 
   useEffect(() => {
-    onCommit((rawText) => {
-      const cStep = stepFlow[currentIdxRef.current];
-      if (cStep?.type === "action" || cStep?.type === "cert_upload" || cStep?.type === "inline_loading" || cStep?.type === "password") return;
-      const text = rawText.trim();
-      if (!text || text.length < 2) return;
-      const NOISE_PATTERNS = /^(음+|어+|아+|으+|응+|흠+|에+|ㅎ+|\.+|…+)$/;
-      if (NOISE_PATTERNS.test(text)) return;
-      if (advanceRef.current) advanceRef.current(text);
-    });
-  }, [onCommit, stepFlow]);
+    if (!isConnected) {
+      void toggleVoice().then(() => setSttReady(true));
+    } else {
+      setSttReady(true);
+    }
+  }, [isConnected, toggleVoice]);
 
   useEffect(() => {
     const t = setTimeout(() => {
