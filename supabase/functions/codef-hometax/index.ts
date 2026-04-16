@@ -186,7 +186,6 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   const encryptedPassword = publicKey ? encryptRSAPKCS1(certPassword, publicKey) : certPassword;
   // 홈택스 인증서 로그인: id/password는 빈 문자열을 암호화하여 전송
   const encryptedEmptyId = publicKey ? encryptRSAPKCS1("", publicKey) : "";
-  const encryptedEmptyPw = publicKey ? encryptRSAPKCS1("", publicKey) : "";
 
   // DER+KEY 분리 방식 vs PFX 통합 방식
   const accountEntry: Record<string, unknown> = {
