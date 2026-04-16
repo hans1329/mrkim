@@ -813,6 +813,17 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
 
   useEffect(() => { advanceRef.current = (value: string) => { void advance(value); }; }, [advance]);
 
+  // Wire voice commits → advance the current step
+  useEffect(() => {
+    onCommit((rawText) => {
+      const text = rawText.trim();
+      if (!text || text.length < 1) return;
+      // Filter common Korean filler/noise tokens
+      if (/^(음+|어+|아+|네\.?|음\.+)$/.test(text)) return;
+      advanceRef.current?.(text);
+    });
+  }, [onCommit]);
+
   // Badge handlers (for basic steps only)
   const handleBadgeClick = useCallback((stepId: string) => {
     const label = STEP_LABELS[stepId] || stepId;
