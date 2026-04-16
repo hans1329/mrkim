@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Sparkles, Loader2 } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAIChat } from "@/hooks/useAIChat";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ReactMarkdown from "react-markdown";
 import { DataVisualization } from "@/components/chat/DataVisualization";
+import { useProfileQuery } from "@/hooks/useProfileQuery";
 
 const quickPrompts = [
   "오늘 매출 얼마야?",
@@ -19,6 +20,8 @@ export const V2ChatHistoryPanel = () => {
     isLoading,
     sendMessage,
   } = useAIChat();
+  const { profile } = useProfileQuery();
+  const avatarUrl = profile?.secretary_avatar_url || "/images/icc-5.webp";
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -54,7 +57,11 @@ export const V2ChatHistoryPanel = () => {
         <div ref={scrollRef} className="px-3 py-3 space-y-3">
           {!hasMessages && (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <Sparkles className="w-8 h-8" style={{ color: "rgba(255,255,255,0.15)" }} />
+              <img
+                src={avatarUrl}
+                alt="김비서"
+                className="w-14 h-14 rounded-full object-cover"
+              />
               <p className="text-[13px] text-center" style={{ color: "rgba(255,255,255,0.3)" }}>
                 김비서에게 무엇이든 물어보세요
               </p>
