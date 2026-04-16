@@ -828,6 +828,8 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     try {
       const trimmedRaw = value.trim();
       const compactRaw = trimmedRaw.replace(/\s/g, "");
+      const isVoiceInput = !value.startsWith("__BUTTON__:");
+      const cleanedValue = value.startsWith("__BUTTON__:") ? value.slice("__BUTTON__:".length) : value;
 
       // ─── 1차: 정규식 SKIP 감지 (연결 단계만) ───
       const isConnectionStep =
@@ -835,6 +837,13 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         step.type === "password" ||
         ["card_id", "bank_id", "delivery_id", "card_select", "bank_select", "card_method", "bank_method"].includes(step.id);
       const SKIP_VOICE = SKIP_PATTERN.test(compactRaw) || SKIP_PATTERN.test(trimmedRaw);
+
+      // ─── cert_upload / password 단계: 음성으로 SKIP 외에는 진행 불가 ───
+      // (파일 업로드/비밀번호 입력은 명시적 UI 액션으로만 처리)
+      if (isVoiceInput && (step.type === "cert_upload" || step.type === "password") && !SKIP_VOICE) {
+        console.log("Voice ignored on cert_upload/password step (use button)");
+        return;
+      }
 
       if (SKIP_VOICE && isConnectionStep) {
         setShowInput(false);
