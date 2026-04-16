@@ -64,10 +64,31 @@ export const V2Header = ({ isDrawerOpen, onToggleDrawer }: V2HeaderProps) => {
       {/* Bento Menu */}
       <BentoMenuButton isOpen={isDrawerOpen} onClick={onToggleDrawer} />
 
-      {/* Oscilloscope area — constrained on PC */}
+      {/* PC only: Search input before oscilloscope */}
+      {!isMobile && (
+        <div
+          className="flex items-center gap-2 px-3 h-8 rounded-xl transition-all duration-200 flex-shrink-0"
+          style={{
+            background: searchFocused ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.05)",
+            border: `1px solid ${searchFocused ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)"}`,
+            width: "240px",
+          }}
+        >
+          <Search size={14} style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+          <input
+            placeholder="김비서에게 물어보세요..."
+            className="flex-1 text-xs bg-transparent outline-none placeholder:text-white/25 min-w-0"
+            style={{ color: "rgba(255,255,255,0.8)" }}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+          />
+        </div>
+      )}
+
+      {/* Oscilloscope area */}
       <div
-        className="h-8 overflow-hidden rounded-xl relative cursor-pointer flex-shrink-0"
-        style={{ width: isMobile ? undefined : undefined, flex: isMobile ? "1" : "0 0 360px", maxWidth: isMobile ? undefined : "360px", minWidth: isMobile ? undefined : "200px" }}
+        className="h-8 overflow-hidden rounded-xl relative cursor-pointer"
+        style={{ flex: "1", maxWidth: isMobile ? undefined : "400px" }}
         onClick={() => navigate("/secretary-settings")}
       >
         <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
