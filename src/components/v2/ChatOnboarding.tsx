@@ -960,12 +960,55 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       {/* Ambient glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(88,86,214,0.1) 0%, transparent 70%)", filter: "blur(60px)" }} />
 
-      {/* Top bar - close & skip only */}
-      <div className="relative z-10 flex items-center justify-end gap-2 px-5 pt-4">
-        <button className="text-[12px] font-medium px-3 py-1.5 rounded-full" style={{ color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.05)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
-          건너뛰기
+      {/* Header with oscilloscope + mic + close */}
+      <div className="relative z-10 flex items-center gap-3 px-4 pt-3 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
+        {/* Oscilloscope */}
+        <div className="h-8 overflow-hidden rounded-xl relative flex-1">
+          <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
+            <defs>
+              <linearGradient id="onb-wave1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#007AFF" stopOpacity="0" />
+                <stop offset="30%" stopColor="#007AFF" stopOpacity="0.6" />
+                <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
+                <stop offset="70%" stopColor="#AF52DE" stopOpacity="0.6" />
+                <stop offset="100%" stopColor="#AF52DE" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="onb-wave2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0" />
+                <stop offset="25%" stopColor="#FF6B9D" stopOpacity="0.35" />
+                <stop offset="50%" stopColor="#007AFF" stopOpacity="0.4" />
+                <stop offset="75%" stopColor="#34C759" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#34C759" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <OnbReactiveWavePath baseAmplitude={2} maxBoost={14} stroke="url(#onb-wave1)" strokeWidth={2} freq={0.024} speed={1.8} phase={0} />
+            <OnbReactiveWavePath baseAmplitude={1.2} maxBoost={7} stroke="url(#onb-wave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
+          </svg>
+        </div>
+
+        {/* Mic toggle */}
+        <button
+          onClick={() => {
+            if (scribe.isConnected) scribe.disconnect();
+            else {
+              (async () => {
+                try {
+                  const { data } = await supabase.functions.invoke("elevenlabs-scribe-token");
+                  if (data?.token) {
+                    await scribe.connect({ token: data.token, microphone: { echoCancellation: true, noiseSuppression: true } });
+                    setSttReady(true);
+                  }
+                } catch {}
+              })();
+            }
+          }}
+          className="flex-shrink-0 w-9 h-9 flex items-center justify-center"
+        >
+          <Mic className="w-4.5 h-4.5" style={{ color: scribe.isConnected ? "#007AFF" : "rgba(255,255,255,0.35)" }} />
         </button>
-        <button className="w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
+
+        {/* Close */}
+        <button className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
           <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} />
         </button>
       </div>
