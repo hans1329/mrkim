@@ -1028,6 +1028,21 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
             const cleaned = ai.value.trim();
             if (cleaned) validation = { isValid: true, normalizedValue: cleaned };
           }
+
+          // 7) business_type choice 단계: 사전에 없는 업종(예: "치킨집해")도 자유 텍스트로 수용
+          if (!validation.isValid && step.id === "business_type" && (ai.intent === "answer" || ai.intent === "choice")) {
+            const raw = (ai.value || trimmedRaw).trim();
+            // 조사/어미 정리: "~해", "~에요", "~입니다", "~요" 제거
+            const cleaned = raw
+              .replace(/(해요|이에요|예요|입니다|이라고|이라|에요|이야|이고|이며|입니다요|해|요)$/g, "")
+              .replace(/[^가-힣a-zA-Z0-9\s/]/g, "")
+              .trim();
+            if (cleaned.length >= 2) {
+              // 사전에 매칭되면 표준 라벨, 아니면 정리된 원문 그대로
+              const normalized = normalizeChoiceValue(step, cleaned) || cleaned;
+              validation = { isValid: true, normalizedValue: normalized };
+            }
+          }
         }
       }
 
