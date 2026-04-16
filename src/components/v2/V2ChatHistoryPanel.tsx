@@ -18,7 +18,6 @@ export const V2ChatHistoryPanel = () => {
     messages,
     isLoading,
     sendMessage,
-    quotaInfo,
   } = useAIChat();
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -48,11 +47,6 @@ export const V2ChatHistoryPanel = () => {
             김비서 대화
           </span>
         </div>
-        {quotaInfo && (
-          <span className="text-[11px] mt-1 block" style={{ color: "rgba(255,255,255,0.3)" }}>
-            오늘 {quotaInfo.used}/{quotaInfo.limit}회 사용
-          </span>
-        )}
       </div>
 
       {/* Messages */}
