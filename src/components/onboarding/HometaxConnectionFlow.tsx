@@ -301,12 +301,16 @@ export function HometaxConnectionFlow({
         })
         .eq("user_id", user.id);
 
-      await connectService("codef_hometax_tax_invoice", connectedId || undefined);
+      // connectedId가 있을 때만 connected 상태로 저장 (인증서 등록 완료 시)
+      // connectedId 없이 저장하면 sync-orchestrator가 데이터를 가져올 수 없음
+      if (connectedId) {
+        await connectService("codef_hometax_tax_invoice", connectedId);
+      }
 
       toast.success(
         connectedId
           ? "홈택스가 연결되었습니다. 세금계산서를 자동으로 동기화합니다."
-          : "홈택스가 연결되었습니다."
+          : "사업자 정보가 저장되었습니다. 세금계산서 연동은 공동인증서가 필요합니다."
       );
       refetchProfile();
       onComplete();
