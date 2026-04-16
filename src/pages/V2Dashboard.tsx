@@ -153,7 +153,14 @@ const V2Dashboard = () => {
   }, []);
 
   const persistOnboardingProgress = useCallback(async (partialData: Record<string, string>) => {
-    setExistingData((prev) => ({ ...prev, ...partialData }));
+    setExistingData((prev) => {
+      const next = { ...prev };
+      for (const [k, v] of Object.entries(partialData)) {
+        if (v) next[k] = v;
+        else delete next[k];
+      }
+      return next;
+    });
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -161,7 +168,7 @@ const V2Dashboard = () => {
     const updates: Record<string, unknown> = {};
     for (const [stepId, value] of Object.entries(partialData)) {
       const col = ONBOARDING_TO_PROFILE[stepId];
-      if (col) updates[col] = value;
+      if (col) updates[col] = value || null;
     }
 
     if (Object.keys(updates).length > 0) {
