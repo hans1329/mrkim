@@ -1032,7 +1032,8 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       if (!text || text.length < 1) return;
       // Filter common Korean filler/noise tokens
       if (/^(음+|어+|아+|네\.?|음\.+)$/.test(text)) return;
-      advanceRef.current?.(text);
+      // 음성 입력은 __VOICE__: 프리픽스로 마킹 (cert_upload/password에서 자동 진행 방지)
+      advanceRef.current?.(`__VOICE__:${text}`);
     });
   }, [onCommit]);
 
