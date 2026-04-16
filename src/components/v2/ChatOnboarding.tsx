@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Mic, Send, Loader2, Check } from "lucide-react";
+import { Send, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useV2Voice } from "./V2VoiceContext";
 import { useConnection } from "@/contexts/ConnectionContext";
@@ -237,29 +237,55 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
     }
   }, [messages, callAgent, executeTool, completed]);
 
-  // ─── 최초 인사 ──────────────────────────────────────────────
+  // ─── 최초 인사 (에이전트에 위임하여 상태 기반으로 자연스럽게 이어서 진행) ──
 
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    // 콜드스타트 방지: 에이전트 워밍업 핑 (응답 무시)
+    // 콜드스타트 방지
     void supabase.functions.invoke("onboarding-agent", { body: { warmup: true } }).catch(() => {});
 
     // 음성 자동 연결
     if (!voiceConnected) toggleVoice();
 
-    // 첫 인사: 수집된 정보 기반 정적 텍스트 (Gemini 호출 절약)
-    const s = stateRef.current;
-    let greet = "반갑습니다, 대표님! 어떻게 불러드릴까요?";
-    if (s.name && !s.business_type) {
-      greet = `다시 오셨네요, ${s.name} 대표님!\n어떤 업종이세요? (음식점·카페·소매/유통·기타)`;
-    } else if (s.name && s.business_type && !s.business_number) {
-      greet = `${s.name} 대표님, 마지막으로 사업자등록번호 10자리만 알려주세요.`;
-    } else if (s.name && s.business_type && s.business_number) {
-      greet = `${s.name} 대표님, 이제 데이터 연동을 도와드릴까요? 홈택스부터 시작해도 될까요?`;
-    }
-    setMessages([{ role: "assistant", content: greet }]);
+    // 에이전트에 resume 시스템 메시지를 보내 상태 기반 첫 인사를 받음
+    const initAgent = async () => {
+      setIsThinking(true);
+      try {
+        const s = stateRef.current;
+        const resumeHint = s.name
+          ? `(시스템: ${s.name} 대표님이 다시 방문했습니다. 현재 수집 상태를 참고해 이미 완료된 항목을 확인하고, 다음 미완료 단계를 자연스럽게 안내해주세요.)`
+          : "(시스템: 새 사용자입니다. 이름부터 물어봐주세요.)";
+
+        const history: ChatMessage[] = [{ role: "user", content: resumeHint, hidden: true }];
+        const res = await callAgent(history, s);
+
+        const finalHistory: ChatMessage[] = [...history];
+        if (res.toolCalls?.length) {
+          for (const call of res.toolCalls) {
+            const result = await executeTool(call);
+            finalHistory.push({ role: "tool", toolName: call.name, content: result, hidden: true });
+          }
+        }
+        if (res.reply?.trim()) {
+          finalHistory.push({ role: "assistant", content: res.reply.trim() });
+        }
+        setMessages(finalHistory);
+      } catch (e) {
+        console.error("init agent error:", e);
+        // 폴백: 정적 인사
+        const s = stateRef.current;
+        const fallback = s.name
+          ? `다시 오셨네요, ${s.name} 대표님! 이어서 진행할게요.`
+          : "반갑습니다, 대표님! 어떻게 불러드릴까요?";
+        setMessages([{ role: "assistant", content: fallback }]);
+      } finally {
+        setIsThinking(false);
+      }
+    };
+
+    void initAgent();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -444,23 +470,10 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
         className="relative z-10 flex items-center gap-2 px-3 pb-4 pt-2"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
       >
-        <button
-          type="button"
-          onClick={() => toggleVoice()}
-          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{
-            background: voiceConnected
-              ? "linear-gradient(135deg, #FF375F, #FF6B9D)"
-              : "rgba(255,255,255,0.08)",
-          }}
-          aria-label="음성 토글"
-        >
-          <Mic className="w-5 h-5" style={{ color: "rgba(255,255,255,0.95)" }} />
-        </button>
         <input
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          placeholder={voiceConnected ? "말씀하시거나 직접 입력하세요" : "메시지를 입력하세요"}
+          placeholder="메시지를 입력하세요"
           className="flex-1 h-11 rounded-full px-4 text-[14px] outline-none"
           style={{
             background: "rgba(255,255,255,0.07)",
