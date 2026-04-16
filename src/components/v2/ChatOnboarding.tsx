@@ -71,6 +71,14 @@ const CONNECTION_STEPS: StepDef[] = [
       { label: "NH농협카드", value: "nh" },
     ],
   },
+  {
+    id: "card_method", question: "어떻게 로그인하실까요?", type: "choice",
+    choices: [
+      { label: "아이디/비밀번호", value: "id" },
+      { label: "공동인증서", value: "cert" },
+    ],
+  },
+  { id: "card_cert", question: "공동인증서 파일을 업로드해주세요.\n(.pfx, .p12, .der 형식)", type: "cert_upload" },
   { id: "card_id", question: "카드사 아이디를 입력해주세요.", type: "text", placeholder: "카드사 로그인 ID" },
   { id: "card_pw", question: "카드사 비밀번호를 입력해주세요.", type: "password", placeholder: "카드사 로그인 비밀번호" },
   { id: "card_connecting", question: "카드사에 연결하고 있어요...", type: "inline_loading" },
