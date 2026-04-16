@@ -14,13 +14,20 @@ const CODEF_TOKEN_URL = "https://oauth.codef.io/oauth/token";
 const BUSINESS_STATUS_PATH = "/v1/kr/public/nt/business/status";
 const ACCOUNT_CREATE_PATH = "/v1/account/create";
 
-function encryptRSAPKCS1(plainText: string, base64PublicKey: string): string {
-  const pem = `-----BEGIN PUBLIC KEY-----\n${base64PublicKey
-    .match(/.{1,64}/g)!
-    .join("\n")}\n-----END PUBLIC KEY-----`;
-  const publicKey = forge.pki.publicKeyFromPem(pem);
-  const bytes = forge.util.encodeUtf8(plainText);
-  const encrypted = publicKey.encrypt(bytes, "RSAES-PKCS1-V1_5");
+// RSA PKCS1 v1.5 암호화 — 은행(codef-bank)과 동일한 UTF-8 바이트 기준 구현
+function encryptRSAPKCS1(plainText: string, rawPublicKey: string): string {
+  const cleanKey = rawPublicKey.replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|[\r\n\s]/g, "");
+  const derBytes = forge.util.decode64(cleanKey);
+  const asn1 = forge.asn1.fromDer(derBytes);
+  const publicKey = forge.pki.publicKeyFromAsn1(asn1);
+
+  const utf8Bytes = new TextEncoder().encode(plainText);
+  let binaryStr = "";
+  for (const byte of utf8Bytes) {
+    binaryStr += String.fromCharCode(byte);
+  }
+
+  const encrypted = publicKey.encrypt(binaryStr, "RSAES-PKCS1-V1_5");
   return forge.util.encode64(encrypted);
 }
 
@@ -55,6 +62,29 @@ async function getAccessToken(): Promise<string> {
   if (!response.ok) throw new Error(`Token request failed: ${response.status}`);
   const data = await response.json();
   return data.access_token;
+}
+
+// 동적 공개키 조회 (은행과 동일) — 실패 시 환경변수 폴백
+async function getPublicKey(accessToken: string): Promise<string> {
+  try {
+    const response = await fetch(`${CODEF_API_URL}/v1/common/public-key`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) throw new Error(`Public key request failed: ${response.status}`);
+    const text = await response.text();
+    try {
+      const json = JSON.parse(text);
+      return json.publicKey || json.data?.publicKey || text.trim();
+    } catch {
+      return text.trim();
+    }
+  } catch (err) {
+    console.error("Dynamic public key fetch failed, using env fallback:", err);
+    const envKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
+    if (!envKey) throw new Error("공개키를 가져올 수 없습니다.");
+    return envKey;
+  }
 }
 
 serve(async (req) => {
@@ -163,7 +193,9 @@ async function handleBusinessVerify(body: any): Promise<Response> {
 }
 
 /**
- * 공동인증서 방식 계정 등록 (loginType: "0")
+ * 공동인증서 방식 계정 등록
+ * - CODEF 공식 규격: loginType "0" (인증서), derFile/keyFile 또는 certFile+certType
+ * - 은행(codef-bank)과 동일한 파라미터 구조 사용
  */
 async function handleRegister(_req: Request, body: any, clientType: string = "P"): Promise<Response> {
   const { businessNumber, certFileBase64, certPassword, keyFileBase64 } = body;
@@ -180,40 +212,44 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
 
   const cleanedNumber = businessNumber.replace(/\D/g, "");
   const accessToken = await getAccessToken();
-  const publicKey = Deno.env.get("CODEF_PUBLIC_KEY") || "";
+
+  // 동적 공개키 조회 (은행과 동일)
+  const publicKey = await getPublicKey(accessToken);
+  console.log("Using public key, length:", publicKey.length);
 
   // 인증서 비밀번호를 RSA 암호화
-  const encryptedPassword = publicKey ? encryptRSAPKCS1(certPassword, publicKey) : certPassword;
-  // 홈택스 인증서 로그인: id/password는 빈 문자열을 암호화하여 전송
-  const encryptedEmptyId = publicKey ? encryptRSAPKCS1("", publicKey) : "";
+  const encryptedPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // DER+KEY 분리 방식 vs PFX 통합 방식
+  // CODEF 공식 규격에 맞춘 계정 엔트리
+  // - loginType: "0" (인증서) — 은행/카드/홈택스 공통
+  // - id 필드 불필요 (인증서 로그인 시)
   const accountEntry: Record<string, unknown> = {
     countryCode: "KR",
     businessType: "NT",
     clientType,
     organization: "0002",
-    loginType: "2",  // 홈택스 공동인증서는 loginType "2"
-    id: encryptedEmptyId,
+    loginType: "0",           // 인증서 로그인 = "0" (공식 규격)
     password: encryptedPassword,
     identity: cleanedNumber,
   };
 
+  // DER+KEY 분리 방식 vs PFX 통합 방식 — 은행(codef-bank)과 동일한 필드명 사용
   if (keyFileBase64) {
-    accountEntry.reqCertFile = certFileBase64;
-    accountEntry.reqKeyFile = keyFileBase64;
-    console.log("Using DER+KEY separate cert files for hometax");
+    accountEntry.derFile = certFileBase64;
+    accountEntry.keyFile = keyFileBase64;
+    accountEntry.certType = "1";
+    console.log(`Using DER+KEY separate cert files (certType: 1, clientType: ${clientType})`);
   } else {
     accountEntry.certFile = certFileBase64;
     accountEntry.certType = "pfx";
-    console.log("Using PFX/P12 combined cert file for hometax");
+    console.log(`Using PFX/P12 combined cert file (clientType: ${clientType})`);
   }
 
   const requestBody = {
     accountList: [accountEntry],
   };
 
-  console.log(`Registering hometax account with certificate, identity=${cleanedNumber}`);
+  console.log(`Registering hometax account with certificate, identity=${cleanedNumber}, loginType=0, clientType=${clientType}`);
 
   const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
     method: "POST",
