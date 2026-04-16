@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { useFeedCards, type FeedCard } from "@/hooks/useFeedCards";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCountUp } from "@/hooks/useCountUp";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useV2PC } from "./V2PCContext";
 
 
 const cardVariants = {
