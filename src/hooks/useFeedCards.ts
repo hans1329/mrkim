@@ -365,7 +365,7 @@ export function useFeedCards() {
     }
 
     return { todayCards: today, historyCards: history };
-  }, [stats, actionData, recentTx]);
+  }, [stats, actionData, recentTx, settlement]);
 
   return { todayCards, historyCards, isLoading };
 }
