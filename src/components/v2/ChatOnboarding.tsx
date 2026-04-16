@@ -267,23 +267,17 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
     // 음성 자동 연결
     if (!voiceConnected) toggleVoice();
 
-    // 빈 user 메시지로 첫 인사 트리거 (history 비어있어도 system이 처음 인사 유도)
-    void (async () => {
-      setIsThinking(true);
-      try {
-        const res = await callAgent([], stateRef.current);
-        if (res.reply && res.reply.trim()) {
-          setMessages([{ role: "assistant", content: res.reply.trim() }]);
-        } else {
-          setMessages([{ role: "assistant", content: "반갑습니다, 대표님! 어떻게 불러드릴까요?" }]);
-        }
-      } catch (e) {
-        console.error("initial greet failed", e);
-        setMessages([{ role: "assistant", content: "반갑습니다, 대표님! 어떻게 불러드릴까요?" }]);
-      } finally {
-        setIsThinking(false);
-      }
-    })();
+    // 첫 인사: 수집된 정보 기반 정적 텍스트 (Gemini 호출 절약)
+    const s = stateRef.current;
+    let greet = "반갑습니다, 대표님! 어떻게 불러드릴까요?";
+    if (s.name && !s.business_type) {
+      greet = `다시 오셨네요, ${s.name} 대표님!\n어떤 업종이세요? (음식점·카페·소매/유통·기타)`;
+    } else if (s.name && s.business_type && !s.business_number) {
+      greet = `${s.name} 대표님, 마지막으로 사업자등록번호 10자리만 알려주세요.`;
+    } else if (s.name && s.business_type && s.business_number) {
+      greet = `${s.name} 대표님, 이제 데이터 연동을 도와드릴까요? 홈택스부터 시작해도 될까요?`;
+    }
+    setMessages([{ role: "assistant", content: greet }]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
