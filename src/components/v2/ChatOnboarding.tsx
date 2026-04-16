@@ -2,7 +2,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useV2Voice } from "./V2VoiceContext";
 import { Mic, X, RotateCcw, Trash2, Upload, FileKey, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useScribe, CommitStrategy } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCardConnection } from "@/hooks/useCardConnection";
 import { useAccountConnection } from "@/hooks/useAccountConnection";
@@ -452,9 +451,13 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
   const advanceRef = useRef<(value: string) => void>();
   const [badgeMode, setBadgeMode] = useState<{ stepId: string } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const { volumeRef: headerVolumeRef } = useV2Voice();
-
-
+  const {
+    volumeRef: headerVolumeRef,
+    isConnected,
+    partialTranscript,
+    toggleVoice,
+    onCommit,
+  } = useV2Voice();
 
   // Connection state
   const [certFile, setCertFile] = useState<File | null>(null);
@@ -475,43 +478,14 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
 
   const step = stepFlow[currentIdx];
 
-  // Auto-scroll to bottom
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, showInput]);
+    if (!isConnected) {
+      toggleVoice();
+    } else {
+      setSttReady(true);
+    }
+  }, [isConnected, toggleVoice]);
 
-  // ElevenLabs Scribe
-  const scribe = useScribe({
-    modelId: "scribe_v2_realtime",
-    commitStrategy: CommitStrategy.VAD,
-    languageCode: "kor",
-    onCommittedTranscript: (data) => {
-      const cStep = stepFlow[currentIdxRef.current];
-      if (cStep?.type === "action" || cStep?.type === "cert_upload" || cStep?.type === "inline_loading" || cStep?.type === "password") return;
-      const text = data.text?.trim();
-      if (!text || text.length < 2) return; // 너무 짧은 노이즈 무시
-      // 의미 없는 필러/노이즈 패턴 무시
-      const NOISE_PATTERNS = /^(음+|어+|아+|으+|응+|흠+|에+|ㅎ+|\.+|…+)$/;
-      if (NOISE_PATTERNS.test(text)) return;
-      if (advanceRef.current) advanceRef.current(text);
-    },
-  });
-
-  useEffect(() => {
-    const initSTT = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("elevenlabs-scribe-token");
-        if (error || !data?.token) return;
-        await scribe.connect({ token: data.token, microphone: { echoCancellation: true, noiseSuppression: true } });
-        setSttReady(true);
-      } catch {}
-    };
-    initSTT();
-    return () => { scribe.disconnect(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Show first question
   useEffect(() => {
     const t = setTimeout(() => {
       if (hasExisting) {
@@ -528,9 +502,9 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
       }
     }, 300);
+
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [existingData, hasExisting, stepFlow, sttReady]);
 
   // ─── Navigation helpers ──────────────────────────────────
 
@@ -753,7 +727,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     switch (step.id) {
       case "connect_intro":
         if (normalizedValue === "skip") {
-          scribe.disconnect();
+          if (isConnected) void toggleVoice();
           onComplete(newAnswers);
           return;
         }
@@ -827,16 +801,15 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         break;
 
       case "complete":
-        scribe.disconnect();
+        if (isConnected) void toggleVoice();
         onComplete(newAnswers);
         break;
 
       default:
-        // Basic steps - go to next
         setTimeout(() => goToNext(), 600);
         break;
     }
-  }, [answers, goToNext, goToStep, handleBankConnect, handleCardConnect, handleDeliveryConnect, onComplete, onProgress, scribe, step]);
+  }, [answers, goToNext, goToStep, handleBankConnect, handleCardConnect, handleDeliveryConnect, isConnected, onComplete, onProgress, step, toggleVoice]);
 
   useEffect(() => { advanceRef.current = (value: string) => { void advance(value); }; }, [advance]);
 
@@ -990,29 +963,13 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
               <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={1.2} maxBoost={7} stroke="url(#onb-wave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
             </svg>
           </div>
-          <button
-            onClick={() => {
-              if (scribe.isConnected) scribe.disconnect();
-              else {
-                (async () => {
-                  try {
-                    const { data } = await supabase.functions.invoke("elevenlabs-scribe-token");
-                    if (data?.token) {
-                      await scribe.connect({ token: data.token, microphone: { echoCancellation: true, noiseSuppression: true } });
-                      setSttReady(true);
-                    }
-                  } catch {}
-                })();
-              }
-            }}
-            className="flex-shrink-0 w-9 h-9 flex items-center justify-center"
-          >
-            <Mic className="w-4.5 h-4.5" style={{ color: scribe.isConnected ? "#007AFF" : "rgba(255,255,255,0.35)" }} />
+          <button onClick={() => { void toggleVoice(); }} className="flex-shrink-0 w-9 h-9 flex items-center justify-center">
+            <Mic className="w-4.5 h-4.5" style={{ color: isConnected ? "#007AFF" : "rgba(255,255,255,0.35)" }} />
           </button>
         </div>
 
         {/* Close */}
-        <button className="absolute right-3 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
+        <button className="absolute right-3 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { if (isConnected) void toggleVoice(); onComplete(answers); }}>
           <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} />
         </button>
       </div>
@@ -1044,10 +1001,10 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
         </AnimatePresence>
 
         {/* Live partial transcript */}
-        {scribe.partialTranscript && (
+        {partialTranscript && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-end mb-3">
             <div className="rounded-2xl rounded-tr-md px-4 py-3 max-w-[240px]" style={{ background: "linear-gradient(135deg, rgba(0,122,255,0.4), rgba(88,86,214,0.4))" }}>
-              <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.6)" }}>{scribe.partialTranscript}</p>
+              <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.6)" }}>{partialTranscript}</p>
             </div>
           </motion.div>
         )}
