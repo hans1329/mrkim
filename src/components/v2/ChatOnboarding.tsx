@@ -126,12 +126,49 @@ const CHOICE_SYNONYMS: Partial<Record<StepId, Record<string, string>>> = {
     음식점: "음식점",
     식당: "음식점",
     레스토랑: "음식점",
+    분식집: "음식점",
+    분식: "음식점",
+    치킨집: "음식점",
+    치킨: "음식점",
+    피자집: "음식점",
+    피자: "음식점",
+    중국집: "음식점",
+    중식: "음식점",
+    한식: "음식점",
+    일식: "음식점",
+    일식집: "음식점",
+    초밥: "음식점",
+    삼겹살: "음식점",
+    고기집: "음식점",
+    포차: "음식점",
+    술집: "음식점",
+    호프: "음식점",
+    바: "음식점",
+    베이커리: "음식점",
+    빵집: "음식점",
+    제과점: "음식점",
+    디저트: "음식점",
     카페: "카페",
     커피숍: "카페",
     커피샵: "카페",
+    커피: "카페",
     소매: "소매/유통",
     유통: "소매/유통",
     소매유통: "소매/유통",
+    편의점: "소매/유통",
+    마트: "소매/유통",
+    슈퍼: "소매/유통",
+    옷가게: "소매/유통",
+    의류: "소매/유통",
+    꽃집: "소매/유통",
+    미용실: "기타",
+    헤어샵: "기타",
+    네일샵: "기타",
+    네일: "기타",
+    학원: "기타",
+    공방: "기타",
+    스튜디오: "기타",
+    사무실: "기타",
     기타: "기타",
   },
   hometax_ask: {
@@ -990,6 +1027,21 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
           if (!validation.isValid && step.type === "text" && ai.intent === "answer" && ai.value) {
             const cleaned = ai.value.trim();
             if (cleaned) validation = { isValid: true, normalizedValue: cleaned };
+          }
+
+          // 7) business_type choice 단계: 사전에 없는 업종(예: "치킨집해")도 자유 텍스트로 수용
+          if (!validation.isValid && step.id === "business_type" && (ai.intent === "answer" || ai.intent === "choice")) {
+            const raw = (ai.value || trimmedRaw).trim();
+            // 조사/어미 정리: "~해", "~에요", "~입니다", "~요" 제거
+            const cleaned = raw
+              .replace(/(해요|이에요|예요|입니다|이라고|이라|에요|이야|이고|이며|입니다요|해|요)$/g, "")
+              .replace(/[^가-힣a-zA-Z0-9\s/]/g, "")
+              .trim();
+            if (cleaned.length >= 2) {
+              // 사전에 매칭되면 표준 라벨, 아니면 정리된 원문 그대로
+              const normalized = normalizeChoiceValue(step, cleaned) || cleaned;
+              validation = { isValid: true, normalizedValue: normalized };
+            }
           }
         }
       }
