@@ -1011,53 +1011,53 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(88,86,214,0.1) 0%, transparent 70%)", filter: "blur(60px)" }} />
 
       {/* Header with oscilloscope + mic + close */}
-      <div className="relative z-10 flex items-center justify-center gap-3 px-4 pt-3 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
-        {/* Oscilloscope - centered, same size as V2Header */}
-        <div className="h-8 overflow-hidden rounded-xl relative cursor-pointer" style={{ width: "100%", maxWidth: "400px" }}>
-          <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
-            <defs>
-              <linearGradient id="onb-wave1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#007AFF" stopOpacity="0" />
-                <stop offset="30%" stopColor="#007AFF" stopOpacity="0.6" />
-                <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
-                <stop offset="70%" stopColor="#AF52DE" stopOpacity="0.6" />
-                <stop offset="100%" stopColor="#AF52DE" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient id="onb-wave2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0" />
-                <stop offset="25%" stopColor="#FF6B9D" stopOpacity="0.35" />
-                <stop offset="50%" stopColor="#007AFF" stopOpacity="0.4" />
-                <stop offset="75%" stopColor="#34C759" stopOpacity="0.35" />
-                <stop offset="100%" stopColor="#34C759" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={2} maxBoost={14} stroke="url(#onb-wave1)" strokeWidth={2} freq={0.024} speed={1.8} phase={0} />
-            <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={1.2} maxBoost={7} stroke="url(#onb-wave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
-          </svg>
+      <div className="relative z-10 flex items-center justify-center px-4 pt-3 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
+        {/* Centered oscilloscope + mic group */}
+        <div className="flex items-center gap-3" style={{ maxWidth: "440px" }}>
+          <div className="h-8 overflow-hidden rounded-xl relative" style={{ width: "400px" }}>
+            <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
+              <defs>
+                <linearGradient id="onb-wave1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#007AFF" stopOpacity="0" />
+                  <stop offset="30%" stopColor="#007AFF" stopOpacity="0.6" />
+                  <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
+                  <stop offset="70%" stopColor="#AF52DE" stopOpacity="0.6" />
+                  <stop offset="100%" stopColor="#AF52DE" stopOpacity="0" />
+                </linearGradient>
+                <linearGradient id="onb-wave2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0" />
+                  <stop offset="25%" stopColor="#FF6B9D" stopOpacity="0.35" />
+                  <stop offset="50%" stopColor="#007AFF" stopOpacity="0.4" />
+                  <stop offset="75%" stopColor="#34C759" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="#34C759" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={2} maxBoost={14} stroke="url(#onb-wave1)" strokeWidth={2} freq={0.024} speed={1.8} phase={0} />
+              <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={1.2} maxBoost={7} stroke="url(#onb-wave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
+            </svg>
+          </div>
+          <button
+            onClick={() => {
+              if (scribe.isConnected) scribe.disconnect();
+              else {
+                (async () => {
+                  try {
+                    const { data } = await supabase.functions.invoke("elevenlabs-scribe-token");
+                    if (data?.token) {
+                      await scribe.connect({ token: data.token, microphone: { echoCancellation: true, noiseSuppression: true } });
+                      setSttReady(true);
+                    }
+                  } catch {}
+                })();
+              }
+            }}
+            className="flex-shrink-0 w-9 h-9 flex items-center justify-center"
+          >
+            <Mic className="w-4.5 h-4.5" style={{ color: scribe.isConnected ? "#007AFF" : "rgba(255,255,255,0.35)" }} />
+          </button>
         </div>
 
-        {/* Mic toggle - absolute right */}
-        <button
-          onClick={() => {
-            if (scribe.isConnected) scribe.disconnect();
-            else {
-              (async () => {
-                try {
-                  const { data } = await supabase.functions.invoke("elevenlabs-scribe-token");
-                  if (data?.token) {
-                    await scribe.connect({ token: data.token, microphone: { echoCancellation: true, noiseSuppression: true } });
-                    setSttReady(true);
-                  }
-                } catch {}
-              })();
-            }
-          }}
-          className="absolute right-12 flex-shrink-0 w-9 h-9 flex items-center justify-center"
-        >
-          <Mic className="w-4.5 h-4.5" style={{ color: scribe.isConnected ? "#007AFF" : "rgba(255,255,255,0.35)" }} />
-        </button>
-
-        {/* Close - absolute right */}
+        {/* Close */}
         <button className="absolute right-3 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
           <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} />
         </button>
