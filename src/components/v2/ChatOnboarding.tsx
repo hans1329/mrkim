@@ -539,12 +539,14 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
 
   const step = stepFlow[currentIdx];
 
+  // Auto-connect mic only once on mount. Do NOT auto-reconnect when user manually disconnects.
+  const didAutoConnectRef = useRef(false);
   useEffect(() => {
-    if (!isConnected) {
+    if (!didAutoConnectRef.current && !isConnected) {
+      didAutoConnectRef.current = true;
       toggleVoice();
-    } else {
-      setSttReady(true);
     }
+    if (isConnected) setSttReady(true);
   }, [isConnected, toggleVoice]);
 
   useEffect(() => {
