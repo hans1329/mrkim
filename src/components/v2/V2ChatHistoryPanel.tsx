@@ -21,7 +21,11 @@ export const V2ChatHistoryPanel = () => {
     sendMessage,
   } = useAIChat();
   const { profile } = useProfileQuery();
-  const avatarUrl = profile?.secretary_avatar_url || "/images/icc-5.webp";
+  const userAvatarUrl = profile?.avatar_url || null;
+  const avatarUrl = userAvatarUrl || "/images/icc-5.webp";
+  const avatarClassName = userAvatarUrl
+    ? "rounded-full object-cover"
+    : "rounded-full object-contain";
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +49,7 @@ export const V2ChatHistoryPanel = () => {
       {/* Header */}
       <div className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <img src={avatarUrl} alt="" className="w-7 h-7 rounded-full object-contain" />
+          <img src={avatarUrl} alt="" className={`w-7 h-7 ${avatarClassName}`} />
           <span className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
             김비서 대화
           </span>
@@ -60,7 +64,7 @@ export const V2ChatHistoryPanel = () => {
               <img
                 src={avatarUrl}
                 alt="김비서"
-                className="w-16 h-16 rounded-full object-contain"
+                className={`w-16 h-16 ${avatarClassName}`}
               />
               <p className="text-[13px] text-center" style={{ color: "rgba(255,255,255,0.3)" }}>
                 김비서에게 무엇이든 물어보세요
