@@ -824,25 +824,71 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     if (!badgeMode) return;
     const { stepId } = badgeMode;
     const label = STEP_LABELS[stepId] || stepId;
+
     if (action === "delete") {
       const newA = { ...answers };
       delete newA[stepId];
       setAnswers(newA);
+
+      // Clear from DB too
+      void onProgress?.({ [stepId]: "" });
+
       setMessages(prev => [...prev, { from: "user", text: "삭제할게요" }, { from: "bot", text: `${label} 정보가 삭제되었어요.` }]);
       setBadgeMode(null);
-      const idx = stepFlow.findIndex(s => s.id === stepId);
+
+      // If step is not in current stepFlow (was pre-filled from existingData), re-insert it
+      let idx = stepFlow.findIndex(s => s.id === stepId);
+      if (idx < 0) {
+        const stepDef = BASIC_STEPS.find(s => s.id === stepId);
+        if (stepDef) {
+          // Insert at the beginning (before connection steps)
+          const basicEnd = stepFlow.findIndex(s => CONNECTION_STEPS.some(cs => cs.id === s.id));
+          const insertAt = basicEnd >= 0 ? basicEnd : 0;
+          const newFlow = [...stepFlow];
+          newFlow.splice(insertAt, 0, stepDef);
+          setStepFlow(newFlow);
+          idx = insertAt;
+          setTimeout(() => {
+            setCurrentIdx(idx);
+            currentIdxRef.current = idx;
+            setMessages(prev => [...prev, { from: "bot", text: stepDef.question }]);
+            setShowInput(true);
+            setShowTextFallback(true);
+          }, 800);
+          return;
+        }
+      }
       if (idx >= 0) {
         setTimeout(() => { setCurrentIdx(idx); currentIdxRef.current = idx; setMessages(prev => [...prev, { from: "bot", text: stepFlow[idx].question }]); setShowInput(true); setShowTextFallback(true); }, 800);
       }
     } else {
       setMessages(prev => [...prev, { from: "user", text: "다시 입력할게요" }]);
       setBadgeMode(null);
-      const idx = stepFlow.findIndex(s => s.id === stepId);
+      let idx = stepFlow.findIndex(s => s.id === stepId);
+      if (idx < 0) {
+        const stepDef = BASIC_STEPS.find(s => s.id === stepId);
+        if (stepDef) {
+          const basicEnd = stepFlow.findIndex(s => CONNECTION_STEPS.some(cs => cs.id === s.id));
+          const insertAt = basicEnd >= 0 ? basicEnd : 0;
+          const newFlow = [...stepFlow];
+          newFlow.splice(insertAt, 0, stepDef);
+          setStepFlow(newFlow);
+          idx = insertAt;
+          setTimeout(() => {
+            setCurrentIdx(idx);
+            currentIdxRef.current = idx;
+            setMessages(prev => [...prev, { from: "bot", text: stepDef.question }]);
+            setShowInput(true);
+            setShowTextFallback(true);
+          }, 500);
+          return;
+        }
+      }
       if (idx >= 0) {
         setTimeout(() => { setCurrentIdx(idx); currentIdxRef.current = idx; setMessages(prev => [...prev, { from: "bot", text: stepFlow[idx].question }]); setShowInput(true); setShowTextFallback(true); }, 500);
       }
     }
-  }, [badgeMode, answers, stepFlow]);
+  }, [badgeMode, answers, stepFlow, onProgress]);
 
   // ─── Bubble components ──────────────────────────────────
 
