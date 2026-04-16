@@ -60,6 +60,14 @@ serve(async (req) => {
 - 단계 ID: ${stepId}
 - 단계 유형: ${stepType}${choicesText}${answeredText}
 
+## value 추출 규칙
+- 현재 단계가 "name"이면 조사/어미/지시어를 제거하고 이름만 추출하세요.
+- 예: "한석이라고 불러" -> value: "한석"
+- 예: "제 이름은 한석이에요" -> value: "한석"
+- 예: "전 한석입니다" -> value: "한석"
+- 현재 단계가 "business_number"이면 숫자만 남기세요.
+- 현재 단계가 choice가 아닌 자유응답이면 불필요한 조사와 설명어를 제거한 핵심 값만 넣으세요.
+
 ## 출력 형식 (반드시 JSON만)
 {"intent": "yes"|"skip"|"choice"|"answer"|"edit_field"|"go_back"|"restart"|"help"|"unclear", "choice": "선택지명 또는 null", "field": "name"|"business_type"|"business_number"|null, "value": "answer일 때 정제된 값 또는 null", "confidence": 0.0~1.0}
 
