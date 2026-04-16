@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { WeatherAnchor } from "@/components/v2/WeatherAnchor";
 import { SecretaryFeed } from "@/components/v2/SecretaryFeed";
 import { TaxSavingCarousel } from "@/components/v2/TaxSavingCarousel";
@@ -15,15 +16,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFeedCards } from "@/hooks/useFeedCards";
 
 const EMPLOYEE_INTENTS = ["직원 등록", "직원 추가", "사람 등록", "알바 등록", "알바 추가", "직원등록", "직원추가"];
+const V2_ONBOARDED_KEY = "v2_onboarded";
 
-// Map onboarding step IDs → profiles columns
 const ONBOARDING_TO_PROFILE: Record<string, string> = {
   name: "name",
   business_type: "business_type",
   business_number: "business_registration_number",
 };
 
-/** Build existingData from profile row */
 function profileToOnboardingData(profile: Record<string, unknown> | null): Record<string, string> {
   if (!profile) return {};
   const data: Record<string, string> = {};
@@ -36,12 +36,10 @@ function profileToOnboardingData(profile: Record<string, unknown> | null): Recor
   return data;
 }
 
-/** Check if user has completed onboarding (has name at minimum) */
 function isOnboarded(profile: Record<string, unknown> | null): boolean {
   return !!profile?.name;
 }
 
-/** Inner component that uses V2Voice context (must be inside V2VoiceProvider) */
 const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onboarding" | "dashboard" | "loading"; onStartOnboarding: () => void }) => {
   const [showEmployeeReg, setShowEmployeeReg] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
@@ -71,7 +69,6 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
 
   if (stage !== "dashboard") return null;
 
-  // Show splash for urgent events before dashboard renders
   if (!splashDone && !feedLoading && todayCards.length > 0) {
     return (
       <UrgentEventSplash
@@ -103,15 +100,27 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
 };
 
 const V2Dashboard = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [stage, setStage] = useState<"intro" | "onboarding" | "dashboard" | "loading">("loading");
   const [existingData, setExistingData] = useState<Record<string, string>>({});
 
-  // Load profile on mount to determine stage
+  const shouldStartConnectionOnboarding = searchParams.get("onboarding") === "connect";
+
+  const clearOnboardingQuery = useCallback(() => {
+    if (!shouldStartConnectionOnboarding) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("onboarding");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams, shouldStartConnectionOnboarding]);
+
   useEffect(() => {
     const load = async () => {
+      const locallyOnboarded = localStorage.getItem(V2_ONBOARDED_KEY) === "true";
       const { data: { user } } = await supabase.auth.getUser();
+
       if (!user) {
-        setStage("intro");
+        setExistingData({});
+        setStage(shouldStartConnectionOnboarding ? "onboarding" : locallyOnboarded ? "dashboard" : "intro");
         return;
       }
 
@@ -124,14 +133,20 @@ const V2Dashboard = () => {
       const onboardingData = profileToOnboardingData(profile);
       setExistingData(onboardingData);
 
-      if (isOnboarded(profile)) {
+      if (shouldStartConnectionOnboarding) {
+        setStage("onboarding");
+        return;
+      }
+
+      if (isOnboarded(profile) || locallyOnboarded) {
         setStage("dashboard");
       } else {
         setStage("intro");
       }
     };
+
     load();
-  }, []);
+  }, [shouldStartConnectionOnboarding]);
 
   const handleIntroComplete = useCallback(() => {
     setStage("onboarding");
@@ -154,10 +169,16 @@ const V2Dashboard = () => {
       }
     }
 
+    localStorage.setItem(V2_ONBOARDED_KEY, "true");
     const merged = { ...existingData, ...data };
     setExistingData(merged);
+    clearOnboardingQuery();
     setStage("dashboard");
-  }, [existingData]);
+  }, [existingData, clearOnboardingQuery]);
+
+  const openVoiceOnboarding = useCallback(() => {
+    setStage("onboarding");
+  }, []);
 
   const hideHeader = stage === "intro" || stage === "onboarding" || stage === "loading";
 
@@ -186,9 +207,7 @@ const V2Dashboard = () => {
         />
       )}
 
-      <DashboardContent stage={stage} onStartOnboarding={() => {
-        setStage("onboarding");
-      }} />
+      <DashboardContent stage={stage} onStartOnboarding={openVoiceOnboarding} />
     </V2Layout>
   );
 };
