@@ -1160,7 +1160,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       )}
 
       {/* Chat area */}
-      <div className="flex-1 overflow-y-auto px-4 pt-8 pb-4 relative z-10 no-scrollbar">
+      <div className={`flex-1 overflow-y-auto px-4 pt-8 relative z-10 no-scrollbar ${(showInput || badgeMode) ? "pb-44" : "pb-4"}`}>
         <AnimatePresence>
           {messages.map((msg, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
