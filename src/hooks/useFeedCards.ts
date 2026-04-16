@@ -182,6 +182,7 @@ export function useFeedCards() {
         time: isToday ? "오늘" : "알림",
         date: td,
         gradient: "linear-gradient(135deg, #2AC1BC 0%, #007AFF 100%)",
+        iconUrl: baeminLogo,
         priority: isToday ? 2 : 3,
       });
     }
