@@ -83,7 +83,7 @@ export const V2ChatHistoryPanel = () => {
         </div>
       ) : (
         <ScrollArea className="flex-1">
-          <div ref={scrollRef} className="px-3 py-3 space-y-3">
+          <div ref={scrollRef} className="px-3 py-3 pb-16 space-y-3">
             {messages.map((msg) => (
               <div
                 key={msg.id}
