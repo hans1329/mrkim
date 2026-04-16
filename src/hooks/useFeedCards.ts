@@ -54,12 +54,69 @@ function getNextVatDeadline(): { dDay: number; label: string } | null {
   return { dDay: daysUntil(1, 25), label: "1기 확정" };
 }
 
+function useSettlementForecast() {
+  return useQuery({
+    queryKey: ["settlement-forecast-feed"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0].replace(/-/g, "");
+      const futureStr = new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0].replace(/-/g, "");
+
+      const { data: orders } = await supabase
+        .from("delivery_orders")
+        .select("settle_dt, settle_amt, platform, order_dt")
+        .eq("user_id", user.id)
+        .gte("settle_dt", todayStr)
+        .lte("settle_dt", futureStr)
+        .not("settle_amt", "is", null);
+
+      if (!orders || orders.length === 0) return null;
+
+      const byDate = new Map<string, { total: number; count: number; platform: string }>();
+      for (const o of orders) {
+        if (!o.settle_dt) continue;
+        const existing = byDate.get(o.settle_dt) || { total: 0, count: 0, platform: o.platform };
+        existing.total += Number(o.settle_amt) || 0;
+        existing.count++;
+        byDate.set(o.settle_dt, existing);
+      }
+
+      const sorted = Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+      if (sorted.length === 0) return null;
+
+      const [nextDate, nextInfo] = sorted[0];
+      const y = nextDate.slice(0, 4);
+      const m = nextDate.slice(4, 6);
+      const d = nextDate.slice(6, 8);
+      const settleDate = new Date(`${y}-${m}-${d}`);
+      const daysLeft = Math.ceil((settleDate.getTime() - today.getTime()) / 86400000);
+
+      const totalPending = sorted.reduce((sum, [, info]) => sum + info.total, 0);
+
+      return {
+        nextDate: `${Number(m)}/${Number(d)}`,
+        daysLeft,
+        nextAmount: nextInfo.total,
+        nextCount: nextInfo.count,
+        totalPending,
+        totalDates: sorted.length,
+        platform: nextInfo.platform,
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useFeedCards() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: actionData, isLoading: actionLoading } = useActionData();
   const { data: recentTx, isLoading: txLoading } = useRecentTransactions();
+  const { data: settlement, isLoading: settlementLoading } = useSettlementForecast();
 
-  const isLoading = statsLoading || actionLoading || txLoading;
+  const isLoading = statsLoading || actionLoading || txLoading || settlementLoading;
 
   const { todayCards, historyCards } = useMemo(() => {
     const today: FeedCard[] = [];
