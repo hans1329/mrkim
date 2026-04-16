@@ -152,6 +152,26 @@ const V2Dashboard = () => {
     setStage("onboarding");
   }, []);
 
+  const persistOnboardingProgress = useCallback(async (partialData: Record<string, string>) => {
+    setExistingData((prev) => ({ ...prev, ...partialData }));
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const updates: Record<string, unknown> = {};
+    for (const [stepId, value] of Object.entries(partialData)) {
+      const col = ONBOARDING_TO_PROFILE[stepId];
+      if (col) updates[col] = value;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await supabase
+        .from("profiles")
+        .update(updates)
+        .eq("user_id", user.id);
+    }
+  }, []);
+
   const handleOnboardingComplete = useCallback(async (data: Record<string, string>) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
@@ -170,11 +190,10 @@ const V2Dashboard = () => {
     }
 
     localStorage.setItem(V2_ONBOARDED_KEY, "true");
-    const merged = { ...existingData, ...data };
-    setExistingData(merged);
+    setExistingData((prev) => ({ ...prev, ...data }));
     clearOnboardingQuery();
     setStage("dashboard");
-  }, [existingData, clearOnboardingQuery]);
+  }, [clearOnboardingQuery]);
 
   const openVoiceOnboarding = useCallback(() => {
     setStage("onboarding");
@@ -203,6 +222,7 @@ const V2Dashboard = () => {
       {stage === "onboarding" && (
         <ChatOnboarding
           onComplete={handleOnboardingComplete}
+          onProgress={persistOnboardingProgress}
           existingData={existingData}
         />
       )}

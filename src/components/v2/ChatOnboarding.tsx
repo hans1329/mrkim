@@ -29,6 +29,12 @@ interface StepDef {
   skipLabel?: string;
 }
 
+interface ValidationResult {
+  isValid: boolean;
+  normalizedValue?: string;
+  retryMessage?: string;
+}
+
 // ─── Step definitions ──────────────────────────────────────
 
 const BASIC_STEPS: StepDef[] = [
@@ -99,10 +105,177 @@ const STEP_LABELS: Record<string, string> = {
   name: "이름", business_type: "업종", business_number: "사업자번호",
 };
 
+const CHOICE_SYNONYMS: Partial<Record<StepId, Record<string, string>>> = {
+  business_type: {
+    음식점: "음식점",
+    식당: "음식점",
+    레스토랑: "음식점",
+    카페: "카페",
+    커피숍: "카페",
+    커피샵: "카페",
+    소매: "소매/유통",
+    유통: "소매/유통",
+    소매유통: "소매/유통",
+    기타: "기타",
+  },
+  hometax_ask: {
+    연동할게요: "연동할게요",
+    네: "연동할게요",
+    예: "연동할게요",
+    응: "연동할게요",
+    좋아요: "연동할게요",
+    할게요: "연동할게요",
+    건너뛸게요: "건너뛸게요",
+    건너뛰기: "건너뛸게요",
+    아니오: "건너뛸게요",
+    아니요: "건너뛸게요",
+    됐어요: "건너뛸게요",
+    나중에: "건너뛸게요",
+  },
+  card_ask: {
+    연동할게요: "연동할게요",
+    네: "연동할게요",
+    예: "연동할게요",
+    응: "연동할게요",
+    좋아요: "연동할게요",
+    할게요: "연동할게요",
+    건너뛸게요: "건너뛸게요",
+    건너뛰기: "건너뛸게요",
+    아니오: "건너뛸게요",
+    아니요: "건너뛸게요",
+    나중에: "건너뛸게요",
+  },
+  bank_ask: {
+    연동할게요: "연동할게요",
+    네: "연동할게요",
+    예: "연동할게요",
+    응: "연동할게요",
+    좋아요: "연동할게요",
+    할게요: "연동할게요",
+    건너뛸게요: "건너뛸게요",
+    건너뛰기: "건너뛸게요",
+    아니오: "건너뛸게요",
+    아니요: "건너뛸게요",
+    나중에: "건너뛸게요",
+  },
+  delivery_ask: {
+    배민연동: "배민 연동",
+    배민: "배민 연동",
+    배달의민족: "배민 연동",
+    쿠팡이츠: "쿠팡이츠 연동",
+    쿠팡이츠연동: "쿠팡이츠 연동",
+    건너뛸게요: "건너뛸게요",
+    건너뛰기: "건너뛸게요",
+    나중에: "건너뛸게요",
+  },
+  card_select: {
+    신한: "신한카드",
+    신한카드: "신한카드",
+    삼성: "삼성카드",
+    삼성카드: "삼성카드",
+    국민카드: "KB국민카드",
+    케이비국민카드: "KB국민카드",
+    KB국민카드: "KB국민카드",
+    현대: "현대카드",
+    현대카드: "현대카드",
+    롯데: "롯데카드",
+    롯데카드: "롯데카드",
+    비씨카드: "BC카드",
+    BC카드: "BC카드",
+    하나카드: "하나카드",
+    우리카드: "우리카드",
+    농협카드: "NH농협카드",
+    NH농협카드: "NH농협카드",
+  },
+  bank_select: {
+    신한은행: "신한은행",
+    신한: "신한은행",
+    국민은행: "KB국민은행",
+    케이비국민은행: "KB국민은행",
+    KB국민은행: "KB국민은행",
+    우리은행: "우리은행",
+    하나은행: "하나은행",
+    농협은행: "NH농협은행",
+    NH농협은행: "NH농협은행",
+    기업은행: "IBK기업은행",
+    IBK기업은행: "IBK기업은행",
+    카카오뱅크: "카카오뱅크",
+    토스뱅크: "토스뱅크",
+  },
+};
+
+function normalizeChoiceValue(stepDef: StepDef, rawValue: string): string | null {
+  const compact = rawValue.replace(/\s/g, "");
+  const synonyms = CHOICE_SYNONYMS[stepDef.id];
+
+  const matchedSynonym = synonyms?.[compact] || synonyms?.[rawValue.trim()];
+  if (matchedSynonym) return matchedSynonym;
+
+  const matchedChoice = stepDef.choices?.find((choice) => {
+    const labelCompact = choice.label.replace(/\s/g, "");
+    return labelCompact === compact || choice.label === rawValue.trim() || choice.value === rawValue.trim();
+  });
+
+  return matchedChoice?.label || null;
+}
+
+function validateStepInput(stepDef: StepDef, rawValue: string): ValidationResult {
+  const trimmed = rawValue.trim();
+  if (!trimmed) {
+    return {
+      isValid: false,
+      retryMessage: "잘 못 들었어요. 한 번만 다시 말씀해주시겠어요?",
+    };
+  }
+
+  if (stepDef.type === "choice") {
+    const normalizedChoice = normalizeChoiceValue(stepDef, trimmed);
+    if (!normalizedChoice) {
+      const labels = stepDef.choices?.map((choice) => choice.label).join(", ");
+      return {
+        isValid: false,
+        retryMessage: labels
+          ? `잘 못 들었어요. ${labels} 중에서 다시 말씀해주시겠어요?`
+          : "잘 못 들었어요. 다시 말씀해주시겠어요?",
+      };
+    }
+
+    return { isValid: true, normalizedValue: normalizedChoice };
+  }
+
+  switch (stepDef.id) {
+    case "name": {
+      const cleanedName = trimmed.replace(/[^가-힣a-zA-Z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+      if (cleanedName.length < 2) {
+        return {
+          isValid: false,
+          retryMessage: "성함을 정확히 못 들었어요. 이름을 다시 말씀해주시거나 직접 입력해주세요.",
+        };
+      }
+      return { isValid: true, normalizedValue: cleanedName };
+    }
+
+    case "business_number": {
+      const digits = trimmed.replace(/\D/g, "");
+      if (digits.length !== 10) {
+        return {
+          isValid: false,
+          retryMessage: "사업자등록번호는 10자리예요. 다시 말씀해주시거나 직접 입력해주세요.",
+        };
+      }
+      return { isValid: true, normalizedValue: digits };
+    }
+
+    default:
+      return { isValid: true, normalizedValue: trimmed };
+  }
+}
+
 // ─── Shared components ──────────────────────────────────────
 
 interface ChatOnboardingProps {
   onComplete: (data: Record<string, string>) => void;
+  onProgress?: (partialData: Record<string, string>) => void | Promise<void>;
   secretaryAvatarUrl?: string | null;
   existingData?: Record<string, string>;
 }
@@ -233,7 +406,7 @@ const ReactiveWavePath = ({ volumeRef, baseAmplitude, maxBoost, stroke, strokeWi
 
 // ─── Main Component ──────────────────────────────────────
 
-export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = {} }: ChatOnboardingProps) => {
+export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, existingData = {} }: ChatOnboardingProps) => {
   const hasExisting = Object.keys(existingData).length > 0;
 
   // Build step flow - skip basic steps already completed
@@ -511,26 +684,46 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = 
 
   // ─── Main advance function ──────────────────────────────
 
-  const advance = useCallback((value: string) => {
+  const advance = useCallback(async (value: string) => {
     if (!step) return;
 
-    const newAnswers = { ...answers, [step.id]: value };
+    const validation = validateStepInput(step, value);
+    if (!validation.isValid) {
+      setShowInput(false);
+      setShowTextFallback(false);
+      setInputValue("");
+      setMessages(prev => [
+        ...prev,
+        { from: "bot", text: validation.retryMessage || "잘 못 들었어요. 다시 말씀해주시겠어요?" },
+        { from: "bot", text: step.question },
+      ]);
+      setTimeout(() => setShowInput(true), 400);
+      setTimeout(() => setShowTextFallback(true), 1600);
+      return;
+    }
+
+    const normalizedValue = validation.normalizedValue ?? value.trim();
+    const newAnswers = { ...answers, [step.id]: normalizedValue };
     setAnswers(newAnswers);
     setShowInput(false);
     setShowTextFallback(false);
     setInputValue("");
 
+    if (step.id === "name" || step.id === "business_type" || step.id === "business_number") {
+      void onProgress?.({ [step.id]: normalizedValue });
+    }
+
     // Don't show user bubble for skip/action types that aren't user text
     const isAction = step.type === "action";
     if (!isAction) {
-      const displayValue = step.type === "password" ? "••••••••" : value;
+      const displayValue = step.type === "password" ? "••••••••" : normalizedValue;
       setMessages(prev => [...prev, { from: "user", text: displayValue }]);
     }
 
     // Route based on step
     switch (step.id) {
       case "connect_intro":
-        if (value === "skip") {
+        if (normalizedValue === "skip") {
           scribe.disconnect();
           onComplete(newAnswers);
           return;
@@ -539,7 +732,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = 
         break;
 
       case "hometax_ask":
-        if (value === "건너뛸게요") {
+        if (normalizedValue === "건너뛸게요") {
           setTimeout(() => goToStep("card_ask"), 600);
         } else {
           setTimeout(() => goToStep("hometax_cert"), 600);
@@ -547,7 +740,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = 
         break;
 
       case "card_ask":
-        if (value === "건너뛸게요") {
+        if (normalizedValue === "건너뛸게요") {
           setTimeout(() => goToStep("bank_ask"), 600);
         } else {
           setTimeout(() => goToStep("card_select"), 600);
@@ -567,7 +760,7 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = 
         break;
 
       case "bank_ask":
-        if (value === "건너뛸게요") {
+        if (normalizedValue === "건너뛸게요") {
           setTimeout(() => goToStep("delivery_ask"), 600);
         } else {
           setTimeout(() => goToStep("bank_select"), 600);
@@ -587,10 +780,11 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = 
         break;
 
       case "delivery_ask":
-        if (value === "건너뛸게요") {
+        if (normalizedValue === "건너뛸게요") {
           setTimeout(() => goToStep("complete"), 600);
         } else {
-          setSelectedDeliveryPlatform(value);
+          const selectedPlatform = step.choices?.find(choice => choice.label === normalizedValue)?.value || normalizedValue;
+          setSelectedDeliveryPlatform(selectedPlatform);
           setTimeout(() => goToStep("delivery_id"), 600);
         }
         break;
@@ -613,9 +807,9 @@ export const ChatOnboarding = ({ onComplete, secretaryAvatarUrl, existingData = 
         setTimeout(() => goToNext(), 600);
         break;
     }
-  }, [answers, step, onComplete, goToStep, goToNext, handleCardConnect, handleBankConnect, handleDeliveryConnect, scribe]);
+  }, [answers, goToNext, goToStep, handleBankConnect, handleCardConnect, handleDeliveryConnect, onComplete, onProgress, scribe, step]);
 
-  useEffect(() => { advanceRef.current = advance; }, [advance]);
+  useEffect(() => { advanceRef.current = (value: string) => { void advance(value); }; }, [advance]);
 
   // Badge handlers (for basic steps only)
   const handleBadgeClick = useCallback((stepId: string) => {
