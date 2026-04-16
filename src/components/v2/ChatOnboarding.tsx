@@ -459,6 +459,25 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     onCommit,
   } = useV2Voice();
 
+  // Connection state
+  const [certFile, setCertFile] = useState<File | null>(null);
+  const [keyFile, setKeyFile] = useState<File | null>(null);
+  const [certPassword, setCertPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const certFileInputRef = useRef<HTMLInputElement>(null);
+  const keyFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Delivery platform selection
+  const [selectedDeliveryPlatform, setSelectedDeliveryPlatform] = useState<string>("");
+
+  // Hooks
+  const { registerCardAccount } = useCardConnection();
+  const { registerBankAccount } = useAccountConnection();
+  const { connectService } = useConnection();
+
+  const step = stepFlow[currentIdx];
+
   useEffect(() => {
     onCommit((rawText) => {
       const cStep = stepFlow[currentIdxRef.current];
