@@ -14,8 +14,8 @@ type StepId =
   | "name" | "business_type" | "business_number"
   | "connect_intro"
   | "hometax_ask" | "hometax_cert" | "hometax_connecting"
-  | "card_ask" | "card_select" | "card_id" | "card_pw" | "card_connecting"
-  | "bank_ask" | "bank_select" | "bank_id" | "bank_pw" | "bank_connecting"
+  | "card_ask" | "card_select" | "card_method" | "card_cert" | "card_id" | "card_pw" | "card_connecting"
+  | "bank_ask" | "bank_select" | "bank_method" | "bank_cert" | "bank_id" | "bank_pw" | "bank_connecting"
   | "delivery_ask" | "delivery_select" | "delivery_id" | "delivery_pw" | "delivery_connecting"
   | "complete";
 
