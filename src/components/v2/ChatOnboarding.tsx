@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, RotateCcw, Trash2, Upload, FileKey, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Mic, X, RotateCcw, Trash2, Upload, FileKey, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useScribe, CommitStrategy } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
@@ -451,6 +451,56 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
   const advanceRef = useRef<(value: string) => void>();
   const [badgeMode, setBadgeMode] = useState<{ stepId: string } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const headerVolumeRef = useRef(0);
+
+  // Audio analysis for header oscilloscope
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    let audioCtx: AudioContext | null = null;
+    let analyser: AnalyserNode | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let dataArray: any = null;
+    let animFrame: number;
+    let cancelled = false;
+
+    const init = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } });
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+        audioCtx = new AudioContext();
+        if (audioCtx.state === "suspended") await audioCtx.resume();
+        const source = audioCtx.createMediaStreamSource(stream);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.55;
+        source.connect(analyser);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        dataArray = new Uint8Array(analyser.fftSize) as any;
+      } catch {}
+    };
+
+    const poll = () => {
+      if (cancelled) return;
+      if (analyser && dataArray) {
+        analyser.getByteTimeDomainData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) { const n = (dataArray[i] - 128) / 128; sum += n * n; }
+        const rms = Math.sqrt(sum / dataArray.length);
+        headerVolumeRef.current += (Math.min(1, rms * 8) - headerVolumeRef.current) * 0.22;
+      } else {
+        headerVolumeRef.current += (0 - headerVolumeRef.current) * 0.08;
+      }
+      animFrame = requestAnimationFrame(poll);
+    };
+
+    init().then(() => { if (!cancelled) poll(); });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(animFrame);
+      stream?.getTracks().forEach(t => t.stop());
+      audioCtx?.close();
+    };
+  }, []);
 
   // Connection state
   const [certFile, setCertFile] = useState<File | null>(null);
@@ -960,12 +1010,55 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       {/* Ambient glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(88,86,214,0.1) 0%, transparent 70%)", filter: "blur(60px)" }} />
 
-      {/* Top bar - close & skip only */}
-      <div className="relative z-10 flex items-center justify-end gap-2 px-5 pt-4">
-        <button className="text-[12px] font-medium px-3 py-1.5 rounded-full" style={{ color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.05)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
-          건너뛰기
+      {/* Header with oscilloscope + mic + close */}
+      <div className="relative z-10 flex items-center gap-3 px-4 pt-3 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
+        {/* Oscilloscope */}
+        <div className="h-8 overflow-hidden rounded-xl relative flex-1">
+          <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
+            <defs>
+              <linearGradient id="onb-wave1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#007AFF" stopOpacity="0" />
+                <stop offset="30%" stopColor="#007AFF" stopOpacity="0.6" />
+                <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
+                <stop offset="70%" stopColor="#AF52DE" stopOpacity="0.6" />
+                <stop offset="100%" stopColor="#AF52DE" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="onb-wave2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0" />
+                <stop offset="25%" stopColor="#FF6B9D" stopOpacity="0.35" />
+                <stop offset="50%" stopColor="#007AFF" stopOpacity="0.4" />
+                <stop offset="75%" stopColor="#34C759" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#34C759" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={2} maxBoost={14} stroke="url(#onb-wave1)" strokeWidth={2} freq={0.024} speed={1.8} phase={0} />
+            <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={1.2} maxBoost={7} stroke="url(#onb-wave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
+          </svg>
+        </div>
+
+        {/* Mic toggle */}
+        <button
+          onClick={() => {
+            if (scribe.isConnected) scribe.disconnect();
+            else {
+              (async () => {
+                try {
+                  const { data } = await supabase.functions.invoke("elevenlabs-scribe-token");
+                  if (data?.token) {
+                    await scribe.connect({ token: data.token, microphone: { echoCancellation: true, noiseSuppression: true } });
+                    setSttReady(true);
+                  }
+                } catch {}
+              })();
+            }
+          }}
+          className="flex-shrink-0 w-9 h-9 flex items-center justify-center"
+        >
+          <Mic className="w-4.5 h-4.5" style={{ color: scribe.isConnected ? "#007AFF" : "rgba(255,255,255,0.35)" }} />
         </button>
-        <button className="w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
+
+        {/* Close */}
+        <button className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
           <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} />
         </button>
       </div>
