@@ -43,7 +43,7 @@ export const V2ChatHistoryPanel = () => {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-white/5">
+      <div className="px-4 py-3">
         <div className="flex items-center gap-2">
           <img src={avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover" />
           <span className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
@@ -138,7 +138,7 @@ export const V2ChatHistoryPanel = () => {
       </ScrollArea>
 
       {/* Input */}
-      <div className="px-3 py-3 border-t border-white/5">
+      <div className="px-3 py-3">
         <div
           className="flex items-center gap-2 rounded-2xl px-3 py-2"
           style={{ background: "rgba(255,255,255,0.06)" }}

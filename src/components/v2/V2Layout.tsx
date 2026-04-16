@@ -47,12 +47,7 @@ export const V2Layout = ({ children, hideHeader = false }: V2LayoutProps) => {
             {/* 3-panel body */}
             <div className="relative z-10 flex flex-1 overflow-hidden">
               {/* Left: Chat History */}
-              <div
-                className="w-[300px] min-w-[260px] flex-shrink-0 overflow-hidden"
-                style={{
-                  borderRight: "1px solid rgba(255,255,255,0.06)",
-                }}
-              >
+              <div className="w-[300px] min-w-[260px] flex-shrink-0 overflow-hidden">
                 <V2ChatHistoryPanel />
               </div>
 
@@ -62,12 +57,7 @@ export const V2Layout = ({ children, hideHeader = false }: V2LayoutProps) => {
               </div>
 
               {/* Right: Detail Panel */}
-              <div
-                className="w-[340px] min-w-[280px] flex-shrink-0 overflow-hidden"
-                style={{
-                  borderLeft: "1px solid rgba(255,255,255,0.06)",
-                }}
-              >
+              <div className="w-[340px] min-w-[280px] flex-shrink-0 overflow-hidden">
                 <V2DetailPanel />
               </div>
             </div>
