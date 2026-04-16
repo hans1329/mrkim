@@ -45,7 +45,7 @@ export const V2ChatHistoryPanel = () => {
       {/* Header */}
       <div className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <img src={avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover" />
+          <img src={avatarUrl} alt="" className="w-7 h-7 rounded-full object-contain" />
           <span className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
             김비서 대화
           </span>
@@ -60,7 +60,7 @@ export const V2ChatHistoryPanel = () => {
               <img
                 src={avatarUrl}
                 alt="김비서"
-                className="w-14 h-14 rounded-full object-cover"
+                className="w-16 h-16 rounded-full object-contain"
               />
               <p className="text-[13px] text-center" style={{ color: "rgba(255,255,255,0.3)" }}>
                 김비서에게 무엇이든 물어보세요
