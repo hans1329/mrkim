@@ -1,11 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Receipt, Car, Coffee, Home, TrendingUp } from "lucide-react";
-import baeminLogo from "@/assets/baemin-logo.png";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Skeleton } from "@/components/ui/skeleton";
-import { SettlementDetailSheet } from "./SettlementDetailSheet";
+
 
 interface CarouselCard {
   id: string;
@@ -19,70 +15,6 @@ interface CarouselCard {
   gradient: string;
   glowColor: string;
   action?: string;
-}
-
-// 배민 정산 예정 데이터 조회
-function useSettlementForecast() {
-  return useQuery({
-    queryKey: ["settlement-forecast"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      const today = new Date();
-      const todayStr = today.toISOString().split("T")[0].replace(/-/g, "");
-      const futureStr = new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0].replace(/-/g, "");
-
-      const { data: orders } = await supabase
-        .from("delivery_orders")
-        .select("settle_dt, settle_amt, platform, order_dt")
-        .eq("user_id", user.id)
-        .gte("settle_dt", todayStr)
-        .lte("settle_dt", futureStr)
-        .not("settle_amt", "is", null);
-
-      if (!orders || orders.length === 0) return null;
-
-      const byDate = new Map<string, { total: number; count: number; platform: string }>();
-      for (const o of orders) {
-        if (!o.settle_dt) continue;
-        const existing = byDate.get(o.settle_dt) || { total: 0, count: 0, platform: o.platform };
-        existing.total += Number(o.settle_amt) || 0;
-        existing.count++;
-        byDate.set(o.settle_dt, existing);
-      }
-
-      const sorted = Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-      if (sorted.length === 0) return null;
-
-      const [nextDate, nextInfo] = sorted[0];
-      const y = nextDate.slice(0, 4);
-      const m = nextDate.slice(4, 6);
-      const d = nextDate.slice(6, 8);
-      const settleDate = new Date(`${y}-${m}-${d}`);
-      const daysLeft = Math.ceil((settleDate.getTime() - today.getTime()) / 86400000);
-
-      const totalPending = sorted.reduce((sum, [, info]) => sum + info.total, 0);
-
-      return {
-        nextDate: `${Number(m)}/${Number(d)}`,
-        daysLeft,
-        nextAmount: nextInfo.total,
-        nextCount: nextInfo.count,
-        totalPending,
-        totalDates: sorted.length,
-        platform: nextInfo.platform,
-      };
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-function formatAmount(amount: number): string {
-  if (amount >= 10_000) {
-    return `${Math.round(amount / 10_000).toLocaleString()}만원`;
-  }
-  return `${amount.toLocaleString()}원`;
 }
 
 const STATIC_TIPS: CarouselCard[] = [
@@ -144,44 +76,19 @@ const STATIC_TIPS: CarouselCard[] = [
 ];
 
 export const TaxSavingCarousel = () => {
-  const { data: settlement, isLoading } = useSettlementForecast();
   const [current, setCurrent] = useState(0);
-  const [settlementOpen, setSettlementOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const cards: CarouselCard[] = useMemo(() => {
-    const list: CarouselCard[] = [];
-
-    if (settlement) {
-      list.push({
-        id: "settlement-forecast",
-        icon: <img src={baeminLogo} alt="배민" className="w-11 h-11 rounded-xl object-cover" />,
-        title: settlement.daysLeft <= 0 ? "배민 정산 오늘 입금" : `배민 정산 D-${settlement.daysLeft}`,
-        subtitle: settlement.daysLeft <= 0
-          ? `오늘 입금 예정 · ${settlement.nextCount}건`
-          : `${settlement.nextDate} 입금 예정 · ${settlement.nextCount}건`,
-        badge: formatAmount(settlement.nextAmount),
-        badgeColor: "#007AFF",
-        badgeBg: "rgba(0,122,255,0.15)",
-        description: settlement.totalDates > 1
-          ? `총 ${settlement.totalDates}회, ${formatAmount(settlement.totalPending)} 정산 대기 중이에요`
-          : `정산금이 곧 입금돼요. 현금흐름 계획에 참고하세요`,
-        gradient: "linear-gradient(135deg, #2AC1BC 0%, #007AFF 100%)",
-        glowColor: "rgba(42,193,188,0.4)",
-        action: "정산 내역 보기",
-      });
-    }
-
     // For infinite loop, we duplicate the cards array
-    const allCards = [...list, ...STATIC_TIPS];
+    const allCards = [...STATIC_TIPS];
     // Return with clones: [last item, ...all, first item]
-    // This allows seamless infinite scrolling
     return [
       allCards[allCards.length - 1],
       ...allCards,
       allCards[0],
     ];
-  }, [settlement]);
+  }, []);
 
   // Track current slide via scroll position with infinite loop detection
   const handleScroll = useCallback(() => {
@@ -223,27 +130,11 @@ export const TaxSavingCarousel = () => {
     if (current >= cards.length - 1) setCurrent(0);
   }, [cards.length, current]);
 
-  if (isLoading) {
-    return (
-      <div className="rounded-3xl overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="px-5 pt-5 pb-3">
-          <Skeleton className="h-4 w-20 bg-white/5" />
-        </div>
-        <div className="px-5 pb-5">
-          <Skeleton className="h-12 w-12 rounded-2xl bg-white/5 mb-3" />
-          <Skeleton className="h-5 w-3/4 bg-white/5 mb-2" />
-          <Skeleton className="h-3 w-full bg-white/5 mb-2" />
-          <Skeleton className="h-11 w-full rounded-xl bg-white/5" />
-        </div>
-      </div>
-    );
-  }
 
   // activeCard offset by 1 because cards array has clone at index 0
   const activeCard = cards[current + 1] || cards[1];
 
   return (
-    <>
     <div className="relative">
       {/* Gradient border + glow */}
       <div
@@ -265,10 +156,10 @@ export const TaxSavingCarousel = () => {
           {/* Header */}
           <div className="relative px-5 pt-4 pb-2 flex items-center justify-between">
             <span className="text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.6)" }}>
-              {settlement && current === 0 ? "정산 알림" : "절세 포인트"}
+              절세 포인트
             </span>
             <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.25)" }}>
-              {current + 1} / {settlement ? STATIC_TIPS.length + 1 : STATIC_TIPS.length}
+              {current + 1} / {STATIC_TIPS.length}
             </span>
           </div>
 
@@ -290,19 +181,15 @@ export const TaxSavingCarousel = () => {
               >
                 {/* Icon + Title + Badge */}
                 <div className="flex items-center gap-3 mb-3">
-                  {card.id === "settlement-forecast" ? (
-                    <span>{card.icon}</span>
-                  ) : (
-                    <div
-                      className="w-11 h-11 rounded-2xl flex items-center justify-center"
-                      style={{
-                        background: card.gradient,
-                        boxShadow: `0 4px 20px ${card.glowColor}`,
-                      }}
-                    >
-                      <span style={{ color: "rgba(255,255,255,0.95)" }}>{card.icon}</span>
-                    </div>
-                  )}
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                    style={{
+                      background: card.gradient,
+                      boxShadow: `0 4px 20px ${card.glowColor}`,
+                    }}
+                  >
+                    <span style={{ color: "rgba(255,255,255,0.95)" }}>{card.icon}</span>
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[15px] font-bold truncate" style={{ color: "rgba(255,255,255,0.95)" }}>
                       {card.title}
@@ -335,9 +222,6 @@ export const TaxSavingCarousel = () => {
                 {card.action && (
                   <motion.button
                     whileTap={{ scale: 0.97 }}
-                    onClick={() => {
-                      if (card.id === "settlement-forecast") setSettlementOpen(true);
-                    }}
                     className="w-full py-3 rounded-xl text-[13px] font-semibold"
                     style={{
                       background: "rgba(255,255,255,0.07)",
@@ -377,8 +261,5 @@ export const TaxSavingCarousel = () => {
         </div>
       </div>
     </div>
-
-    <SettlementDetailSheet open={settlementOpen} onClose={() => setSettlementOpen(false)} />
-    </>
   );
 };

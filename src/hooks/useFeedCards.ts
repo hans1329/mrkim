@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { useDashboardStats, useActionData, useRecentTransactions } from "./useDashboardStats";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface FeedCard {
   id: string;
@@ -52,12 +54,69 @@ function getNextVatDeadline(): { dDay: number; label: string } | null {
   return { dDay: daysUntil(1, 25), label: "1기 확정" };
 }
 
+function useSettlementForecast() {
+  return useQuery({
+    queryKey: ["settlement-forecast-feed"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0].replace(/-/g, "");
+      const futureStr = new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0].replace(/-/g, "");
+
+      const { data: orders } = await supabase
+        .from("delivery_orders")
+        .select("settle_dt, settle_amt, platform, order_dt")
+        .eq("user_id", user.id)
+        .gte("settle_dt", todayStr)
+        .lte("settle_dt", futureStr)
+        .not("settle_amt", "is", null);
+
+      if (!orders || orders.length === 0) return null;
+
+      const byDate = new Map<string, { total: number; count: number; platform: string }>();
+      for (const o of orders) {
+        if (!o.settle_dt) continue;
+        const existing = byDate.get(o.settle_dt) || { total: 0, count: 0, platform: o.platform };
+        existing.total += Number(o.settle_amt) || 0;
+        existing.count++;
+        byDate.set(o.settle_dt, existing);
+      }
+
+      const sorted = Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+      if (sorted.length === 0) return null;
+
+      const [nextDate, nextInfo] = sorted[0];
+      const y = nextDate.slice(0, 4);
+      const m = nextDate.slice(4, 6);
+      const d = nextDate.slice(6, 8);
+      const settleDate = new Date(`${y}-${m}-${d}`);
+      const daysLeft = Math.ceil((settleDate.getTime() - today.getTime()) / 86400000);
+
+      const totalPending = sorted.reduce((sum, [, info]) => sum + info.total, 0);
+
+      return {
+        nextDate: `${Number(m)}/${Number(d)}`,
+        daysLeft,
+        nextAmount: nextInfo.total,
+        nextCount: nextInfo.count,
+        totalPending,
+        totalDates: sorted.length,
+        platform: nextInfo.platform,
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useFeedCards() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: actionData, isLoading: actionLoading } = useActionData();
   const { data: recentTx, isLoading: txLoading } = useRecentTransactions();
+  const { data: settlement, isLoading: settlementLoading } = useSettlementForecast();
 
-  const isLoading = statsLoading || actionLoading || txLoading;
+  const isLoading = statsLoading || actionLoading || txLoading || settlementLoading;
 
   const { todayCards, historyCards } = useMemo(() => {
     const today: FeedCard[] = [];
@@ -99,6 +158,29 @@ export function useFeedCards() {
         date: td,
         gradient: "linear-gradient(135deg, #007AFF 0%, #5856D6 100%)",
         priority: 1,
+      });
+    }
+
+    // 2. 배민 정산 입금
+    if (settlement) {
+      const fmt = formatMoney(settlement.nextAmount);
+      const isToday = settlement.daysLeft <= 0;
+      today.push({
+        id: "settlement-forecast",
+        type: "hero",
+        title: isToday ? "배민 정산 오늘 입금" : `배민 정산 D-${settlement.daysLeft}`,
+        bigNumber: fmt.number,
+        unit: fmt.unit,
+        body: isToday
+          ? `오늘 입금 예정 · ${settlement.nextCount}건`
+          : `${settlement.nextDate} 입금 예정 · ${settlement.nextCount}건`,
+        detail: settlement.totalDates > 1
+          ? `총 ${settlement.totalDates}회, ${formatMoney(settlement.totalPending).number}${formatMoney(settlement.totalPending).unit} 정산 대기 중이에요. 현금흐름 계획에 참고하세요.`
+          : `정산금이 곧 입금돼요. 현금흐름 계획에 참고하세요.`,
+        time: isToday ? "오늘" : "알림",
+        date: td,
+        gradient: "linear-gradient(135deg, #2AC1BC 0%, #007AFF 100%)",
+        priority: isToday ? 2 : 3,
       });
     }
 
@@ -283,7 +365,7 @@ export function useFeedCards() {
     }
 
     return { todayCards: today, historyCards: history };
-  }, [stats, actionData, recentTx]);
+  }, [stats, actionData, recentTx, settlement]);
 
   return { todayCards, historyCards, isLoading };
 }
