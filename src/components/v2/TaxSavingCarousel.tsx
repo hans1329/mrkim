@@ -199,21 +199,6 @@ export const TaxSavingCarousel = () => {
     if (current >= cards.length - 1) setCurrent(0);
   }, [cards.length, current]);
 
-  if (isLoading) {
-    return (
-      <div className="rounded-3xl overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="px-5 pt-5 pb-3">
-          <Skeleton className="h-4 w-20 bg-white/5" />
-        </div>
-        <div className="px-5 pb-5">
-          <Skeleton className="h-12 w-12 rounded-2xl bg-white/5 mb-3" />
-          <Skeleton className="h-5 w-3/4 bg-white/5 mb-2" />
-          <Skeleton className="h-3 w-full bg-white/5 mb-2" />
-          <Skeleton className="h-11 w-full rounded-xl bg-white/5" />
-        </div>
-      </div>
-    );
-  }
 
   // activeCard offset by 1 because cards array has clone at index 0
   const activeCard = cards[current + 1] || cards[1];
