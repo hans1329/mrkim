@@ -1011,9 +1011,9 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(88,86,214,0.1) 0%, transparent 70%)", filter: "blur(60px)" }} />
 
       {/* Header with oscilloscope + mic + close */}
-      <div className="relative z-10 flex items-center gap-3 px-4 pt-3 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
-        {/* Oscilloscope */}
-        <div className="h-8 overflow-hidden rounded-xl relative flex-1">
+      <div className="relative z-10 flex items-center justify-center gap-3 px-4 pt-3 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
+        {/* Oscilloscope - centered, same size as V2Header */}
+        <div className="h-8 overflow-hidden rounded-xl relative cursor-pointer" style={{ width: "100%", maxWidth: "400px" }}>
           <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
             <defs>
               <linearGradient id="onb-wave1" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -1036,7 +1036,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
           </svg>
         </div>
 
-        {/* Mic toggle */}
+        {/* Mic toggle - absolute right */}
         <button
           onClick={() => {
             if (scribe.isConnected) scribe.disconnect();
@@ -1052,13 +1052,13 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
               })();
             }
           }}
-          className="flex-shrink-0 w-9 h-9 flex items-center justify-center"
+          className="absolute right-12 flex-shrink-0 w-9 h-9 flex items-center justify-center"
         >
           <Mic className="w-4.5 h-4.5" style={{ color: scribe.isConnected ? "#007AFF" : "rgba(255,255,255,0.35)" }} />
         </button>
 
-        {/* Close */}
-        <button className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
+        {/* Close - absolute right */}
+        <button className="absolute right-3 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { scribe.disconnect(); onComplete(answers); }}>
           <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} />
         </button>
       </div>
