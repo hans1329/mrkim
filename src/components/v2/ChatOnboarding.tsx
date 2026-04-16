@@ -786,6 +786,33 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
 
   // ─── Main advance function ──────────────────────────────
 
+  // ─── AI 폴백 의도 분류 (정규식이 못잡은 애매한 발화용) ───
+  const classifyIntentAI = useCallback(async (
+    utterance: string,
+    stepDef: StepDef,
+  ): Promise<"yes" | "skip" | "choice" | "unclear"> => {
+    try {
+      const choices = stepDef.choices?.map(c => c.label) ?? [];
+      const { data, error } = await supabase.functions.invoke("classify-onboarding-intent", {
+        body: {
+          utterance,
+          stepId: stepDef.id,
+          stepType: stepDef.type,
+          choices,
+        },
+      });
+      if (error || !data) return "unclear";
+      const intent = data.intent as "yes" | "skip" | "choice" | "unclear";
+      const confidence = typeof data.confidence === "number" ? data.confidence : 0;
+      // 신뢰도 0.6 미만은 unclear로 처리해서 재질문 유도
+      if (confidence < 0.6) return "unclear";
+      return intent;
+    } catch (e) {
+      console.warn("AI intent classify failed:", e);
+      return "unclear";
+    }
+  }, []);
+
   const advance = useCallback(async (value: string) => {
     if (!step) return;
 
@@ -795,11 +822,18 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     // Allow voice "skip/later" intent on cert_upload / password / connection-related text steps
     const trimmedRaw = value.trim();
     const compactRaw = trimmedRaw.replace(/\s/g, "");
-    const SKIP_VOICE = SKIP_PATTERN.test(compactRaw) || SKIP_PATTERN.test(trimmedRaw);
+    let SKIP_VOICE = SKIP_PATTERN.test(compactRaw) || SKIP_PATTERN.test(trimmedRaw);
     const isConnectionStep =
       step.type === "cert_upload" ||
       step.type === "password" ||
       ["card_id", "bank_id", "delivery_id", "card_select", "bank_select", "card_method", "bank_method"].includes(step.id);
+
+    // 정규식 미스 + 연결 단계에서 음성 입력이면 AI 폴백으로 의도 재확인
+    const isVoiceInput = step.type !== "cert_upload" && step.type !== "password" && step.type !== "text";
+    if (!SKIP_VOICE && isConnectionStep && isVoiceInput && trimmedRaw.length > 1) {
+      const aiIntent = await classifyIntentAI(trimmedRaw, step);
+      if (aiIntent === "skip") SKIP_VOICE = true;
+    }
 
     if (SKIP_VOICE && isConnectionStep) {
       setShowInput(false);
@@ -817,7 +851,18 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       return;
     }
 
-    const validation = validateStepInput(step, value);
+    let validation = validateStepInput(step, value);
+
+    // 정규식 검증 실패 + ask_steps(yes/skip 질문) 단계면 AI 폴백 시도
+    if (!validation.isValid && (ASK_STEPS.includes(step.id) || step.id === "delivery_ask")) {
+      const aiIntent = await classifyIntentAI(trimmedRaw, step);
+      if (aiIntent === "skip") {
+        validation = { isValid: true, normalizedValue: "건너뛸게요" };
+      } else if (aiIntent === "yes") {
+        validation = { isValid: true, normalizedValue: "연동할게요" };
+      }
+    }
+
     if (!validation.isValid) {
       setShowInput(false);
       setShowTextFallback(false);
