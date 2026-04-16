@@ -480,7 +480,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
 
   useEffect(() => {
     if (!isConnected) {
-      void toggleVoice().then(() => setSttReady(true));
+      toggleVoice();
     } else {
       setSttReady(true);
     }
