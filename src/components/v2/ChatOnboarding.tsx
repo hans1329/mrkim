@@ -356,10 +356,10 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
   // ─── 렌더 ──────────────────────────────────────────────────
 
   return (
-    <div className="relative z-10 flex flex-1 flex-col">
+    <div className="relative z-10 flex flex-1 flex-col min-h-0">
       {/* 저장 완료 배지 바 */}
       {savedBadges.length > 0 && (
-        <div className="relative z-10 px-4 pt-3 pb-1">
+        <div className="relative z-10 px-4 pt-3 pb-1 flex-shrink-0">
           <div className="flex flex-wrap gap-1.5">
             {savedBadges.map((b) => (
               <motion.div
@@ -389,7 +389,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
       )}
 
       {/* Messages */}
-      <div className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-4">
+      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-4">
         {visibleMessages.map((m, idx) =>
           m.role === "assistant" ? (
             <motion.div
@@ -467,7 +467,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
       {/* Composer */}
       <form
         onSubmit={handleSend}
-        className="relative z-10 flex items-center gap-2 px-3 pb-4 pt-2"
+        className="relative z-10 flex-shrink-0 flex items-center gap-2 px-3 pb-4 pt-2"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
       >
         <input
