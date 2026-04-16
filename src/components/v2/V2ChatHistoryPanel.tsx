@@ -51,7 +51,7 @@ export const V2ChatHistoryPanel = () => {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 flex items-center justify-center">
         <div ref={scrollRef} className="px-3 py-3 space-y-3">
           {!hasMessages && (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
