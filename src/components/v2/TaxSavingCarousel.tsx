@@ -135,7 +135,6 @@ export const TaxSavingCarousel = () => {
   const activeCard = cards[current + 1] || cards[1];
 
   return (
-    <>
     <div className="relative">
       {/* Gradient border + glow */}
       <div
