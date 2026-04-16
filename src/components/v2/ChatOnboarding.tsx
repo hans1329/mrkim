@@ -1,414 +1,52 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { useV2Voice } from "./V2VoiceContext";
-import { Mic, X, RotateCcw, Trash2, Upload, FileKey, Eye, EyeOff, Loader2 } from "lucide-react";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { Mic, Send, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useCardConnection } from "@/hooks/useCardConnection";
-import { useAccountConnection } from "@/hooks/useAccountConnection";
+import { useV2Voice } from "./V2VoiceContext";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { useConnectionDrawer, type ConnectionType } from "@/contexts/ConnectionDrawerContext";
 import { toast } from "sonner";
 
-// ─── Types ──────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────
 
-type StepId =
-  | "name" | "business_type" | "business_number"
-  | "connect_intro"
-  | "hometax_ask" | "hometax_cert" | "hometax_connecting"
-  | "card_ask" | "card_select" | "card_method" | "card_cert" | "card_id" | "card_pw" | "card_connecting"
-  | "bank_ask" | "bank_select" | "bank_method" | "bank_cert" | "bank_id" | "bank_pw" | "bank_connecting"
-  | "delivery_ask" | "delivery_select" | "delivery_id" | "delivery_pw" | "delivery_connecting"
-  | "complete";
+type ChatRole = "user" | "assistant" | "tool";
 
-interface StepDef {
-  id: StepId;
-  question: string;
-  type: "text" | "choice" | "action" | "cert_upload" | "inline_loading" | "password";
-  placeholder?: string;
-  choices?: { label: string; value: string }[];
-  actionLabel?: string;
-  skipLabel?: string;
+interface ChatMessage {
+  role: ChatRole;
+  content: string;
+  toolName?: string;
+  hidden?: boolean;
 }
 
-interface ValidationResult {
-  isValid: boolean;
-  normalizedValue?: string;
-  retryMessage?: string;
+interface ToolCall {
+  name: string;
+  args: Record<string, unknown>;
 }
 
-// ─── Step definitions ──────────────────────────────────────
-
-const BASIC_STEPS: StepDef[] = [
-  { id: "name", question: "반갑습니다! 어떻게 불러드릴까요?", type: "text", placeholder: "예: 홍길동" },
-  {
-    id: "business_type", question: "사업체에 대해 알려주세요!\n어떤 업종이세요?", type: "choice",
-    choices: [
-      { label: "음식점", value: "restaurant" },
-      { label: "카페", value: "cafe" },
-      { label: "소매/유통", value: "retail" },
-      { label: "기타", value: "other" },
-    ],
-  },
-  { id: "business_number", question: "마지막이에요! 사업자등록번호 알려주시면\n바로 세무 현황을 확인해드릴게요 ✨", type: "text", placeholder: "000-00-00000" },
-];
-
-const CONNECTION_STEPS: StepDef[] = [
-  { id: "connect_intro", question: "이제 데이터를 연동하면\n매출·세무를 자동으로 관리해드려요.\n하나씩 안내해드릴게요!", type: "action", actionLabel: "좋아요, 시작할게요", skipLabel: "나중에 할게요" },
-
-  // 홈택스
-  { id: "hometax_ask", question: "먼저 국세청(홈택스)을 연동할까요?\n세금계산서를 자동으로 가져올 수 있어요.", type: "choice", choices: [{ label: "연동할게요", value: "yes" }, { label: "건너뛸게요", value: "skip" }] },
-  { id: "hometax_cert", question: "공동인증서 파일을 업로드해주세요.\n(.pfx, .p12, .der 형식)", type: "cert_upload" },
-  { id: "hometax_connecting", question: "국세청에 연결하고 있어요...", type: "inline_loading" },
-
-  // 카드
-  { id: "card_ask", question: "카드를 연동하면 지출을 자동 분류해드려요.\n연동할까요?", type: "choice", choices: [{ label: "연동할게요", value: "yes" }, { label: "건너뛸게요", value: "skip" }] },
-  {
-    id: "card_select", question: "어떤 카드사를 사용하세요?", type: "choice",
-    choices: [
-      { label: "신한카드", value: "shinhan" }, { label: "삼성카드", value: "samsung" },
-      { label: "KB국민카드", value: "kb" }, { label: "현대카드", value: "hyundai" },
-      { label: "롯데카드", value: "lotte" }, { label: "BC카드", value: "bc" },
-      { label: "하나카드", value: "hana" }, { label: "우리카드", value: "woori" },
-      { label: "NH농협카드", value: "nh" },
-    ],
-  },
-  {
-    id: "card_method", question: "어떻게 로그인하실까요?", type: "choice",
-    choices: [
-      { label: "아이디/비밀번호", value: "id" },
-      { label: "공동인증서", value: "cert" },
-    ],
-  },
-  { id: "card_cert", question: "공동인증서 파일을 업로드해주세요.\n(.pfx, .p12, .der 형식)", type: "cert_upload" },
-  { id: "card_id", question: "카드사 아이디를 입력해주세요.", type: "text", placeholder: "카드사 로그인 ID" },
-  { id: "card_pw", question: "카드사 비밀번호를 입력해주세요.", type: "password", placeholder: "카드사 로그인 비밀번호" },
-  { id: "card_connecting", question: "카드사에 연결하고 있어요...", type: "inline_loading" },
-
-  // 은행
-  { id: "bank_ask", question: "은행 계좌를 연동하면\n입출금 내역을 자동으로 관리해요.\n연동할까요?", type: "choice", choices: [{ label: "연동할게요", value: "yes" }, { label: "건너뛸게요", value: "skip" }] },
-  {
-    id: "bank_select", question: "어떤 은행을 사용하세요?", type: "choice",
-    choices: [
-      { label: "신한은행", value: "shinhan" }, { label: "KB국민은행", value: "kb" },
-      { label: "우리은행", value: "woori" }, { label: "하나은행", value: "hana" },
-      { label: "NH농협은행", value: "nh" }, { label: "IBK기업은행", value: "ibk" },
-      { label: "카카오뱅크", value: "kakao" }, { label: "토스뱅크", value: "toss" },
-    ],
-  },
-  {
-    id: "bank_method", question: "어떻게 로그인하실까요?", type: "choice",
-    choices: [
-      { label: "아이디/비밀번호", value: "id" },
-      { label: "공동인증서", value: "cert" },
-    ],
-  },
-  { id: "bank_cert", question: "공동인증서 파일을 업로드해주세요.\n(.pfx, .p12, .der 형식)", type: "cert_upload" },
-  { id: "bank_id", question: "은행 아이디를 입력해주세요.", type: "text", placeholder: "인터넷뱅킹 ID" },
-  { id: "bank_pw", question: "은행 비밀번호를 입력해주세요.", type: "password", placeholder: "인터넷뱅킹 비밀번호" },
-  { id: "bank_connecting", question: "은행에 연결하고 있어요...", type: "inline_loading" },
-
-  // 배달
-  { id: "delivery_ask", question: "배달앱을 연동하면\n주문·정산을 한눈에 볼 수 있어요.\n연동할까요?", type: "choice", choices: [{ label: "배민 연동", value: "baemin" }, { label: "쿠팡이츠 연동", value: "coupangeats" }, { label: "건너뛸게요", value: "skip" }] },
-  { id: "delivery_id", question: "배달앱 아이디를 입력해주세요.", type: "text", placeholder: "배달앱 로그인 ID" },
-  { id: "delivery_pw", question: "배달앱 비밀번호를 입력해주세요.", type: "password", placeholder: "배달앱 비밀번호" },
-  { id: "delivery_connecting", question: "배달앱에 연결하고 있어요...", type: "inline_loading" },
-
-  { id: "complete", question: "설정이 완료되었어요! 🎉\n이제 김비서가 대표님의 사업을 도와드릴게요.", type: "action", actionLabel: "시작하기" },
-];
-
-const ALL_STEPS = [...BASIC_STEPS, ...CONNECTION_STEPS];
-
-const STEP_LABELS: Record<string, string> = {
-  name: "이름", business_type: "업종", business_number: "사업자번호",
-};
-
-const CHOICE_SYNONYMS: Partial<Record<StepId, Record<string, string>>> = {
-  business_type: {
-    음식점: "음식점",
-    식당: "음식점",
-    레스토랑: "음식점",
-    분식집: "음식점",
-    분식: "음식점",
-    치킨집: "음식점",
-    치킨: "음식점",
-    피자집: "음식점",
-    피자: "음식점",
-    중국집: "음식점",
-    중식: "음식점",
-    한식: "음식점",
-    일식: "음식점",
-    일식집: "음식점",
-    초밥: "음식점",
-    삼겹살: "음식점",
-    고기집: "음식점",
-    포차: "음식점",
-    술집: "음식점",
-    호프: "음식점",
-    바: "음식점",
-    베이커리: "음식점",
-    빵집: "음식점",
-    제과점: "음식점",
-    디저트: "음식점",
-    카페: "카페",
-    커피숍: "카페",
-    커피샵: "카페",
-    커피: "카페",
-    소매: "소매/유통",
-    유통: "소매/유통",
-    소매유통: "소매/유통",
-    편의점: "소매/유통",
-    마트: "소매/유통",
-    슈퍼: "소매/유통",
-    옷가게: "소매/유통",
-    의류: "소매/유통",
-    꽃집: "소매/유통",
-    미용실: "기타",
-    헤어샵: "기타",
-    네일샵: "기타",
-    네일: "기타",
-    학원: "기타",
-    공방: "기타",
-    스튜디오: "기타",
-    사무실: "기타",
-    기타: "기타",
-  },
-  hometax_ask: {
-    연동할게요: "연동할게요",
-    네: "연동할게요",
-    예: "연동할게요",
-    응: "연동할게요",
-    좋아요: "연동할게요",
-    할게요: "연동할게요",
-    건너뛸게요: "건너뛸게요",
-    건너뛰기: "건너뛸게요",
-    아니오: "건너뛸게요",
-    아니요: "건너뛸게요",
-    됐어요: "건너뛸게요",
-    나중에: "건너뛸게요",
-  },
-  card_ask: {
-    연동할게요: "연동할게요",
-    네: "연동할게요",
-    예: "연동할게요",
-    응: "연동할게요",
-    좋아요: "연동할게요",
-    할게요: "연동할게요",
-    건너뛸게요: "건너뛸게요",
-    건너뛰기: "건너뛸게요",
-    아니오: "건너뛸게요",
-    아니요: "건너뛸게요",
-    나중에: "건너뛸게요",
-  },
-  bank_ask: {
-    연동할게요: "연동할게요",
-    네: "연동할게요",
-    예: "연동할게요",
-    응: "연동할게요",
-    좋아요: "연동할게요",
-    할게요: "연동할게요",
-    건너뛸게요: "건너뛸게요",
-    건너뛰기: "건너뛸게요",
-    아니오: "건너뛸게요",
-    아니요: "건너뛸게요",
-    나중에: "건너뛸게요",
-  },
-  delivery_ask: {
-    배민연동: "배민 연동",
-    배민: "배민 연동",
-    배달의민족: "배민 연동",
-    쿠팡이츠: "쿠팡이츠 연동",
-    쿠팡이츠연동: "쿠팡이츠 연동",
-    건너뛸게요: "건너뛸게요",
-    건너뛰기: "건너뛸게요",
-    나중에: "건너뛸게요",
-  },
-  card_select: {
-    신한: "신한카드",
-    신한카드: "신한카드",
-    삼성: "삼성카드",
-    삼성카드: "삼성카드",
-    국민카드: "KB국민카드",
-    케이비국민카드: "KB국민카드",
-    KB국민카드: "KB국민카드",
-    현대: "현대카드",
-    현대카드: "현대카드",
-    롯데: "롯데카드",
-    롯데카드: "롯데카드",
-    비씨카드: "BC카드",
-    BC카드: "BC카드",
-    하나카드: "하나카드",
-    우리카드: "우리카드",
-    농협카드: "NH농협카드",
-    NH농협카드: "NH농협카드",
-  },
-  bank_select: {
-    신한은행: "신한은행",
-    신한: "신한은행",
-    국민은행: "KB국민은행",
-    케이비국민은행: "KB국민은행",
-    KB국민은행: "KB국민은행",
-    우리은행: "우리은행",
-    하나은행: "하나은행",
-    농협은행: "NH농협은행",
-    NH농협은행: "NH농협은행",
-    기업은행: "IBK기업은행",
-    IBK기업은행: "IBK기업은행",
-    카카오뱅크: "카카오뱅크",
-    토스뱅크: "토스뱅크",
-  },
-  card_method: {
-    아이디: "아이디/비밀번호",
-    아이디비번: "아이디/비밀번호",
-    아이디비밀번호: "아이디/비밀번호",
-    비번: "아이디/비밀번호",
-    비밀번호: "아이디/비밀번호",
-    공동인증서: "공동인증서",
-    인증서: "공동인증서",
-    공인인증서: "공동인증서",
-    인증: "공동인증서",
-  },
-  bank_method: {
-    아이디: "아이디/비밀번호",
-    아이디비번: "아이디/비밀번호",
-    아이디비밀번호: "아이디/비밀번호",
-    비번: "아이디/비밀번호",
-    비밀번호: "아이디/비밀번호",
-    공동인증서: "공동인증서",
-    인증서: "공동인증서",
-    공인인증서: "공동인증서",
-    인증: "공동인증서",
-  },
-};
-
-// Intent patterns for ask-style steps (yes/skip questions)
-// 자연어 응답을 폭넓게 잡기 위한 정규식
-const YES_PATTERN = /(연동|연결|등록|진행|시작|할게|해줘|해주세|^해$|좋아|좋|그래|그러|^네$|^예$|^응$|^어$|오케|오케이|ok|yes|^가자$|^콜$)/i;
-const SKIP_PATTERN = /(건너|스킵|패스|나중|넘어|생략|취소|아니|안할|안함|싫|괜찮|됐|필요없|^노$|않을|않아|^no$|pass|skip|later)/i;
-const ASK_STEPS: StepId[] = ["hometax_ask", "card_ask", "bank_ask"];
-
-function fuzzyIntentMatch(stepDef: StepDef, compact: string, trimmed: string): string | null {
-  if (ASK_STEPS.includes(stepDef.id)) {
-    const skipMatch = SKIP_PATTERN.test(compact) || SKIP_PATTERN.test(trimmed);
-    const yesMatch = YES_PATTERN.test(compact) || YES_PATTERN.test(trimmed);
-    if (skipMatch && !yesMatch) return "건너뛸게요";
-    if (yesMatch) return "연동할게요";
-  }
-  if (stepDef.id === "delivery_ask") {
-    if (/배민|배달의민족|baemin/i.test(compact)) return "배민 연동";
-    if (/쿠팡|coupang/i.test(compact)) return "쿠팡이츠 연동";
-    if (SKIP_PATTERN.test(compact) || SKIP_PATTERN.test(trimmed)) return "건너뛸게요";
-  }
-  return null;
+interface AgentResponse {
+  reply: string;
+  toolCalls: ToolCall[];
+  done: boolean;
+  error?: string;
 }
 
-function normalizeChoiceValue(stepDef: StepDef, rawValue: string): string | null {
-  const compact = rawValue.replace(/\s/g, "");
-  const trimmed = rawValue.trim();
-  const synonyms = CHOICE_SYNONYMS[stepDef.id];
-
-  // 1) Exact match on synonyms
-  const matchedSynonym = synonyms?.[compact] || synonyms?.[trimmed];
-  if (matchedSynonym) return matchedSynonym;
-
-  // 2) Substring/contains match on synonym keys
-  if (synonyms) {
-    const sortedKeys = Object.keys(synonyms).sort((a, b) => b.length - a.length);
-    for (const key of sortedKeys) {
-      if (compact.includes(key) || trimmed.includes(key)) {
-        return synonyms[key];
-      }
-    }
-  }
-
-  // 3) Exact match on choice labels/values
-  const matchedChoice = stepDef.choices?.find((choice) => {
-    const labelCompact = choice.label.replace(/\s/g, "");
-    return labelCompact === compact || choice.label === trimmed || choice.value === trimmed;
-  });
-  if (matchedChoice) return matchedChoice.label;
-
-  // 4) Substring match on choice labels
-  const substringChoice = stepDef.choices?.find((choice) => {
-    const labelCompact = choice.label.replace(/\s/g, "");
-    return compact.includes(labelCompact) || trimmed.includes(choice.label);
-  });
-  if (substringChoice) return substringChoice.label;
-
-  // 5) Fuzzy intent matching (broad natural language fallback)
-  return fuzzyIntentMatch(stepDef, compact, trimmed);
+interface OnboardingState {
+  name?: string | null;
+  business_type?: string | null;
+  business_number?: string | null;
+  hometax_connected?: boolean;
+  card_connected?: boolean;
+  account_connected?: boolean;
+  delivery_connected?: boolean;
 }
-
-function extractNameCandidate(rawValue: string): string {
-  return rawValue
-    .trim()
-    .replace(/^(제|내)?\s*(이름|성함)(은|는)?\s*/g, "")
-    .replace(/^(저는|전|저|나는|난)\s+/g, "")
-    .replace(/\s*(이라고|라고)\s*(불러(줘|주세요)?|불러요|불러|부르(면|세요)?|해주세요|해줘)\s*$/g, "")
-    .replace(/\s*(입니다|이에요|예요|이야|라고요)\s*$/g, "")
-    .replace(/[^가-힣a-zA-Z0-9\s]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function validateStepInput(stepDef: StepDef, rawValue: string): ValidationResult {
-  const trimmed = rawValue.trim();
-  if (!trimmed) {
-    return {
-      isValid: false,
-      retryMessage: "잘 못 들었어요. 한 번만 다시 말씀해주시겠어요?",
-    };
-  }
-
-  if (stepDef.type === "choice") {
-    const normalizedChoice = normalizeChoiceValue(stepDef, trimmed);
-    if (!normalizedChoice) {
-      const labels = stepDef.choices?.map((choice) => choice.label).join(", ");
-      return {
-        isValid: false,
-        retryMessage: labels
-          ? `잘 못 들었어요. ${labels} 중에서 다시 말씀해주시겠어요?`
-          : "잘 못 들었어요. 다시 말씀해주시겠어요?",
-      };
-    }
-
-    return { isValid: true, normalizedValue: normalizedChoice };
-  }
-
-  switch (stepDef.id) {
-    case "name": {
-      const cleanedName = extractNameCandidate(trimmed);
-      if (cleanedName.length < 2) {
-        return {
-          isValid: false,
-          retryMessage: "성함을 정확히 못 들었어요. 이름을 다시 말씀해주시거나 직접 입력해주세요.",
-        };
-      }
-      return { isValid: true, normalizedValue: cleanedName };
-    }
-
-    case "business_number": {
-      const digits = trimmed.replace(/\D/g, "");
-      if (digits.length !== 10) {
-        return {
-          isValid: false,
-          retryMessage: "사업자등록번호는 10자리예요. 다시 말씀해주시거나 직접 입력해주세요.",
-        };
-      }
-      return { isValid: true, normalizedValue: digits };
-    }
-
-    default:
-      return { isValid: true, normalizedValue: trimmed };
-  }
-}
-
-// ─── Shared components ──────────────────────────────────────
 
 interface ChatOnboardingProps {
   onComplete: (data: Record<string, string>) => void;
   onProgress?: (partialData: Record<string, string>) => void | Promise<void>;
-  secretaryAvatarUrl?: string | null;
   existingData?: Record<string, string>;
 }
+
+// ─── Avatar ────────────────────────────────────────────────────
 
 const YarnBallAvatar = () => (
   <div className="w-8 h-8 flex-shrink-0 rounded-full">
@@ -424,1203 +62,426 @@ const YarnBallAvatar = () => (
   </div>
 );
 
-// ─── Oscilloscope ──────────────────────────────────────────
+// ─── Service mapping (agent service -> ConnectionDrawer type) ─
 
-const OscilloscopeWave = () => {
-  const volumeRef = useRef(0);
-  const animFrameRef = useRef<number>();
-
-  useEffect(() => {
-    let stream: MediaStream | null = null;
-    let audioCtx: AudioContext | null = null;
-    let analyser: AnalyserNode | null = null;
-    let dataArray: Uint8Array<ArrayBuffer> | null = null;
-
-    const init = async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } });
-        audioCtx = new AudioContext();
-        if (audioCtx.state === "suspended") await audioCtx.resume();
-        const source = audioCtx.createMediaStreamSource(stream);
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 512;
-        analyser.smoothingTimeConstant = 0.55;
-        source.connect(analyser);
-        dataArray = new Uint8Array(analyser.fftSize);
-      } catch { /* mic unavailable */ }
-    };
-
-    const poll = () => {
-      if (analyser && dataArray) {
-        analyser.getByteTimeDomainData(dataArray);
-        let sumSquares = 0;
-        for (let i = 0; i < dataArray.length; i++) { const n = (dataArray[i] - 128) / 128; sumSquares += n * n; }
-        const rms = Math.sqrt(sumSquares / dataArray.length);
-        volumeRef.current += (Math.min(1, rms * 8) - volumeRef.current) * 0.22;
-      } else {
-        volumeRef.current += (0 - volumeRef.current) * 0.08;
-      }
-      animFrameRef.current = requestAnimationFrame(poll);
-    };
-
-    init().then(() => poll());
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      if (stream) stream.getTracks().forEach(t => t.stop());
-      if (audioCtx) audioCtx.close();
-    };
-  }, []);
-
-  const baseAmplitude = 2.5;
-  const maxBoost = 20;
-
-  return (
-    <div className="w-full h-10 pointer-events-none overflow-hidden mb-2">
-      <svg viewBox="0 0 390 40" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(1px)" }}>
-        <defs>
-          <linearGradient id="wave1Grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#007AFF" stopOpacity="0" />
-            <stop offset="30%" stopColor="#007AFF" stopOpacity="0.6" />
-            <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
-            <stop offset="70%" stopColor="#AF52DE" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#AF52DE" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="wave2Grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0" />
-            <stop offset="25%" stopColor="#FF6B9D" stopOpacity="0.4" />
-            <stop offset="50%" stopColor="#007AFF" stopOpacity="0.5" />
-            <stop offset="75%" stopColor="#34C759" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#34C759" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="wave3Grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#5856D6" stopOpacity="0" />
-            <stop offset="35%" stopColor="#AF52DE" stopOpacity="0.3" />
-            <stop offset="65%" stopColor="#FF9F0A" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#FF9F0A" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <ReactiveWavePath volumeRef={volumeRef} baseAmplitude={baseAmplitude} maxBoost={maxBoost} stroke="url(#wave1Grad)" strokeWidth={2.5} freq={0.016} speed={1.8} phase={0} />
-        <ReactiveWavePath volumeRef={volumeRef} baseAmplitude={baseAmplitude * 0.7} maxBoost={maxBoost * 0.6} stroke="url(#wave2Grad)" strokeWidth={1.8} freq={0.022} speed={2.3} phase={1.5} />
-        <ReactiveWavePath volumeRef={volumeRef} baseAmplitude={baseAmplitude * 0.5} maxBoost={maxBoost * 0.4} stroke="url(#wave3Grad)" strokeWidth={1.2} freq={0.028} speed={2.8} phase={3.0} />
-      </svg>
-    </div>
-  );
+const SERVICE_TO_DRAWER: Record<string, ConnectionType> = {
+  hometax: "hometax",
+  card: "card",
+  account: "account",
+  baemin: "baemin",
+  coupangeats: "coupangeats",
 };
 
-const ReactiveWavePath = ({ volumeRef, baseAmplitude, maxBoost, stroke, strokeWidth, freq, speed, phase }: {
-  volumeRef: React.RefObject<number>; baseAmplitude: number; maxBoost: number;
-  stroke: string; strokeWidth: number; freq: number; speed: number; phase: number;
-}) => {
-  const pathRef = useRef<SVGPathElement>(null);
-  const animRef = useRef<number>();
-  useEffect(() => {
-    const animate = () => {
-      const el = pathRef.current;
-      if (!el) return;
-      const t = Date.now() / 1000;
-      const vol = volumeRef.current ?? 0;
-      const amp = baseAmplitude + vol * maxBoost;
-      const points: string[] = [];
-      for (let x = 0; x <= 390; x += 3) {
-        const y = 20 + Math.sin(x * freq + t * speed + phase) * amp + Math.sin(x * freq * 1.7 + t * speed * 0.7 + phase * 0.5) * amp * 0.3;
-        points.push(`${x === 0 ? "M" : "L"}${x},${y.toFixed(1)}`);
-      }
-      el.setAttribute("d", points.join(" "));
-      animRef.current = requestAnimationFrame(animate);
-    };
-    animate();
-    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, [volumeRef, baseAmplitude, maxBoost, freq, speed, phase]);
-  return <path ref={pathRef} fill="none" stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" />;
-};
+// ─── Main Component ───────────────────────────────────────────
 
-// ─── Main Component ──────────────────────────────────────
-
-export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, existingData = {} }: ChatOnboardingProps) => {
-  const hasExisting = Object.keys(existingData).length > 0;
-
-  // Build step flow - skip basic steps already completed
-  const buildStepFlow = useCallback((): StepDef[] => {
-    const flow: StepDef[] = [];
-    for (const s of BASIC_STEPS) {
-      if (!existingData[s.id]) flow.push(s);
-    }
-    flow.push(...CONNECTION_STEPS);
-    return flow;
-  }, [existingData]);
-
-  const [stepFlow, setStepFlow] = useState<StepDef[]>(buildStepFlow);
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const currentIdxRef = useRef(0);
-  const [answers, setAnswers] = useState<Record<string, string>>(existingData);
-  const [inputValue, setInputValue] = useState("");
-  const [messages, setMessages] = useState<{ from: "bot" | "user"; text: string }[]>([]);
-  const [showInput, setShowInput] = useState(false);
-  const [showTextFallback, setShowTextFallback] = useState(false);
-  const [sttReady, setSttReady] = useState(false);
-  const advanceRef = useRef<(value: string) => void>();
-  const [badgeMode, setBadgeMode] = useState<{ stepId: string } | null>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: ChatOnboardingProps) => {
   const {
-    volumeRef: headerVolumeRef,
-    isConnected,
+    isConnected: voiceConnected,
     partialTranscript,
     toggleVoice,
     onCommit,
   } = useV2Voice();
+  const { openDrawer } = useConnectionDrawer();
+  const { hometaxConnected, cardConnected, accountConnected, deliveryConnected, refetch: refetchConnection } = useConnection();
 
-  // Connection state
-  const [certFile, setCertFile] = useState<File | null>(null);
-  const [keyFile, setKeyFile] = useState<File | null>(null);
-  const [certPassword, setCertPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const certFileInputRef = useRef<HTMLInputElement>(null);
-  const keyFileInputRef = useRef<HTMLInputElement>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [isThinking, setIsThinking] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
-  // Delivery platform selection
-  const [selectedDeliveryPlatform, setSelectedDeliveryPlatform] = useState<string>("");
-
-  // Hooks
-  const { registerCardAccount } = useCardConnection();
-  const { registerBankAccount } = useAccountConnection();
-  const { connectService } = useConnection();
-
-  const step = stepFlow[currentIdx];
-
-  // Auto-connect mic only once on mount. Do NOT auto-reconnect when user manually disconnects.
-  const didAutoConnectRef = useRef(false);
+  // 수집 상태 (저장 도구가 호출되면 즉시 갱신)
+  const [state, setState] = useState<OnboardingState>(() => ({
+    name: existingData.name || null,
+    business_type: existingData.business_type || null,
+    business_number: existingData.business_number || null,
+    hometax_connected: hometaxConnected,
+    card_connected: cardConnected,
+    account_connected: accountConnected,
+    delivery_connected: deliveryConnected,
+  }));
+  const stateRef = useRef(state);
   useEffect(() => {
-    if (!didAutoConnectRef.current && !isConnected) {
-      didAutoConnectRef.current = true;
-      toggleVoice();
-    }
-    if (isConnected) setSttReady(true);
-  }, [isConnected, toggleVoice]);
+    stateRef.current = state;
+  }, [state]);
 
+  // 연동 상태 동기화
   useEffect(() => {
-    const t = setTimeout(() => {
-      if (hasExisting) {
-        const completedLabels = BASIC_STEPS.filter(s => existingData[s.id]).map(s => STEP_LABELS[s.id]).join(", ");
-        setMessages([{ from: "bot", text: `다시 오셨네요! ${completedLabels} 정보가 등록되어 있어요.` }]);
-        if (stepFlow[0]) {
-          setMessages(prev => [...prev, { from: "bot", text: stepFlow[0].question }]);
-          setTimeout(() => setShowInput(true), 500);
-          setTimeout(() => setShowTextFallback(true), 2000);
-        }
-      } else if (stepFlow[0]) {
-        setMessages([{ from: "bot", text: stepFlow[0].question }]);
-        setTimeout(() => setShowInput(true), 500);
-        setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
-      }
-    }, 300);
+    setState((prev) => ({
+      ...prev,
+      hometax_connected: hometaxConnected,
+      card_connected: cardConnected,
+      account_connected: accountConnected,
+      delivery_connected: deliveryConnected,
+    }));
+  }, [hometaxConnected, cardConnected, accountConnected, deliveryConnected]);
 
+  // 동시 실행 가드
+  const isProcessingRef = useRef(false);
+  const initializedRef = useRef(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // 자동 스크롤
+  useEffect(() => {
+    const t = setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 50);
     return () => clearTimeout(t);
-  }, [existingData, hasExisting, stepFlow, sttReady]);
+  }, [messages, partialTranscript, isThinking]);
 
-  // ─── Navigation helpers ──────────────────────────────────
+  // ─── 도구 실행 ──────────────────────────────────────────────
 
-  const goToStep = useCallback((targetId: StepId) => {
-    const idx = stepFlow.findIndex(s => s.id === targetId);
-    if (idx >= 0) {
-      setCurrentIdx(idx);
-      currentIdxRef.current = idx;
-      setMessages(prev => [...prev, { from: "bot", text: stepFlow[idx].question }]);
-      setShowInput(false);
-      setTimeout(() => setShowInput(true), 500);
-      setTimeout(() => setShowTextFallback(true), 2000);
-    }
-  }, [stepFlow]);
-
-  const goToNext = useCallback(() => {
-    if (currentIdx < stepFlow.length - 1) {
-      const nextIdx = currentIdx + 1;
-      setCurrentIdx(nextIdx);
-      currentIdxRef.current = nextIdx;
-      setMessages(prev => [...prev, { from: "bot", text: stepFlow[nextIdx].question }]);
-      setShowInput(false);
-      setTimeout(() => setShowInput(true), 500);
-      setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
-    }
-  }, [currentIdx, stepFlow, sttReady]);
-
-  // File → Base64
-  const fileToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => { const r = reader.result as string; resolve(r.split(",")[1] || r); };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
-  // ─── Connection handlers ──────────────────────────────────
-
-  const handleHometaxConnect = useCallback(async () => {
-    if (!certFile || !certPassword) return;
-    setIsConnecting(true);
-    goToStep("hometax_connecting");
-
+  const executeTool = useCallback(async (call: ToolCall): Promise<string> => {
     try {
-      const certFileBase64 = await fileToBase64(certFile);
-      let keyFileBase64: string | undefined;
-      if (keyFile) keyFileBase64 = await fileToBase64(keyFile);
-
-      const brn = answers.business_number?.replace(/\D/g, "") || "";
-      const mid = brn.length >= 5 ? parseInt(brn.substring(3, 5), 10) : 0;
-      const clientType = mid >= 81 ? "B" : "P";
-
-      const { data, error } = await supabase.functions.invoke("codef-hometax", {
-        body: { action: "register", businessNumber: brn, certFileBase64, certPassword, keyFileBase64, clientType },
-      });
-
-      if (error || data?.status !== "completed") {
-        const errMsg = data?.error || "홈택스 연동에 실패했어요.";
-        setMessages(prev => [...prev, { from: "bot", text: `❌ ${errMsg}\n다시 시도하거나 건너뛸 수 있어요.` }]);
-        setCertFile(null);
-        setCertPassword("");
-        goToStep("hometax_cert");
-        return;
+      switch (call.name) {
+        case "save_user_name": {
+          const name = String(call.args.name || "").trim();
+          if (!name) return "이름이 비어 있어 저장하지 않았습니다.";
+          setState((prev) => ({ ...prev, name }));
+          await onProgress?.({ name });
+          return `이름 저장 완료: ${name}`;
+        }
+        case "save_business_type": {
+          const business_type = String(call.args.business_type || "").trim();
+          if (!business_type) return "업종이 비어 있어 저장하지 않았습니다.";
+          setState((prev) => ({ ...prev, business_type }));
+          await onProgress?.({ business_type });
+          return `업종 저장 완료: ${business_type}`;
+        }
+        case "save_business_number": {
+          const digits = String(call.args.business_number || "").replace(/\D/g, "");
+          if (digits.length !== 10) {
+            return "사업자번호는 10자리 숫자여야 합니다. 다시 받아주세요.";
+          }
+          setState((prev) => ({ ...prev, business_number: digits }));
+          await onProgress?.({ business_number: digits });
+          return `사업자번호 저장 완료: ${digits}`;
+        }
+        case "start_connection": {
+          const service = String(call.args.service || "").toLowerCase();
+          const drawerType = SERVICE_TO_DRAWER[service];
+          if (!drawerType) return `지원하지 않는 서비스: ${service}`;
+          openDrawer(drawerType);
+          return `${service} 연동 화면을 열었습니다. 사용자가 완료하거나 닫을 때까지 기다려주세요.`;
+        }
+        case "skip_step": {
+          const target = String(call.args.target || "current");
+          return `${target} 단계를 건너뛰었습니다. 다음 단계로 진행해주세요.`;
+        }
+        case "finish_onboarding": {
+          return "온보딩이 종료되었습니다.";
+        }
+        default:
+          return `알 수 없는 도구: ${call.name}`;
       }
-
-      await connectService("codef_hometax_tax_invoice", data.connectedId || undefined);
-      setMessages(prev => [...prev, { from: "bot", text: "✅ 국세청 연동 완료! 세금계산서를 자동으로 가져올게요." }]);
-      setAnswers(prev => ({ ...prev, hometax: "connected" }));
-      setCertFile(null);
-      setCertPassword("");
-
-      // Move to card
-      setTimeout(() => goToStep("card_ask"), 800);
-    } catch (err) {
-      setMessages(prev => [...prev, { from: "bot", text: "연결 중 오류가 발생했어요. 다시 시도해주세요." }]);
-      goToStep("hometax_cert");
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [certFile, certPassword, keyFile, answers, connectService, goToStep]);
-
-  const handleCardConnect = useCallback(async () => {
-    const cardCompany = answers.card_select;
-    const useCert = answers.card_method === "공동인증서";
-
-    if (!cardCompany) return;
-    if (useCert) {
-      if (!certFile || !certPassword) return;
-    } else {
-      if (!answers.card_id || !answers.card_pw) return;
-    }
-
-    setIsConnecting(true);
-    goToStep("card_connecting");
-
-    try {
-      const brn = answers.business_number?.replace(/\D/g, "") || "";
-      const mid = brn.length >= 5 ? parseInt(brn.substring(3, 5), 10) : 0;
-      const clientType = mid >= 81 ? "B" : "P";
-
-      let connectedId: string | null = null;
-      if (useCert) {
-        const certFileBase64 = await fileToBase64(certFile!);
-        const keyFileBase64 = keyFile ? await fileToBase64(keyFile) : undefined;
-        connectedId = await registerCardAccount(
-          cardCompany, "", "",
-          { loginType: "0", certFile: certFileBase64, certPassword, keyFile: keyFileBase64 },
-          clientType,
-        );
-      } else {
-        connectedId = await registerCardAccount(cardCompany, answers.card_id, answers.card_pw, undefined, clientType);
-      }
-
-      if (connectedId) {
-        await connectService(`codef_card_${cardCompany}`, connectedId);
-        setMessages(prev => [...prev, { from: "bot", text: "✅ 카드 연동 완료! 지출 내역을 자동으로 가져올게요." }]);
-        setAnswers(prev => ({ ...prev, card: "connected" }));
-        setCertFile(null); setKeyFile(null); setCertPassword("");
-        setTimeout(() => goToStep("bank_ask"), 800);
-      } else {
-        setMessages(prev => [...prev, { from: "bot", text: useCert ? "❌ 인증서 연동에 실패했어요.\n인증서와 비밀번호를 확인해주세요." : "❌ 카드사 연결에 실패했어요.\n아이디와 비밀번호를 확인해주세요." }]);
-        goToStep(useCert ? "card_cert" : "card_id");
-      }
-    } catch (err) {
-      setMessages(prev => [...prev, { from: "bot", text: "❌ 연결 중 오류가 발생했어요. 다시 시도해주세요." }]);
-      goToStep(useCert ? "card_cert" : "card_id");
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [answers, certFile, keyFile, certPassword, registerCardAccount, connectService, goToStep]);
-
-  const handleBankConnect = useCallback(async () => {
-    const bankId = answers.bank_select;
-    const useCert = answers.bank_method === "공동인증서";
-
-    if (!bankId) return;
-    if (useCert) {
-      if (!certFile || !certPassword) return;
-    } else {
-      if (!answers.bank_id || !answers.bank_pw) return;
-    }
-
-    setIsConnecting(true);
-    goToStep("bank_connecting");
-
-    try {
-      const brn = answers.business_number?.replace(/\D/g, "") || "";
-      const mid = brn.length >= 5 ? parseInt(brn.substring(3, 5), 10) : 0;
-      const clientType = mid >= 81 ? "B" : "P";
-
-      let connectedId: string | null = null;
-      if (useCert) {
-        const certFileBase64 = await fileToBase64(certFile!);
-        const keyFileBase64 = keyFile ? await fileToBase64(keyFile) : undefined;
-        connectedId = await registerBankAccount(
-          bankId, "", "",
-          { loginType: "0", certFile: certFileBase64, certPassword, keyFile: keyFileBase64 },
-          clientType,
-        );
-      } else {
-        connectedId = await registerBankAccount(bankId, answers.bank_id, answers.bank_pw, undefined, clientType);
-      }
-
-      if (connectedId) {
-        await connectService(`codef_bank_${bankId}`, connectedId);
-        setMessages(prev => [...prev, { from: "bot", text: "✅ 은행 연동 완료! 입출금 내역을 자동으로 관리할게요." }]);
-        setAnswers(prev => ({ ...prev, bank: "connected" }));
-        setCertFile(null); setKeyFile(null); setCertPassword("");
-        setTimeout(() => goToStep("delivery_ask"), 800);
-      } else {
-        setMessages(prev => [...prev, { from: "bot", text: useCert ? "❌ 인증서 연동에 실패했어요.\n인증서와 비밀번호를 확인해주세요." : "❌ 은행 연결에 실패했어요.\n아이디와 비밀번호를 확인해주세요." }]);
-        goToStep(useCert ? "bank_cert" : "bank_id");
-      }
-    } catch (err) {
-      setMessages(prev => [...prev, { from: "bot", text: "❌ 연결 중 오류가 발생했어요. 다시 시도해주세요." }]);
-      goToStep(useCert ? "bank_cert" : "bank_id");
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [answers, certFile, keyFile, certPassword, registerBankAccount, connectService, goToStep]);
-
-  const handleDeliveryConnect = useCallback(async () => {
-    const platform = selectedDeliveryPlatform;
-    const id = answers.delivery_id;
-    const pw = answers.delivery_pw;
-    if (!platform || !id || !pw) return;
-
-    setIsConnecting(true);
-    goToStep("delivery_connecting");
-
-    try {
-      const funcName = platform === "baemin" ? "hyphen-baemin" : "hyphen-coupangeats";
-      const { data, error } = await supabase.functions.invoke(funcName, {
-        body: { action: "verify", userId: id, userPw: pw },
-      });
-
-      if (error || !data?.success) {
-        setMessages(prev => [...prev, { from: "bot", text: `❌ ${data?.error || "계정 검증에 실패했어요."}\n아이디와 비밀번호를 확인해주세요.` }]);
-        goToStep("delivery_id");
-        return;
-      }
-
-      const connectorId = platform === "baemin" ? "hyphen_baemin" : "hyphen_coupangeats";
-      await connectService(connectorId);
-      setMessages(prev => [...prev, { from: "bot", text: "✅ 배달앱 연동 완료! 주문·정산을 자동으로 관리할게요." }]);
-      setAnswers(prev => ({ ...prev, delivery: "connected" }));
-
-      setTimeout(() => goToStep("complete"), 800);
-    } catch (err) {
-      setMessages(prev => [...prev, { from: "bot", text: "❌ 연결 중 오류가 발생했어요. 다시 시도해주세요." }]);
-      goToStep("delivery_id");
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [selectedDeliveryPlatform, answers, connectService, goToStep]);
-
-  // ─── Main advance function ──────────────────────────────
-
-  // ─── AI 폴백 의도 분류 (정규식이 못잡은 애매한 발화용) ───
-  const classifyIntentAI = useCallback(async (
-    utterance: string,
-    stepDef: StepDef,
-  ): Promise<{
-    intent: "yes" | "skip" | "choice" | "answer" | "edit_field" | "go_back" | "restart" | "help" | "unclear";
-    field?: "name" | "business_type" | "business_number" | null;
-    value?: string | null;
-    confidence: number;
-  }> => {
-    try {
-      const choices = stepDef.choices?.map(c => c.label) ?? [];
-      const { data, error } = await supabase.functions.invoke("classify-onboarding-intent", {
-        body: {
-          utterance,
-          stepId: stepDef.id,
-          stepType: stepDef.type,
-          choices,
-          answers,
-        },
-      });
-      if (error || !data) return { intent: "unclear", confidence: 0 };
-      return {
-        intent: data.intent ?? "unclear",
-        field: data.field ?? null,
-        value: data.value ?? null,
-        confidence: typeof data.confidence === "number" ? data.confidence : 0,
-      };
     } catch (e) {
-      console.warn("AI intent classify failed:", e);
-      return { intent: "unclear", confidence: 0 };
+      console.error("tool error", call.name, e);
+      return `도구 실행 실패: ${e instanceof Error ? e.message : "unknown"}`;
     }
-  }, [answers]);
+  }, [onProgress, openDrawer]);
 
-  // 동시 실행 가드 (음성 transcript와 버튼 클릭이 겹치는 것 방지)
-  const isAdvancingRef = useRef(false);
+  // ─── 에이전트 호출 ──────────────────────────────────────────
 
-  const advance = useCallback(async (value: string) => {
-    if (!step) return;
-    if (step.type === "inline_loading") return;
-    if (isAdvancingRef.current) {
-      console.warn("advance already in progress, skipping duplicate call");
-      return;
-    }
-    isAdvancingRef.current = true;
+  const callAgent = useCallback(async (history: ChatMessage[], currentState: OnboardingState): Promise<AgentResponse> => {
+    const payload = {
+      messages: history.map((m) => ({
+        role: m.role,
+        content: m.content,
+        toolName: m.toolName,
+      })),
+      state: currentState,
+    };
+    const { data, error } = await supabase.functions.invoke("onboarding-agent", { body: payload });
+    if (error) throw error;
+    return (data as AgentResponse) || { reply: "", toolCalls: [], done: false };
+  }, []);
+
+  // ─── 사용자 발화 처리 (메인 루프) ──────────────────────────
+
+  const handleUserMessage = useCallback(async (raw: string) => {
+    const text = raw.trim();
+    if (!text || isProcessingRef.current) return;
+    isProcessingRef.current = true;
+    setIsThinking(true);
 
     try {
-      const isVoiceInput = value.startsWith("__VOICE__:");
-      const cleanValue = isVoiceInput ? value.slice("__VOICE__:".length) : value;
-      const trimmedRaw = cleanValue.trim();
-      const compactRaw = trimmedRaw.replace(/\s/g, "");
+      let history: ChatMessage[] = [...messages, { role: "user", content: text }];
+      setMessages(history);
 
-      // ─── 1차: 정규식 SKIP 감지 (연결 단계만) ───
-      const isConnectionStep =
-        step.type === "cert_upload" ||
-        step.type === "password" ||
-        ["card_id", "bank_id", "delivery_id", "card_select", "bank_select", "card_method", "bank_method"].includes(step.id);
-      const SKIP_VOICE = SKIP_PATTERN.test(compactRaw) || SKIP_PATTERN.test(trimmedRaw);
+      // 최대 4번까지 도구 호출 라운드 허용 (저장→안내 동시 처리, 무한루프 방지)
+      for (let round = 0; round < 4; round++) {
+        const res = await callAgent(history, stateRef.current);
 
-      // ─── cert_upload / password 단계: 음성으로 SKIP 외에는 진행 불가 ───
-      // (파일 업로드/비밀번호 입력은 명시적 UI 액션으로만 처리)
-      if (isVoiceInput && (step.type === "cert_upload" || step.type === "password") && !SKIP_VOICE) {
-        console.log("Voice ignored on cert_upload/password step (use button)");
-        return;
-      }
+        if (res.error) {
+          console.warn("agent error:", res.error);
+        }
 
-      if (SKIP_VOICE && isConnectionStep) {
-        setShowInput(false);
-        setShowTextFallback(false);
-        setInputValue("");
-        setCertFile(null); setKeyFile(null); setCertPassword("");
-        setMessages(prev => [...prev, { from: "user", text: "나중에 할게요" }]);
-        const nextStep: StepId =
-          step.id.startsWith("hometax") ? "card_ask" :
-          step.id.startsWith("card") ? "bank_ask" :
-          step.id.startsWith("bank") ? "delivery_ask" :
-          "complete";
-        setTimeout(() => goToStep(nextStep), 500);
-        return;
-      }
-
-      // ─── 2차: 정규식 + 동의어 기반 입력 검증 ───
-      let validation = validateStepInput(step, cleanValue);
-
-      // ─── 3차: AI 의도 분류 (모든 단계 + 메타 명령) ───
-      // 호출 조건:
-      //   (a) 정규식이 실패했거나
-      //   (b) 발화가 충분히 길어서 메타 명령일 가능성이 있는 경우
-      // cert_upload/password/inline_loading/connecting 단계는 음성 잡음 영향이 크니 제외
-      const skipAIStepTypes =
-        (step.type as string) === "cert_upload" ||
-        (step.type as string) === "password" ||
-        (step.type as string) === "inline_loading";
-      const looksLikeMeta = isVoiceInput && trimmedRaw.length >= 4 && /(다시|바꾸|수정|뒤로|이전|돌아|처음|리셋|초기화|도와|뭐|모르)/.test(trimmedRaw);
-      const shouldCallAI = !skipAIStepTypes && trimmedRaw.length > 1 && (!validation.isValid || looksLikeMeta);
-
-      if (shouldCallAI) {
-        const ai = await classifyIntentAI(trimmedRaw, step);
-
-        // 메타 명령은 신뢰도 0.55 이상일 때만 처리
-        if (ai.confidence >= 0.55) {
-          // 1) 처음부터 다시
-          if (ai.intent === "restart") {
-            setMessages(prev => [
-              ...prev,
-              { from: "user", text: trimmedRaw },
-              { from: "bot", text: "처음부터 다시 시작할게요. 이름부터 알려주세요!" },
-            ]);
-            setAnswers({});
-            void onProgress?.({ name: "", business_type: "", business_number: "" });
-            const newFlow = [...BASIC_STEPS, ...CONNECTION_STEPS];
-            setStepFlow(newFlow);
-            setCurrentIdx(0);
-            currentIdxRef.current = 0;
-            setShowInput(false); setShowTextFallback(false); setInputValue("");
-            setTimeout(() => { setShowInput(true); setShowTextFallback(true); }, 600);
-            return;
-          }
-
-          // 2) 뒤로
-          if (ai.intent === "go_back") {
-            const prevIdx = Math.max(0, currentIdxRef.current - 1);
-            const prevStep = stepFlow[prevIdx];
-            if (prevStep) {
-              setMessages(prev => [
-                ...prev,
-                { from: "user", text: trimmedRaw },
-                { from: "bot", text: "이전 단계로 돌아갈게요." },
-                { from: "bot", text: prevStep.question },
-              ]);
-              setCurrentIdx(prevIdx);
-              currentIdxRef.current = prevIdx;
-              setShowInput(false); setShowTextFallback(false); setInputValue("");
-              setTimeout(() => { setShowInput(true); setShowTextFallback(true); }, 500);
-            }
-            return;
-          }
-
-          // 3) 도움말
-          if (ai.intent === "help") {
-            setMessages(prev => [
-              ...prev,
-              { from: "user", text: trimmedRaw },
-              { from: "bot", text: `이 단계에서는 다음을 여쭤보고 있어요:\n\n${step.question}\n\n언제든 "이름 다시 입력", "뒤로", "처음부터" 라고 말씀해주셔도 돼요.` },
-            ]);
-            return;
-          }
-
-          // 4) 필드 재입력 (이름/업종/사업자번호)
-          if (ai.intent === "edit_field" && ai.field) {
-            const targetId = ai.field as StepId;
-            const label = STEP_LABELS[targetId] || targetId;
-            const newAnswersMinusField = { ...answers };
-            delete newAnswersMinusField[targetId];
-            setAnswers(newAnswersMinusField);
-            void onProgress?.({ [targetId]: "" });
-
-            // stepFlow에 해당 필드가 없으면 끼워넣기
-            let idx = stepFlow.findIndex(s => s.id === targetId);
-            let nextFlow = stepFlow;
-            if (idx < 0) {
-              const stepDef = BASIC_STEPS.find(s => s.id === targetId);
-              if (stepDef) {
-                const basicEnd = stepFlow.findIndex(s => CONNECTION_STEPS.some(cs => cs.id === s.id));
-                const insertAt = basicEnd >= 0 ? basicEnd : 0;
-                nextFlow = [...stepFlow];
-                nextFlow.splice(insertAt, 0, stepDef);
-                setStepFlow(nextFlow);
-                idx = insertAt;
-              }
-            }
-            const targetStep = nextFlow[idx];
-            setMessages(prev => [
-              ...prev,
-              { from: "user", text: trimmedRaw },
-              { from: "bot", text: `${label} 정보를 다시 받을게요.` },
-              ...(targetStep ? [{ from: "bot" as const, text: targetStep.question }] : []),
-            ]);
-            if (idx >= 0) {
-              setCurrentIdx(idx);
-              currentIdxRef.current = idx;
-              setShowInput(false); setShowTextFallback(false); setInputValue("");
-              setTimeout(() => { setShowInput(true); setShowTextFallback(true); }, 500);
-            }
-            return;
-          }
-
-          // 5) yes/skip → 정규식 실패 보완 (ask 단계)
-          const isAskStep = ASK_STEPS.includes(step.id) || step.id === "delivery_ask";
-          if (!validation.isValid && isAskStep) {
-            if (ai.intent === "skip") {
-              validation = { isValid: true, normalizedValue: "건너뛸게요" };
-            } else if (ai.intent === "yes") {
-              validation = { isValid: true, normalizedValue: "연동할게요" };
-            } else if (ai.intent === "choice" && ai.value) {
-              const norm = normalizeChoiceValue(step, ai.value);
-              if (norm) validation = { isValid: true, normalizedValue: norm };
+        // 도구 실행
+        if (res.toolCalls && res.toolCalls.length > 0) {
+          const toolResults: ChatMessage[] = [];
+          for (const call of res.toolCalls) {
+            const result = await executeTool(call);
+            toolResults.push({
+              role: "tool",
+              toolName: call.name,
+              content: result,
+              hidden: true,
+            });
+            if (call.name === "finish_onboarding") {
+              setCompleted(true);
             }
           }
-
-          // 6) text 단계에서 AI가 정제한 answer 사용 (이름 등)
-          if (!validation.isValid && step.type === "text" && ai.intent === "answer" && ai.value) {
-            const cleaned = step.id === "name"
-              ? extractNameCandidate(ai.value)
-              : ai.value.trim();
-            if (cleaned) validation = { isValid: true, normalizedValue: cleaned };
-          }
-
-          // 7) business_type choice 단계: 사전에 없는 업종(예: "치킨집해")도 자유 텍스트로 수용
-          if (!validation.isValid && step.id === "business_type" && (ai.intent === "answer" || ai.intent === "choice")) {
-            const raw = (ai.value || trimmedRaw).trim();
-            // 조사/어미 정리: "~해", "~에요", "~입니다", "~요" 제거
-            const cleaned = raw
-              .replace(/(해요|이에요|예요|입니다|이라고|이라|에요|이야|이고|이며|입니다요|해|요)$/g, "")
-              .replace(/[^가-힣a-zA-Z0-9\s/]/g, "")
-              .trim();
-            if (cleaned.length >= 2) {
-              // 사전에 매칭되면 표준 라벨, 아니면 정리된 원문 그대로
-              const normalized = normalizeChoiceValue(step, cleaned) || cleaned;
-              validation = { isValid: true, normalizedValue: normalized };
-            }
-          }
+          history = [...history, ...toolResults];
         }
+
+        // 텍스트 답변이 있으면 메시지로 추가하고 라운드 종료
+        if (res.reply && res.reply.trim()) {
+          history = [...history, { role: "assistant", content: res.reply.trim() }];
+          setMessages(history);
+          break;
+        }
+
+        // 텍스트가 없는데 도구만 호출됐다면 다음 라운드에서 안내 받기
+        if (!res.toolCalls || res.toolCalls.length === 0) {
+          break;
+        }
+        setMessages(history);
       }
 
-      if (!validation.isValid) {
-        setShowInput(false);
-        setShowTextFallback(false);
-        setInputValue("");
-        setMessages(prev => [
-          ...prev,
-          { from: "bot", text: validation.retryMessage || "잘 못 들었어요. 다시 말씀해주시겠어요?" },
-          { from: "bot", text: step.question },
-        ]);
-        setTimeout(() => setShowInput(true), 400);
-        setTimeout(() => setShowTextFallback(true), 1600);
-        return;
+      // 종료 조건
+      if (stateRef.current && completed) {
+        // finish_onboarding 호출되면 완료 처리는 effect에서
       }
-
-    const normalizedValue = validation.normalizedValue ?? cleanValue.trim();
-    const newAnswers = { ...answers, [step.id]: normalizedValue };
-    setAnswers(newAnswers);
-    setShowInput(false);
-    setShowTextFallback(false);
-    setInputValue("");
-
-    if (step.id === "name" || step.id === "business_type" || step.id === "business_number") {
-      void onProgress?.({ [step.id]: normalizedValue });
-    }
-
-    // Don't show user bubble for skip/action types that aren't user text
-    const isAction = step.type === "action";
-    if (!isAction) {
-      const displayValue = step.type === "password" ? "••••••••" : normalizedValue;
-      setMessages(prev => [...prev, { from: "user", text: displayValue }]);
-    }
-
-    // Acknowledgment helper: friendly confirmation + next-step guidance
-    const ackThenGo = (ackText: string, nextFn: () => void, delay = 900) => {
-      setMessages(prev => [...prev, { from: "bot", text: ackText }]);
-      setTimeout(() => nextFn(), delay);
-    };
-
-    // Route based on step
-    switch (step.id) {
-      case "name": {
-        ackThenGo(`반가워요, ${normalizedValue}님! 😊\n이제 사업체에 대해 여쭤볼게요.`, () => goToNext());
-        break;
-      }
-
-      case "business_type": {
-        ackThenGo(`${normalizedValue} 운영 중이시군요! 👍\n마지막으로 사업자번호만 알려주세요.`, () => goToNext());
-        break;
-      }
-
-      case "business_number": {
-        ackThenGo(`사업자번호 확인했어요! ✨\n기본 정보 등록이 끝났어요.`, () => goToNext());
-        break;
-      }
-
-      case "connect_intro":
-        if (normalizedValue === "skip") {
-          setMessages(prev => [...prev, { from: "bot", text: "알겠어요. 연동은 나중에 하셔도 돼요!" }]);
-          setTimeout(() => {
-            if (isConnected) void toggleVoice();
-            onComplete(newAnswers);
-          }, 800);
-          return;
-        }
-        ackThenGo("좋아요! 하나씩 차근차근 연동해볼게요. 🚀", () => goToStep("hometax_ask"));
-        break;
-
-      case "hometax_ask":
-        if (normalizedValue === "건너뛸게요") {
-          ackThenGo("국세청은 건너뛸게요. 다음으로 카드를 안내해드릴게요.", () => goToStep("card_ask"));
-        } else {
-          ackThenGo("좋아요! 공동인증서로 안전하게 연결해드릴게요.", () => goToStep("hometax_cert"));
-        }
-        break;
-
-      case "card_ask":
-        if (normalizedValue === "건너뛸게요") {
-          ackThenGo("카드는 건너뛸게요. 다음으로 은행 계좌를 안내해드릴게요.", () => goToStep("bank_ask"));
-        } else {
-          ackThenGo("좋아요! 어떤 카드사를 사용하시는지 여쭤볼게요.", () => goToStep("card_select"));
-        }
-        break;
-
-      case "card_select":
-        ackThenGo(`${normalizedValue} 선택하셨어요. 로그인 방식을 골라주세요.`, () => goToStep("card_method"));
-        break;
-
-      case "card_method":
-        if (normalizedValue === "공동인증서") {
-          ackThenGo("공동인증서로 진행할게요. 인증서 파일을 준비해주세요.", () => goToStep("card_cert"));
-        } else {
-          ackThenGo("아이디/비밀번호로 진행할게요. 먼저 아이디를 알려주세요.", () => goToStep("card_id"));
-        }
-        break;
-
-      case "card_id":
-        ackThenGo("아이디 확인했어요. 이어서 비밀번호를 입력해주세요.", () => goToStep("card_pw"));
-        break;
-
-      case "card_pw":
-        ackThenGo("비밀번호 확인했어요. 카드사에 연결할게요!", () => handleCardConnect(), 600);
-        break;
-
-      case "bank_ask":
-        if (normalizedValue === "건너뛸게요") {
-          ackThenGo("계좌는 건너뛸게요. 다음으로 배달앱을 안내해드릴게요.", () => goToStep("delivery_ask"));
-        } else {
-          ackThenGo("좋아요! 어떤 은행을 사용하시는지 여쭤볼게요.", () => goToStep("bank_select"));
-        }
-        break;
-
-      case "bank_select":
-        ackThenGo(`${normalizedValue} 선택하셨어요. 로그인 방식을 골라주세요.`, () => goToStep("bank_method"));
-        break;
-
-      case "bank_method":
-        if (normalizedValue === "공동인증서") {
-          ackThenGo("공동인증서로 진행할게요. 인증서 파일을 준비해주세요.", () => goToStep("bank_cert"));
-        } else {
-          ackThenGo("아이디/비밀번호로 진행할게요. 먼저 아이디를 알려주세요.", () => goToStep("bank_id"));
-        }
-        break;
-
-      case "bank_id":
-        ackThenGo("아이디 확인했어요. 이어서 비밀번호를 입력해주세요.", () => goToStep("bank_pw"));
-        break;
-
-      case "bank_pw":
-        ackThenGo("비밀번호 확인했어요. 은행에 연결할게요!", () => handleBankConnect(), 600);
-        break;
-
-      case "delivery_ask":
-        if (normalizedValue === "건너뛸게요") {
-          ackThenGo("배달앱은 건너뛸게요. 마무리할게요!", () => goToStep("complete"));
-        } else {
-          const selectedPlatform = step.choices?.find(choice => choice.label === normalizedValue)?.value || normalizedValue;
-          setSelectedDeliveryPlatform(selectedPlatform);
-          ackThenGo(`${normalizedValue} 진행할게요. 아이디를 알려주세요.`, () => goToStep("delivery_id"));
-        }
-        break;
-
-      case "delivery_id":
-        ackThenGo("아이디 확인했어요. 이어서 비밀번호를 입력해주세요.", () => goToStep("delivery_pw"));
-        break;
-
-      case "delivery_pw":
-        ackThenGo("비밀번호 확인했어요. 배달앱에 연결할게요!", () => handleDeliveryConnect(), 600);
-        break;
-
-      case "complete":
-        if (isConnected) void toggleVoice();
-        onComplete(newAnswers);
-        break;
-
-      default:
-        setTimeout(() => goToNext(), 600);
-        break;
-    }
+    } catch (e) {
+      console.error("agent flow error:", e);
+      toast.error("잠깐 신호가 약했어요. 다시 한 번 말씀해주세요.");
     } finally {
-      // 다음 입력 받을 수 있도록 가드 해제 (약간의 딜레이로 연속 transcript 이벤트 차단)
-      setTimeout(() => { isAdvancingRef.current = false; }, 300);
+      setIsThinking(false);
+      isProcessingRef.current = false;
     }
-  }, [answers, goToNext, goToStep, handleBankConnect, handleCardConnect, handleDeliveryConnect, isConnected, onComplete, onProgress, step, toggleVoice, classifyIntentAI]);
+  }, [messages, callAgent, executeTool, completed]);
 
-  useEffect(() => { advanceRef.current = (value: string) => { void advance(value); }; }, [advance]);
+  // ─── 최초 인사 ──────────────────────────────────────────────
 
-  // Auto-scroll chat to bottom when new messages, transcript, input, or badge area appears
   useEffect(() => {
-    const t = setTimeout(() => {
-      chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }, 50);
-    return () => clearTimeout(t);
-  }, [messages, partialTranscript, showInput, badgeMode, step?.id]);
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
-  // Wire voice commits → advance the current step
+    // 음성 자동 연결
+    if (!voiceConnected) toggleVoice();
+
+    // 첫 인사: 수집된 정보 기반 정적 텍스트 (Gemini 호출 절약)
+    const s = stateRef.current;
+    let greet = "반갑습니다, 대표님! 어떻게 불러드릴까요?";
+    if (s.name && !s.business_type) {
+      greet = `다시 오셨네요, ${s.name} 대표님!\n어떤 업종이세요? (음식점·카페·소매/유통·기타)`;
+    } else if (s.name && s.business_type && !s.business_number) {
+      greet = `${s.name} 대표님, 마지막으로 사업자등록번호 10자리만 알려주세요.`;
+    } else if (s.name && s.business_type && s.business_number) {
+      greet = `${s.name} 대표님, 이제 데이터 연동을 도와드릴까요? 홈택스부터 시작해도 될까요?`;
+    }
+    setMessages([{ role: "assistant", content: greet }]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ─── 음성 입력 → 메시지 ─────────────────────────────────────
   useEffect(() => {
-    onCommit((rawText) => {
-      const text = rawText.trim();
-      if (!text || text.length < 1) return;
-      // Filter common Korean filler/noise tokens
-      if (/^(음+|어+|아+|네\.?|음\.+)$/.test(text)) return;
-      // 음성 입력은 __VOICE__: 프리픽스로 마킹 (cert_upload/password에서 자동 진행 방지)
-      advanceRef.current?.(`__VOICE__:${text}`);
+    onCommit((rawText: string) => {
+      const t = rawText.trim();
+      if (!t || t.length < 1) return;
+      if (/^(음+|어+|아+|네\.?|음\.+)$/.test(t)) return;
+      void handleUserMessage(t);
     });
-  }, [onCommit]);
+  }, [onCommit, handleUserMessage]);
 
-  // Badge handlers (for basic steps only)
-  const handleBadgeClick = useCallback((stepId: string) => {
-    const label = STEP_LABELS[stepId] || stepId;
-    const value = answers[stepId];
-    setBadgeMode({ stepId });
-    setShowInput(false);
-    setMessages(prev => [...prev, { from: "bot", text: `"${label}: ${value}" 항목을 어떻게 할까요?` }]);
-  }, [answers]);
+  // ─── 완료 처리 ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!completed) return;
+    const timer = setTimeout(() => {
+      if (voiceConnected) toggleVoice();
+      const data: Record<string, string> = {};
+      if (state.name) data.name = state.name;
+      if (state.business_type) data.business_type = state.business_type;
+      if (state.business_number) data.business_number = state.business_number;
+      onComplete(data);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [completed, onComplete, state, toggleVoice, voiceConnected]);
 
-  const handleBadgeAction = useCallback((action: "redo" | "delete") => {
-    if (!badgeMode) return;
-    const { stepId } = badgeMode;
-    const label = STEP_LABELS[stepId] || stepId;
-
-    if (action === "delete") {
-      const newA = { ...answers };
-      delete newA[stepId];
-      setAnswers(newA);
-
-      // Clear from DB too
-      void onProgress?.({ [stepId]: "" });
-
-      setMessages(prev => [...prev, { from: "user", text: "삭제할게요" }, { from: "bot", text: `${label} 정보가 삭제되었어요.` }]);
-      setBadgeMode(null);
-
-      // If step is not in current stepFlow (was pre-filled from existingData), re-insert it
-      let idx = stepFlow.findIndex(s => s.id === stepId);
-      if (idx < 0) {
-        const stepDef = BASIC_STEPS.find(s => s.id === stepId);
-        if (stepDef) {
-          // Insert at the beginning (before connection steps)
-          const basicEnd = stepFlow.findIndex(s => CONNECTION_STEPS.some(cs => cs.id === s.id));
-          const insertAt = basicEnd >= 0 ? basicEnd : 0;
-          const newFlow = [...stepFlow];
-          newFlow.splice(insertAt, 0, stepDef);
-          setStepFlow(newFlow);
-          idx = insertAt;
-          setTimeout(() => {
-            setCurrentIdx(idx);
-            currentIdxRef.current = idx;
-            setMessages(prev => [...prev, { from: "bot", text: stepDef.question }]);
-            setShowInput(true);
-            setShowTextFallback(true);
-          }, 800);
-          return;
-        }
-      }
-      if (idx >= 0) {
-        setTimeout(() => { setCurrentIdx(idx); currentIdxRef.current = idx; setMessages(prev => [...prev, { from: "bot", text: stepFlow[idx].question }]); setShowInput(true); setShowTextFallback(true); }, 800);
-      }
-    } else {
-      setMessages(prev => [...prev, { from: "user", text: "다시 입력할게요" }]);
-      setBadgeMode(null);
-      let idx = stepFlow.findIndex(s => s.id === stepId);
-      if (idx < 0) {
-        const stepDef = BASIC_STEPS.find(s => s.id === stepId);
-        if (stepDef) {
-          const basicEnd = stepFlow.findIndex(s => CONNECTION_STEPS.some(cs => cs.id === s.id));
-          const insertAt = basicEnd >= 0 ? basicEnd : 0;
-          const newFlow = [...stepFlow];
-          newFlow.splice(insertAt, 0, stepDef);
-          setStepFlow(newFlow);
-          idx = insertAt;
-          setTimeout(() => {
-            setCurrentIdx(idx);
-            currentIdxRef.current = idx;
-            setMessages(prev => [...prev, { from: "bot", text: stepDef.question }]);
-            setShowInput(true);
-            setShowTextFallback(true);
-          }, 500);
-          return;
-        }
-      }
-      if (idx >= 0) {
-        setTimeout(() => { setCurrentIdx(idx); currentIdxRef.current = idx; setMessages(prev => [...prev, { from: "bot", text: stepFlow[idx].question }]); setShowInput(true); setShowTextFallback(true); }, 500);
-      }
+  // 연동 완료 감지 시 에이전트에 자동 통보
+  const prevConnectionsRef = useRef({ hometax: hometaxConnected, card: cardConnected, account: accountConnected, delivery: deliveryConnected });
+  useEffect(() => {
+    const prev = prevConnectionsRef.current;
+    const newlyConnected: string[] = [];
+    if (!prev.hometax && hometaxConnected) newlyConnected.push("홈택스");
+    if (!prev.card && cardConnected) newlyConnected.push("카드");
+    if (!prev.account && accountConnected) newlyConnected.push("계좌");
+    if (!prev.delivery && deliveryConnected) newlyConnected.push("배달앱");
+    prevConnectionsRef.current = { hometax: hometaxConnected, card: cardConnected, account: accountConnected, delivery: deliveryConnected };
+    if (newlyConnected.length > 0 && initializedRef.current) {
+      void refetchConnection?.();
+      void handleUserMessage(`(시스템: ${newlyConnected.join(", ")} 연동이 완료되었습니다. 다음 단계로 안내해주세요.)`);
     }
-  }, [badgeMode, answers, stepFlow, onProgress]);
+  }, [hometaxConnected, cardConnected, accountConnected, deliveryConnected, handleUserMessage, refetchConnection]);
 
-  // ─── Bubble components ──────────────────────────────────
-
-  const SecretaryBubble = ({ text }: { text: string }) => (
-    <div className="flex items-start gap-2.5 mb-3">
-      <YarnBallAvatar />
-      <div className="rounded-2xl rounded-tl-md px-4 py-3 max-w-[260px]" style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <p className="text-[14px] leading-relaxed whitespace-pre-line" style={{ color: "rgba(255,255,255,0.85)" }}>{text}</p>
-      </div>
-    </div>
-  );
-
-  const UserBubble = ({ text }: { text: string }) => (
-    <div className="flex justify-end mb-3">
-      <div className="rounded-2xl rounded-tr-md px-4 py-3 max-w-[240px]" style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)" }}>
-        <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.95)" }}>{text}</p>
-      </div>
-    </div>
-  );
-
-  // ─── Cert upload handler ──────────────────────────────────
-
-  const handleCertFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const ext = file.name.toLowerCase();
-    if (ext.endsWith(".pfx") || ext.endsWith(".p12")) { setCertFile(file); setKeyFile(null); }
-    else if (ext.endsWith(".der")) { setCertFile(file); }
-    else { toast.error("PFX, P12 또는 DER 파일만 지원합니다."); }
+  // ─── 입력 핸들러 ────────────────────────────────────────────
+  const handleSend = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const v = inputValue.trim();
+    if (!v) return;
+    setInputValue("");
+    void handleUserMessage(v);
   };
 
-  const handleKeyFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file?.name.toLowerCase().endsWith(".key")) setKeyFile(file);
-    else toast.error("signPri.key 파일만 업로드 가능합니다.");
-  };
+  const visibleMessages = useMemo(() => messages.filter((m) => !m.hidden && (m.role === "user" || m.role === "assistant")), [messages]);
 
-  const isDerMode = certFile?.name.toLowerCase().endsWith(".der");
-
-  // ─── Render ──────────────────────────────────────────────
+  // ─── 렌더 ──────────────────────────────────────────────────
 
   return (
-    <div className="absolute inset-x-0 top-0 bottom-0 z-30 flex flex-col" style={{ background: "linear-gradient(180deg, #0A0A0F 0%, #12121A 100%)" }}>
+    <div
+      className="absolute inset-x-0 top-0 bottom-0 z-30 flex flex-col"
+      style={{ background: "linear-gradient(180deg, #0A0A0F 0%, #12121A 100%)" }}
+    >
       {/* Ambient glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(88,86,214,0.1) 0%, transparent 70%)", filter: "blur(60px)" }} />
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse, rgba(88,86,214,0.1) 0%, transparent 70%)", filter: "blur(60px)" }}
+      />
 
-      {/* Header with oscilloscope + mic + close */}
-      <div className="relative z-10 flex items-center gap-2 px-3 pt-3 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
-        {/* Oscilloscope (flex grow) */}
-        <div className="flex-1 min-w-0 h-8 overflow-hidden rounded-xl relative">
-          <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
-            <defs>
-              <linearGradient id="onb-wave1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#007AFF" stopOpacity="0.6" />
-                <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#AF52DE" stopOpacity="0.6" />
-              </linearGradient>
-              <linearGradient id="onb-wave2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0.35" />
-                <stop offset="50%" stopColor="#007AFF" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#34C759" stopOpacity="0.35" />
-              </linearGradient>
-              <linearGradient id="onb-fade-mask" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#000" />
-                <stop offset="15%" stopColor="#fff" />
-                <stop offset="85%" stopColor="#fff" />
-                <stop offset="100%" stopColor="#000" />
-              </linearGradient>
-              <mask id="onb-fade" maskUnits="userSpaceOnUse">
-                <rect x="0" y="0" width="260" height="32" fill="url(#onb-fade-mask)" />
-              </mask>
-            </defs>
-            <g mask="url(#onb-fade)">
-              <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={2} maxBoost={14} stroke="url(#onb-wave1)" strokeWidth={2} freq={0.024} speed={1.8} phase={0} />
-              <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={1.2} maxBoost={7} stroke="url(#onb-wave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
-            </g>
-          </svg>
+      {/* Header */}
+      <div
+        className="relative z-10 flex items-center justify-between px-4 pt-3 pb-2"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
+      >
+        <div className="flex items-center gap-2">
+          <YarnBallAvatar />
+          <span className="text-[13px]" style={{ color: "rgba(255,255,255,0.7)" }}>김비서</span>
         </div>
-
-        {/* Mic */}
-        <button onClick={() => { void toggleVoice(); }} className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full" style={{ background: isConnected ? "rgba(0,122,255,0.12)" : "rgba(255,255,255,0.04)" }}>
-          <Mic className="w-4 h-4" style={{ color: isConnected ? "#007AFF" : "rgba(255,255,255,0.55)" }} />
-        </button>
-
-        {/* Close */}
-        <button className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { if (isConnected) void toggleVoice(); onComplete(answers); }}>
-          <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} />
+        <button
+          type="button"
+          onClick={() => onComplete({ name: state.name || "", business_type: state.business_type || "", business_number: state.business_number || "" })}
+          className="w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: "rgba(255,255,255,0.06)" }}
+          aria-label="닫기"
+        >
+          <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.6)" }} />
         </button>
       </div>
 
-      {/* Existing onboarding badges */}
-      {hasExisting && (
-        <div className="relative z-10 flex items-center gap-2 px-5 pt-3 overflow-x-auto no-scrollbar">
-          {BASIC_STEPS.map(s => {
-            const val = answers[s.id];
-            if (!val) return null;
-            return (
-              <motion.button key={s.id} whileTap={{ scale: 0.95 }} onClick={() => handleBadgeClick(s.id)} className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium" style={{ background: badgeMode?.stepId === s.id ? "rgba(0,122,255,0.15)" : "rgba(255,255,255,0.06)", border: badgeMode?.stepId === s.id ? "1px solid rgba(0,122,255,0.3)" : "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}>
-                <span style={{ color: "rgba(255,255,255,0.4)" }}>{STEP_LABELS[s.id]}</span>
-                <span style={{ color: "rgba(255,255,255,0.9)" }}>{val.length > 8 ? val.slice(0, 8) + "…" : val}</span>
-              </motion.button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Chat area */}
-      <div className={`flex-1 overflow-y-auto px-4 pt-8 relative z-10 no-scrollbar ${(showInput || badgeMode) ? "pb-44" : "pb-4"}`}>
-        <AnimatePresence>
-          {messages.map((msg, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-              {msg.from === "bot" ? <SecretaryBubble text={msg.text} /> : <UserBubble text={msg.text} />}
+      {/* Messages */}
+      <div className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-4 pt-3 pb-4">
+        {visibleMessages.map((m, idx) =>
+          m.role === "assistant" ? (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="flex items-start gap-2.5 mb-3"
+            >
+              <YarnBallAvatar />
+              <div
+                className="rounded-2xl rounded-tl-md px-4 py-3 max-w-[260px]"
+                style={{
+                  background: "rgba(255,255,255,0.07)",
+                  backdropFilter: "blur(16px)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <p className="text-[14px] leading-relaxed whitespace-pre-line" style={{ color: "rgba(255,255,255,0.9)" }}>
+                  {m.content}
+                </p>
+              </div>
             </motion.div>
-          ))}
-        </AnimatePresence>
-
-        {/* Live partial transcript */}
-        {partialTranscript && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-end mb-3">
-            <div className="rounded-2xl rounded-tr-md px-4 py-3 max-w-[240px]" style={{ background: "linear-gradient(135deg, rgba(0,122,255,0.4), rgba(88,86,214,0.4))" }}>
-              <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.6)" }}>{partialTranscript}</p>
-            </div>
-          </motion.div>
+          ) : (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="flex justify-end mb-3"
+            >
+              <div
+                className="rounded-2xl rounded-tr-md px-4 py-3 max-w-[240px]"
+                style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)" }}
+              >
+                <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.95)" }}>
+                  {m.content}
+                </p>
+              </div>
+            </motion.div>
+          )
         )}
+
+        {/* Live transcript preview */}
+        {partialTranscript && (
+          <div className="flex justify-end mb-3">
+            <div
+              className="rounded-2xl rounded-tr-md px-4 py-3 max-w-[240px] opacity-50"
+              style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)" }}
+            >
+              <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.95)" }}>{partialTranscript}</p>
+            </div>
+          </div>
+        )}
+
+        {isThinking && (
+          <div className="flex items-start gap-2.5 mb-3">
+            <YarnBallAvatar />
+            <div
+              className="rounded-2xl rounded-tl-md px-4 py-3"
+              style={{
+                background: "rgba(255,255,255,0.07)",
+                backdropFilter: "blur(16px)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <Loader2 className="w-4 h-4 animate-spin" style={{ color: "rgba(255,255,255,0.5)" }} />
+            </div>
+          </div>
+        )}
+
         <div ref={chatEndRef} />
       </div>
 
-      {/* Badge action buttons */}
-      <AnimatePresence>
-        {badgeMode && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="relative z-10 px-4 pb-8 pt-3 flex gap-3 justify-center">
-            <motion.button whileTap={{ scale: 0.95 }} onClick={() => handleBadgeAction("redo")} className="flex items-center gap-2 px-5 py-3 rounded-xl text-[13px] font-semibold" style={{ background: "rgba(0,122,255,0.12)", border: "1px solid rgba(0,122,255,0.25)", color: "#007AFF" }}>
-              <RotateCcw className="w-3.5 h-3.5" /> 다시 입력
-            </motion.button>
-            <motion.button whileTap={{ scale: 0.95 }} onClick={() => handleBadgeAction("delete")} className="flex items-center gap-2 px-5 py-3 rounded-xl text-[13px] font-semibold" style={{ background: "rgba(255,69,58,0.1)", border: "1px solid rgba(255,69,58,0.2)", color: "#FF453A" }}>
-              <Trash2 className="w-3.5 h-3.5" /> 삭제
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Bottom input area */}
-      <AnimatePresence>
-        {showInput && step && !badgeMode && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="relative z-10 px-4 pb-8 pt-3 flex flex-col items-center gap-1">
-
-
-            {/* Choice chips */}
-            {step.type === "choice" && (
-              <div className="flex flex-wrap gap-2 justify-center">
-                {step.choices?.map(c => (
-                  <motion.button key={c.value} whileTap={{ scale: 0.95 }} onClick={() => advance(c.label)}
-                    className="px-4 py-2.5 rounded-xl text-[13px] font-medium"
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.8)" }}
-                  >{c.label}</motion.button>
-                ))}
-              </div>
-            )}
-
-            {/* Text input */}
-            {step.type === "text" && (
-              <AnimatePresence>
-                {showTextFallback && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-                    <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 w-full" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                      <input value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyDown={e => e.key === "Enter" && inputValue.trim() && advance(inputValue.trim())} placeholder={step.placeholder} className="flex-1 bg-transparent outline-none text-[13px] placeholder:text-white/20" style={{ color: "rgba(255,255,255,0.8)" }} />
-                      <button onClick={() => inputValue.trim() && advance(inputValue.trim())} className="px-2.5 py-1 rounded-lg text-[12px] font-semibold" style={{ background: inputValue.trim() ? "linear-gradient(135deg, #007AFF, #5856D6)" : "rgba(255,255,255,0.04)", color: inputValue.trim() ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.2)" }}>
-                        확인
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            )}
-
-            {/* Password input */}
-            {step.type === "password" && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-                <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 w-full" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <input type={showPassword ? "text" : "password"} value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyDown={e => e.key === "Enter" && inputValue.trim() && advance(inputValue.trim())} placeholder={step.placeholder} className="flex-1 bg-transparent outline-none text-[13px] placeholder:text-white/20" style={{ color: "rgba(255,255,255,0.8)" }} />
-                  <button onClick={() => setShowPassword(!showPassword)} className="p-1">
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.3)" }} /> : <Eye className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.3)" }} />}
-                  </button>
-                  <button onClick={() => inputValue.trim() && advance(inputValue.trim())} className="px-2.5 py-1 rounded-lg text-[12px] font-semibold" style={{ background: inputValue.trim() ? "linear-gradient(135deg, #007AFF, #5856D6)" : "rgba(255,255,255,0.04)", color: inputValue.trim() ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.2)" }}>
-                    확인
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Cert upload */}
-            {step.type === "cert_upload" && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="w-full space-y-3">
-                <input ref={certFileInputRef} type="file" accept=".pfx,.p12,.der" onChange={handleCertFileChange} className="hidden" />
-                <input ref={keyFileInputRef} type="file" accept=".key" onChange={handleKeyFileChange} className="hidden" />
-
-                {/* Cert file button */}
-                <button onClick={() => certFileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[13px]" style={{ background: "rgba(255,255,255,0.04)", border: certFile ? "1px solid rgba(0,122,255,0.3)" : "1px dashed rgba(255,255,255,0.15)" }}>
-                  {certFile ? (
-                    <>
-                      <FileKey className="w-4 h-4" style={{ color: "#007AFF" }} />
-                      <span className="flex-1 text-left truncate" style={{ color: "rgba(255,255,255,0.8)" }}>{certFile.name}</span>
-                      <button onClick={e => { e.stopPropagation(); setCertFile(null); setKeyFile(null); }} className="p-0.5"><X className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.3)" }} /></button>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} />
-                      <span style={{ color: "rgba(255,255,255,0.4)" }}>인증서 파일 (.pfx, .p12 또는 .der)</span>
-                    </>
-                  )}
-                </button>
-
-                {/* DER mode: key file */}
-                {isDerMode && (
-                  <button onClick={() => keyFileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[13px]" style={{ background: "rgba(255,255,255,0.04)", border: keyFile ? "1px solid rgba(0,122,255,0.3)" : "1px dashed rgba(255,255,255,0.15)" }}>
-                    {keyFile ? (
-                      <>
-                        <FileKey className="w-4 h-4" style={{ color: "#007AFF" }} />
-                        <span className="flex-1 text-left" style={{ color: "rgba(255,255,255,0.8)" }}>{keyFile.name}</span>
-                        <button onClick={e => { e.stopPropagation(); setKeyFile(null); }} className="p-0.5"><X className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.3)" }} /></button>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} />
-                        <span style={{ color: "rgba(255,255,255,0.4)" }}>signPri.key 파일</span>
-                      </>
-                    )}
-                  </button>
-                )}
-
-                {/* Cert password */}
-                <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 w-full" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <input type={showPassword ? "text" : "password"} value={certPassword} onChange={e => setCertPassword(e.target.value)} placeholder="인증서 비밀번호" className="flex-1 bg-transparent outline-none text-[13px] placeholder:text-white/20" style={{ color: "rgba(255,255,255,0.8)" }} />
-                  <button onClick={() => setShowPassword(!showPassword)} className="p-1">
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.3)" }} /> : <Eye className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.3)" }} />}
-                  </button>
-                </div>
-
-                {/* Submit + skip */}
-                <div className="flex gap-2">
-                  <motion.button
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => {
-                      if (step.id === "card_cert") handleCardConnect();
-                      else if (step.id === "bank_cert") handleBankConnect();
-                      else handleHometaxConnect();
-                    }}
-                    disabled={!certFile || !certPassword || (isDerMode && !keyFile)}
-                    className="flex-1 py-3 rounded-xl text-[13px] font-semibold disabled:opacity-30"
-                    style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)", color: "rgba(255,255,255,0.95)" }}
-                  >
-                    연동하기
-                  </motion.button>
-                  <motion.button
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => {
-                      const nextStep: StepId = step.id === "card_cert" ? "bank_ask" : step.id === "bank_cert" ? "delivery_ask" : "card_ask";
-                      setMessages(prev => [...prev, { from: "user", text: "건너뛸게요" }]);
-                      setCertFile(null); setKeyFile(null); setCertPassword("");
-                      setTimeout(() => goToStep(nextStep), 600);
-                    }}
-                    className="px-4 py-3 rounded-xl text-[13px]"
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}
-                  >
-                    건너뛰기
-                  </motion.button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Inline loading */}
-            {step.type === "inline_loading" && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3 py-4">
-                <Loader2 className="w-6 h-6 animate-spin" style={{ color: "#007AFF" }} />
-                <p className="text-[13px]" style={{ color: "rgba(255,255,255,0.5)" }}>잠시만 기다려주세요...</p>
-              </motion.div>
-            )}
-
-            {/* Action type */}
-            {step.type === "action" && (
-              <div className="flex flex-col items-center gap-3 w-full">
-                <motion.button whileTap={{ scale: 0.97 }} onClick={() => advance(step.actionLabel || "확인")} className="w-full py-3.5 rounded-xl text-[14px] font-semibold" style={{ background: "linear-gradient(135deg, #007AFF, #5856D6, #AF52DE)", color: "rgba(255,255,255,0.95)", boxShadow: "0 0 24px rgba(88,86,214,0.3)" }}>
-                  {step.actionLabel}
-                </motion.button>
-                {step.skipLabel && (
-                  <button onClick={() => advance("skip")} className="text-[12px]" style={{ color: "rgba(255,255,255,0.3)" }}>
-                    {step.skipLabel}
-                  </button>
-                )}
-                {step.id === "complete" && !step.skipLabel && (
-                  <></>
-                )}
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Composer */}
+      <form
+        onSubmit={handleSend}
+        className="relative z-10 flex items-center gap-2 px-3 pb-4 pt-2"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
+      >
+        <button
+          type="button"
+          onClick={() => toggleVoice()}
+          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{
+            background: voiceConnected
+              ? "linear-gradient(135deg, #FF375F, #FF6B9D)"
+              : "rgba(255,255,255,0.08)",
+          }}
+          aria-label="음성 토글"
+        >
+          <Mic className="w-5 h-5" style={{ color: "rgba(255,255,255,0.95)" }} />
+        </button>
+        <input
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder={voiceConnected ? "말씀하시거나 직접 입력하세요" : "메시지를 입력하세요"}
+          className="flex-1 h-11 rounded-full px-4 text-[14px] outline-none"
+          style={{
+            background: "rgba(255,255,255,0.07)",
+            color: "rgba(255,255,255,0.95)",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}
+          disabled={isThinking}
+        />
+        <button
+          type="submit"
+          disabled={!inputValue.trim() || isThinking}
+          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-40"
+          style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)" }}
+          aria-label="전송"
+        >
+          <Send className="w-4 h-4" style={{ color: "rgba(255,255,255,0.95)" }} />
+        </button>
+      </form>
     </div>
   );
 };

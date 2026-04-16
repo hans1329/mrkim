@@ -70,5 +70,5 @@ verify_jwt = false
 [functions.notify-accountant-assignment]
 verify_jwt = false
 
-[functions.classify-onboarding-intent]
+[functions.onboarding-agent]
 verify_jwt = false
