@@ -787,11 +787,15 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
   // ─── Main advance function ──────────────────────────────
 
   // ─── AI 폴백 의도 분류 (정규식이 못잡은 애매한 발화용) ───
-  // 호출 조건: ASK_STEPS(yes/skip 질문) 단계에서 정규식이 실패한 경우에만 단 1회
   const classifyIntentAI = useCallback(async (
     utterance: string,
     stepDef: StepDef,
-  ): Promise<"yes" | "skip" | "choice" | "unclear"> => {
+  ): Promise<{
+    intent: "yes" | "skip" | "choice" | "answer" | "edit_field" | "go_back" | "restart" | "help" | "unclear";
+    field?: "name" | "business_type" | "business_number" | null;
+    value?: string | null;
+    confidence: number;
+  }> => {
     try {
       const choices = stepDef.choices?.map(c => c.label) ?? [];
       const { data, error } = await supabase.functions.invoke("classify-onboarding-intent", {
@@ -800,18 +804,21 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
           stepId: stepDef.id,
           stepType: stepDef.type,
           choices,
+          answers,
         },
       });
-      if (error || !data) return "unclear";
-      const intent = data.intent as "yes" | "skip" | "choice" | "unclear";
-      const confidence = typeof data.confidence === "number" ? data.confidence : 0;
-      if (confidence < 0.6) return "unclear";
-      return intent;
+      if (error || !data) return { intent: "unclear", confidence: 0 };
+      return {
+        intent: data.intent ?? "unclear",
+        field: data.field ?? null,
+        value: data.value ?? null,
+        confidence: typeof data.confidence === "number" ? data.confidence : 0,
+      };
     } catch (e) {
       console.warn("AI intent classify failed:", e);
-      return "unclear";
+      return { intent: "unclear", confidence: 0 };
     }
-  }, []);
+  }, [answers]);
 
   // 동시 실행 가드 (음성 transcript와 버튼 클릭이 겹치는 것 방지)
   const isAdvancingRef = useRef(false);
