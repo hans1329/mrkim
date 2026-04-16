@@ -52,7 +52,7 @@ export const V2ChatHistoryPanel = () => {
       </div>
 
       <ScrollArea className="flex-1 flex items-center justify-center">
-        <div ref={scrollRef} className="px-3 py-3 space-y-3">
+        <div ref={scrollRef} className={`px-3 py-3 space-y-3 ${!hasMessages ? 'flex items-center justify-center min-h-full' : ''}`}>
           {!hasMessages && (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
               <Avatar className="h-16 w-16 border-2 border-primary/20">
