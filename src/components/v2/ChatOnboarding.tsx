@@ -787,11 +787,15 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
   // ─── Main advance function ──────────────────────────────
 
   // ─── AI 폴백 의도 분류 (정규식이 못잡은 애매한 발화용) ───
-  // 호출 조건: ASK_STEPS(yes/skip 질문) 단계에서 정규식이 실패한 경우에만 단 1회
   const classifyIntentAI = useCallback(async (
     utterance: string,
     stepDef: StepDef,
-  ): Promise<"yes" | "skip" | "choice" | "unclear"> => {
+  ): Promise<{
+    intent: "yes" | "skip" | "choice" | "answer" | "edit_field" | "go_back" | "restart" | "help" | "unclear";
+    field?: "name" | "business_type" | "business_number" | null;
+    value?: string | null;
+    confidence: number;
+  }> => {
     try {
       const choices = stepDef.choices?.map(c => c.label) ?? [];
       const { data, error } = await supabase.functions.invoke("classify-onboarding-intent", {
@@ -800,18 +804,21 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
           stepId: stepDef.id,
           stepType: stepDef.type,
           choices,
+          answers,
         },
       });
-      if (error || !data) return "unclear";
-      const intent = data.intent as "yes" | "skip" | "choice" | "unclear";
-      const confidence = typeof data.confidence === "number" ? data.confidence : 0;
-      if (confidence < 0.6) return "unclear";
-      return intent;
+      if (error || !data) return { intent: "unclear", confidence: 0 };
+      return {
+        intent: data.intent ?? "unclear",
+        field: data.field ?? null,
+        value: data.value ?? null,
+        confidence: typeof data.confidence === "number" ? data.confidence : 0,
+      };
     } catch (e) {
       console.warn("AI intent classify failed:", e);
-      return "unclear";
+      return { intent: "unclear", confidence: 0 };
     }
-  }, []);
+  }, [answers]);
 
   // 동시 실행 가드 (음성 transcript와 버튼 클릭이 겹치는 것 방지)
   const isAdvancingRef = useRef(false);
@@ -863,15 +870,127 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       // ─── 2차: 정규식 + 동의어 기반 입력 검증 ───
       let validation = validateStepInput(step, cleanValue);
 
-      // ─── 3차: AI 폴백 (ASK_STEPS에서 정규식이 실패한 경우만 단 1회) ───
-      // choice 단계(card_select 등)는 normalizeChoiceValue가 처리하므로 AI 호출 안 함
-      const isAskStep = ASK_STEPS.includes(step.id) || step.id === "delivery_ask";
-      if (!validation.isValid && isAskStep && trimmedRaw.length > 1) {
-        const aiIntent = await classifyIntentAI(trimmedRaw, step);
-        if (aiIntent === "skip") {
-          validation = { isValid: true, normalizedValue: "건너뛸게요" };
-        } else if (aiIntent === "yes") {
-          validation = { isValid: true, normalizedValue: "연동할게요" };
+      // ─── 3차: AI 의도 분류 (모든 단계 + 메타 명령) ───
+      // 호출 조건:
+      //   (a) 정규식이 실패했거나
+      //   (b) 발화가 충분히 길어서 메타 명령일 가능성이 있는 경우
+      // cert_upload/password/inline_loading/connecting 단계는 음성 잡음 영향이 크니 제외
+      const skipAIStepTypes =
+        (step.type as string) === "cert_upload" ||
+        (step.type as string) === "password" ||
+        (step.type as string) === "inline_loading";
+      const looksLikeMeta = isVoiceInput && trimmedRaw.length >= 4 && /(다시|바꾸|수정|뒤로|이전|돌아|처음|리셋|초기화|도와|뭐|모르)/.test(trimmedRaw);
+      const shouldCallAI = !skipAIStepTypes && trimmedRaw.length > 1 && (!validation.isValid || looksLikeMeta);
+
+      if (shouldCallAI) {
+        const ai = await classifyIntentAI(trimmedRaw, step);
+
+        // 메타 명령은 신뢰도 0.55 이상일 때만 처리
+        if (ai.confidence >= 0.55) {
+          // 1) 처음부터 다시
+          if (ai.intent === "restart") {
+            setMessages(prev => [
+              ...prev,
+              { from: "user", text: trimmedRaw },
+              { from: "bot", text: "처음부터 다시 시작할게요. 이름부터 알려주세요!" },
+            ]);
+            setAnswers({});
+            void onProgress?.({ name: "", business_type: "", business_number: "" });
+            const newFlow = [...BASIC_STEPS, ...CONNECTION_STEPS];
+            setStepFlow(newFlow);
+            setCurrentIdx(0);
+            currentIdxRef.current = 0;
+            setShowInput(false); setShowTextFallback(false); setInputValue("");
+            setTimeout(() => { setShowInput(true); setShowTextFallback(true); }, 600);
+            return;
+          }
+
+          // 2) 뒤로
+          if (ai.intent === "go_back") {
+            const prevIdx = Math.max(0, currentIdxRef.current - 1);
+            const prevStep = stepFlow[prevIdx];
+            if (prevStep) {
+              setMessages(prev => [
+                ...prev,
+                { from: "user", text: trimmedRaw },
+                { from: "bot", text: "이전 단계로 돌아갈게요." },
+                { from: "bot", text: prevStep.question },
+              ]);
+              setCurrentIdx(prevIdx);
+              currentIdxRef.current = prevIdx;
+              setShowInput(false); setShowTextFallback(false); setInputValue("");
+              setTimeout(() => { setShowInput(true); setShowTextFallback(true); }, 500);
+            }
+            return;
+          }
+
+          // 3) 도움말
+          if (ai.intent === "help") {
+            setMessages(prev => [
+              ...prev,
+              { from: "user", text: trimmedRaw },
+              { from: "bot", text: `이 단계에서는 다음을 여쭤보고 있어요:\n\n${step.question}\n\n언제든 "이름 다시 입력", "뒤로", "처음부터" 라고 말씀해주셔도 돼요.` },
+            ]);
+            return;
+          }
+
+          // 4) 필드 재입력 (이름/업종/사업자번호)
+          if (ai.intent === "edit_field" && ai.field) {
+            const targetId = ai.field as StepId;
+            const label = STEP_LABELS[targetId] || targetId;
+            const newAnswersMinusField = { ...answers };
+            delete newAnswersMinusField[targetId];
+            setAnswers(newAnswersMinusField);
+            void onProgress?.({ [targetId]: "" });
+
+            // stepFlow에 해당 필드가 없으면 끼워넣기
+            let idx = stepFlow.findIndex(s => s.id === targetId);
+            let nextFlow = stepFlow;
+            if (idx < 0) {
+              const stepDef = BASIC_STEPS.find(s => s.id === targetId);
+              if (stepDef) {
+                const basicEnd = stepFlow.findIndex(s => CONNECTION_STEPS.some(cs => cs.id === s.id));
+                const insertAt = basicEnd >= 0 ? basicEnd : 0;
+                nextFlow = [...stepFlow];
+                nextFlow.splice(insertAt, 0, stepDef);
+                setStepFlow(nextFlow);
+                idx = insertAt;
+              }
+            }
+            const targetStep = nextFlow[idx];
+            setMessages(prev => [
+              ...prev,
+              { from: "user", text: trimmedRaw },
+              { from: "bot", text: `${label} 정보를 다시 받을게요.` },
+              ...(targetStep ? [{ from: "bot" as const, text: targetStep.question }] : []),
+            ]);
+            if (idx >= 0) {
+              setCurrentIdx(idx);
+              currentIdxRef.current = idx;
+              setShowInput(false); setShowTextFallback(false); setInputValue("");
+              setTimeout(() => { setShowInput(true); setShowTextFallback(true); }, 500);
+            }
+            return;
+          }
+
+          // 5) yes/skip → 정규식 실패 보완 (ask 단계)
+          const isAskStep = ASK_STEPS.includes(step.id) || step.id === "delivery_ask";
+          if (!validation.isValid && isAskStep) {
+            if (ai.intent === "skip") {
+              validation = { isValid: true, normalizedValue: "건너뛸게요" };
+            } else if (ai.intent === "yes") {
+              validation = { isValid: true, normalizedValue: "연동할게요" };
+            } else if (ai.intent === "choice" && ai.value) {
+              const norm = normalizeChoiceValue(step, ai.value);
+              if (norm) validation = { isValid: true, normalizedValue: norm };
+            }
+          }
+
+          // 6) text 단계에서 AI가 정제한 answer 사용 (이름 등)
+          if (!validation.isValid && step.type === "text" && ai.intent === "answer" && ai.value) {
+            const cleaned = ai.value.trim();
+            if (cleaned) validation = { isValid: true, normalizedValue: cleaned };
+          }
         }
       }
 
