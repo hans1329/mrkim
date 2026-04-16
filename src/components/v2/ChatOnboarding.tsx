@@ -1162,46 +1162,46 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(88,86,214,0.1) 0%, transparent 70%)", filter: "blur(60px)" }} />
 
       {/* Header with oscilloscope + mic + close */}
-      <div className="relative z-10 flex items-center justify-center px-4 pt-3 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
-        {/* Centered oscilloscope + mic group */}
-        <div className="flex items-center gap-3" style={{ maxWidth: "440px" }}>
-          <div className="h-8 overflow-hidden rounded-xl relative" style={{ width: "400px" }}>
-            <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
-              <defs>
-                <linearGradient id="onb-wave1" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#007AFF" stopOpacity="0.6" />
-                  <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#AF52DE" stopOpacity="0.6" />
-                </linearGradient>
-                <linearGradient id="onb-wave2" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0.35" />
-                  <stop offset="50%" stopColor="#007AFF" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#34C759" stopOpacity="0.35" />
-                </linearGradient>
-                <linearGradient id="onb-fade-mask" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#000" />
-                  <stop offset="15%" stopColor="#fff" />
-                  <stop offset="85%" stopColor="#fff" />
-                  <stop offset="100%" stopColor="#000" />
-                </linearGradient>
-                <mask id="onb-fade" maskUnits="userSpaceOnUse">
-                  <rect x="0" y="0" width="260" height="32" fill="url(#onb-fade-mask)" />
-                </mask>
-              </defs>
-              <g mask="url(#onb-fade)">
-                <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={2} maxBoost={14} stroke="url(#onb-wave1)" strokeWidth={2} freq={0.024} speed={1.8} phase={0} />
-                <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={1.2} maxBoost={7} stroke="url(#onb-wave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
-              </g>
-            </svg>
-          </div>
-          <button onClick={() => { void toggleVoice(); }} className="flex-shrink-0 w-9 h-9 flex items-center justify-center">
-            <Mic className="w-4.5 h-4.5" style={{ color: isConnected ? "#007AFF" : "rgba(255,255,255,0.35)" }} />
-          </button>
+      <div className="relative z-10 flex items-center gap-2 px-3 pt-3 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
+        {/* Oscilloscope (flex grow) */}
+        <div className="flex-1 min-w-0 h-8 overflow-hidden rounded-xl relative">
+          <svg viewBox="0 0 260 32" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(0.8px)" }}>
+            <defs>
+              <linearGradient id="onb-wave1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#007AFF" stopOpacity="0.6" />
+                <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#AF52DE" stopOpacity="0.6" />
+              </linearGradient>
+              <linearGradient id="onb-wave2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#FF6B9D" stopOpacity="0.35" />
+                <stop offset="50%" stopColor="#007AFF" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#34C759" stopOpacity="0.35" />
+              </linearGradient>
+              <linearGradient id="onb-fade-mask" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#000" />
+                <stop offset="15%" stopColor="#fff" />
+                <stop offset="85%" stopColor="#fff" />
+                <stop offset="100%" stopColor="#000" />
+              </linearGradient>
+              <mask id="onb-fade" maskUnits="userSpaceOnUse">
+                <rect x="0" y="0" width="260" height="32" fill="url(#onb-fade-mask)" />
+              </mask>
+            </defs>
+            <g mask="url(#onb-fade)">
+              <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={2} maxBoost={14} stroke="url(#onb-wave1)" strokeWidth={2} freq={0.024} speed={1.8} phase={0} />
+              <ReactiveWavePath volumeRef={headerVolumeRef} baseAmplitude={1.2} maxBoost={7} stroke="url(#onb-wave2)" strokeWidth={1.4} freq={0.032} speed={2.3} phase={1.5} />
+            </g>
+          </svg>
         </div>
 
+        {/* Mic */}
+        <button onClick={() => { void toggleVoice(); }} className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full" style={{ background: isConnected ? "rgba(0,122,255,0.12)" : "rgba(255,255,255,0.04)" }}>
+          <Mic className="w-4 h-4" style={{ color: isConnected ? "#007AFF" : "rgba(255,255,255,0.55)" }} />
+        </button>
+
         {/* Close */}
-        <button className="absolute right-3 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { if (isConnected) void toggleVoice(); onComplete(answers); }}>
-          <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} />
+        <button className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} onClick={() => { if (isConnected) void toggleVoice(); onComplete(answers); }}>
+          <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} />
         </button>
       </div>
 
