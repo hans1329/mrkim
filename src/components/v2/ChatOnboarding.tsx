@@ -826,9 +826,10 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     isAdvancingRef.current = true;
 
     try {
-      const trimmedRaw = value.trim();
+      const isVoiceInput = value.startsWith("__VOICE__:");
+      const cleanValue = isVoiceInput ? value.slice("__VOICE__:".length) : value;
+      const trimmedRaw = cleanValue.trim();
       const compactRaw = trimmedRaw.replace(/\s/g, "");
-      const isVoiceInput = isListening;
 
       // ─── 1차: 정규식 SKIP 감지 (연결 단계만) ───
       const isConnectionStep =
