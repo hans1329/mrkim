@@ -335,38 +335,9 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
   // ─── 렌더 ──────────────────────────────────────────────────
 
   return (
-    <div
-      className="absolute inset-x-0 top-0 bottom-0 z-30 flex flex-col"
-      style={{ background: "linear-gradient(180deg, #0A0A0F 0%, #12121A 100%)" }}
-    >
-      {/* Ambient glow */}
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] pointer-events-none"
-        style={{ background: "radial-gradient(ellipse, rgba(88,86,214,0.1) 0%, transparent 70%)", filter: "blur(60px)" }}
-      />
-
-      {/* Header */}
-      <div
-        className="relative z-10 flex items-center justify-between px-4 pt-3 pb-2"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
-      >
-        <div className="flex items-center gap-2">
-          <YarnBallAvatar />
-          <span className="text-[13px]" style={{ color: "rgba(255,255,255,0.7)" }}>김비서</span>
-        </div>
-        <button
-          type="button"
-          onClick={() => onComplete({ name: state.name || "", business_type: state.business_type || "", business_number: state.business_number || "" })}
-          className="w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: "rgba(255,255,255,0.06)" }}
-          aria-label="닫기"
-        >
-          <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.6)" }} />
-        </button>
-      </div>
-
+    <div className="relative z-10 flex flex-1 flex-col">
       {/* Messages */}
-      <div className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-4 pt-3 pb-4">
+      <div className="relative z-10 flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-4">
         {visibleMessages.map((m, idx) =>
           m.role === "assistant" ? (
             <motion.div
