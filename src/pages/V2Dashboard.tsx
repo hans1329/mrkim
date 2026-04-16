@@ -206,7 +206,7 @@ const V2Dashboard = () => {
     setStage("onboarding");
   }, []);
 
-  const hideHeader = stage === "intro" || stage === "onboarding" || stage === "loading";
+  const hideHeader = stage === "intro" || stage === "loading";
 
   if (stage === "loading") {
     return (
