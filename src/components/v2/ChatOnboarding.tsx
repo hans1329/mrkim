@@ -464,7 +464,12 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     onCommittedTranscript: (data) => {
       const cStep = stepFlow[currentIdxRef.current];
       if (cStep?.type === "action" || cStep?.type === "cert_upload" || cStep?.type === "inline_loading" || cStep?.type === "password") return;
-      if (data.text?.trim() && advanceRef.current) advanceRef.current(data.text.trim());
+      const text = data.text?.trim();
+      if (!text || text.length < 2) return; // 너무 짧은 노이즈 무시
+      // 의미 없는 필러/노이즈 패턴 무시
+      const NOISE_PATTERNS = /^(음+|어+|아+|으+|응+|흠+|에+|ㅎ+|\.+|…+)$/;
+      if (NOISE_PATTERNS.test(text)) return;
+      if (advanceRef.current) advanceRef.current(text);
     },
   });
 
