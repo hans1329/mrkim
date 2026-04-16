@@ -259,7 +259,7 @@ const HeroCard = ({ card, index }: { card: FeedCard; index: number }) => {
 
         <div className="flex items-center gap-3 mt-3">
           {card.iconUrl && (
-            <img src={card.iconUrl} alt="" className="w-24 h-24 object-contain -ml-2" />
+            <img src={card.iconUrl} alt="" className="w-36 h-36 object-contain -ml-3" />
           )}
           <div className="flex items-baseline gap-2">
             <span
