@@ -472,16 +472,24 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
   }, [onCommit, stepFlow]);
 
   useEffect(() => {
-    if (isConnected) {
-      setSttReady(true);
-      return;
-    }
+    const t = setTimeout(() => {
+      if (hasExisting) {
+        const completedLabels = BASIC_STEPS.filter(s => existingData[s.id]).map(s => STEP_LABELS[s.id]).join(", ");
+        setMessages([{ from: "bot", text: `다시 오셨네요! ${completedLabels} 정보가 등록되어 있어요.` }]);
+        if (stepFlow[0]) {
+          setMessages(prev => [...prev, { from: "bot", text: stepFlow[0].question }]);
+          setTimeout(() => setShowInput(true), 500);
+          setTimeout(() => setShowTextFallback(true), 2000);
+        }
+      } else if (stepFlow[0]) {
+        setMessages([{ from: "bot", text: stepFlow[0].question }]);
+        setTimeout(() => setShowInput(true), 500);
+        setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
+      }
+    }, 300);
 
-    void toggleVoice().then(() => setSttReady(true));
-  }, [isConnected, toggleVoice]);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [existingData, hasExisting, stepFlow, sttReady]);
 
   // ─── Navigation helpers ──────────────────────────────────
 
@@ -701,23 +709,88 @@ export const ChatOnboarding = ({ onComplete, onProgress, secretaryAvatarUrl, exi
     }
 
     // Route based on step
-      switch (step.id) {
-        case "connect_intro":
-          if (normalizedValue === "skip") {
-            if (isConnected) void toggleVoice();
-            onComplete(newAnswers);
-            return;
-          }
-          setTimeout(() => goToStep("hometax_ask"), 600);
-          break;
-...
-        case "complete":
+    switch (step.id) {
+      case "connect_intro":
+        if (normalizedValue === "skip") {
           if (isConnected) void toggleVoice();
           onComplete(newAnswers);
-          break;
+          return;
+        }
+        setTimeout(() => goToStep("hometax_ask"), 600);
+        break;
+
+      case "hometax_ask":
+        if (normalizedValue === "건너뛸게요") {
+          setTimeout(() => goToStep("card_ask"), 600);
+        } else {
+          setTimeout(() => goToStep("hometax_cert"), 600);
+        }
+        break;
+
+      case "card_ask":
+        if (normalizedValue === "건너뛸게요") {
+          setTimeout(() => goToStep("bank_ask"), 600);
+        } else {
+          setTimeout(() => goToStep("card_select"), 600);
+        }
+        break;
+
+      case "card_select":
+        setTimeout(() => goToStep("card_id"), 600);
+        break;
+
+      case "card_id":
+        setTimeout(() => goToStep("card_pw"), 600);
+        break;
+
+      case "card_pw":
+        setTimeout(() => handleCardConnect(), 300);
+        break;
+
+      case "bank_ask":
+        if (normalizedValue === "건너뛸게요") {
+          setTimeout(() => goToStep("delivery_ask"), 600);
+        } else {
+          setTimeout(() => goToStep("bank_select"), 600);
+        }
+        break;
+
+      case "bank_select":
+        setTimeout(() => goToStep("bank_id"), 600);
+        break;
+
+      case "bank_id":
+        setTimeout(() => goToStep("bank_pw"), 600);
+        break;
+
+      case "bank_pw":
+        setTimeout(() => handleBankConnect(), 300);
+        break;
+
+      case "delivery_ask":
+        if (normalizedValue === "건너뛸게요") {
+          setTimeout(() => goToStep("complete"), 600);
+        } else {
+          const selectedPlatform = step.choices?.find(choice => choice.label === normalizedValue)?.value || normalizedValue;
+          setSelectedDeliveryPlatform(selectedPlatform);
+          setTimeout(() => goToStep("delivery_id"), 600);
+        }
+        break;
+
+      case "delivery_id":
+        setTimeout(() => goToStep("delivery_pw"), 600);
+        break;
+
+      case "delivery_pw":
+        setTimeout(() => handleDeliveryConnect(), 300);
+        break;
+
+      case "complete":
+        if (isConnected) void toggleVoice();
+        onComplete(newAnswers);
+        break;
 
       default:
-        // Basic steps - go to next
         setTimeout(() => goToNext(), 600);
         break;
     }
