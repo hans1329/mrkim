@@ -57,12 +57,47 @@ const TOOLS = [
     },
   },
   {
-    name: "start_connection",
-    description: "특정 서비스 연동 화면을 엽니다.",
+    name: "prepare_connection",
+    description:
+      "특정 연동에 필요한 정보(기관/인증방식)를 단계별 대화로 받아 임시 저장합니다. 모든 필수 정보가 모이면 클라이언트가 자동으로 보안 입력 화면(비밀번호/인증서)을 띄웁니다. 한 번에 한 필드씩 채워 나가세요.",
     parameters: {
       type: "OBJECT",
       properties: {
-        service: { type: "STRING", enum: ["hometax", "card", "account", "baemin", "coupangeats"] },
+        service: {
+          type: "STRING",
+          enum: ["hometax", "card", "account", "baemin", "coupangeats"],
+          description: "연동 대상 서비스",
+        },
+        institution: {
+          type: "STRING",
+          description:
+            "은행/카드사/플랫폼 이름. account=은행명(국민/신한/하나/우리/농협/카카오뱅크 등), card=카드사명(신한카드/삼성카드/현대카드/KB국민카드/롯데카드/우리카드/하나카드/BC카드 등). hometax/baemin/coupangeats는 비워둠.",
+        },
+        auth_type: {
+          type: "STRING",
+          enum: ["cert", "id_pw", "simple"],
+          description:
+            "인증 방식. cert=공동인증서, id_pw=아이디/비밀번호, simple=간편인증(홈택스 전용). 사용자가 명확히 선택했을 때만 채움.",
+        },
+        login_id: {
+          type: "STRING",
+          description: "ID/PW 방식일 때 사용자가 말한 아이디. 비밀번호는 절대 음성으로 받지 마세요.",
+        },
+      },
+      required: ["service"],
+    },
+  },
+  {
+    name: "open_secure_input",
+    description:
+      "기관/인증방식 등 필수 정보가 모두 모였을 때 호출. 클라이언트가 비밀번호/인증서 파일만 입력받는 보안 시트를 엽니다. 같은 service에 대해 prepare_connection으로 정보를 다 모은 직후에 호출하세요.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        service: {
+          type: "STRING",
+          enum: ["hometax", "card", "account", "baemin", "coupangeats"],
+        },
       },
       required: ["service"],
     },
