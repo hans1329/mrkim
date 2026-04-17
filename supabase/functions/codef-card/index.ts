@@ -234,8 +234,8 @@ async function handleRegisterWithCert(
   if (keyFile) {
     accountEntry.derFile = certFile;
     accountEntry.keyFile = keyFile;
-    accountEntry.certType = "1";
-    console.log(`Using DER+KEY separate cert files (certType: 1, clientType: ${clientType})`);
+    // DER+KEY 분리 방식: certType 생략 (CODEF 공식 규격)
+    console.log(`Using DER+KEY separate cert files (no certType, clientType: ${clientType})`);
   } else {
     accountEntry.certFile = certFile;
     accountEntry.certType = "pfx";
