@@ -105,6 +105,8 @@ function LoginContent() {
     }
     
     toast.success("로그인 성공!");
+    // V2 인트로(인사말) 화면부터 다시 보여주기 위해 온보딩 플래그 초기화
+    try { localStorage.removeItem("v2_onboarded"); } catch {}
     navigate("/");
   };
 
