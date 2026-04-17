@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { WeatherAnchor } from "@/components/v2/WeatherAnchor";
 import { SecretaryFeed } from "@/components/v2/SecretaryFeed";
