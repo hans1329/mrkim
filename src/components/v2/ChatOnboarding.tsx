@@ -523,18 +523,65 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
           loginId={secureSheet.pending.login_id}
           onClose={() => setSecureSheet(null)}
           onSubmit={async (payload) => {
-            // 실제 연동 호출은 추후 단계에서 각 엣지 함수(codef-bank/card/hometax, hyphen-baemin/coupangeats)와 연결
-            // 지금은 보안값을 받아 에이전트에 진행 신호만 보냄
-            console.log("[SecureCredentialSheet] payload received", {
-              ...payload,
+            // [TODO] 실제 연동 호출 연결 지점
+            // - hometax: supabase.functions.invoke("codef-hometax", { body: { auth_type, cert_file, cert_password, login_id, password } })
+            // - card:    supabase.functions.invoke("codef-card",    { body: { institution, auth_type, login_id, password, cert_file, cert_password } })
+            // - account: supabase.functions.invoke("codef-bank",    { body: { institution, auth_type, login_id, password, cert_file, cert_password } })
+            // - baemin:  supabase.functions.invoke("hyphen-baemin", { body: { action: "verify", userId: login_id, userPw: password } })
+            // - coupangeats: supabase.functions.invoke("hyphen-coupangeats", { body: { action: "verify", userId: login_id, userPw: password } })
+            const masked = {
+              service: payload.service,
+              institution: payload.institution,
+              auth_type: payload.auth_type,
+              login_id: payload.login_id,
               password: payload.password ? "***" : undefined,
               cert_password: payload.cert_password ? "***" : undefined,
               cert_file: payload.cert_file?.name,
-            });
-            toast.success(`${payload.service} 연동 정보가 안전하게 접수되었어요`);
+            };
+            console.log("[SecureCredentialSheet] payload received (mock connect)", masked);
+
+            const serviceLabel: Record<SecureService, string> = {
+              hometax: "홈택스",
+              card: "카드",
+              account: "계좌",
+              baemin: "배달의민족",
+              coupangeats: "쿠팡이츠",
+            };
+            const label = serviceLabel[payload.service];
+            const where = payload.institution ? `${payload.institution} ${label}` : label;
+
+            // 1) 접수 토스트
+            toast.success(`${where} 연동 정보가 안전하게 접수되었어요`);
             setSecureSheet(null);
-            // 에이전트에 알려서 다음 단계로 자연스럽게 전환
-            void handleUserMessage(`(시스템: ${payload.service} 보안 정보 입력이 완료되었습니다. 곧 연동이 진행됩니다. 다음 단계를 안내해주세요.)`);
+
+            // 2) "처리 중" 시스템 메시지 → 에이전트가 "잠시만요, 연동 진행 중이에요" 류 안내
+            void handleUserMessage(
+              `(시스템: ${payload.service} 보안 정보 입력 완료. 연동을 진행 중입니다. "잠시만 기다려주세요" 류로 짧게 안내해주세요. 다음 단계는 안내하지 마세요.)`
+            );
+
+            // 3) 모의 연동: 1.5초 후 성공 신호 + 축하 메시지 → 에이전트가 다음 단계 안내
+            window.setTimeout(() => {
+              // 로컬 상태도 즉시 반영 (실제 연동 시에는 refetchConnection이 처리)
+              setState((prev) => {
+                const next = { ...prev };
+                if (payload.service === "hometax") next.hometax_connected = true;
+                else if (payload.service === "card") next.card_connected = true;
+                else if (payload.service === "account") next.account_connected = true;
+                else if (payload.service === "baemin" || payload.service === "coupangeats") next.delivery_connected = true;
+                // pending 정리
+                if (next.pending) {
+                  const { [payload.service]: _omit, ...rest } = next.pending;
+                  next.pending = rest;
+                }
+                return next;
+              });
+
+              toast.success(`🎉 ${where} 연동이 완료됐어요!`);
+
+              void handleUserMessage(
+                `(시스템: ${where} 연동이 성공적으로 완료되었습니다! 대표님께 축하의 한마디(이모지 1개 포함, 1~2문장)를 건네고, 남아있는 다음 연동 항목을 자연스럽게 제안해주세요. 모두 끝났다면 finish_onboarding 도구를 호출하세요.)`
+              );
+            }, 1500);
           }}
         />
       )}
