@@ -198,7 +198,7 @@ async function handleBusinessVerify(body: any): Promise<Response> {
  * - 은행(codef-bank)과 동일한 파라미터 구조 사용
  */
 async function handleRegister(_req: Request, body: any, clientType: string = "P"): Promise<Response> {
-  const { businessNumber, certFileBase64, certPassword, keyFileBase64 } = body;
+  const { businessNumber, certFileBase64, certPassword, keyFileBase64, identity } = body;
 
   if (!businessNumber || !certFileBase64 || !certPassword) {
     return new Response(
@@ -211,6 +211,7 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   }
 
   const cleanedNumber = businessNumber.replace(/\D/g, "");
+  const cleanedIdentity = identity ? String(identity).replace(/\D/g, "") : "";
   const accessToken = await getAccessToken();
 
   // 동적 공개키 조회 (은행과 동일)
@@ -220,49 +221,53 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   // 인증서 비밀번호를 RSA 암호화
   const encryptedPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // 홈택스는 기관별 파라미터 편차가 있어 카드/은행과 동일한 전송 구조를 유지하되
-  // 실제 등록은 홈택스 전용 loginType "2"를 우선 시도하고, 기존 "0"도 폴백으로 남긴다.
-  // - DER+KEY: derFile + keyFile, certType 생략
-  // - PFX/P12: certFile + certType "pfx"
-  // - password = 인증서 비밀번호 RSA 암호화
-  // - organization: 0001(국세청 일반) → 0002(전자세금계산서) 순서
-  const attemptPlans = [
-    { loginType: "2", organization: "0001" },
-    { loginType: "2", organization: "0002" },
-    { loginType: "0", organization: "0001" },
-    { loginType: "0", organization: "0002" },
-  ];
-
+  // 홈택스(NT) 전용 규격 — CODEF 홈택스 데모 페이지 기준:
+  //   * DER+KEY: certFile(DER) + keyFile(.key) + certType "1"
+  //   * PFX/P12: certFile + certType "pfx" (keyFile 없음)
+  //   * 비밀번호 필드명은 기관별 편차가 있어 password → certPassword 순으로 시도
+  //   * organization: 0001(국세청 일반) → 0002(전자세금계산서)
+  //   * loginType: "0" (공동인증서). NT는 "2"를 거부하므로 더 이상 사용하지 않음.
+  //   * identity: 개인 공동인증서의 경우 주민번호(또는 법인번호)가 필요할 수 있음
   const isDerMode = !!keyFileBase64;
+  const attemptPlans: Array<{ organization: string; passwordKey: "password" | "certPassword" }> = [
+    { organization: "0001", passwordKey: "password" },
+    { organization: "0002", passwordKey: "password" },
+    { organization: "0001", passwordKey: "certPassword" },
+    { organization: "0002", passwordKey: "certPassword" },
+  ];
 
   const buildEntry = (
     organization: string,
-    loginType: string,
+    passwordKey: "password" | "certPassword",
   ): Record<string, unknown> => {
     const entry: Record<string, unknown> = {
       countryCode: "KR",
       businessType: "NT",
       clientType,
       organization,
-      loginType,
-      password: encryptedPassword,
+      loginType: "0",
     };
+    entry[passwordKey] = encryptedPassword;
     if (isDerMode) {
-      // DER + KEY 분리 방식 (은행/카드와 동일): certType 생략
-      entry.derFile = certFileBase64;
+      // DER + KEY 분리 방식 (홈택스 NT 규격): certFile(=DER) + keyFile + certType "1"
+      entry.certFile = certFileBase64;
       entry.keyFile = keyFileBase64;
+      entry.certType = "1";
     } else {
       // PFX/P12 통합 파일
       entry.certFile = certFileBase64;
       entry.certType = "pfx";
+    }
+    if (cleanedIdentity) {
+      entry.identity = cleanedIdentity;
     }
     return entry;
   };
 
   console.log(
     `Registering hometax account with certificate, identity=${cleanedNumber}, ` +
-    `clientType=${clientType}, certMode=${isDerMode ? "DER+KEY" : "PFX"}, ` +
-    `attempts=${attemptPlans.map((p) => `${p.loginType}:${p.organization}`).join(",")}`
+    `clientType=${clientType}, certMode=${isDerMode ? "DER+KEY" : "PFX"}, hasUserIdentity=${!!cleanedIdentity}, ` +
+    `attempts=${attemptPlans.map((p) => `${p.organization}:${p.passwordKey}`).join(",")}`
   );
 
   let responseText = "";
@@ -271,29 +276,27 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   let lastErrorList: any[] = [];
 
   for (const plan of attemptPlans) {
-    const accountEntry = buildEntry(plan.organization, plan.loginType);
+    const accountEntry = buildEntry(plan.organization, plan.passwordKey);
     const requestBody = { accountList: [accountEntry] };
 
-    // 디버그: 실제 보내는 페이로드 메타 (값은 노출 X, 길이/존재만)
     const debugMeta = {
       loginType: accountEntry.loginType,
       organization: accountEntry.organization,
       clientType: accountEntry.clientType,
       businessType: accountEntry.businessType,
       countryCode: accountEntry.countryCode,
-      passwordLen: String(accountEntry.password || "").length,
+      passwordKey: plan.passwordKey,
+      passwordLen: String((accountEntry as any)[plan.passwordKey] || "").length,
       hasCertFile: !!accountEntry.certFile,
       certFileLen: String(accountEntry.certFile || "").length,
-      hasDerFile: !!accountEntry.derFile,
-      derFileLen: String(accountEntry.derFile || "").length,
       hasKeyFile: !!accountEntry.keyFile,
       keyFileLen: String(accountEntry.keyFile || "").length,
       certType: accountEntry.certType ?? null,
+      hasIdentity: !!accountEntry.identity,
       keys: Object.keys(accountEntry),
     };
     console.log(`→ Payload meta:`, JSON.stringify(debugMeta));
 
-    // 카드/은행과 동일하게 JSON body로 전송해 기관별 파라미터 처리 차이를 제거한다.
     const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
       method: "POST",
       headers: {
@@ -305,7 +308,7 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
 
     responseText = await response.text();
     console.log(
-      `Account create response (loginType=${plan.loginType}, org=${plan.organization}):`,
+      `Account create response (org=${plan.organization}, pwKey=${plan.passwordKey}):`,
       responseText.substring(0, 1500),
     );
 

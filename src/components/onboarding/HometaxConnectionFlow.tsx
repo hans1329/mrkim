@@ -78,6 +78,7 @@ export function HometaxConnectionFlow({
   const [keyFile, setKeyFile] = useState<File | null>(null);
   const [certPassword, setCertPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [identity, setIdentity] = useState(""); // 개인: 주민번호 13자리 / 법인: 법인등록번호 13자리
   const fileInputRef = useRef<HTMLInputElement>(null);
   const keyFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -258,6 +259,7 @@ export function HometaxConnectionFlow({
             certPassword,
             keyFileBase64,
             clientType,
+            identity: identity.replace(/\D/g, "") || undefined,
           },
         }
       );
@@ -682,11 +684,31 @@ export function HometaxConnectionFlow({
                 </div>
               </div>
 
+              {/* 본인 식별번호 (개인: 주민번호 / 법인: 법인등록번호) */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  {clientType === "B" ? "법인등록번호" : "대표자 주민등록번호"}
+                  <span className="text-muted-foreground font-normal ml-1">(13자리)</span>
+                </label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  placeholder={clientType === "B" ? "법인등록번호 13자리" : "주민등록번호 13자리"}
+                  value={identity}
+                  onChange={(e) => setIdentity(e.target.value.replace(/\D/g, "").slice(0, 13))}
+                  className="w-full px-4 py-3 rounded-xl border bg-background text-sm font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  maxLength={13}
+                />
+                <p className="text-xs text-muted-foreground">
+                  공동인증서의 소유자 본인 확인용으로만 사용되며, 저장되지 않습니다.
+                </p>
+              </div>
+
               <Button
                 onClick={handleCertRegister}
                 size="lg"
                 className="w-full"
-                disabled={!certFile || !certPassword || (isDerMode && !keyFile)}
+                disabled={!certFile || !certPassword || (isDerMode && !keyFile) || identity.length !== 13}
               >
                 인증서로 연동하기
               </Button>
