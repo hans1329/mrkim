@@ -109,7 +109,10 @@ export default function V2SalesPattern() {
   }, [transactions]);
 
   return (
-    <div className="min-h-screen" style={{ background: "#0A0A0F" }}>
+    <div
+      className="h-full overflow-y-auto overflow-x-hidden"
+      style={{ background: "#0A0A0F", WebkitOverflowScrolling: "touch" }}
+    >
       {/* Header */}
       <div
         className="sticky top-0 z-20 px-4 py-3 flex items-center gap-3"
