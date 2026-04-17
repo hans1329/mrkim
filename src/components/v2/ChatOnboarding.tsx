@@ -4,8 +4,8 @@ import { Send, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useV2Voice } from "./V2VoiceContext";
 import { useConnection } from "@/contexts/ConnectionContext";
-import { useConnectionDrawer, type ConnectionType } from "@/contexts/ConnectionDrawerContext";
 import { toast } from "sonner";
+import { SecureCredentialSheet, type SecureService, type SecureCredentialPayload } from "./SecureCredentialSheet";
 
 // ─── Types ─────────────────────────────────────────────────────
 
