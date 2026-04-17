@@ -67,8 +67,47 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [isThinking, setIsThinking] = useState(false);
+  const [systemResult, setSystemResult] = useState<SystemToggleResult | null>(null);
   const processingRef = useRef(false);
 
+  const applySystemToggle = useCallback(async (feature: "phone_alert" | "briefing", enable: boolean) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setSystemResult({ id: `s-${Date.now()}`, feature, enable, success: false, message: "로그인이 필요해요" });
+      return;
+    }
+    const updates: Record<string, unknown> =
+      feature === "phone_alert"
+        ? { phone_alert_enabled: enable }
+        : { briefing_frequency: enable ? "daily" : "off" };
+
+    const { error } = await supabase.from("profiles").update(updates).eq("user_id", user.id);
+    if (error) {
+      setSystemResult({ id: `s-${Date.now()}`, feature, enable, success: false, message: error.message });
+      return;
+    }
+    // 검증: 즉시 다시 읽어서 적용 확인
+    const verifyCol = feature === "phone_alert" ? "phone_alert_enabled" : "briefing_frequency";
+    const { data: verify } = await supabase
+      .from("profiles")
+      .select(verifyCol)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const ok =
+      feature === "phone_alert"
+        ? (verify as { phone_alert_enabled?: boolean } | null)?.phone_alert_enabled === enable
+        : enable
+        ? (verify as { briefing_frequency?: string } | null)?.briefing_frequency !== "off"
+        : (verify as { briefing_frequency?: string } | null)?.briefing_frequency === "off";
+
+    setSystemResult({
+      id: `s-${Date.now()}`,
+      feature,
+      enable,
+      success: ok,
+      message: ok ? undefined : "설정이 반영되지 않았어요. 다시 시도해주세요.",
+    });
+  }, []);
   const askChatAI = useCallback(async (userText: string) => {
     if (processingRef.current) return;
     processingRef.current = true;
