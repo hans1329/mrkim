@@ -215,7 +215,7 @@ export const IntroSequence = ({
                           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.2)",
                         }}
                       >
-                      <span className="text-[13px]" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      <span className="text-[13px]" style={{ color: "rgba(255,255,255,0.85)" }}>
                         {item.label}
                       </span>
                       <div className="flex items-center gap-2">
