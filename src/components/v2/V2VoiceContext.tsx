@@ -101,17 +101,51 @@ export function V2VoiceProvider({ children }: { children: ReactNode }) {
   const toggleVoice = useCallback(async () => {
     if (scribe.isConnected) {
       scribe.disconnect();
-    } else {
-      try {
-        const { data } = await supabase.functions.invoke("elevenlabs-scribe-token");
-        if (data?.token) {
-          await scribe.connect({
-            token: data.token,
-            microphone: { echoCancellation: true, noiseSuppression: true },
-          });
-          setIsReady(true);
-        }
-      } catch {}
+      return;
+    }
+
+    // 1) HTTPS / 지원 여부 확인
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast.error("이 브라우저는 마이크를 지원하지 않아요", {
+        description: "Chrome, Safari 최신 버전에서 다시 시도해주세요.",
+      });
+      return;
+    }
+
+    // 2) 권한 사전 요청 (실패 시 명확히 안내)
+    try {
+      const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
+      probe.getTracks().forEach((t) => t.stop());
+    } catch (err) {
+      const e = err as DOMException;
+      if (e?.name === "NotAllowedError" || e?.name === "SecurityError") {
+        toast.error("마이크 권한이 차단되어 있어요", {
+          description: "브라우저 주소창의 자물쇠 아이콘 → 사이트 설정 → 마이크를 '허용'으로 바꿔주세요.",
+          duration: 8000,
+        });
+      } else if (e?.name === "NotFoundError") {
+        toast.error("마이크를 찾을 수 없어요", { description: "마이크가 연결되어 있는지 확인해주세요." });
+      } else {
+        toast.error("마이크를 켤 수 없어요", { description: e?.message || "잠시 후 다시 시도해주세요." });
+      }
+      return;
+    }
+
+    // 3) 토큰 발급 + 연결
+    try {
+      const { data, error } = await supabase.functions.invoke("elevenlabs-scribe-token");
+      if (error || !data?.token) {
+        toast.error("음성 서비스 연결 실패", { description: "잠시 후 다시 시도해주세요." });
+        return;
+      }
+      await scribe.connect({
+        token: data.token,
+        microphone: { echoCancellation: true, noiseSuppression: true },
+      });
+      setIsReady(true);
+    } catch (err) {
+      console.error("scribe connect error:", err);
+      toast.error("음성 연결에 실패했어요", { description: "네트워크를 확인하고 다시 시도해주세요." });
     }
   }, [scribe]);
 
