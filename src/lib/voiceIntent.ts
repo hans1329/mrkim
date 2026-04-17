@@ -18,10 +18,12 @@ export function detectVoiceIntent(text: string): VoiceIntent {
   const n = norm(text);
 
   // 0) 종료/취소 (짧은 발화에서만 적용해 오탐 방지)
-  if (n.length <= 12 && has(n, [
+  // ⚠️ "알림 꺼줘" 같은 시스템 토글이 dismiss로 오인되지 않도록 알림/브리핑 키워드가 있으면 skip
+  const hasToggleKeyword = has(n, ["알림", "브리핑", "전화알림", "콜알림"]);
+  if (!hasToggleKeyword && n.length <= 12 && has(n, [
     "그만", "그만해", "그만하자", "끊어", "끊어줘", "꺼줘", "닫아", "닫아줘",
     "나중에", "나중에다시", "다음에", "됐어", "됬어", "괜찮아", "취소",
-    "종료", "스톱", "정지", "중지", "마쳐"
+    "종료", "스톱", "정지", "마쳐"
   ])) {
     return { kind: "dismiss" };
   }
