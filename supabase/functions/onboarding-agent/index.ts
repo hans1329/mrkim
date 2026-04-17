@@ -154,7 +154,8 @@ function buildSystemPrompt(state: OnboardingState): string {
   · 이름/호칭 → save_user_name
   · 업종 → save_business_type
   · 10자리 숫자(사업자번호) → save_business_number
-  · 연동 동의 → start_connection
+  · 연동 진행/기관·인증방식 선택 → prepare_connection (한 필드씩)
+  · 모든 정보(기관+인증방식, ID/PW면 login_id 포함)가 모이면 → open_secure_input
   · 스킵/나중에 → skip_step
   · 모두 끝나면 → finish_onboarding
 - 도구 호출 없이 "저장했어요"라고 말하지 마세요. 실제 저장이 안 됩니다.
@@ -165,6 +166,31 @@ function buildSystemPrompt(state: OnboardingState): string {
 4. 연동 안내 — 홈택스 → 카드 → 계좌 → 배달앱, 한 번에 하나만 권유
 5. 모두 끝나면 finish_onboarding
 
+# 대화형 연동 진행 절차 (매우 중요)
+사용자가 특정 연동에 동의하면 ConnectionHub 같은 별도 화면을 열지 말고, 한 번에 한 가지 정보만 대화로 받습니다.
+
+[계좌 연동]
+1) "어느 은행을 연동할까요? 국민, 신한, 하나, 우리, 농협, 카카오뱅크 중에 알려주세요." → 답변 받으면 prepare_connection(service="account", institution="신한")
+2) "공동인증서로 하실래요, 아니면 인터넷뱅킹 아이디·비밀번호로 하실래요?" → prepare_connection(service="account", auth_type="cert" 또는 "id_pw")
+3) auth_type="id_pw"면 "인터넷뱅킹 아이디만 말씀해 주시겠어요? 비밀번호는 다음 화면에서 안전하게 입력하시면 돼요." → prepare_connection(service="account", login_id="...")
+4) 모든 정보가 모이면 open_secure_input(service="account") + 안내 텍스트 "비밀번호 입력 화면을 열어드릴게요."
+
+[카드 연동]
+1) "어느 카드사인가요? 신한, 삼성, 현대, KB국민, 롯데, 우리, 하나, BC 중에 골라주세요." → prepare_connection(service="card", institution="...")
+2) "공동인증서 또는 카드사 홈페이지 아이디·비밀번호 중 어떤 걸로 하실래요?" → auth_type
+3) id_pw면 아이디 → login_id
+4) open_secure_input(service="card")
+
+[홈택스 연동]
+1) "공동인증서, 간편인증(카카오톡 등), 홈택스 아이디·비밀번호 중 어떤 방식이 편하세요?" → prepare_connection(service="hometax", auth_type=...)
+2) id_pw면 아이디 → login_id
+3) open_secure_input(service="hometax")
+
+[배달앱 연동 - 배민/쿠팡이츠]
+1) "배달의민족과 쿠팡이츠 둘 다 쓰세요? 먼저 어느 쪽부터 할까요?" → service 결정 (baemin 또는 coupangeats)
+2) "사장님 사이트 아이디만 알려주세요. 비밀번호는 다음 화면에서요." → prepare_connection(service=..., auth_type="id_pw", login_id="...")
+3) open_secure_input(service=...)
+
 # 현재 수집 상태 (이미 채워진 값은 다시 묻지 말 것)
 - 이름: ${state.name || "(미수집)"}
 - 업종: ${state.business_type || "(미수집)"}
@@ -173,6 +199,7 @@ function buildSystemPrompt(state: OnboardingState): string {
 - 카드: ${state.card_connected ? "완료" : "미완료"}
 - 계좌: ${state.account_connected ? "완료" : "미완료"}
 - 배달앱: ${state.delivery_connected ? "완료" : "미완료"}
+- 진행 중인 연동 정보: ${JSON.stringify(state.pending || {})}
 `;
 }
 
