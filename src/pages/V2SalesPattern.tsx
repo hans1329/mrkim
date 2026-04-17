@@ -178,7 +178,7 @@ export default function V2SalesPattern() {
         hotHour,
       },
     };
-  }, [transactions]);
+  }, [transactions, deliveryOrders]);
 
   return (
     <div
