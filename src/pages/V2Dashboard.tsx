@@ -8,6 +8,7 @@ import { IntroSequence } from "@/components/v2/IntroSequence";
 import { ChatOnboarding } from "@/components/v2/ChatOnboarding";
 import { VoiceEmployeeRegistration } from "@/components/v2/VoiceEmployeeRegistration";
 import { UrgentEventSplash } from "@/components/v2/UrgentEventSplash";
+import { VoiceChatOverlay } from "@/components/v2/VoiceChatOverlay";
 import { useV2Voice } from "@/components/v2/V2VoiceContext";
 import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
