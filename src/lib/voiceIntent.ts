@@ -7,6 +7,7 @@ export type VoiceIntent =
   | { kind: "employee_register" }
   | { kind: "onboarding_connect"; target?: "card" | "bank" | "hometax" | "delivery" }
   | { kind: "settings"; target?: "secretary" | "alert" | "profile" }
+  | { kind: "system_toggle"; feature: "phone_alert" | "briefing"; enable: boolean }
   | { kind: "tax_consultation" }
   | { kind: "chat" }; // 기본값: AI 채팅으로 위임
 
