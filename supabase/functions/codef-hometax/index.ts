@@ -198,7 +198,7 @@ async function handleBusinessVerify(body: any): Promise<Response> {
  * - 은행(codef-bank)과 동일한 파라미터 구조 사용
  */
 async function handleRegister(_req: Request, body: any, clientType: string = "P"): Promise<Response> {
-  const { businessNumber, certFileBase64, certPassword, keyFileBase64 } = body;
+  const { businessNumber, certFileBase64, certPassword } = body;
 
   if (!businessNumber || !certFileBase64 || !certPassword) {
     return new Response(
@@ -220,15 +220,12 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   // 인증서 비밀번호를 RSA 암호화
   const encryptedPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // 홈택스 공동인증서 특이 규격:
-  // - loginType "2"를 우선 시도
-  // - id/password는 RSA 암호화된 빈 문자열
-  // - 실제 인증서 비밀번호는 certPassword 필드로 전달
-  // - organization은 0001/0002를 모두 시도
-  const encryptedEmpty = encryptRSAPKCS1("", publicKey);
+  // CODEF 홈택스 표준 규격 (은행/카드와 동일):
+  // - loginType "0" (공동인증서)
+  // - certFile (PFX Base64) + certType "pfx"
+  // - password = 인증서 비밀번호 RSA 암호화
+  // - organization: 0001(국세청 일반) → 0002(전자세금계산서) 폴백
   const attemptPlans = [
-    { loginType: "2", organization: "0001" },
-    { loginType: "2", organization: "0002" },
     { loginType: "0", organization: "0001" },
     { loginType: "0", organization: "0002" },
   ];
@@ -243,32 +240,16 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       clientType,
       organization,
       loginType,
-      identity: cleanedNumber,
+      password: encryptedPassword,
+      certType: "pfx",
+      certFile: certFileBase64,
     };
-
-    if (loginType === "2") {
-      entry.id = encryptedEmpty;
-      entry.password = encryptedEmpty;
-      entry.certPassword = encryptedPassword;
-    } else {
-      entry.password = encryptedPassword;
-    }
-
-    if (keyFileBase64) {
-      entry.derFile = certFileBase64;
-      entry.keyFile = keyFileBase64;
-      entry.certType = "1";
-    } else {
-      entry.certFile = certFileBase64;
-      entry.certType = "pfx";
-    }
-
     return entry;
   };
 
   console.log(
     `Registering hometax account with certificate, identity=${cleanedNumber}, ` +
-    `clientType=${clientType}, certMode=${keyFileBase64 ? "DER+KEY" : "PFX"}, ` +
+    `clientType=${clientType}, certMode=PFX, ` +
     `attempts=${attemptPlans.map((p) => `${p.loginType}:${p.organization}`).join(",")}`
   );
 
@@ -288,18 +269,9 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       clientType: accountEntry.clientType,
       businessType: accountEntry.businessType,
       countryCode: accountEntry.countryCode,
-      identity: accountEntry.identity,
-      identityLen: String(accountEntry.identity || "").length,
-      hasId: Object.prototype.hasOwnProperty.call(accountEntry, "id"),
-      idLen: String(accountEntry.id || "").length,
       passwordLen: String(accountEntry.password || "").length,
-      hasCertPassword: Object.prototype.hasOwnProperty.call(accountEntry, "certPassword"),
-      certPasswordLen: String(accountEntry.certPassword || "").length,
-      hasDerFile: !!accountEntry.derFile,
-      derFileLen: String(accountEntry.derFile || "").length,
-      hasKeyFile: !!accountEntry.keyFile,
-      keyFileLen: String(accountEntry.keyFile || "").length,
       hasCertFile: !!accountEntry.certFile,
+      certFileLen: String(accountEntry.certFile || "").length,
       certType: accountEntry.certType ?? null,
       keys: Object.keys(accountEntry),
     };
