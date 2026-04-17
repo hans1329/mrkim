@@ -39,8 +39,6 @@ export const WeatherAnchor = () => {
     }, 4000);
     return () => clearInterval(interval);
   }, []);
-  const config = weatherConfig[weather];
-  const gaugePercent = 78;
 
   return (
     <motion.div
