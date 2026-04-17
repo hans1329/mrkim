@@ -170,18 +170,15 @@ function useSettlementCard(): CarouselCard | null {
 export const TaxSavingCarousel = () => {
   const [current, setCurrent] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const settlementCard = useSettlementCard();
-
+  // 배민 정산 카드는 '오늘의 브리핑' 영역에서 노출하므로 절세포인트 캐러셀에서는 제외
   const cards: CarouselCard[] = useMemo(() => {
-    // Settlement card goes first when available
-    const allCards = settlementCard ? [settlementCard, ...STATIC_TIPS] : [...STATIC_TIPS];
-    // Return with clones: [last item, ...all, first item]
+    const allCards = [...STATIC_TIPS];
     return [
       allCards[allCards.length - 1],
       ...allCards,
       allCards[0],
     ];
-  }, [settlementCard]);
+  }, []);
 
   // Track current slide via scroll position with infinite loop detection
   const handleScroll = useCallback(() => {
