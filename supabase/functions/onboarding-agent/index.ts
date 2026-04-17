@@ -266,6 +266,11 @@ function finalizeAgentOutput(
       (call) => call.name === "open_secure_input" && String(call.args.service || "").toLowerCase() === service,
     );
 
+  const getSecureInputReply = (authType?: PendingConnection["auth_type"]) =>
+    authType === "cert"
+      ? "공동인증서 파일과 비밀번호 입력 화면을 열어드릴게요."
+      : "비밀번호 입력 화면을 열어드릴게요.";
+
   for (const call of toolCalls) {
     if (call.name !== "prepare_connection") continue;
 
@@ -281,14 +286,14 @@ function finalizeAgentOutput(
             ? merged.auth_type === "id_pw" && !!merged.login_id
             : false;
 
-    if (!readyForSecureInput || hasOpenCall(service)) continue;
+    if (!readyForSecureInput) continue;
 
-    nextToolCalls.push({ name: "open_secure_input", args: { service } });
+    if (!hasOpenCall(service)) {
+      nextToolCalls.push({ name: "open_secure_input", args: { service } });
+    }
 
     if (!nextReply) {
-      nextReply = merged.auth_type === "cert"
-        ? "공동인증서 파일과 비밀번호 입력 화면을 열어드릴게요."
-        : "비밀번호 입력 화면을 열어드릴게요.";
+      nextReply = getSecureInputReply(merged.auth_type);
     }
   }
 
