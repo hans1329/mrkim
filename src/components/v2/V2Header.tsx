@@ -135,8 +135,7 @@ export const V2Header = ({ isDrawerOpen, onToggleDrawer }: V2HeaderProps) => {
                 boxShadow: "0 0 0 3px rgba(0,122,255,0.18), 0 6px 18px rgba(0,122,255,0.45)",
               }
             : {
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: "transparent",
               }
         }
       >
