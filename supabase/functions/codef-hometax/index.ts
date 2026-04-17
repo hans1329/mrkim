@@ -266,8 +266,8 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
 
   console.log(
     `Registering hometax account with certificate, identity=${cleanedNumber}, ` +
-    `clientType=${clientType}, certMode=${isDerMode ? "DER+KEY" : "PFX"}, ` +
-    `attempts=${attemptPlans.map((p) => `${p.loginType}:${p.organization}`).join(",")}`
+    `clientType=${clientType}, certMode=${isDerMode ? "DER+KEY" : "PFX"}, hasUserIdentity=${!!cleanedIdentity}, ` +
+    `attempts=${attemptPlans.map((p) => `${p.organization}:${p.passwordKey}`).join(",")}`
   );
 
   let responseText = "";
@@ -276,29 +276,27 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   let lastErrorList: any[] = [];
 
   for (const plan of attemptPlans) {
-    const accountEntry = buildEntry(plan.organization, plan.loginType);
+    const accountEntry = buildEntry(plan.organization, plan.passwordKey);
     const requestBody = { accountList: [accountEntry] };
 
-    // 디버그: 실제 보내는 페이로드 메타 (값은 노출 X, 길이/존재만)
     const debugMeta = {
       loginType: accountEntry.loginType,
       organization: accountEntry.organization,
       clientType: accountEntry.clientType,
       businessType: accountEntry.businessType,
       countryCode: accountEntry.countryCode,
-      passwordLen: String(accountEntry.password || "").length,
+      passwordKey: plan.passwordKey,
+      passwordLen: String((accountEntry as any)[plan.passwordKey] || "").length,
       hasCertFile: !!accountEntry.certFile,
       certFileLen: String(accountEntry.certFile || "").length,
-      hasDerFile: !!accountEntry.derFile,
-      derFileLen: String(accountEntry.derFile || "").length,
       hasKeyFile: !!accountEntry.keyFile,
       keyFileLen: String(accountEntry.keyFile || "").length,
       certType: accountEntry.certType ?? null,
+      hasIdentity: !!accountEntry.identity,
       keys: Object.keys(accountEntry),
     };
     console.log(`→ Payload meta:`, JSON.stringify(debugMeta));
 
-    // 카드/은행과 동일하게 JSON body로 전송해 기관별 파라미터 처리 차이를 제거한다.
     const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
       method: "POST",
       headers: {
@@ -310,7 +308,7 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
 
     responseText = await response.text();
     console.log(
-      `Account create response (loginType=${plan.loginType}, org=${plan.organization}):`,
+      `Account create response (org=${plan.organization}, pwKey=${plan.passwordKey}):`,
       responseText.substring(0, 1500),
     );
 
