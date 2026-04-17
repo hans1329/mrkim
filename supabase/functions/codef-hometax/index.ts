@@ -220,12 +220,15 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   // 인증서 비밀번호를 RSA 암호화
   const encryptedPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // CODEF 홈택스 표준 규격 (은행/카드와 동일):
-  // - loginType "0" (공동인증서)
-  // - certFile (PFX Base64) + certType "pfx"
+  // 홈택스는 기관별 파라미터 편차가 있어 카드/은행과 동일한 전송 구조를 유지하되
+  // 실제 등록은 홈택스 전용 loginType "2"를 우선 시도하고, 기존 "0"도 폴백으로 남긴다.
+  // - DER+KEY: derFile + keyFile, certType 생략
+  // - PFX/P12: certFile + certType "pfx"
   // - password = 인증서 비밀번호 RSA 암호화
-  // - organization: 0001(국세청 일반) → 0002(전자세금계산서) 폴백
+  // - organization: 0001(국세청 일반) → 0002(전자세금계산서) 순서
   const attemptPlans = [
+    { loginType: "2", organization: "0001" },
+    { loginType: "2", organization: "0002" },
     { loginType: "0", organization: "0001" },
     { loginType: "0", organization: "0002" },
   ];
@@ -290,15 +293,14 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
     };
     console.log(`→ Payload meta:`, JSON.stringify(debugMeta));
 
-    // CODEF 공식 SDK 규격: body를 URL-encode 해서 전송
-    // (.write(encodeURIComponent(JSON.stringify(param))) — easycodef-node 동일)
+    // 카드/은행과 동일하게 JSON body로 전송해 기관별 파라미터 처리 차이를 제거한다.
     const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      body: encodeURIComponent(JSON.stringify(requestBody)),
+      body: JSON.stringify(requestBody),
     });
 
     responseText = await response.text();
