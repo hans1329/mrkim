@@ -4,8 +4,53 @@ import { Send, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useV2Voice } from "./V2VoiceContext";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { useCardConnection } from "@/hooks/useCardConnection";
+import { useAccountConnection } from "@/hooks/useAccountConnection";
 import { toast } from "sonner";
 import { SecureCredentialSheet, type SecureService, type SecureCredentialPayload } from "./SecureCredentialSheet";
+
+// ─── 기관 라벨 → ID 매핑 (음성/채팅 입력의 한글명을 codef/hyphen ID로 변환) ───
+const BANK_LABEL_TO_ID: Record<string, string> = {
+  "신한은행": "shinhan", "신한": "shinhan",
+  "kb국민은행": "kb", "국민은행": "kb", "kb": "kb", "국민": "kb",
+  "우리은행": "woori", "우리": "woori",
+  "하나은행": "hana", "하나": "hana",
+  "nh농협은행": "nh", "농협": "nh", "nh": "nh", "농협은행": "nh",
+  "ibk기업은행": "ibk", "기업은행": "ibk", "ibk": "ibk",
+  "카카오뱅크": "kakao", "카뱅": "kakao", "카카오": "kakao",
+  "토스뱅크": "toss", "토스": "toss",
+  "케이뱅크": "kbank", "k뱅크": "kbank", "kbank": "kbank",
+};
+const CARD_LABEL_TO_ID: Record<string, string> = {
+  "신한카드": "shinhan", "신한": "shinhan",
+  "삼성카드": "samsung", "삼성": "samsung",
+  "kb국민카드": "kb", "국민카드": "kb", "kb": "kb", "국민": "kb",
+  "현대카드": "hyundai", "현대": "hyundai",
+  "롯데카드": "lotte", "롯데": "lotte",
+  "bc카드": "bc", "bc": "bc", "비씨카드": "bc",
+  "하나카드": "hana", "하나": "hana",
+  "우리카드": "woori", "우리": "woori",
+  "nh농협카드": "nh", "농협카드": "nh", "nh": "nh",
+};
+
+const normalizeInstitution = (raw: string | undefined, kind: "bank" | "card"): string | undefined => {
+  if (!raw) return undefined;
+  const key = raw.toLowerCase().replace(/\s+/g, "");
+  const map = kind === "bank" ? BANK_LABEL_TO_ID : CARD_LABEL_TO_ID;
+  return map[key] || raw.toLowerCase();
+};
+
+// File → base64 (data URL prefix 제거)
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const r = reader.result as string;
+      resolve(r.includes(",") ? r.split(",")[1] : r);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -78,7 +123,19 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
     toggleVoice,
     onCommit,
   } = useV2Voice();
-  const { hometaxConnected, cardConnected, accountConnected, deliveryConnected, refetch: refetchConnection } = useConnection();
+  const { hometaxConnected, cardConnected, accountConnected, deliveryConnected, refetch: refetchConnection, connectService, profile } = useConnection();
+  const { registerCardAccount } = useCardConnection();
+  const { registerBankAccount } = useAccountConnection();
+
+  // 사업자번호 → clientType ('B' 법인 / 'P' 개인) 자동 판별
+  const getClientType = useCallback((): "P" | "B" => {
+    const brn = (stateRef.current.business_number || profile?.business_registration_number || "").replace(/\D/g, "");
+    if (brn.length === 10) {
+      const middle = parseInt(brn.slice(3, 5), 10);
+      if (middle >= 81 && middle <= 99) return "B";
+    }
+    return "P";
+  }, [profile?.business_registration_number]);
 
   // 보안 입력 시트 상태
   const [secureSheet, setSecureSheet] = useState<{ open: boolean; service: SecureService; pending: PendingConnection } | null>(null);
@@ -523,23 +580,6 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
           loginId={secureSheet.pending.login_id}
           onClose={() => setSecureSheet(null)}
           onSubmit={async (payload) => {
-            // [TODO] 실제 연동 호출 연결 지점
-            // - hometax: supabase.functions.invoke("codef-hometax", { body: { auth_type, cert_file, cert_password, login_id, password } })
-            // - card:    supabase.functions.invoke("codef-card",    { body: { institution, auth_type, login_id, password, cert_file, cert_password } })
-            // - account: supabase.functions.invoke("codef-bank",    { body: { institution, auth_type, login_id, password, cert_file, cert_password } })
-            // - baemin:  supabase.functions.invoke("hyphen-baemin", { body: { action: "verify", userId: login_id, userPw: password } })
-            // - coupangeats: supabase.functions.invoke("hyphen-coupangeats", { body: { action: "verify", userId: login_id, userPw: password } })
-            const masked = {
-              service: payload.service,
-              institution: payload.institution,
-              auth_type: payload.auth_type,
-              login_id: payload.login_id,
-              password: payload.password ? "***" : undefined,
-              cert_password: payload.cert_password ? "***" : undefined,
-              cert_file: payload.cert_file?.name,
-            };
-            console.log("[SecureCredentialSheet] payload received (mock connect)", masked);
-
             const serviceLabel: Record<SecureService, string> = {
               hometax: "홈택스",
               card: "카드",
@@ -550,38 +590,139 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
             const label = serviceLabel[payload.service];
             const where = payload.institution ? `${payload.institution} ${label}` : label;
 
-            // 1) 접수 토스트
-            toast.success(`${where} 연동 정보가 안전하게 접수되었어요`);
-            setSecureSheet(null);
+            console.log("[SecureCredentialSheet] submit", {
+              service: payload.service,
+              institution: payload.institution,
+              auth_type: payload.auth_type,
+              login_id: payload.login_id,
+              has_password: !!payload.password,
+              has_cert: !!payload.cert_file,
+            });
 
-            // 2) "처리 중" 시스템 메시지 → 에이전트가 "잠시만요, 연동 진행 중이에요" 류 안내
+            // 진행 중 안내
             void handleUserMessage(
-              `(시스템: ${payload.service} 보안 정보 입력 완료. 연동을 진행 중입니다. "잠시만 기다려주세요" 류로 짧게 안내해주세요. 다음 단계는 안내하지 마세요.)`
+              `(시스템: ${where} 연동을 시작합니다. "${where} 연동을 시작할게요. 잠시만 기다려주세요" 류로 짧게 안내하세요. 다음 단계는 아직 안내하지 마세요.)`
             );
 
-            // 3) 모의 연동: 1.5초 후 성공 신호 + 축하 메시지 → 에이전트가 다음 단계 안내
-            window.setTimeout(() => {
-              // 로컬 상태도 즉시 반영 (실제 연동 시에는 refetchConnection이 처리)
-              setState((prev) => {
-                const next = { ...prev };
-                if (payload.service === "hometax") next.hometax_connected = true;
-                else if (payload.service === "card") next.card_connected = true;
-                else if (payload.service === "account") next.account_connected = true;
-                else if (payload.service === "baemin" || payload.service === "coupangeats") next.delivery_connected = true;
-                // pending 정리
-                if (next.pending) {
-                  const { [payload.service]: _omit, ...rest } = next.pending;
-                  next.pending = rest;
+            try {
+              const clientType = getClientType();
+              let ok = false;
+
+              if (payload.service === "card") {
+                const cardId = normalizeInstitution(payload.institution, "card");
+                if (!cardId) throw new Error("카드사를 인식하지 못했어요. 다시 말씀해주세요.");
+                let certOptions: Parameters<typeof registerCardAccount>[3] | undefined;
+                if (payload.auth_type === "cert" && payload.cert_file && payload.cert_password) {
+                  certOptions = {
+                    loginType: "0",
+                    certFile: await fileToBase64(payload.cert_file),
+                    certPassword: payload.cert_password,
+                    clientType,
+                  };
                 }
-                return next;
-              });
+                const connectedId = await registerCardAccount(
+                  cardId,
+                  payload.login_id || "",
+                  payload.password || "",
+                  certOptions,
+                  clientType,
+                );
+                ok = !!connectedId;
+              } else if (payload.service === "account") {
+                const bankId = normalizeInstitution(payload.institution, "bank");
+                if (!bankId) throw new Error("은행을 인식하지 못했어요. 다시 말씀해주세요.");
+                let certOptions: Parameters<typeof registerBankAccount>[3] | undefined;
+                if (payload.auth_type === "cert" && payload.cert_file && payload.cert_password) {
+                  certOptions = {
+                    loginType: "0",
+                    certFile: await fileToBase64(payload.cert_file),
+                    certPassword: payload.cert_password,
+                    clientType,
+                  };
+                }
+                const connectedId = await registerBankAccount(
+                  bankId,
+                  payload.login_id || "",
+                  payload.password || "",
+                  certOptions,
+                  clientType,
+                );
+                ok = !!connectedId;
+              } else if (payload.service === "hometax") {
+                if (!payload.cert_file || !payload.cert_password) {
+                  throw new Error("홈택스는 공동인증서 파일과 비밀번호가 필요해요.");
+                }
+                const brn = stateRef.current.business_number || profile?.business_registration_number;
+                if (!brn) throw new Error("사업자등록번호가 먼저 필요해요.");
+                const certFileBase64 = await fileToBase64(payload.cert_file);
+                const { data, error } = await supabase.functions.invoke("codef-hometax", {
+                  body: {
+                    action: "register",
+                    businessNumber: String(brn).replace(/\D/g, ""),
+                    certFileBase64,
+                    certPassword: payload.cert_password,
+                    clientType,
+                  },
+                });
+                if (error) throw error;
+                if (data?.status !== "completed" || !data?.connectedId) {
+                  throw new Error(data?.error || "홈택스 연동에 실패했어요.");
+                }
+                await connectService("codef_hometax_tax_invoice", data.connectedId);
+                ok = true;
+              } else if (payload.service === "baemin" || payload.service === "coupangeats") {
+                const fnName = payload.service === "baemin" ? "hyphen-baemin" : "hyphen-coupangeats";
+                const connectorId = payload.service === "baemin" ? "hyphen_baemin" : "hyphen_coupangeats";
+                const { data, error } = await supabase.functions.invoke(fnName, {
+                  body: {
+                    action: "verify",
+                    userId: payload.login_id,
+                    userPw: payload.password,
+                  },
+                });
+                if (error || !data?.success) {
+                  throw new Error(data?.error || "계정 검증에 실패했어요.");
+                }
+                const meta = payload.service === "baemin"
+                  ? { bm_user_id: payload.login_id, bm_user_pw: payload.password }
+                  : { ce_user_id: payload.login_id, ce_user_pw: payload.password };
+                await connectService(connectorId, `${payload.service}_${payload.login_id}`, meta);
+                ok = true;
+              }
 
-              toast.success(`🎉 ${where} 연동이 완료됐어요!`);
+              setSecureSheet(null);
 
+              if (ok) {
+                // 로컬 상태 즉시 반영
+                setState((prev) => {
+                  const next = { ...prev };
+                  if (payload.service === "hometax") next.hometax_connected = true;
+                  else if (payload.service === "card") next.card_connected = true;
+                  else if (payload.service === "account") next.account_connected = true;
+                  else next.delivery_connected = true;
+                  if (next.pending) {
+                    const { [payload.service]: _omit, ...rest } = next.pending;
+                    next.pending = rest;
+                  }
+                  return next;
+                });
+                await refetchConnection?.();
+                toast.success(`🎉 ${where} 연동이 완료됐어요!`);
+                void handleUserMessage(
+                  `(시스템: ${where} 연동이 성공적으로 완료되었습니다! 대표님께 축하의 한마디(이모지 1개 포함, 1~2문장)를 건네고, 남아있는 다음 연동 항목을 자연스럽게 제안해주세요. 모두 끝났다면 finish_onboarding 도구를 호출하세요.)`
+                );
+              } else {
+                throw new Error("연동에 실패했어요.");
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : "연동 중 오류가 발생했어요.";
+              console.error("[SecureCredentialSheet] connect error:", err);
+              toast.error(msg);
               void handleUserMessage(
-                `(시스템: ${where} 연동이 성공적으로 완료되었습니다! 대표님께 축하의 한마디(이모지 1개 포함, 1~2문장)를 건네고, 남아있는 다음 연동 항목을 자연스럽게 제안해주세요. 모두 끝났다면 finish_onboarding 도구를 호출하세요.)`
+                `(시스템: ${where} 연동에 실패했습니다. 사유: "${msg}". 대표님께 부드럽게 사과하고 다시 시도하실지, 다른 항목을 먼저 진행할지 여쭤보세요.)`
               );
-            }, 1500);
+              throw err; // 시트가 열린 채로 유지되도록
+            }
           }}
         />
       )}
