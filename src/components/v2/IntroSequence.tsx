@@ -202,19 +202,14 @@ export const IntroSequence = ({
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.15, type: "spring" as const, stiffness: 300, damping: 30 }}
-                      className="rounded-2xl p-[1px]"
+                      className="flex items-center justify-between px-5 py-3.5 rounded-2xl"
                       style={{
-                        background: "linear-gradient(135deg, rgba(0,122,255,0.5), rgba(88,86,214,0.4), rgba(175,82,222,0.5), rgba(255,45,85,0.3))",
+                        background: `linear-gradient(135deg, ${item.color}, rgba(20,20,28,0.6))`,
+                        backdropFilter: "blur(24px)",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.25)",
+                        border: "1px solid rgba(255,255,255,0.08)",
                       }}
                     >
-                      <div
-                        className="flex items-center justify-between px-5 py-3.5 rounded-[15px]"
-                        style={{
-                          background: `linear-gradient(135deg, ${item.color}, rgba(10,10,15,0.85))`,
-                          backdropFilter: "blur(24px)",
-                          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.2)",
-                        }}
-                      >
                       <span className="text-[13px]" style={{ color: "rgba(255,255,255,0.85)" }}>
                         {item.label}
                       </span>
@@ -224,7 +219,7 @@ export const IntroSequence = ({
                           style={{
                             color: item.highlight
                               ? "#FF9500"
-                              : "rgba(255,255,255,0.9)",
+                              : "rgba(255,255,255,0.95)",
                           }}
                         >
                           {item.value}
@@ -241,7 +236,6 @@ export const IntroSequence = ({
                             {item.change}
                           </span>
                         )}
-                      </div>
                       </div>
                     </motion.div>
                   ))}
