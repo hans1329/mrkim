@@ -185,6 +185,17 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
           const target = String(call.args.target || "current");
           return `${target} 단계를 건너뛰었습니다. 다음 단계로 진행해주세요.`;
         }
+        case "finish_onboarding": {
+          return "온보딩이 종료되었습니다.";
+        }
+        default:
+          return `알 수 없는 도구: ${call.name}`;
+      }
+    } catch (e) {
+      console.error("tool error", call.name, e);
+      return `도구 실행 실패: ${e instanceof Error ? e.message : "unknown"}`;
+    }
+  }, [onProgress]);
 
   // ─── 에이전트 호출 ──────────────────────────────────────────
 
