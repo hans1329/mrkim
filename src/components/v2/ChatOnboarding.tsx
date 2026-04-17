@@ -512,6 +512,33 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
           <Send className="w-4 h-4" style={{ color: "rgba(255,255,255,0.95)" }} />
         </button>
       </form>
+
+      {/* 보안 입력 시트 (비밀번호/인증서) */}
+      {secureSheet && (
+        <SecureCredentialSheet
+          open={secureSheet.open}
+          service={secureSheet.service}
+          institution={secureSheet.pending.institution}
+          authType={secureSheet.pending.auth_type}
+          loginId={secureSheet.pending.login_id}
+          onClose={() => setSecureSheet(null)}
+          onSubmit={async (payload) => {
+            // 실제 연동 호출은 추후 단계에서 각 엣지 함수(codef-bank/card/hometax, hyphen-baemin/coupangeats)와 연결
+            // 지금은 보안값을 받아 에이전트에 진행 신호만 보냄
+            console.log("[SecureCredentialSheet] payload received", {
+              ...payload,
+              password: payload.password ? "***" : undefined,
+              cert_password: payload.cert_password ? "***" : undefined,
+              cert_file: payload.cert_file?.name,
+            });
+            toast.success(`${payload.service} 연동 정보가 안전하게 접수되었어요`);
+            setSecureSheet(null);
+            // 에이전트에 알려서 다음 단계로 자연스럽게 전환
+            void handleUserMessage(`(시스템: ${payload.service} 보안 정보 입력이 완료되었습니다. 곧 연동이 진행됩니다. 다음 단계를 안내해주세요.)`);
+          }}
+        />
+      )}
     </div>
   );
+}
 };
