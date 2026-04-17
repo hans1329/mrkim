@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, X, Check } from "lucide-react";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { X, Send, Loader2, Check } from "lucide-react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useScribe, CommitStrategy } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -45,7 +45,6 @@ const steps: RegistrationStep[] = [
     type: "text",
     placeholder: "예: 250만원 또는 12000원",
     parse: (input: string) => {
-      // Extract numbers from voice input like "이백오십만원", "250만원", "12000원"
       const cleaned = input.replace(/[,\s]/g, "");
       const manMatch = cleaned.match(/(\d+)\s*만/);
       if (manMatch) return String(Number(manMatch[1]) * 10000);
@@ -65,7 +64,7 @@ const steps: RegistrationStep[] = [
   },
   {
     id: "phone",
-    question: "연락처를 알려주세요. (선택)",
+    question: "연락처를 알려주세요. (선택사항이라 '없음'이라 답해도 돼요)",
     type: "text",
     placeholder: "예: 010-1234-5678",
   },
@@ -76,7 +75,7 @@ interface VoiceEmployeeRegistrationProps {
   onComplete: (employee: Record<string, string>) => void;
 }
 
-// Yarn ball avatar (reused from ChatOnboarding)
+// Yarn ball avatar (ChatOnboarding 동일)
 const YarnBallAvatar = () => (
   <div className="w-8 h-8 flex-shrink-0 rounded-full">
     <svg viewBox="0 0 32 32" className="w-full h-full" style={{ filter: "blur(3px) saturate(1.4)" }}>
@@ -85,83 +84,36 @@ const YarnBallAvatar = () => (
       <circle cx="16" cy="19" r="10" fill="#34C759" opacity={0.7} />
       <circle cx="14" cy="17" r="8" fill="#FF6B9D" opacity={0.6} />
       <circle cx="18" cy="16" r="7" fill="#FF9F0A" opacity={0.5} />
+      <circle cx="12" cy="18" r="8" fill="#5856D6" opacity={0.65} />
+      <circle cx="20" cy="14" r="7" fill="#FF375F" opacity={0.55} />
     </svg>
   </div>
 );
 
-// Oscilloscope
-const MiniOscilloscope = ({ volumeRef }: { volumeRef: React.RefObject<number> }) => {
-  const pathRef = useRef<SVGPathElement>(null);
-  const animRef = useRef<number>();
-
-  useEffect(() => {
-    const animate = () => {
-      const el = pathRef.current;
-      if (!el) return;
-      const t = Date.now() / 1000;
-      const vol = volumeRef.current ?? 0;
-      const amp = 2 + vol * 16;
-      const points: string[] = [];
-      for (let x = 0; x <= 200; x += 3) {
-        const y = 15 + Math.sin(x * 0.02 + t * 2) * amp
-          + Math.sin(x * 0.035 + t * 1.3) * amp * 0.3;
-        points.push(`${x === 0 ? "M" : "L"}${x},${y.toFixed(1)}`);
-      }
-      el.setAttribute("d", points.join(" "));
-      animRef.current = requestAnimationFrame(animate);
-    };
-    animate();
-    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, [volumeRef]);
-
-  return (
-    <div className="w-full h-8 pointer-events-none overflow-hidden">
-      <svg viewBox="0 0 200 30" preserveAspectRatio="none" className="w-full h-full" style={{ filter: "blur(1px)" }}>
-        <defs>
-          <linearGradient id="empWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#007AFF" stopOpacity="0" />
-            <stop offset="30%" stopColor="#007AFF" stopOpacity="0.6" />
-            <stop offset="50%" stopColor="#5856D6" stopOpacity="0.8" />
-            <stop offset="70%" stopColor="#AF52DE" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#AF52DE" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path ref={pathRef} fill="none" stroke="url(#empWaveGrad)" strokeWidth={2} strokeLinecap="round" />
-      </svg>
-    </div>
-  );
-};
+type Msg = { from: "bot" | "user"; text: string };
 
 export const VoiceEmployeeRegistration = ({ onClose, onComplete }: VoiceEmployeeRegistrationProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const currentStepRef = useRef(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [inputValue, setInputValue] = useState("");
-  const [messages, setMessages] = useState<{ from: "bot" | "user"; text: string }[]>([]);
-  const [showInput, setShowInput] = useState(false);
-  const [showTextFallback, setShowTextFallback] = useState(false);
-  const [sttReady, setSttReady] = useState(false);
+  const [messages, setMessages] = useState<Msg[]>([]);
   const [saving, setSaving] = useState(false);
   const [completed, setCompleted] = useState(false);
   const advanceRef = useRef<(value: string) => void>();
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const volumeRef = useRef(0);
-  const streamRef = useRef<MediaStream | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
-  const animFrameRef = useRef<number>();
 
-  const step = steps[currentStep];
-
-  // Determine which steps to show based on pay_type
+  // pay_type에 따라 weekly_hours 스킵
   const getActiveSteps = useCallback((ans: Record<string, string>) => {
     return steps.filter((s) => {
-      // weekly_hours only needed for hourly
       if (s.id === "weekly_hours" && ans.pay_type !== "hourly") return false;
       return true;
     });
   }, []);
+
+  const activeSteps = getActiveSteps(answers);
+  const isConfirmation = currentStep >= activeSteps.length;
+  const step = activeSteps[currentStep];
 
   // STT
   const scribe = useScribe({
@@ -175,79 +127,39 @@ export const VoiceEmployeeRegistration = ({ onClose, onComplete }: VoiceEmployee
     },
   });
 
-  // Audio analysis
-  useEffect(() => {
-    if (!scribe.isConnected) { volumeRef.current = 0; return; }
-    let cancelled = false;
-    const initAudio = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } });
-        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
-        streamRef.current = stream;
-        const audioCtx = new AudioContext();
-        if (audioCtx.state === "suspended") await audioCtx.resume();
-        audioCtxRef.current = audioCtx;
-        const source = audioCtx.createMediaStreamSource(stream);
-        const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 512; analyser.smoothingTimeConstant = 0.55;
-        source.connect(analyser);
-        analyserRef.current = analyser;
-        dataArrayRef.current = new Uint8Array(analyser.fftSize);
-      } catch {}
-    };
-    const poll = () => {
-      if (cancelled) return;
-      if (analyserRef.current && dataArrayRef.current) {
-        analyserRef.current.getByteTimeDomainData(dataArrayRef.current);
-        let sum = 0;
-        for (let i = 0; i < dataArrayRef.current.length; i++) {
-          const n = (dataArrayRef.current[i] - 128) / 128; sum += n * n;
-        }
-        const rms = Math.sqrt(sum / dataArrayRef.current.length);
-        volumeRef.current += (Math.min(1, rms * 8) - volumeRef.current) * 0.22;
-      } else { volumeRef.current += (0 - volumeRef.current) * 0.08; }
-      animFrameRef.current = requestAnimationFrame(poll);
-    };
-    initAudio().then(() => { if (!cancelled) poll(); });
-    return () => {
-      cancelled = true;
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      streamRef.current?.getTracks().forEach(t => t.stop());
-      audioCtxRef.current?.close();
-      streamRef.current = null; audioCtxRef.current = null; analyserRef.current = null;
-    };
-  }, [scribe.isConnected]);
-
-  // Init STT
+  // STT 연결
   useEffect(() => {
     const init = async () => {
       try {
         const { data, error } = await supabase.functions.invoke("elevenlabs-scribe-token");
         if (error || !data?.token) return;
         await scribe.connect({ token: data.token, microphone: { echoCancellation: true, noiseSuppression: true } });
-        setSttReady(true);
-      } catch {}
+      } catch {
+        /* noop */
+      }
     };
     init();
-    return () => { scribe.disconnect(); };
+    return () => {
+      scribe.disconnect();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // First message
+  // 첫 인사
   useEffect(() => {
     const t = setTimeout(() => {
-      setMessages([{ from: "bot", text: "직원을 등록할게요.\n이름부터 알려주세요!" }]);
-      setTimeout(() => setShowInput(true), 500);
-      setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
-    }, 300);
+      setMessages([
+        { from: "bot", text: "직원을 등록할게요.\n이름부터 알려주세요!" },
+      ]);
+    }, 200);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Scroll to bottom
+  // 자동 스크롤
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, scribe.partialTranscript]);
+    const t = setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 50);
+    return () => clearTimeout(t);
+  }, [messages, scribe.partialTranscript, saving]);
 
   const saveEmployee = useCallback(async (data: Record<string, string>) => {
     setSaving(true);
@@ -257,8 +169,8 @@ export const VoiceEmployeeRegistration = ({ onClose, onComplete }: VoiceEmployee
 
       const isHourly = data.pay_type === "hourly";
       const amount = Number(data.pay_amount) || 0;
-
       const employeeType = (data.employee_type || "정규직") as "정규직" | "계약직" | "알바";
+
       const { error } = await supabase.from("employees").insert([{
         user_id: userData.user.id,
         name: data.name,
@@ -266,7 +178,7 @@ export const VoiceEmployeeRegistration = ({ onClose, onComplete }: VoiceEmployee
         monthly_salary: isHourly ? null : amount,
         hourly_rate: isHourly ? amount : null,
         weekly_hours: isHourly ? Number(data.weekly_hours) || null : null,
-        phone: data.phone || null,
+        phone: data.phone && data.phone !== "없음" ? data.phone : null,
         source: "voice",
       }]);
 
@@ -286,58 +198,71 @@ export const VoiceEmployeeRegistration = ({ onClose, onComplete }: VoiceEmployee
     const currentStepData = getActiveSteps(answers)[currentStepRef.current];
     if (!currentStepData) return;
 
-    // Parse if parser exists
     const parsed = currentStepData.parse ? currentStepData.parse(value) : value;
-
-    // For choice steps, try to match voice input to a choice
     let finalValue = parsed;
     if (currentStepData.type === "choice" && currentStepData.choices) {
       const matched = currentStepData.choices.find(
         (c) => value.includes(c.label) || value.includes(c.value)
       );
       if (matched) finalValue = matched.value;
-      else finalValue = parsed;
     }
 
     const newAnswers = { ...answers, [currentStepData.id]: finalValue };
     setAnswers(newAnswers);
     setMessages((prev) => [...prev, { from: "user", text: value }]);
-    setShowInput(false);
-    setShowTextFallback(false);
     setInputValue("");
 
-    const activeSteps = getActiveSteps(newAnswers);
+    const nextActive = getActiveSteps(newAnswers);
     const nextIdx = currentStepRef.current + 1;
 
-    if (nextIdx < activeSteps.length) {
+    if (nextIdx < nextActive.length) {
       setTimeout(() => {
-        setMessages((prev) => [...prev, { from: "bot", text: activeSteps[nextIdx].question }]);
+        setMessages((prev) => [...prev, { from: "bot", text: nextActive[nextIdx].question }]);
         setCurrentStep(nextIdx);
         currentStepRef.current = nextIdx;
-        setTimeout(() => setShowInput(true), 500);
-        setTimeout(() => setShowTextFallback(true), sttReady ? 5000 : 2000);
-      }, 600);
+      }, 500);
     } else {
-      // Show confirmation
       setTimeout(() => {
         const payLabel = newAnswers.pay_type === "hourly"
           ? `시급 ${Number(newAnswers.pay_amount).toLocaleString()}원 · 주 ${newAnswers.weekly_hours}시간`
           : `월급 ${(Number(newAnswers.pay_amount) / 10000).toFixed(0)}만원`;
         setMessages((prev) => [...prev, {
           from: "bot",
-          text: `확인할게요!\n\n👤 ${newAnswers.name}\n💼 ${newAnswers.employee_type}\n💰 ${payLabel}${newAnswers.phone ? `\n📱 ${newAnswers.phone}` : ""}\n\n이대로 등록할까요?`,
+          text: `확인할게요!\n\n👤 ${newAnswers.name}\n💼 ${newAnswers.employee_type}\n💰 ${payLabel}${newAnswers.phone && newAnswers.phone !== "없음" ? `\n📱 ${newAnswers.phone}` : ""}\n\n이대로 등록할까요?`,
         }]);
-        setCurrentStep(activeSteps.length); // confirmation step
-        currentStepRef.current = activeSteps.length;
-        setTimeout(() => setShowInput(true), 500);
-      }, 600);
+        setCurrentStep(nextActive.length);
+        currentStepRef.current = nextActive.length;
+      }, 500);
     }
-  }, [answers, getActiveSteps, sttReady]);
+  }, [answers, getActiveSteps]);
 
   useEffect(() => { advanceRef.current = advance; }, [advance]);
 
-  const activeSteps = getActiveSteps(answers);
-  const isConfirmation = currentStep >= activeSteps.length;
+  const handleSend = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const v = inputValue.trim();
+    if (!v) return;
+    advance(v);
+  };
+
+  // 저장 완료 배지
+  const savedBadges = useMemo(() => {
+    const items: { key: string; label: string }[] = [];
+    if (answers.name) items.push({ key: "name", label: `이름 · ${answers.name}` });
+    if (answers.employee_type) items.push({ key: "type", label: `고용 · ${answers.employee_type}` });
+    if (answers.pay_type) {
+      const payLabel = answers.pay_type === "hourly" ? "시급제" : "월급제";
+      items.push({ key: "pay_type", label: `급여 · ${payLabel}` });
+    }
+    if (answers.pay_amount) {
+      const amt = Number(answers.pay_amount);
+      const display = amt >= 10000 ? `${(amt / 10000).toFixed(0)}만원` : `${amt.toLocaleString()}원`;
+      items.push({ key: "pay_amount", label: `금액 · ${display}` });
+    }
+    if (answers.weekly_hours) items.push({ key: "weekly_hours", label: `주 ${answers.weekly_hours}시간` });
+    if (answers.phone && answers.phone !== "없음") items.push({ key: "phone", label: `연락처 · ${answers.phone}` });
+    return items;
+  }, [answers]);
 
   return (
     <motion.div
@@ -355,153 +280,214 @@ export const VoiceEmployeeRegistration = ({ onClose, onComplete }: VoiceEmployee
       />
 
       {/* Top bar */}
-      <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-2">
-        <div className="flex items-center gap-2">
-          <Mic className="w-4 h-4" style={{ color: scribe.isConnected ? "#34C759" : "rgba(255,255,255,0.3)" }} />
-          <span className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
-            직원 등록
-          </span>
-        </div>
+      <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-2 flex-shrink-0">
+        <span className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+          직원 등록
+        </span>
         <button
           onClick={() => { scribe.disconnect(); onClose(); }}
           className="w-8 h-8 flex items-center justify-center rounded-full"
           style={{ background: "rgba(255,255,255,0.06)" }}
+          aria-label="닫기"
         >
           <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} />
         </button>
       </div>
 
-      {/* Chat area */}
-      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4 relative z-10 no-scrollbar">
-        <AnimatePresence>
-          {messages.map((msg, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {msg.from === "bot" ? (
-                <div className="flex items-start gap-2.5 mb-3">
-                  <YarnBallAvatar />
-                  <div
-                    className="rounded-2xl rounded-tl-md px-4 py-3 max-w-[260px]"
-                    style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}
-                  >
-                    <p className="text-[14px] leading-relaxed whitespace-pre-line" style={{ color: "rgba(255,255,255,0.85)" }}>
-                      {msg.text}
-                    </p>
-                  </div>
+      {/* 저장 완료 배지 바 (ChatOnboarding 동일) */}
+      {savedBadges.length > 0 && (
+        <div className="relative z-10 px-4 pt-1 pb-1 flex-shrink-0">
+          <div className="flex flex-wrap gap-1.5">
+            {savedBadges.map((b) => (
+              <motion.div
+                key={b.key}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2 }}
+                className="inline-flex items-center gap-1 rounded-full pl-1.5 pr-2.5 py-1"
+                style={{
+                  background: "rgba(52, 199, 89, 0.14)",
+                  border: "1px solid rgba(52, 199, 89, 0.32)",
+                }}
+              >
+                <span
+                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center"
+                  style={{ background: "#34C759" }}
+                >
+                  <Check className="w-2.5 h-2.5" style={{ color: "white" }} strokeWidth={3} />
+                </span>
+                <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.92)" }}>
+                  {b.label}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Messages (ChatOnboarding 동일 스타일) */}
+      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-4 pb-4">
+        <AnimatePresence initial={false}>
+          {messages.map((m, idx) =>
+            m.from === "bot" ? (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className="flex items-start gap-2.5 mb-3"
+              >
+                <YarnBallAvatar />
+                <div
+                  className="rounded-2xl rounded-tl-md px-4 py-3 max-w-[260px]"
+                  style={{
+                    background: "rgba(255,255,255,0.07)",
+                    backdropFilter: "blur(16px)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                >
+                  <p className="text-[14px] leading-relaxed whitespace-pre-line" style={{ color: "rgba(255,255,255,0.9)" }}>
+                    {m.text}
+                  </p>
                 </div>
-              ) : (
-                <div className="flex justify-end mb-3">
-                  <div className="rounded-2xl rounded-tr-md px-4 py-3 max-w-[240px]" style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)" }}>
-                    <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.95)" }}>{msg.text}</p>
-                  </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className="flex justify-end mb-3"
+              >
+                <div
+                  className="rounded-2xl rounded-tr-md px-4 py-3 max-w-[240px]"
+                  style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)" }}
+                >
+                  <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.95)" }}>
+                    {m.text}
+                  </p>
                 </div>
-              )}
-            </motion.div>
-          ))}
+              </motion.div>
+            )
+          )}
         </AnimatePresence>
 
         {/* Live partial */}
         {scribe.partialTranscript && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-end mb-3">
-            <div className="rounded-2xl rounded-tr-md px-4 py-3 max-w-[240px]" style={{ background: "linear-gradient(135deg, rgba(0,122,255,0.4), rgba(88,86,214,0.4))" }}>
-              <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.6)" }}>{scribe.partialTranscript}</p>
+          <div className="flex justify-end mb-3">
+            <div
+              className="rounded-2xl rounded-tr-md px-4 py-3 max-w-[240px] opacity-50"
+              style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)" }}
+            >
+              <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.95)" }}>{scribe.partialTranscript}</p>
             </div>
-          </motion.div>
+          </div>
         )}
+
+        {saving && (
+          <div className="flex items-start gap-2.5 mb-3">
+            <YarnBallAvatar />
+            <div
+              className="rounded-2xl rounded-tl-md px-4 py-3"
+              style={{
+                background: "rgba(255,255,255,0.07)",
+                backdropFilter: "blur(16px)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <Loader2 className="w-4 h-4 animate-spin" style={{ color: "rgba(255,255,255,0.5)" }} />
+            </div>
+          </div>
+        )}
+
         <div ref={chatEndRef} />
       </div>
 
-      {/* Bottom input */}
-      <AnimatePresence>
-        {showInput && !completed && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="relative z-10 px-4 pb-8 pt-2 flex flex-col items-center gap-1"
+      {/* 선택지 칩 (현재 단계가 choice일 때) */}
+      {!completed && !isConfirmation && step?.type === "choice" && (
+        <div className="relative z-10 px-4 pb-2 flex-shrink-0 flex flex-wrap gap-2">
+          {step.choices?.map((c) => (
+            <motion.button
+              key={c.value}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => advance(c.label)}
+              className="px-4 py-2.5 rounded-xl text-[13px] font-medium"
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "rgba(255,255,255,0.85)",
+              }}
+            >
+              {c.label}
+            </motion.button>
+          ))}
+        </div>
+      )}
+
+      {/* 확인 단계 액션 */}
+      {!completed && isConfirmation && (
+        <div className="relative z-10 px-4 pb-2 flex-shrink-0 flex gap-2">
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => { scribe.disconnect(); saveEmployee(answers); }}
+            disabled={saving}
+            className="flex-1 py-3 rounded-xl text-[14px] font-semibold flex items-center justify-center gap-2"
+            style={{ background: "linear-gradient(135deg, #34C759, #30D158)", color: "#fff" }}
           >
-            {!isConfirmation && <MiniOscilloscope volumeRef={volumeRef} />}
+            <Check className="w-4 h-4" />
+            {saving ? "등록 중..." : "등록하기"}
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => {
+              setCurrentStep(0);
+              currentStepRef.current = 0;
+              setAnswers({});
+              setMessages([{ from: "bot", text: "처음부터 다시 할게요.\n이름부터 알려주세요!" }]);
+            }}
+            className="px-4 py-3 rounded-xl text-[14px] font-medium"
+            style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}
+          >
+            다시
+          </motion.button>
+        </div>
+      )}
 
-            {/* Choice chips */}
-            {!isConfirmation && step?.type === "choice" && (
-              <div className="flex flex-wrap gap-2 justify-center">
-                {step.choices?.map((c) => (
-                  <motion.button
-                    key={c.value}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => advance(c.label)}
-                    className="px-4 py-2.5 rounded-xl text-[13px] font-medium"
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.8)" }}
-                  >
-                    {c.label}
-                  </motion.button>
-                ))}
-              </div>
-            )}
+      {/* Composer (ChatOnboarding 동일) */}
+      {!completed && !isConfirmation && step?.type === "text" && (
+        <form
+          onSubmit={handleSend}
+          className="relative z-10 flex-shrink-0 flex items-center gap-2 px-3 pb-4 pt-2"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
+        >
+          <input
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder={step.placeholder || "메시지를 입력하세요"}
+            className="flex-1 h-11 rounded-full px-4 text-[14px] outline-none"
+            style={{
+              background: "rgba(255,255,255,0.07)",
+              color: "rgba(255,255,255,0.95)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+            disabled={saving}
+          />
+          <button
+            type="submit"
+            disabled={!inputValue.trim() || saving}
+            className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-40"
+            style={{ background: "linear-gradient(135deg, #007AFF, #5856D6)" }}
+            aria-label="전송"
+          >
+            <Send className="w-4 h-4" style={{ color: "rgba(255,255,255,0.95)" }} />
+          </button>
+        </form>
+      )}
 
-            {/* Text input */}
-            {!isConfirmation && step?.type === "text" && showTextFallback && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-                <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 w-full" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <input
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && inputValue.trim() && advance(inputValue.trim())}
-                    placeholder={step.placeholder}
-                    className="flex-1 bg-transparent outline-none text-[13px] placeholder:text-white/20"
-                    style={{ color: "rgba(255,255,255,0.8)" }}
-                  />
-                  <button
-                    onClick={() => inputValue.trim() && advance(inputValue.trim())}
-                    className="px-2.5 py-1 rounded-lg text-[12px] font-semibold"
-                    style={{
-                      background: inputValue.trim() ? "linear-gradient(135deg, #007AFF, #5856D6)" : "rgba(255,255,255,0.04)",
-                      color: inputValue.trim() ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.2)",
-                    }}
-                  >
-                    확인
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Confirmation buttons */}
-            {isConfirmation && (
-              <div className="flex gap-3 w-full">
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => { scribe.disconnect(); saveEmployee(answers); }}
-                  disabled={saving}
-                  className="flex-1 py-3.5 rounded-xl text-[14px] font-semibold flex items-center justify-center gap-2"
-                  style={{ background: "linear-gradient(135deg, #34C759, #30D158)", color: "#fff" }}
-                >
-                  <Check className="w-4 h-4" />
-                  {saving ? "등록 중..." : "등록하기"}
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    // Reset
-                    setCurrentStep(0);
-                    currentStepRef.current = 0;
-                    setAnswers({});
-                    setMessages([{ from: "bot", text: "처음부터 다시 할게요.\n이름부터 알려주세요!" }]);
-                    setTimeout(() => setShowInput(true), 500);
-                  }}
-                  className="px-5 py-3.5 rounded-xl text-[14px] font-medium"
-                  style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}
-                >
-                  다시
-                </motion.button>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* 닫힌 상태에서 빈 하단 패딩 유지 */}
+      {(completed || (isConfirmation && false)) && (
+        <div style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }} />
+      )}
     </motion.div>
   );
 };
