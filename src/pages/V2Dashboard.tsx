@@ -50,14 +50,60 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
   useEffect(() => {
     if (stage !== "dashboard") return;
 
-    onCommit((text: string) => {
+    let isProcessing = false;
+    let currentAudio: HTMLAudioElement | null = null;
+
+    onCommit(async (text: string) => {
+      if (isProcessing || !text.trim()) return;
+
       const lower = text.toLowerCase().replace(/\s/g, "");
       const matched = EMPLOYEE_INTENTS.some((intent) => lower.includes(intent.replace(/\s/g, "")));
       if (matched) {
         setShowEmployeeReg(true);
+        return;
+      }
+
+      isProcessing = true;
+      // 사용자 발화 표시
+      toast({ title: "🎤 질문", description: text });
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const userId = session?.user?.id;
+
+        // 1) AI 응답 생성
+        const { data: chatData, error: chatError } = await supabase.functions.invoke("chat-ai", {
+          body: {
+            messages: [{ role: "user", content: text }],
+            userId,
+          },
+        });
+
+        if (chatError) throw chatError;
+        const reply = chatData?.response || "죄송합니다, 응답을 만들지 못했어요.";
+
+        // 2) 화면에 답변 표시
+        toast({ title: "💬 김비서", description: reply, duration: 8000 });
+
+        // 3) TTS 재생
+        const { data: ttsData, error: ttsError } = await supabase.functions.invoke("elevenlabs-tts", {
+          body: { text: reply, gender: "female" },
+        });
+
+        if (!ttsError && ttsData?.audio) {
+          if (currentAudio) currentAudio.pause();
+          const audio = new Audio(`data:audio/mpeg;base64,${ttsData.audio}`);
+          currentAudio = audio;
+          audio.play().catch((e) => console.warn("TTS play failed:", e));
+        }
+      } catch (e) {
+        console.error("Voice query failed:", e);
+        toast({ title: "오류", description: "음성 응답 중 문제가 발생했어요.", variant: "destructive" });
+      } finally {
+        isProcessing = false;
       }
     });
-  }, [stage, onCommit]);
+  }, [stage, onCommit, toast]);
 
   const handleEmployeeRegComplete = useCallback((data: Record<string, string>) => {
     setShowEmployeeReg(false);
