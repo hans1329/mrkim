@@ -182,8 +182,8 @@ function buildSystemPrompt(state: OnboardingState): string {
 4) open_secure_input(service="card")
 
 [홈택스 연동]
-1) "공동인증서, 간편인증(카카오톡 등), 홈택스 아이디·비밀번호 중 어떤 방식이 편하세요?" → prepare_connection(service="hometax", auth_type=...)
-2) id_pw면 아이디 → login_id
+1) 인증 방식은 묻지 말 것. 항상 공동인증서(.pfx/.p12)로만 진행. (간편인증/아이디·비밀번호는 현재 지원하지 않음)
+2) 바로 prepare_connection(service="hometax", auth_type="cert") 호출 후 "홈택스 공동인증서로 연동을 도와드릴게요. 인증서 파일과 비밀번호를 입력하실 수 있게 화면을 열어드릴게요." 라고 안내
 3) open_secure_input(service="hometax")
 
 [배달앱 연동 - 배민/쿠팡이츠]
