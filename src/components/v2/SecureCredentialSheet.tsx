@@ -12,6 +12,7 @@ export interface SecureCredentialPayload {
   login_id?: string;
   password?: string;
   cert_file?: File;
+  key_file?: File;
   cert_password?: string;
 }
 
@@ -44,9 +45,13 @@ export function SecureCredentialSheet({
 }: Props) {
   const [password, setPassword] = useState("");
   const [certFile, setCertFile] = useState<File | null>(null);
+  const [keyFile, setKeyFile] = useState<File | null>(null);
   const [certPassword, setCertPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const certExt = certFile?.name.split(".").pop()?.toLowerCase();
+  const isDerMode = certExt === "der";
 
   const title = institution
     ? `${institution} ${SERVICE_LABEL[service]} 연동`
@@ -55,6 +60,7 @@ export function SecureCredentialSheet({
   const reset = () => {
     setPassword("");
     setCertFile(null);
+    setKeyFile(null);
     setCertPassword("");
     setShowPw(false);
   };
@@ -63,6 +69,7 @@ export function SecureCredentialSheet({
     e.preventDefault();
     if (authType === "cert") {
       if (!certFile) return toast.error("인증서 파일(.pfx/.p12)을 선택해주세요");
+      if (isDerMode && !keyFile) return toast.error("signPri.key 파일을 함께 선택해주세요");
       if (!certPassword) return toast.error("인증서 비밀번호를 입력해주세요");
     } else {
       if (!password) return toast.error("비밀번호를 입력해주세요");
@@ -77,6 +84,7 @@ export function SecureCredentialSheet({
         login_id: loginId,
         password: authType === "cert" ? undefined : password,
         cert_file: certFile || undefined,
+        key_file: authType === "cert" ? keyFile || undefined : undefined,
         cert_password: authType === "cert" ? certPassword : undefined,
       });
       reset();
@@ -148,7 +156,7 @@ export function SecureCredentialSheet({
                 <>
                   <div>
                     <label className="text-[12px] text-white/70 mb-1.5 block">
-                      공동인증서 파일 (.pfx / .p12)
+                      공동인증서 파일 (.pfx / .p12 / .der)
                     </label>
                     <label
                       className="flex items-center gap-2 px-3 py-3 rounded-xl border border-dashed cursor-pointer hover:bg-white/5"
@@ -160,12 +168,44 @@ export function SecureCredentialSheet({
                       </span>
                       <input
                         type="file"
-                        accept=".pfx,.p12"
+                        accept=".pfx,.p12,.der"
                         className="hidden"
-                        onChange={(e) => setCertFile(e.target.files?.[0] || null)}
+                        onChange={(e) => {
+                          const nextFile = e.target.files?.[0] || null;
+                          const nextExt = nextFile?.name.split(".").pop()?.toLowerCase();
+                          setCertFile(nextFile);
+                          if (nextExt !== "der") {
+                            setKeyFile(null);
+                          }
+                        }}
                       />
                     </label>
+                    <p className="mt-1.5 text-[11px] text-white/45">
+                      PFX/P12 1개 또는 signCert.der + signPri.key 조합을 지원해요.
+                    </p>
                   </div>
+                  {isDerMode && (
+                    <div>
+                      <label className="text-[12px] text-white/70 mb-1.5 block">
+                        개인키 파일 (signPri.key)
+                      </label>
+                      <label
+                        className="flex items-center gap-2 px-3 py-3 rounded-xl border border-dashed cursor-pointer hover:bg-white/5"
+                        style={{ borderColor: "rgba(255,255,255,0.18)" }}
+                      >
+                        <FileKey className="w-4 h-4 text-white/60" />
+                        <span className="text-[13px] text-white/80 truncate">
+                          {keyFile ? keyFile.name : "signPri.key 선택"}
+                        </span>
+                        <input
+                          type="file"
+                          accept=".key"
+                          className="hidden"
+                          onChange={(e) => setKeyFile(e.target.files?.[0] || null)}
+                        />
+                      </label>
+                    </div>
+                  )}
                   <div>
                     <label className="text-[12px] text-white/70 mb-1.5 block">
                       인증서 비밀번호
