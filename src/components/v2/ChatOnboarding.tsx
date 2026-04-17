@@ -153,28 +153,38 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
           await onProgress?.({ business_number: digits });
           return `사업자번호 저장 완료: ${digits}`;
         }
-        case "start_connection": {
-          const service = String(call.args.service || "").toLowerCase();
-          const drawerType = SERVICE_TO_DRAWER[service];
-          if (!drawerType) return `지원하지 않는 서비스: ${service}`;
-          openDrawer(drawerType);
-          return `${service} 연동 화면을 열었습니다. 사용자가 완료하거나 닫을 때까지 기다려주세요.`;
+        case "prepare_connection": {
+          const service = String(call.args.service || "").toLowerCase() as SecureService;
+          if (!["hometax", "card", "account", "baemin", "coupangeats"].includes(service)) {
+            return `지원하지 않는 서비스: ${service}`;
+          }
+          const update: PendingConnection = {};
+          if (call.args.institution) update.institution = String(call.args.institution).trim();
+          if (call.args.auth_type) update.auth_type = String(call.args.auth_type).trim() as PendingConnection["auth_type"];
+          if (call.args.login_id) update.login_id = String(call.args.login_id).trim();
+          setState((prev) => ({
+            ...prev,
+            pending: {
+              ...(prev.pending || {}),
+              [service]: { ...(prev.pending?.[service] || {}), ...update },
+            },
+          }));
+          const merged = { ...(stateRef.current.pending?.[service] || {}), ...update };
+          return `${service} 연동 정보 임시 저장: ${JSON.stringify(merged)}. 다음 단계로 진행하세요.`;
+        }
+        case "open_secure_input": {
+          const service = String(call.args.service || "").toLowerCase() as SecureService;
+          if (!["hometax", "card", "account", "baemin", "coupangeats"].includes(service)) {
+            return `지원하지 않는 서비스: ${service}`;
+          }
+          const pending = stateRef.current.pending?.[service] || {};
+          setSecureSheet({ open: true, service, pending });
+          return `${service} 보안 입력 화면을 열었습니다. 사용자가 비밀번호 입력을 완료할 때까지 대기.`;
         }
         case "skip_step": {
           const target = String(call.args.target || "current");
           return `${target} 단계를 건너뛰었습니다. 다음 단계로 진행해주세요.`;
         }
-        case "finish_onboarding": {
-          return "온보딩이 종료되었습니다.";
-        }
-        default:
-          return `알 수 없는 도구: ${call.name}`;
-      }
-    } catch (e) {
-      console.error("tool error", call.name, e);
-      return `도구 실행 실패: ${e instanceof Error ? e.message : "unknown"}`;
-    }
-  }, [onProgress, openDrawer]);
 
   // ─── 에이전트 호출 ──────────────────────────────────────────
 
