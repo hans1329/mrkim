@@ -1670,7 +1670,7 @@ serve(async (req) => {
     if (hasData) {
       const visualization = buildVisualization(classified.dataSource, result.data, lastMsg);
       const sourceNote = syncMeta ? `\n\n📌 이 데이터의 출처: ${syncMeta.name} (${syncMeta.source === "codef" ? "코드에프 자동 동기화" : "수동 등록"}, 갱신: ${formatSyncTimestamp(syncMeta.syncedAt)})` : "";
-      const dataPrompt = `당신은 "${secretaryName}"입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${result.prompt}${sourceNote}`;
+      const dataPrompt = `당신은 "${secretaryName}"입니다. ${userTitle}의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${titleRule}\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${result.prompt}${sourceNote}`;
       const geminiResult = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: dataPrompt }] },
         { role: "model", parts: [{ text: "네, 실제 데이터를 기반으로 정확하게 답변하겠습니다." }] },
