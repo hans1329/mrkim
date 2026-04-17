@@ -16,7 +16,7 @@ const fmtMan = (won: number) => `₩${(won / 10000).toFixed(1)}만`;
  * - 데이터가 없으면 스켈레톤으로 표시 (글로벌 룰)
  */
 export const SalesPatternCard = () => {
-  const { transactions, loading } = useTransactions();
+  const { data: transactions, isLoading: loading } = useTransactions();
 
   const { daily, hourly, heatmap, hasData, insights } = useMemo(() => {
     const incomes = (transactions || []).filter((t) => t.type === "income");
