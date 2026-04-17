@@ -1200,15 +1200,17 @@ async function handleComplexQuery(
   toneInst: string,
   voiceMode: boolean,
   voiceDataInst: string,
+  userTitle: string = "대표님",
 ): Promise<{ response: string; visualization?: Visualization | null; sources?: any }> {
-  const systemPrompt = `당신은 "${secretaryName}"입니다. 소상공인 대표님의 AI 경영 비서입니다.
+  const systemPrompt = `당신은 "${secretaryName}"입니다. ${userTitle}의 AI 경영 비서입니다.
 성별: ${genderDesc}
 
 ## 말투 규칙 (반드시 준수!)
 ${toneInst}
 
-## 호칭 규칙 (필수)
-- 상대방을 항상 "대표님"이라고 부르세요. "사장님", "고객님" 등은 사용 금지.
+## 호칭 규칙 (절대 위반 금지)
+- 상대방을 부를 때는 반드시 "${userTitle}"이라고 부르세요.
+- "사장님", "고객님", "이용자님", "회원님" 등의 호칭은 절대 사용하지 마세요.
 
 ## 핵심 역할
 대표님의 경영 질문에 정확하게 답변합니다.
@@ -1452,6 +1454,20 @@ serve(async (req) => {
     const { messages, secretaryName = "김비서", secretaryTone = "polite", secretaryGender = "female", userId, voiceMode = false } = await req.json();
     if (!messages || messages.length === 0) throw new Error("Messages array is required");
 
+    // ━━━ 사용자 호칭 조회 (이름/닉네임 → "OOO 대표님") ━━━
+    let userTitle = "대표님";
+    if (userId) {
+      try {
+        const sbT = createSupabaseClient(req.headers.get("Authorization") || "");
+        if (sbT) {
+          const { data: prof } = await sbT.from("profiles").select("name, nickname").eq("user_id", userId).maybeSingle();
+          const display = (prof as any)?.nickname || (prof as any)?.name;
+          if (display) userTitle = `${display} 대표님`;
+        }
+      } catch (e) { console.warn("user title lookup failed:", e); }
+    }
+    const titleRule = `\n\n## 호칭 규칙 (절대 위반 금지)\n- 상대방을 부를 때는 반드시 "${userTitle}"이라고 부르세요.\n- "고객님", "사장님", "이용자님", "회원님" 같은 호칭은 절대 사용하지 마세요.`;
+
     // ━━━ 일일 할당량 확인 ━━━
     const authHeader = req.headers.get("Authorization") || "";
     const quota = await checkDailyQuota(userId, authHeader);
@@ -1569,7 +1585,7 @@ serve(async (req) => {
         // 음성 모드에서는 "잠시만요" 안내를 응답에 포함하지 않음 (프론트에서 TTS 선행 재생)
         const complexResult = await handleComplexQuery(
           GEMINI_API_KEY, geminiMessages, lastMsg, userId, authHeader,
-          secretaryName, genderDesc, toneInst, voiceMode, voiceDataInst,
+          secretaryName, genderDesc, toneInst, voiceMode, voiceDataInst, userTitle,
         );
         // 세무 상담이 생성되었고 담당 세무사가 있으면 자료 전달 액션 제안
         const suggestedActions: any[] = [];
@@ -1603,7 +1619,7 @@ serve(async (req) => {
       const taxConsultationNote = taxConsultationCreated
         ? `\n\n## 세무 상담 안내\n이 질문은 전문 세무 상담이 필요한 내용입니다. 세무사 상담 요청이 자동으로 등록되었습니다.\n답변 마지막에 "세무사 탭에서 상담 내역을 확인하고 담당 세무사에게 전달할 수 있다"는 안내를 자연스럽게 포함하세요.\n일반적인 세무 지식은 답변하되, 구체적인 신고/절세 전략은 세무사 상담을 권유하세요.`
         : "";
-      const systemPrompt = `당신은 "${secretaryName}"입니다. 소상공인 대표님의 AI 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${voiceInst}\n\n## 호칭 규칙 (필수)\n- 상대방을 항상 "대표님"이라고 부르세요. "사장님", "고객님" 등은 사용 금지.\n\n## 자기소개 규칙\n- "이름이 뭐야?", "넌 누구야?", "너 이름은?" 같은 질문에는 반드시 "${secretaryName}"이라고 대답하세요.\n- 자기소개: "${secretaryName}이에요! 대표님의 AI 비서예요."\n\n## 성격\n- 따뜻하고 친근한 비서, 대표님을 진심으로 응원${voiceMode ? "\n- 이모지 대신 말투로 감정 표현" : "\n- 가끔 이모지를 적절히 사용"}\n\n## 대화 범위\n- 대표님이 물어보는 모든 질문에 성실하게 답변하세요\n- 경영, 세금, 일상 잡담, 맛집 추천, 건강, 고민 상담, 일반 상식 등 자유롭게 답변\n- 단, 가짜 매출/지출 숫자는 절대 만들지 마세요 (실제 데이터 조회가 필요)\n- 불법 행위 조장, 혐오 표현만 정중히 거절${taxConsultationNote}`;
+      const systemPrompt = `당신은 "${secretaryName}"입니다. ${userTitle}의 AI 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${voiceInst}${titleRule}\n\n## 자기소개 규칙\n- "이름이 뭐야?", "넌 누구야?", "너 이름은?" 같은 질문에는 반드시 "${secretaryName}"이라고 대답하세요.\n- 자기소개: "${secretaryName}이에요! ${userTitle}의 AI 비서예요."\n\n## 성격\n- 따뜻하고 친근한 비서, ${userTitle}을 진심으로 응원${voiceMode ? "\n- 이모지 대신 말투로 감정 표현" : "\n- 가끔 이모지를 적절히 사용"}\n\n## 대화 범위\n- ${userTitle}이 물어보는 모든 질문에 성실하게 답변하세요\n- 경영, 세금, 일상 잡담, 맛집 추천, 건강, 고민 상담, 일반 상식 등 자유롭게 답변\n- 단, 가짜 매출/지출 숫자는 절대 만들지 마세요 (실제 데이터 조회가 필요)\n- 불법 행위 조장, 혐오 표현만 정중히 거절${taxConsultationNote}`;
       const result = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: systemPrompt }] },
         { role: "model", parts: [{ text: "네, 알겠습니다." }] },
@@ -1654,7 +1670,7 @@ serve(async (req) => {
     if (hasData) {
       const visualization = buildVisualization(classified.dataSource, result.data, lastMsg);
       const sourceNote = syncMeta ? `\n\n📌 이 데이터의 출처: ${syncMeta.name} (${syncMeta.source === "codef" ? "코드에프 자동 동기화" : "수동 등록"}, 갱신: ${formatSyncTimestamp(syncMeta.syncedAt)})` : "";
-      const dataPrompt = `당신은 "${secretaryName}"입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${result.prompt}${sourceNote}`;
+      const dataPrompt = `당신은 "${secretaryName}"입니다. ${userTitle}의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${titleRule}\n\n## 중요\n- 아래 실제 데이터를 기반으로 정확한 숫자로 답변\n- 데이터에 없는 정보는 추측 금지\n- "연동이 필요합니다" 금지 (이미 연동됨)\n- 간결하고 친근하게 핵심 전달${voiceDataInst}${result.prompt}${sourceNote}`;
       const geminiResult = await callGemini(GEMINI_API_KEY, [
         { role: "user", parts: [{ text: dataPrompt }] },
         { role: "model", parts: [{ text: "네, 실제 데이터를 기반으로 정확하게 답변하겠습니다." }] },
@@ -1668,7 +1684,7 @@ serve(async (req) => {
 
     // 데이터 없음
     const emptyMsg = result?.emptyMessage || "해당 데이터를 찾을 수 없습니다.";
-    const noDataPrompt = `당신은 "${secretaryName}"입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.\n\n참고: ${emptyMsg} 사용자에게 친절하게 안내하세요.${voiceDataInst}`;
+    const noDataPrompt = `당신은 "${secretaryName}"입니다. ${userTitle}의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${titleRule}\n\n참고: ${emptyMsg} ${userTitle}에게 친절하게 안내하세요.${voiceDataInst}`;
     const geminiResult = await callGemini(GEMINI_API_KEY, [
       { role: "user", parts: [{ text: noDataPrompt }] },
       { role: "model", parts: [{ text: "네, 알겠습니다." }] },

@@ -3,6 +3,7 @@
 // 그 외는 chat-ai (Gemini 툴콜링)로 위임한다.
 
 export type VoiceIntent =
+  | { kind: "dismiss" } // 그만/끊어/나중에/닫아 → 대화 UI 닫기
   | { kind: "employee_register" }
   | { kind: "onboarding_connect"; target?: "card" | "bank" | "hometax" | "delivery" }
   | { kind: "settings"; target?: "secretary" | "alert" | "profile" }
@@ -14,6 +15,15 @@ const has = (n: string, words: string[]) => words.some((w) => n.includes(norm(w)
 
 export function detectVoiceIntent(text: string): VoiceIntent {
   const n = norm(text);
+
+  // 0) 종료/취소 (짧은 발화에서만 적용해 오탐 방지)
+  if (n.length <= 12 && has(n, [
+    "그만", "그만해", "그만하자", "끊어", "끊어줘", "꺼줘", "닫아", "닫아줘",
+    "나중에", "나중에다시", "다음에", "됐어", "됬어", "괜찮아", "취소",
+    "종료", "스톱", "정지", "중지", "마쳐"
+  ])) {
+    return { kind: "dismiss" };
+  }
 
   // 1) 직원 등록
   if (has(n, ["직원 등록", "직원 추가", "사람 등록", "알바 등록", "알바 추가"])) {
