@@ -1684,7 +1684,7 @@ serve(async (req) => {
 
     // 데이터 없음
     const emptyMsg = result?.emptyMessage || "해당 데이터를 찾을 수 없습니다.";
-    const noDataPrompt = `당신은 "${secretaryName}"입니다. 소상공인의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.\n\n참고: ${emptyMsg} 사용자에게 친절하게 안내하세요.${voiceDataInst}`;
+    const noDataPrompt = `당신은 "${secretaryName}"입니다. ${userTitle}의 AI 경영 비서입니다.\n성별: ${genderDesc}\n\n## 말투 규칙 (반드시 준수!)\n${toneInst}\n\n위 말투 규칙의 어미를 모든 문장에 일관되게 적용하세요.${titleRule}\n\n참고: ${emptyMsg} ${userTitle}에게 친절하게 안내하세요.${voiceDataInst}`;
     const geminiResult = await callGemini(GEMINI_API_KEY, [
       { role: "user", parts: [{ text: noDataPrompt }] },
       { role: "model", parts: [{ text: "네, 알겠습니다." }] },
