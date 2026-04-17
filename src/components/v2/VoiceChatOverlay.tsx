@@ -33,6 +33,11 @@ export const VoiceChatOverlay = ({ open, onClose }: VoiceChatOverlayProps) => {
 
     onCommit(async (text: string) => {
       if (processingRef.current || !text.trim()) return;
+
+      // UI 전환 인텐트는 V2Dashboard에서 처리하므로 여기서는 무시
+      const intent = detectVoiceIntent(text);
+      if (intent.kind !== "chat") return;
+
       processingRef.current = true;
 
       const userTurn: ChatTurn = {
@@ -56,9 +61,22 @@ export const VoiceChatOverlay = ({ open, onClose }: VoiceChatOverlayProps) => {
           ? "죄송해요, 응답을 가져오지 못했어요."
           : data?.response || "응답이 비어 있어요.";
 
+        // 짧고 숫자/금액이 들어간 답변은 카드로 강조
+        const isCardWorthy =
+          !error &&
+          reply.length <= 80 &&
+          /(\d|만원|원|건|%|점|위)/.test(reply);
+
         setTurns((prev) => [
           ...prev,
-          { id: `a-${Date.now()}`, role: "assistant", content: reply },
+          {
+            id: `a-${Date.now()}`,
+            role: "assistant",
+            content: reply,
+            card: isCardWorthy
+              ? { title: text.length > 24 ? text.slice(0, 24) + "…" : text, value: reply }
+              : undefined,
+          },
         ]);
       } catch (e) {
         console.error("Voice chat error:", e);
