@@ -278,7 +278,26 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
     const accountEntry = buildEntry(plan.organization, plan.loginType);
     const requestBody = { accountList: [accountEntry] };
 
-    console.log(`→ Trying loginType=${plan.loginType}, organization=${plan.organization}`);
+    // 디버그: 실제 보내는 페이로드 메타 (값은 노출 X, 길이/존재만)
+    const debugMeta = {
+      loginType: accountEntry.loginType,
+      organization: accountEntry.organization,
+      clientType: accountEntry.clientType,
+      businessType: accountEntry.businessType,
+      countryCode: accountEntry.countryCode,
+      identity: accountEntry.identity,
+      identityLen: String(accountEntry.identity || "").length,
+      passwordLen: String(accountEntry.password || "").length,
+      hasDerFile: !!accountEntry.derFile,
+      derFileLen: String(accountEntry.derFile || "").length,
+      hasKeyFile: !!accountEntry.keyFile,
+      keyFileLen: String(accountEntry.keyFile || "").length,
+      hasCertFile: !!accountEntry.certFile,
+      certType: accountEntry.certType ?? null,
+      keys: Object.keys(accountEntry),
+    };
+    console.log(`→ Payload meta:`, JSON.stringify(debugMeta));
+
     const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
       method: "POST",
       headers: {
@@ -291,12 +310,16 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
     responseText = await response.text();
     console.log(
       `Account create response (loginType=${plan.loginType}, org=${plan.organization}):`,
-      responseText.substring(0, 500),
+      responseText.substring(0, 1500),
     );
 
     data = parseCodefResponse(responseText);
     result = data.result || {};
     lastErrorList = data.data?.errorList || [];
+
+    if (lastErrorList.length > 0) {
+      console.log(`← CODEF echo errorList:`, JSON.stringify(lastErrorList));
+    }
 
     if (result.code === "CF-00000" && data.data?.connectedId) break;
     if ((data.data?.successList?.length || 0) > 0 && data.data?.connectedId) break;
