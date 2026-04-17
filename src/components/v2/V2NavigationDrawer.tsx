@@ -69,7 +69,7 @@ export const V2NavigationDrawer = ({ isOpen, onClose }: V2NavigationDrawerProps)
             </div>
 
             {/* Menu items */}
-            <nav className="flex-1 px-3 space-y-0.5">
+            <nav className="flex-1 min-h-0 overflow-y-auto px-3 space-y-0.5">
               {menuItems.map((item) => (
                 <button
                   key={item.path}
