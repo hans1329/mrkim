@@ -168,8 +168,14 @@ const V2Dashboard = () => {
       navigate("/login");
       return;
     }
+    // 이미 온보딩이 완료된 사용자는 인트로 이후 바로 대시보드로
+    if (existingData.name) {
+      localStorage.setItem(V2_ONBOARDED_KEY, "true");
+      setStage("dashboard");
+      return;
+    }
     setStage("onboarding");
-  }, [navigate]);
+  }, [navigate, existingData.name]);
 
   const persistOnboardingProgress = useCallback(async (partialData: Record<string, string>) => {
     setExistingData((prev) => {
