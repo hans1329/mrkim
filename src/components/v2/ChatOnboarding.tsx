@@ -4,8 +4,53 @@ import { Send, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useV2Voice } from "./V2VoiceContext";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { useCardConnection } from "@/hooks/useCardConnection";
+import { useAccountConnection } from "@/hooks/useAccountConnection";
 import { toast } from "sonner";
 import { SecureCredentialSheet, type SecureService, type SecureCredentialPayload } from "./SecureCredentialSheet";
+
+// ─── 기관 라벨 → ID 매핑 (음성/채팅 입력의 한글명을 codef/hyphen ID로 변환) ───
+const BANK_LABEL_TO_ID: Record<string, string> = {
+  "신한은행": "shinhan", "신한": "shinhan",
+  "kb국민은행": "kb", "국민은행": "kb", "kb": "kb", "국민": "kb",
+  "우리은행": "woori", "우리": "woori",
+  "하나은행": "hana", "하나": "hana",
+  "nh농협은행": "nh", "농협": "nh", "nh": "nh", "농협은행": "nh",
+  "ibk기업은행": "ibk", "기업은행": "ibk", "ibk": "ibk",
+  "카카오뱅크": "kakao", "카뱅": "kakao", "카카오": "kakao",
+  "토스뱅크": "toss", "토스": "toss",
+  "케이뱅크": "kbank", "k뱅크": "kbank", "kbank": "kbank",
+};
+const CARD_LABEL_TO_ID: Record<string, string> = {
+  "신한카드": "shinhan", "신한": "shinhan",
+  "삼성카드": "samsung", "삼성": "samsung",
+  "kb국민카드": "kb", "국민카드": "kb", "kb": "kb", "국민": "kb",
+  "현대카드": "hyundai", "현대": "hyundai",
+  "롯데카드": "lotte", "롯데": "lotte",
+  "bc카드": "bc", "bc": "bc", "비씨카드": "bc",
+  "하나카드": "hana", "하나": "hana",
+  "우리카드": "woori", "우리": "woori",
+  "nh농협카드": "nh", "농협카드": "nh", "nh": "nh",
+};
+
+const normalizeInstitution = (raw: string | undefined, kind: "bank" | "card"): string | undefined => {
+  if (!raw) return undefined;
+  const key = raw.toLowerCase().replace(/\s+/g, "");
+  const map = kind === "bank" ? BANK_LABEL_TO_ID : CARD_LABEL_TO_ID;
+  return map[key] || raw.toLowerCase();
+};
+
+// File → base64 (data URL prefix 제거)
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const r = reader.result as string;
+      resolve(r.includes(",") ? r.split(",")[1] : r);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 // ─── Types ─────────────────────────────────────────────────────
 
