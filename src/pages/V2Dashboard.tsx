@@ -8,6 +8,7 @@ import { IntroSequence } from "@/components/v2/IntroSequence";
 import { ChatOnboarding } from "@/components/v2/ChatOnboarding";
 import { VoiceEmployeeRegistration } from "@/components/v2/VoiceEmployeeRegistration";
 import { UrgentEventSplash } from "@/components/v2/UrgentEventSplash";
+import { VoiceChatOverlay } from "@/components/v2/VoiceChatOverlay";
 import { useV2Voice } from "@/components/v2/V2VoiceContext";
 import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
@@ -42,68 +43,28 @@ function isOnboarded(profile: Record<string, unknown> | null): boolean {
 
 const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onboarding" | "dashboard" | "loading"; onStartOnboarding: () => void }) => {
   const [showEmployeeReg, setShowEmployeeReg] = useState(false);
+  const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
-  const { onCommit } = useV2Voice();
+  const { onCommit, isConnected } = useV2Voice();
   const { toast } = useToast();
   const { todayCards, isLoading: feedLoading } = useFeedCards();
 
+  // 마이크가 켜지면 자동으로 음성 채팅 오버레이 열기
   useEffect(() => {
     if (stage !== "dashboard") return;
+    if (isConnected) setShowVoiceChat(true);
+  }, [isConnected, stage]);
 
-    let isProcessing = false;
-    let currentAudio: HTMLAudioElement | null = null;
+  // 직원 등록 의도 감지 (오버레이가 자체적으로 일반 질의 처리)
+  useEffect(() => {
+    if (stage !== "dashboard" || showVoiceChat) return;
 
-    onCommit(async (text: string) => {
-      if (isProcessing || !text.trim()) return;
-
+    onCommit((text: string) => {
       const lower = text.toLowerCase().replace(/\s/g, "");
       const matched = EMPLOYEE_INTENTS.some((intent) => lower.includes(intent.replace(/\s/g, "")));
-      if (matched) {
-        setShowEmployeeReg(true);
-        return;
-      }
-
-      isProcessing = true;
-      // 사용자 발화 표시
-      toast({ title: "🎤 질문", description: text });
-
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const userId = session?.user?.id;
-
-        // 1) AI 응답 생성
-        const { data: chatData, error: chatError } = await supabase.functions.invoke("chat-ai", {
-          body: {
-            messages: [{ role: "user", content: text }],
-            userId,
-          },
-        });
-
-        if (chatError) throw chatError;
-        const reply = chatData?.response || "죄송합니다, 응답을 만들지 못했어요.";
-
-        // 2) 화면에 답변 표시
-        toast({ title: "💬 김비서", description: reply, duration: 8000 });
-
-        // 3) TTS 재생
-        const { data: ttsData, error: ttsError } = await supabase.functions.invoke("elevenlabs-tts", {
-          body: { text: reply, gender: "female" },
-        });
-
-        if (!ttsError && ttsData?.audio) {
-          if (currentAudio) currentAudio.pause();
-          const audio = new Audio(`data:audio/mpeg;base64,${ttsData.audio}`);
-          currentAudio = audio;
-          audio.play().catch((e) => console.warn("TTS play failed:", e));
-        }
-      } catch (e) {
-        console.error("Voice query failed:", e);
-        toast({ title: "오류", description: "음성 응답 중 문제가 발생했어요.", variant: "destructive" });
-      } finally {
-        isProcessing = false;
-      }
+      if (matched) setShowEmployeeReg(true);
     });
-  }, [stage, onCommit, toast]);
+  }, [stage, onCommit, showVoiceChat]);
 
   const handleEmployeeRegComplete = useCallback((data: Record<string, string>) => {
     setShowEmployeeReg(false);
@@ -133,6 +94,7 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
         </div>
         <SecretaryFeed onStartOnboarding={onStartOnboarding} />
       </div>
+      <VoiceChatOverlay open={showVoiceChat} onClose={() => setShowVoiceChat(false)} />
       <AnimatePresence>
         {showEmployeeReg && (
           <VoiceEmployeeRegistration
