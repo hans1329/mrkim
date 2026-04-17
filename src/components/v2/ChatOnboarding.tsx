@@ -219,14 +219,32 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
           if (call.args.institution) update.institution = String(call.args.institution).trim();
           if (call.args.auth_type) update.auth_type = String(call.args.auth_type).trim() as PendingConnection["auth_type"];
           if (call.args.login_id) update.login_id = String(call.args.login_id).trim();
-          setState((prev) => ({
-            ...prev,
-            pending: {
-              ...(prev.pending || {}),
-              [service]: { ...(prev.pending?.[service] || {}), ...update },
-            },
-          }));
+
           const merged = { ...(stateRef.current.pending?.[service] || {}), ...update };
+          const nextState: OnboardingState = {
+            ...stateRef.current,
+            pending: {
+              ...(stateRef.current.pending || {}),
+              [service]: merged,
+            },
+          };
+          stateRef.current = nextState;
+          setState(nextState);
+
+          const shouldOpenSecureInput =
+            (service === "hometax" && merged.auth_type === "cert") ||
+            ((service === "card" || service === "account") &&
+              !!merged.institution &&
+              (merged.auth_type === "cert" || (merged.auth_type === "id_pw" && !!merged.login_id))) ||
+            ((service === "baemin" || service === "coupangeats") &&
+              merged.auth_type === "id_pw" &&
+              !!merged.login_id);
+
+          if (shouldOpenSecureInput) {
+            setSecureSheet({ open: true, service, pending: merged });
+            return `${service} 연동 정보 임시 저장: ${JSON.stringify(merged)}. 보안 입력 화면을 열었습니다.`;
+          }
+
           return `${service} 연동 정보 임시 저장: ${JSON.stringify(merged)}. 다음 단계로 진행하세요.`;
         }
         case "open_secure_input": {
@@ -235,7 +253,10 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
             return `지원하지 않는 서비스: ${service}`;
           }
           const pending = stateRef.current.pending?.[service] || {};
-          setSecureSheet({ open: true, service, pending });
+          const normalizedPending = service === "hometax"
+            ? { auth_type: "cert" as const, ...pending }
+            : pending;
+          setSecureSheet({ open: true, service, pending: normalizedPending });
           return `${service} 보안 입력 화면을 열었습니다. 사용자가 비밀번호 입력을 완료할 때까지 대기.`;
         }
         case "skip_step": {
