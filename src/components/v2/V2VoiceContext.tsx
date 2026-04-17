@@ -73,17 +73,19 @@ export function V2VoiceProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const scribeRef = useRef(scribe);
+  scribeRef.current = scribe;
+
   const safeDisconnect = useCallback(() => {
     disconnectRequestedRef.current = true;
     clearFallbackCommitTimer();
     lastPartialRef.current = "";
     try {
-      scribe.clearTranscripts();
-      scribe.disconnect();
+      scribeRef.current?.disconnect();
     } catch (error) {
       console.warn("[V2Voice] disconnect warning:", error);
     }
-  }, [clearFallbackCommitTimer, scribe]);
+  }, [clearFallbackCommitTimer]);
 
   // Audio analysis for oscilloscope
   useEffect(() => {
