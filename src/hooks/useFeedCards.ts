@@ -63,15 +63,22 @@ function useSettlementForecast() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const today = new Date();
-      const todayStr = today.toISOString().split("T")[0].replace(/-/g, "");
-      const futureStr = new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0].replace(/-/g, "");
+      // KST 기준 오늘
+      const now = new Date();
+      const kstNow = new Date(now.getTime() + 9 * 3600000);
+      const todayStr = kstNow.toISOString().split("T")[0].replace(/-/g, "");
+      const futureStr = new Date(kstNow.getTime() + 14 * 86400000)
+        .toISOString().split("T")[0].replace(/-/g, "");
+      const pastStr = new Date(kstNow.getTime() - 14 * 86400000)
+        .toISOString().split("T")[0].replace(/-/g, "");
 
+      // 최근 14일 ~ 향후 14일 범위 내 정산 데이터 조회
       const { data: orders } = await supabase
         .from("delivery_orders")
-        .select("settle_dt, settle_amt, platform, order_dt")
+        .select("settle_dt, settle_amt, platform")
         .eq("user_id", user.id)
-        .gte("settle_dt", todayStr)
+        .eq("platform", "baemin")
+        .gte("settle_dt", pastStr)
         .lte("settle_dt", futureStr)
         .not("settle_amt", "is", null);
 
@@ -85,27 +92,33 @@ function useSettlementForecast() {
         existing.count++;
         byDate.set(o.settle_dt, existing);
       }
+      if (byDate.size === 0) return null;
 
       const sorted = Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-      if (sorted.length === 0) return null;
+      // 1) 오늘/미래 정산 우선, 없으면 2) 가장 최근 과거 정산
+      const futureOrToday = sorted.find(([d]) => d >= todayStr);
+      const target = futureOrToday || sorted[sorted.length - 1];
+      const [pickDate, pickInfo] = target;
 
-      const [nextDate, nextInfo] = sorted[0];
-      const y = nextDate.slice(0, 4);
-      const m = nextDate.slice(4, 6);
-      const d = nextDate.slice(6, 8);
+      const y = pickDate.slice(0, 4);
+      const m = pickDate.slice(4, 6);
+      const d = pickDate.slice(6, 8);
       const settleDate = new Date(`${y}-${m}-${d}`);
-      const daysLeft = Math.ceil((settleDate.getTime() - today.getTime()) / 86400000);
+      const todayDate = new Date(`${todayStr.slice(0, 4)}-${todayStr.slice(4, 6)}-${todayStr.slice(6, 8)}`);
+      const daysDiff = Math.round((settleDate.getTime() - todayDate.getTime()) / 86400000);
 
-      const totalPending = sorted.reduce((sum, [, info]) => sum + info.total, 0);
+      // 미래 정산 합계 (totalPending)
+      const futureEntries = sorted.filter(([d]) => d >= todayStr);
+      const totalPending = futureEntries.reduce((sum, [, info]) => sum + info.total, 0);
 
       return {
         nextDate: `${Number(m)}/${Number(d)}`,
-        daysLeft,
-        nextAmount: nextInfo.total,
-        nextCount: nextInfo.count,
-        totalPending,
-        totalDates: sorted.length,
-        platform: nextInfo.platform,
+        daysLeft: daysDiff, // 음수면 과거
+        nextAmount: pickInfo.total,
+        nextCount: pickInfo.count,
+        totalPending: totalPending || pickInfo.total,
+        totalDates: futureEntries.length || 1,
+        platform: pickInfo.platform,
       };
     },
     staleTime: 5 * 60 * 1000,
