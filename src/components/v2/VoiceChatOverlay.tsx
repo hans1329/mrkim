@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useV2Voice } from "./V2VoiceContext";
+import { detectVoiceIntent } from "@/lib/voiceIntent";
 
 interface ChatTurn {
   id: string;
   role: "user" | "assistant";
   content: string;
+  card?: {
+    title: string;
+    value?: string;
+    hint?: string;
+  };
 }
 
 interface VoiceChatOverlayProps {
@@ -27,6 +33,11 @@ export const VoiceChatOverlay = ({ open, onClose }: VoiceChatOverlayProps) => {
 
     onCommit(async (text: string) => {
       if (processingRef.current || !text.trim()) return;
+
+      // UI 전환 인텐트는 V2Dashboard에서 처리하므로 여기서는 무시
+      const intent = detectVoiceIntent(text);
+      if (intent.kind !== "chat") return;
+
       processingRef.current = true;
 
       const userTurn: ChatTurn = {
@@ -50,9 +61,22 @@ export const VoiceChatOverlay = ({ open, onClose }: VoiceChatOverlayProps) => {
           ? "죄송해요, 응답을 가져오지 못했어요."
           : data?.response || "응답이 비어 있어요.";
 
+        // 짧고 숫자/금액이 들어간 답변은 카드로 강조
+        const isCardWorthy =
+          !error &&
+          reply.length <= 80 &&
+          /(\d|만원|원|건|%|점|위)/.test(reply);
+
         setTurns((prev) => [
           ...prev,
-          { id: `a-${Date.now()}`, role: "assistant", content: reply },
+          {
+            id: `a-${Date.now()}`,
+            role: "assistant",
+            content: reply,
+            card: isCardWorthy
+              ? { title: text.length > 24 ? text.slice(0, 24) + "…" : text, value: reply }
+              : undefined,
+          },
         ]);
       } catch (e) {
         console.error("Voice chat error:", e);
@@ -124,24 +148,53 @@ export const VoiceChatOverlay = ({ open, onClose }: VoiceChatOverlayProps) => {
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex ${turn.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                <div
-                  className={`rounded-2xl px-4 py-2.5 max-w-[80%] ${
-                    turn.role === "user" ? "rounded-tr-md" : "rounded-tl-md"
-                  }`}
-                  style={{
-                    background:
-                      turn.role === "user"
-                        ? "linear-gradient(135deg, rgba(0,122,255,0.85), rgba(88,86,214,0.85))"
-                        : "rgba(255,255,255,0.08)",
-                  }}
-                >
-                  <p
-                    className="text-[14px] whitespace-pre-wrap leading-relaxed"
-                    style={{ color: "rgba(255,255,255,0.95)" }}
+                {turn.role === "assistant" && turn.card ? (
+                  <div
+                    className="rounded-2xl rounded-tl-md px-5 py-4 max-w-[85%] w-full"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(88,86,214,0.25), rgba(0,122,255,0.18))",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+                    }}
                   >
-                    {turn.content}
-                  </p>
-                </div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Sparkles size={12} style={{ color: "rgba(180,170,255,0.9)" }} />
+                      <p className="text-[11px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.5)" }}>
+                        {turn.card.title}
+                      </p>
+                    </div>
+                    <p
+                      className="text-[18px] font-semibold leading-snug"
+                      style={{ color: "rgba(255,255,255,0.98)" }}
+                    >
+                      {turn.card.value}
+                    </p>
+                    {turn.card.hint && (
+                      <p className="text-[12px] mt-2" style={{ color: "rgba(255,255,255,0.55)" }}>
+                        {turn.card.hint}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    className={`rounded-2xl px-4 py-2.5 max-w-[80%] ${
+                      turn.role === "user" ? "rounded-tr-md" : "rounded-tl-md"
+                    }`}
+                    style={{
+                      background:
+                        turn.role === "user"
+                          ? "linear-gradient(135deg, rgba(0,122,255,0.85), rgba(88,86,214,0.85))"
+                          : "rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <p
+                      className="text-[14px] whitespace-pre-wrap leading-relaxed"
+                      style={{ color: "rgba(255,255,255,0.95)" }}
+                    >
+                      {turn.content}
+                    </p>
+                  </div>
+                )}
               </motion.div>
             ))}
 

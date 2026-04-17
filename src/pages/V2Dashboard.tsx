@@ -15,8 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFeedCards } from "@/hooks/useFeedCards";
+import { detectVoiceIntent } from "@/lib/voiceIntent";
 
-const EMPLOYEE_INTENTS = ["직원 등록", "직원 추가", "사람 등록", "알바 등록", "알바 추가", "직원등록", "직원추가"];
 const V2_ONBOARDED_KEY = "v2_onboarded";
 
 const ONBOARDING_TO_PROFILE: Record<string, string> = {
@@ -42,6 +42,7 @@ function isOnboarded(profile: Record<string, unknown> | null): boolean {
 }
 
 const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onboarding" | "dashboard" | "loading"; onStartOnboarding: () => void }) => {
+  const navigate = useNavigate();
   const [showEmployeeReg, setShowEmployeeReg] = useState(false);
   const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
@@ -55,16 +56,34 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
     if (isConnected) setShowVoiceChat(true);
   }, [isConnected, stage]);
 
-  // 직원 등록 의도 감지 (오버레이가 자체적으로 일반 질의 처리)
+  // UI 전환 인텐트만 클라이언트에서 분기 (그 외는 VoiceChatOverlay에서 chat-ai로 처리)
   useEffect(() => {
-    if (stage !== "dashboard" || showVoiceChat) return;
+    if (stage !== "dashboard") return;
 
     onCommit((text: string) => {
-      const lower = text.toLowerCase().replace(/\s/g, "");
-      const matched = EMPLOYEE_INTENTS.some((intent) => lower.includes(intent.replace(/\s/g, "")));
-      if (matched) setShowEmployeeReg(true);
+      const intent = detectVoiceIntent(text);
+
+      switch (intent.kind) {
+        case "employee_register":
+          setShowVoiceChat(false);
+          setShowEmployeeReg(true);
+          return;
+        case "onboarding_connect":
+          setShowVoiceChat(false);
+          onStartOnboarding();
+          return;
+        case "settings":
+          setShowVoiceChat(false);
+          navigate(intent.target === "secretary" ? "/secretary-settings" : "/settings");
+          return;
+        case "tax_consultation":
+          setShowVoiceChat(false);
+          navigate("/tax-accountant");
+          return;
+        // "chat"은 VoiceChatOverlay 내부에서 처리됨
+      }
     });
-  }, [stage, onCommit, showVoiceChat]);
+  }, [stage, onCommit, navigate, onStartOnboarding]);
 
   const handleEmployeeRegComplete = useCallback((data: Record<string, string>) => {
     setShowEmployeeReg(false);
