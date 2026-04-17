@@ -346,7 +346,7 @@ serve(async (req) => {
       contents: toGeminiContents(messages),
       tools: [{ functionDeclarations: TOOLS }],
       toolConfig: { functionCallingConfig: { mode: "AUTO" } },
-      generationConfig: { temperature: 0.3, maxOutputTokens: 350 },
+      generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
     };
 
     const controller = new AbortController();
