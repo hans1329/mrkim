@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useRef, useEffect, useCallback, ReactNode } from "react";
 import { useScribe, CommitStrategy } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,7 +14,6 @@ interface V2VoiceContextType {
 const V2VoiceContext = createContext<V2VoiceContextType | null>(null);
 
 export function V2VoiceProvider({ children }: { children: ReactNode }) {
-  const [isReady, setIsReady] = useState(false);
   const volumeRef = useRef(0);
   const commitCallbackRef = useRef<((text: string) => void) | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -23,13 +22,35 @@ export function V2VoiceProvider({ children }: { children: ReactNode }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dataArrayRef = useRef<any>(null);
   const animFrameRef = useRef<number>();
+  const fallbackCommitTimerRef = useRef<number>();
+  const lastPartialRef = useRef("");
+  const disconnectRequestedRef = useRef(false);
 
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
     commitStrategy: CommitStrategy.VAD,
     languageCode: "kor",
+    minSilenceDurationMs: 900,
+    onConnect: () => {
+      disconnectRequestedRef.current = false;
+      console.log("[V2Voice] connected");
+    },
+    onDisconnect: () => {
+      disconnectRequestedRef.current = false;
+      lastPartialRef.current = "";
+      if (fallbackCommitTimerRef.current) {
+        clearTimeout(fallbackCommitTimerRef.current);
+        fallbackCommitTimerRef.current = undefined;
+      }
+      console.log("[V2Voice] disconnected");
+    },
     onCommittedTranscript: (data) => {
       console.log("[V2Voice] committed transcript:", data.text, "callback?", !!commitCallbackRef.current);
+      lastPartialRef.current = "";
+      if (fallbackCommitTimerRef.current) {
+        clearTimeout(fallbackCommitTimerRef.current);
+        fallbackCommitTimerRef.current = undefined;
+      }
       if (data.text?.trim() && commitCallbackRef.current) {
         commitCallbackRef.current(data.text.trim());
       }
@@ -37,7 +58,32 @@ export function V2VoiceProvider({ children }: { children: ReactNode }) {
     onPartialTranscript: (data) => {
       if (data.text) console.log("[V2Voice] partial:", data.text);
     },
+    onError: (error) => {
+      console.error("[V2Voice] scribe error:", error);
+    },
+    onInsufficientAudioActivityError: () => {
+      console.warn("[V2Voice] insufficient audio activity");
+    },
   });
+
+  const clearFallbackCommitTimer = useCallback(() => {
+    if (fallbackCommitTimerRef.current) {
+      clearTimeout(fallbackCommitTimerRef.current);
+      fallbackCommitTimerRef.current = undefined;
+    }
+  }, []);
+
+  const safeDisconnect = useCallback(() => {
+    disconnectRequestedRef.current = true;
+    clearFallbackCommitTimer();
+    lastPartialRef.current = "";
+    try {
+      scribe.clearTranscripts();
+      scribe.disconnect();
+    } catch (error) {
+      console.warn("[V2Voice] disconnect warning:", error);
+    }
+  }, [clearFallbackCommitTimer, scribe]);
 
   // Audio analysis for oscilloscope
   useEffect(() => {
@@ -102,9 +148,45 @@ export function V2VoiceProvider({ children }: { children: ReactNode }) {
     };
   }, [scribe.isConnected]);
 
+  useEffect(() => {
+    if (!scribe.isConnected || disconnectRequestedRef.current) {
+      clearFallbackCommitTimer();
+      lastPartialRef.current = "";
+      return;
+    }
+
+    const partial = scribe.partialTranscript.trim();
+    if (!partial) {
+      clearFallbackCommitTimer();
+      lastPartialRef.current = "";
+      return;
+    }
+
+    lastPartialRef.current = partial;
+    clearFallbackCommitTimer();
+
+    fallbackCommitTimerRef.current = window.setTimeout(() => {
+      const stillSameTranscript = lastPartialRef.current === partial;
+      if (!stillSameTranscript || disconnectRequestedRef.current || !scribe.isConnected) return;
+
+      try {
+        console.log("[V2Voice] fallback commit:", partial);
+        scribe.commit();
+      } catch (error) {
+        console.warn("[V2Voice] fallback commit skipped:", error);
+      }
+    }, 1200);
+
+    return clearFallbackCommitTimer;
+  }, [clearFallbackCommitTimer, scribe, scribe.isConnected, scribe.partialTranscript]);
+
   const toggleVoice = useCallback(async () => {
-    if (scribe.isConnected) {
-      scribe.disconnect();
+    if (scribe.status === "connecting") {
+      return;
+    }
+
+    if (scribe.status !== "disconnected" && scribe.status !== "error") {
+      safeDisconnect();
       return;
     }
 
@@ -137,6 +219,8 @@ export function V2VoiceProvider({ children }: { children: ReactNode }) {
 
     // 3) 토큰 발급 + 연결
     try {
+      disconnectRequestedRef.current = false;
+      clearFallbackCommitTimer();
       const { data, error } = await supabase.functions.invoke("elevenlabs-scribe-token");
       if (error || !data?.token) {
         toast.error("음성 서비스 연결 실패", { description: "잠시 후 다시 시도해주세요." });
@@ -144,14 +228,19 @@ export function V2VoiceProvider({ children }: { children: ReactNode }) {
       }
       await scribe.connect({
         token: data.token,
-        microphone: { echoCancellation: true, noiseSuppression: true },
+        microphone: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
-      setIsReady(true);
     } catch (err) {
       console.error("scribe connect error:", err);
       toast.error("음성 연결에 실패했어요", { description: "네트워크를 확인하고 다시 시도해주세요." });
     }
-  }, [scribe]);
+  }, [clearFallbackCommitTimer, safeDisconnect, scribe]);
+
+  useEffect(() => {
+    return () => {
+      safeDisconnect();
+    };
+  }, [safeDisconnect]);
 
   const onCommit = useCallback((callback: (text: string) => void) => {
     commitCallbackRef.current = callback;
