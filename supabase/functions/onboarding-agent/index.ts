@@ -17,6 +17,12 @@ interface ClientMessage {
   toolName?: string;
 }
 
+interface PendingConnection {
+  institution?: string;
+  auth_type?: "cert" | "id_pw" | "simple";
+  login_id?: string;
+}
+
 interface OnboardingState {
   name?: string | null;
   business_type?: string | null;
@@ -25,6 +31,7 @@ interface OnboardingState {
   card_connected?: boolean;
   account_connected?: boolean;
   delivery_connected?: boolean;
+  pending?: Partial<Record<"hometax" | "card" | "account" | "baemin" | "coupangeats", PendingConnection>>;
 }
 
 const TOOLS = [
