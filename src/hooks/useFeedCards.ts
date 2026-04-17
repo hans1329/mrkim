@@ -63,14 +63,18 @@ function useSettlementForecast() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // KST 기준 오늘
+      // KST 기준 오늘 (Asia/Seoul 로케일로 직접 추출 — toISOString UTC 변환 버그 회피)
+      const kstFmt = (d: Date) =>
+        new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Seoul",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(d).replace(/-/g, ""); // YYYYMMDD
       const now = new Date();
-      const kstNow = new Date(now.getTime() + 9 * 3600000);
-      const todayStr = kstNow.toISOString().split("T")[0].replace(/-/g, "");
-      const futureStr = new Date(kstNow.getTime() + 14 * 86400000)
-        .toISOString().split("T")[0].replace(/-/g, "");
-      const pastStr = new Date(kstNow.getTime() - 14 * 86400000)
-        .toISOString().split("T")[0].replace(/-/g, "");
+      const todayStr = kstFmt(now);
+      const futureStr = kstFmt(new Date(now.getTime() + 14 * 86400000));
+      const pastStr = kstFmt(new Date(now.getTime() - 14 * 86400000));
 
       // 최근 14일 ~ 향후 14일 범위 내 정산 데이터 조회
       const { data: orders } = await supabase
