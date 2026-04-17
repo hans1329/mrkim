@@ -4,8 +4,8 @@ import { Send, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useV2Voice } from "./V2VoiceContext";
 import { useConnection } from "@/contexts/ConnectionContext";
-import { useConnectionDrawer, type ConnectionType } from "@/contexts/ConnectionDrawerContext";
 import { toast } from "sonner";
+import { SecureCredentialSheet, type SecureService, type SecureCredentialPayload } from "./SecureCredentialSheet";
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -30,6 +30,12 @@ interface AgentResponse {
   error?: string;
 }
 
+interface PendingConnection {
+  institution?: string;
+  auth_type?: "cert" | "id_pw" | "simple";
+  login_id?: string;
+}
+
 interface OnboardingState {
   name?: string | null;
   business_type?: string | null;
@@ -38,6 +44,7 @@ interface OnboardingState {
   card_connected?: boolean;
   account_connected?: boolean;
   delivery_connected?: boolean;
+  pending?: Partial<Record<SecureService, PendingConnection>>;
 }
 
 interface ChatOnboardingProps {
@@ -62,16 +69,6 @@ const YarnBallAvatar = () => (
   </div>
 );
 
-// ─── Service mapping (agent service -> ConnectionDrawer type) ─
-
-const SERVICE_TO_DRAWER: Record<string, ConnectionType> = {
-  hometax: "hometax",
-  card: "card",
-  account: "account",
-  baemin: "baemin",
-  coupangeats: "coupangeats",
-};
-
 // ─── Main Component ───────────────────────────────────────────
 
 export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: ChatOnboardingProps) => {
@@ -81,8 +78,10 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
     toggleVoice,
     onCommit,
   } = useV2Voice();
-  const { openDrawer } = useConnectionDrawer();
   const { hometaxConnected, cardConnected, accountConnected, deliveryConnected, refetch: refetchConnection } = useConnection();
+
+  // 보안 입력 시트 상태
+  const [secureSheet, setSecureSheet] = useState<{ open: boolean; service: SecureService; pending: PendingConnection } | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -154,12 +153,33 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
           await onProgress?.({ business_number: digits });
           return `사업자번호 저장 완료: ${digits}`;
         }
-        case "start_connection": {
-          const service = String(call.args.service || "").toLowerCase();
-          const drawerType = SERVICE_TO_DRAWER[service];
-          if (!drawerType) return `지원하지 않는 서비스: ${service}`;
-          openDrawer(drawerType);
-          return `${service} 연동 화면을 열었습니다. 사용자가 완료하거나 닫을 때까지 기다려주세요.`;
+        case "prepare_connection": {
+          const service = String(call.args.service || "").toLowerCase() as SecureService;
+          if (!["hometax", "card", "account", "baemin", "coupangeats"].includes(service)) {
+            return `지원하지 않는 서비스: ${service}`;
+          }
+          const update: PendingConnection = {};
+          if (call.args.institution) update.institution = String(call.args.institution).trim();
+          if (call.args.auth_type) update.auth_type = String(call.args.auth_type).trim() as PendingConnection["auth_type"];
+          if (call.args.login_id) update.login_id = String(call.args.login_id).trim();
+          setState((prev) => ({
+            ...prev,
+            pending: {
+              ...(prev.pending || {}),
+              [service]: { ...(prev.pending?.[service] || {}), ...update },
+            },
+          }));
+          const merged = { ...(stateRef.current.pending?.[service] || {}), ...update };
+          return `${service} 연동 정보 임시 저장: ${JSON.stringify(merged)}. 다음 단계로 진행하세요.`;
+        }
+        case "open_secure_input": {
+          const service = String(call.args.service || "").toLowerCase() as SecureService;
+          if (!["hometax", "card", "account", "baemin", "coupangeats"].includes(service)) {
+            return `지원하지 않는 서비스: ${service}`;
+          }
+          const pending = stateRef.current.pending?.[service] || {};
+          setSecureSheet({ open: true, service, pending });
+          return `${service} 보안 입력 화면을 열었습니다. 사용자가 비밀번호 입력을 완료할 때까지 대기.`;
         }
         case "skip_step": {
           const target = String(call.args.target || "current");
@@ -175,7 +195,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
       console.error("tool error", call.name, e);
       return `도구 실행 실패: ${e instanceof Error ? e.message : "unknown"}`;
     }
-  }, [onProgress, openDrawer]);
+  }, [onProgress]);
 
   // ─── 에이전트 호출 ──────────────────────────────────────────
 
@@ -492,6 +512,32 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
           <Send className="w-4 h-4" style={{ color: "rgba(255,255,255,0.95)" }} />
         </button>
       </form>
+
+      {/* 보안 입력 시트 (비밀번호/인증서) */}
+      {secureSheet && (
+        <SecureCredentialSheet
+          open={secureSheet.open}
+          service={secureSheet.service}
+          institution={secureSheet.pending.institution}
+          authType={secureSheet.pending.auth_type}
+          loginId={secureSheet.pending.login_id}
+          onClose={() => setSecureSheet(null)}
+          onSubmit={async (payload) => {
+            // 실제 연동 호출은 추후 단계에서 각 엣지 함수(codef-bank/card/hometax, hyphen-baemin/coupangeats)와 연결
+            // 지금은 보안값을 받아 에이전트에 진행 신호만 보냄
+            console.log("[SecureCredentialSheet] payload received", {
+              ...payload,
+              password: payload.password ? "***" : undefined,
+              cert_password: payload.cert_password ? "***" : undefined,
+              cert_file: payload.cert_file?.name,
+            });
+            toast.success(`${payload.service} 연동 정보가 안전하게 접수되었어요`);
+            setSecureSheet(null);
+            // 에이전트에 알려서 다음 단계로 자연스럽게 전환
+            void handleUserMessage(`(시스템: ${payload.service} 보안 정보 입력이 완료되었습니다. 곧 연동이 진행됩니다. 다음 단계를 안내해주세요.)`);
+          }}
+        />
+      )}
     </div>
   );
 };
