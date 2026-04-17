@@ -428,6 +428,10 @@ const V2Dashboard = () => {
           onComplete={handleOnboardingComplete}
           onProgress={persistOnboardingProgress}
           existingData={existingData}
+          onClose={() => {
+            clearOnboardingQuery();
+            setStage("dashboard");
+          }}
         />
       )}
 
