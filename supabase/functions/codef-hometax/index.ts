@@ -227,7 +227,7 @@ async function handleBusinessVerify(body: any): Promise<Response> {
  * - 은행(codef-bank)과 동일한 파라미터 구조 사용
  */
 async function handleRegister(_req: Request, body: any, clientType: string = "P"): Promise<Response> {
-  const { businessNumber, certFileBase64, certPassword, keyFileBase64 } = body;
+  const { businessNumber, certFileBase64, certPassword } = body;
 
   if (!businessNumber || !certFileBase64 || !certPassword) {
     return new Response(
