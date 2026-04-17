@@ -181,6 +181,11 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
           setDrawerOpen(false);
           navigate(intent.target === "secretary" ? "/secretary-settings" : "/settings");
           return;
+        case "system_toggle":
+          setCard(null);
+          setDrawerOpen(false);
+          void applySystemToggle(intent.feature, intent.enable);
+          return;
         case "tax_consultation":
           setCard(null);
           setDrawerOpen(false);
@@ -192,7 +197,7 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
           return;
       }
     });
-  }, [stage, onCommit, navigate, onStartOnboarding, askChatAI, isConnected, toggleVoice]);
+  }, [stage, onCommit, navigate, onStartOnboarding, askChatAI, isConnected, toggleVoice, applySystemToggle]);
 
   const handleEmployeeRegComplete = useCallback((data: Record<string, string>) => {
     setShowEmployeeReg(false);
