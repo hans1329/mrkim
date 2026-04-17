@@ -8,6 +8,7 @@ import { useCountUp } from "@/hooks/useCountUp";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useV2PC } from "./V2PCContext";
 import { SettlementDetailSheet } from "./SettlementDetailSheet";
+import { SalesPatternCard } from "./SalesPatternCard";
 
 
 const cardVariants = {
@@ -83,6 +84,14 @@ export const SecretaryFeed = ({ onStartOnboarding }: { onStartOnboarding?: () =>
 
       {/* 데이터가 하나도 없을 때 */}
       {!hasToday && !hasHistory && <EmptyFeed onStartOnboarding={onStartOnboarding} />}
+
+      {/* 매출 패턴 분석 (요일별 / 시간대별 / 히트맵) */}
+      <section className="mt-2">
+        <SectionHeader label="매출 패턴 분석" />
+        <div className="mt-3">
+          <SalesPatternCard />
+        </div>
+      </section>
 
       {/* 지난 기록 */}
       {hasHistory && (
