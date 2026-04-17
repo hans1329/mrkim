@@ -30,6 +30,12 @@ interface AgentResponse {
   error?: string;
 }
 
+interface PendingConnection {
+  institution?: string;
+  auth_type?: "cert" | "id_pw" | "simple";
+  login_id?: string;
+}
+
 interface OnboardingState {
   name?: string | null;
   business_type?: string | null;
@@ -38,6 +44,7 @@ interface OnboardingState {
   card_connected?: boolean;
   account_connected?: boolean;
   delivery_connected?: boolean;
+  pending?: Partial<Record<SecureService, PendingConnection>>;
 }
 
 interface ChatOnboardingProps {
@@ -61,16 +68,6 @@ const YarnBallAvatar = () => (
     </svg>
   </div>
 );
-
-// ─── Service mapping (agent service -> ConnectionDrawer type) ─
-
-const SERVICE_TO_DRAWER: Record<string, ConnectionType> = {
-  hometax: "hometax",
-  card: "card",
-  account: "account",
-  baemin: "baemin",
-  coupangeats: "coupangeats",
-};
 
 // ─── Main Component ───────────────────────────────────────────
 
