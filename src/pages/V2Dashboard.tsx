@@ -56,19 +56,64 @@ function isOnboarded(profile: Record<string, unknown> | null): boolean {
 const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onboarding" | "dashboard" | "loading"; onStartOnboarding: () => void }) => {
   const navigate = useNavigate();
   const [showEmployeeReg, setShowEmployeeReg] = useState(false);
-  const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
-  const { onCommit, isConnected } = useV2Voice();
+  const { onCommit, isConnected, partialTranscript } = useV2Voice();
   const { toast } = useToast();
   const { todayCards, isLoading: feedLoading } = useFeedCards();
 
-  // 마이크가 켜지면 자동으로 음성 채팅 오버레이 열기
-  useEffect(() => {
-    if (stage !== "dashboard") return;
-    if (isConnected) setShowVoiceChat(true);
-  }, [isConnected, stage]);
+  // 음성 응답 라우터 상태
+  const [card, setCard] = useState<VoiceCard | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [turns, setTurns] = useState<ChatTurn[]>([]);
+  const [isThinking, setIsThinking] = useState(false);
+  const processingRef = useRef(false);
 
-  // UI 전환 인텐트만 클라이언트에서 분기 (그 외는 VoiceChatOverlay에서 chat-ai로 처리)
+  const askChatAI = useCallback(async (userText: string) => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+
+    // 사용자 발화를 누적 대화에 추가 (드로어 열렸을 때만 보이지만 미리 적재)
+    const userTurn: ChatTurn = { id: `u-${Date.now()}`, role: "user", content: userText };
+    setTurns((prev) => [...prev, userTurn]);
+    setIsThinking(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("chat-ai", {
+        body: {
+          messages: [...turns, userTurn].map((t) => ({ role: t.role, content: t.content })),
+          userId: session?.user?.id,
+        },
+      });
+
+      const reply = error ? "죄송해요, 응답을 가져오지 못했어요." : data?.response || "응답이 비어 있어요.";
+      const hasVisualization = !!data?.visualization;
+
+      const assistantTurn: ChatTurn = { id: `a-${Date.now()}`, role: "assistant", content: reply };
+      setTurns((prev) => [...prev, assistantTurn]);
+
+      // UI 분기: 드로어가 이미 열려있으면 그쪽에 누적, 아니면 카드/드로어 자동 결정
+      if (drawerOpen) {
+        // 이미 대화 중이므로 드로어에서 계속 표시
+      } else if (!error && shouldShowAsCard(reply, hasVisualization)) {
+        setCard({ id: assistantTurn.id, question: userText, answer: reply });
+      } else {
+        setDrawerOpen(true);
+      }
+    } catch (e) {
+      console.error("chat-ai error:", e);
+      setTurns((prev) => [
+        ...prev,
+        { id: `a-${Date.now()}`, role: "assistant", content: "오류가 발생했어요. 다시 시도해주세요." },
+      ]);
+      setDrawerOpen(true);
+    } finally {
+      setIsThinking(false);
+      processingRef.current = false;
+    }
+  }, [turns, drawerOpen]);
+
+  // 음성 commit → 인텐트 라우팅
   useEffect(() => {
     if (stage !== "dashboard") return;
 
@@ -77,25 +122,32 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
 
       switch (intent.kind) {
         case "employee_register":
-          setShowVoiceChat(false);
+          setCard(null);
+          setDrawerOpen(false);
           setShowEmployeeReg(true);
           return;
         case "onboarding_connect":
-          setShowVoiceChat(false);
+          setCard(null);
+          setDrawerOpen(false);
           onStartOnboarding();
           return;
         case "settings":
-          setShowVoiceChat(false);
+          setCard(null);
+          setDrawerOpen(false);
           navigate(intent.target === "secretary" ? "/secretary-settings" : "/settings");
           return;
         case "tax_consultation":
-          setShowVoiceChat(false);
+          setCard(null);
+          setDrawerOpen(false);
           navigate("/tax-accountant");
           return;
-        // "chat"은 VoiceChatOverlay 내부에서 처리됨
+        case "chat":
+        default:
+          void askChatAI(text);
+          return;
       }
     });
-  }, [stage, onCommit, navigate, onStartOnboarding]);
+  }, [stage, onCommit, navigate, onStartOnboarding, askChatAI]);
 
   const handleEmployeeRegComplete = useCallback((data: Record<string, string>) => {
     setShowEmployeeReg(false);
@@ -104,6 +156,11 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
       description: `${data.name}님이 등록되었습니다.`,
     });
   }, [toast]);
+
+  const expandCardToDrawer = useCallback(() => {
+    setCard(null);
+    setDrawerOpen(true);
+  }, []);
 
   if (stage !== "dashboard") return null;
 
@@ -125,7 +182,29 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
         </div>
         <SecretaryFeed onStartOnboarding={onStartOnboarding} />
       </div>
-      <VoiceChatOverlay open={showVoiceChat} onClose={() => setShowVoiceChat(false)} />
+
+      {/* 마이크 ON 시: 작은 힌트 토스트만 (드로어 열렸을 땐 숨김) */}
+      {!drawerOpen && (
+        <VoiceListeningHint isConnected={isConnected} partialTranscript={partialTranscript} />
+      )}
+
+      {/* 단답형 응답 카드 토스트 */}
+      <VoiceCardToast
+        card={card}
+        onExpand={expandCardToDrawer}
+        onDismiss={() => setCard(null)}
+      />
+
+      {/* 복합 대화 드로어 */}
+      <VoiceChatDrawer
+        open={drawerOpen}
+        turns={turns}
+        isThinking={isThinking}
+        partialTranscript={partialTranscript}
+        isConnected={isConnected}
+        onClose={() => setDrawerOpen(false)}
+      />
+
       <AnimatePresence>
         {showEmployeeReg && (
           <VoiceEmployeeRegistration
