@@ -27,23 +27,43 @@ const weatherConfig = {
 
 export const WeatherAnchor = () => {
   const [expanded, setExpanded] = useState(false);
-  // slot: 0 = 날씨 표시, 1..N = 팁 표시
-  const [slot, setSlot] = useState(0);
+  // mode: "weather" | "tip", 팁이 끝나면 다시 날씨로 돌아감
+  const [mode, setMode] = useState<"weather" | "tip">("weather");
+  const [tipIndex, setTipIndex] = useState(0);
+  const [tipsShownInBurst, setTipsShownInBurst] = useState(0);
   const weather = "sunny";
   const config = weatherConfig[weather];
   const gaugePercent = 78;
 
-  // 4초마다 다음 슬롯으로 (날씨 ↔ 팁 순환)
+  // 시퀀스: 날씨 12초 유지 → 팁 2개씩 보여줌(각 4초) → 다시 날씨로
   useEffect(() => {
-    if (expanded) return; // 펼친 상태에서는 순환 정지
-    const interval = setInterval(() => {
-      setSlot((prev) => (prev + 1) % (COMMAND_TIPS.length + 1));
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [expanded]);
+    if (expanded) return;
+    const TIPS_PER_BURST = 2;
+    const WEATHER_HOLD_MS = 12000;
+    const TIP_HOLD_MS = 4000;
 
-  const showingTip = slot > 0 && !expanded;
-  const tipIndex = slot - 1;
+    if (mode === "weather") {
+      const t = setTimeout(() => {
+        setTipsShownInBurst(0);
+        setMode("tip");
+      }, WEATHER_HOLD_MS);
+      return () => clearTimeout(t);
+    }
+    // mode === "tip"
+    const t = setTimeout(() => {
+      const next = tipsShownInBurst + 1;
+      if (next >= TIPS_PER_BURST) {
+        setMode("weather");
+        setTipIndex((prev) => (prev + 1) % COMMAND_TIPS.length);
+      } else {
+        setTipsShownInBurst(next);
+        setTipIndex((prev) => (prev + 1) % COMMAND_TIPS.length);
+      }
+    }, TIP_HOLD_MS);
+    return () => clearTimeout(t);
+  }, [mode, tipsShownInBurst, expanded]);
+
+  const showingTip = mode === "tip" && !expanded;
 
   return (
     <motion.div
