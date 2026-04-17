@@ -1,6 +1,8 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useTransactions } from "@/hooks/useTransactions";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -9,42 +11,131 @@ const HOUR_BUCKETS = Array.from({ length: 24 }, (_, h) => h);
 
 const fmtMan = (won: number) => `₩${(won / 10000).toFixed(1)}만`;
 
+// === KST 유틸리티 ===
+// "YYYY-MM-DD" 또는 "YYYYMMDD" 문자열에서 KST 요일 추출 (UTC 변환 없이 순수 산술)
+function kstDayOfWeek(year: number, month: number, day: number): number {
+  // Date.UTC로 만든 Date의 getUTCDay는 시스템 타임존과 무관하게 해당 날짜의 요일 반환
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
+// transactions의 transaction_date(YYYY-MM-DD)에서 요일 추출
+function getDowFromIsoDate(s: string): number | null {
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  return kstDayOfWeek(Number(m[1]), Number(m[2]), Number(m[3]));
+}
+
+// transactions의 transaction_time(HH:MM:SS)에서 시간 추출
+function getHourFromTime(s: string | null): number {
+  if (!s) return -1;
+  const m = String(s).match(/^(\d{1,2})/);
+  if (!m) return -1;
+  const h = Number(m[1]);
+  return h >= 0 && h < 24 ? h : -1;
+}
+
+// delivery_orders의 order_dt(YYYYMMDD)에서 요일 추출
+function getDowFromOrderDt(s: string | null): number | null {
+  if (!s) return null;
+  const m = s.match(/^(\d{4})(\d{2})(\d{2})/);
+  if (!m) return null;
+  return kstDayOfWeek(Number(m[1]), Number(m[2]), Number(m[3]));
+}
+
+// delivery_orders의 order_tm(HHMMSS)에서 시간 추출
+function getHourFromOrderTm(s: string | null): number {
+  if (!s) return -1;
+  const m = String(s).padStart(6, "0").match(/^(\d{2})/);
+  if (!m) return -1;
+  const h = Number(m[1]);
+  return h >= 0 && h < 24 ? h : -1;
+}
+
+// 배달 주문 데이터 조회 (매출 발생 시점 기준)
+function useDeliveryOrders() {
+  return useQuery({
+    queryKey: ["sales-pattern-delivery-orders"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const PAGE_SIZE = 1000;
+      let all: { order_dt: string | null; order_tm: string | null; total_amt: number | null; platform: string }[] = [];
+      let from = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("delivery_orders")
+          .select("order_dt, order_tm, total_amt, platform")
+          .eq("user_id", user.id)
+          .in("platform", ["baemin", "coupangeats"])
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (error) throw error;
+        all = all.concat(data || []);
+        hasMore = (data?.length || 0) === PAGE_SIZE;
+        from += PAGE_SIZE;
+      }
+
+      return all;
+    },
+    staleTime: 1000 * 60 * 3,
+    gcTime: 1000 * 60 * 15,
+    refetchOnWindowFocus: false,
+  });
+}
+
 /**
  * 매출 패턴 분석 - 대시보드 요약 카드
- * 4가지 핵심 인사이트를 큰 카드 캐러셀로 표시 (네이티브 scroll-snap)
+ * KST 기준 + transactions(매출) + 배민/쿠팡이츠 주문 매출 발생 시점 통합 분석
  */
 export const SalesPatternCard = () => {
   const navigate = useNavigate();
-  const { data: transactions, isLoading: loading } = useTransactions();
+  const { data: transactions, isLoading: txLoading } = useTransactions();
+  const { data: deliveryOrders, isLoading: dOrdersLoading } = useDeliveryOrders();
+  const loading = txLoading || dOrdersLoading;
 
   const { insights, hasData } = useMemo(() => {
-    const incomes = (transactions || []).filter((t) => t.type === "income");
-
     const dailyMap = new Map<number, { day: number; total: number; count: number; avg: number }>();
     const hourlyMap = new Map<number, { hour: number; total: number; count: number }>();
 
-    for (const t of incomes) {
-      const d = new Date(t.transaction_date);
-      if (isNaN(d.getTime())) continue;
-      const dow = d.getDay();
-      const amt = Number(t.amount) || 0;
-
+    const addDaily = (dow: number, amt: number) => {
       const ds = dailyMap.get(dow) || { day: dow, total: 0, count: 0, avg: 0 };
       ds.total += amt;
       ds.count += 1;
       dailyMap.set(dow, ds);
+    };
+    const addHourly = (hr: number, amt: number) => {
+      const hs = hourlyMap.get(hr) || { hour: hr, total: 0, count: 0 };
+      hs.total += amt;
+      hs.count += 1;
+      hourlyMap.set(hr, hs);
+    };
 
-      let hr = -1;
-      if (t.transaction_time) {
-        const m = String(t.transaction_time).match(/^(\d{1,2})/);
-        if (m) hr = Number(m[1]);
-      }
-      if (hr >= 0 && hr < 24) {
-        const hs = hourlyMap.get(hr) || { hour: hr, total: 0, count: 0 };
-        hs.total += amt;
-        hs.count += 1;
-        hourlyMap.set(hr, hs);
-      }
+    // 1) 일반 매출 (transactions: income + transfer_in, 배달 정산 제외)
+    //    delivery source는 정산 시점이라 매출 패턴 왜곡 → 제외하고 delivery_orders로 대체
+    const incomes = (transactions || []).filter(
+      (t) => (t.type === "income" || t.type === "transfer_in") && t.source_type !== "delivery"
+    );
+    for (const t of incomes) {
+      const dow = getDowFromIsoDate(t.transaction_date);
+      if (dow === null) continue;
+      const amt = Number(t.amount) || 0;
+      addDaily(dow, amt);
+      const hr = getHourFromTime(t.transaction_time);
+      if (hr >= 0) addHourly(hr, amt);
+    }
+
+    // 2) 배민/쿠팡이츠 주문 매출 (매출 발생 일시 기준)
+    for (const o of deliveryOrders || []) {
+      const dow = getDowFromOrderDt(o.order_dt);
+      if (dow === null) continue;
+      const amt = Number(o.total_amt) || 0;
+      if (amt <= 0) continue;
+      addDaily(dow, amt);
+      const hr = getHourFromOrderTm(o.order_tm);
+      if (hr >= 0) addHourly(hr, amt);
     }
 
     const daily = Array.from({ length: 7 }, (_, i) => {
@@ -67,10 +158,10 @@ export const SalesPatternCard = () => {
     const peakHourShare = totalHourly > 0 && peakHour ? (peakHour.total / totalHourly) * 100 : 0;
 
     return {
-      hasData: incomes.length > 0,
+      hasData: totalDaily > 0,
       insights: { topDay, lowDay, peakHour, peakHourShare, weekendShare },
     };
-  }, [transactions]);
+  }, [transactions, deliveryOrders]);
 
   if (loading) {
     return (
