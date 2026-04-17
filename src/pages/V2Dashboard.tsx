@@ -57,7 +57,7 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
   const navigate = useNavigate();
   const [showEmployeeReg, setShowEmployeeReg] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
-  const { onCommit, isConnected, partialTranscript } = useV2Voice();
+  const { onCommit, isConnected, partialTranscript, toggleVoice } = useV2Voice();
   const { toast } = useToast();
   const { todayCards, isLoading: feedLoading } = useFeedCards();
 
@@ -120,6 +120,12 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
       const intent = detectVoiceIntent(text);
 
       switch (intent.kind) {
+        case "dismiss":
+          setCard(null);
+          setDrawerOpen(false);
+          setTurns([]);
+          if (isConnected) toggleVoice(); // 마이크 끄기
+          return;
         case "employee_register":
           setCard(null);
           setDrawerOpen(false);
@@ -146,7 +152,7 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
           return;
       }
     });
-  }, [stage, onCommit, navigate, onStartOnboarding, askChatAI]);
+  }, [stage, onCommit, navigate, onStartOnboarding, askChatAI, isConnected, toggleVoice]);
 
   const handleEmployeeRegComplete = useCallback((data: Record<string, string>) => {
     setShowEmployeeReg(false);
