@@ -76,6 +76,9 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
     const userTurn: ChatTurn = { id: `u-${Date.now()}`, role: "user", content: userText };
     setTurns((prev) => [...prev, userTurn]);
     setIsThinking(true);
+    // 즉시 드로어를 열어 "생각 중…" 피드백을 보여준다 (응답 대기 4~5초 체감 제거)
+    setCard(null);
+    setDrawerOpen(true);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -91,14 +94,11 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
 
       const assistantTurn: ChatTurn = { id: `a-${Date.now()}`, role: "assistant", content: reply };
       setTurns((prev) => [...prev, assistantTurn]);
-
-      // UI 분기: 드로어가 이미 열려있으면 그쪽에 누적, 아니면 카드/드로어 자동 결정
-      if (drawerOpen) {
-        // 이미 대화 중이므로 드로어에서 계속 표시
-      } else if (!error && shouldShowAsCard(reply, hasVisualization)) {
+      // 첫 응답이고 짧은 단답형이면 드로어 닫고 카드 토스트로 승격
+      const isFirstTurn = turns.length === 0;
+      if (!error && isFirstTurn && shouldShowAsCard(reply, hasVisualization)) {
+        setDrawerOpen(false);
         setCard({ id: assistantTurn.id, question: userText, answer: reply });
-      } else {
-        setDrawerOpen(true);
       }
     } catch (e) {
       console.error("chat-ai error:", e);
@@ -106,12 +106,11 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
         ...prev,
         { id: `a-${Date.now()}`, role: "assistant", content: "오류가 발생했어요. 다시 시도해주세요." },
       ]);
-      setDrawerOpen(true);
     } finally {
       setIsThinking(false);
       processingRef.current = false;
     }
-  }, [turns, drawerOpen]);
+  }, [turns]);
 
   // 음성 commit → 인텐트 라우팅
   useEffect(() => {
