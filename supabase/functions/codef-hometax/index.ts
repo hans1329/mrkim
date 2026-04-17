@@ -220,23 +220,13 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   // 인증서 비밀번호를 RSA 암호화
   const encryptedPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // 홈택스 공동인증서 계정 등록은 은행/카드와 스펙이 다르게 동작할 수 있어
-  // 홈택스 전용 조합을 우선 시도한다.
-  // - 우선: loginType "2" + organization "0002"
-  // - 폴백: organization/loginType 조합 변경
-  const attemptPlans = clientType === "B"
-    ? [
-        { loginType: "2", organization: "0002" },
-        { loginType: "2", organization: "0001" },
-        { loginType: "0", organization: "0002" },
-        { loginType: "0", organization: "0001" },
-      ]
-    : [
-        { loginType: "2", organization: "0002" },
-        { loginType: "0", organization: "0002" },
-        { loginType: "2", organization: "0001" },
-        { loginType: "0", organization: "0001" },
-      ];
+  // CODEF 공식 SDK 표준: loginType "0" = 인증서 (only valid value)
+  // organization은 홈택스 표준: "0001"
+  // 핵심 수정: Body를 encodeURIComponent(JSON.stringify())로 인코딩 (공식 SDK 규격)
+  const attemptPlans = [
+    { loginType: "0", organization: "0001" },
+    { loginType: "0", organization: "0002" },
+  ];
 
   const buildEntry = (
     organization: string,
@@ -298,13 +288,15 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
     };
     console.log(`→ Payload meta:`, JSON.stringify(debugMeta));
 
+    // CODEF 공식 SDK 규격: body를 URL-encode 해서 전송
+    // (.write(encodeURIComponent(JSON.stringify(param))) — easycodef-node 동일)
     const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      body: JSON.stringify(requestBody),
+      body: encodeURIComponent(JSON.stringify(requestBody)),
     });
 
     responseText = await response.text();
