@@ -1,5 +1,21 @@
-import { motion } from "framer-motion";
-import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+
+// 음성 명령어 사용팁 — 자주 안 쓰는 명령 위주로 순환 노출
+const COMMAND_TIPS = [
+  '"이번 달 매출 알려줘"',
+  '"브리핑 켜줘"',
+  '"세무사 상담 요청"',
+  '"카드 연동해줘"',
+  '"홈택스 연결"',
+  '"배민 연동"',
+  '"직원 등록"',
+  '"알바 추가"',
+  '"비서 목소리 바꿔줘"',
+  '"오늘 지출 보여줘"',
+  '"이번 주 정산 얼마야"',
+  '"부가세 얼마 나와"',
+];
 
 const weatherConfig = {
   sunny: { icon: "☀️", label: "맑음" },
@@ -11,9 +27,18 @@ const weatherConfig = {
 
 export const WeatherAnchor = () => {
   const [expanded, setExpanded] = useState(false);
+  const [tipIndex, setTipIndex] = useState(0);
   const weather = "sunny";
   const config = weatherConfig[weather];
   const gaugePercent = 78;
+
+  // 4초마다 다음 팁으로 순환
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTipIndex((prev) => (prev + 1) % COMMAND_TIPS.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <motion.div
@@ -52,6 +77,22 @@ export const WeatherAnchor = () => {
                 animate={{ width: `${gaugePercent}%` }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
               />
+            </div>
+            {/* 음성 명령어 사용팁 — 페이드 인/아웃 순환 */}
+            <div className="mt-2 h-3.5 overflow-hidden relative">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={tipIndex}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-[10.5px] font-medium absolute inset-0"
+                  style={{ color: "rgba(255,255,255,0.45)" }}
+                >
+                  💡 이렇게 말해보세요 — {COMMAND_TIPS[tipIndex]}
+                </motion.p>
+              </AnimatePresence>
             </div>
           </div>
         </div>
