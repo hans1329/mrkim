@@ -1,6 +1,51 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+// === KST(Asia/Seoul) 유틸리티 ===
+// 모든 날짜 계산은 KST 기준으로 수행 (toISOString의 UTC 변환 버그 방지)
+const KST_TZ = "Asia/Seoul";
+
+/** KST 기준 현재 시각의 Date 객체 (연/월/일/시 추출용) */
+function kstNow(): { year: number; month: number; day: number; hours: number } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: KST_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  return { year: get("year"), month: get("month"), day: get("day"), hours: get("hour") };
+}
+
+/** YYYY-MM-DD 포맷 (KST 기준) */
+function kstDateStr(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/** KST 오늘 기준 N일 전/후 날짜 문자열 반환 */
+function kstShiftDate(daysOffset: number): { dateStr: string; dayOfWeek: number } {
+  const { year, month, day } = kstNow();
+  // KST 자정을 UTC로 표현(00:00 KST = 전날 15:00 UTC)
+  const baseUtc = Date.UTC(year, month - 1, day) + daysOffset * 86400000;
+  const d = new Date(baseUtc);
+  // 다시 KST 기준 연/월/일 추출
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: KST_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  }).formatToParts(d);
+  const y = Number(parts.find((p) => p.type === "year")?.value);
+  const m = Number(parts.find((p) => p.type === "month")?.value);
+  const dd = Number(parts.find((p) => p.type === "day")?.value);
+  // getUTCDay는 baseUtc가 KST 자정을 가리키므로 KST 요일과 일치
+  const dow = new Date(Date.UTC(y, m - 1, dd)).getUTCDay();
+  return { dateStr: kstDateStr(y, m, dd), dayOfWeek: dow };
+}
+
 interface SummaryStats {
   todayIncome: number;
   todayExpense: number;
@@ -12,9 +57,9 @@ async function fetchSummaryStats(): Promise<SummaryStats | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-  const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
+  const { year, month, day } = kstNow();
+  const todayStr = kstDateStr(year, month, day);
+  const monthStart = kstDateStr(year, month, 1);
 
   const [todayResult, monthlyResult] = await Promise.all([
     supabase
@@ -69,12 +114,11 @@ async function fetchWeeklyData(): Promise<{ data: WeeklyDataItem[]; hasRealData:
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const today = new Date();
-  const weekAgo = new Date(today);
-  weekAgo.setDate(today.getDate() - 6);
-
-  const startDateStr = weekAgo.toISOString().split("T")[0];
-  const endDateStr = today.toISOString().split("T")[0];
+  // KST 기준 최근 7일 (오늘 포함)
+  const start = kstShiftDate(-6);
+  const end = kstShiftDate(0);
+  const startDateStr = start.dateStr;
+  const endDateStr = end.dateStr;
 
   const { data: transactions } = await supabase
     .from("transactions")
@@ -89,13 +133,10 @@ async function fetchWeeklyData(): Promise<{ data: WeeklyDataItem[]; hasRealData:
 
   const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
 
-  // 날짜 순서대로 7일 생성 (오래된 날 → 오늘)
   const chartData: WeeklyDataItem[] = [];
   for (let i = 6; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    const dateStr = date.toISOString().split("T")[0];
-    const dayName = dayNames[date.getDay()];
+    const { dateStr, dayOfWeek } = kstShiftDate(-i);
+    const dayName = dayNames[dayOfWeek];
 
     let 매출 = 0, 지출 = 0;
     transactions.forEach((tx) => {
@@ -136,10 +177,8 @@ async function fetchRecentTransactions(): Promise<{ data: Transaction[]; hasReal
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  // Fetch last 14 days of transactions for richer history cards
-  const twoWeeksAgo = new Date();
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-  const startDate = twoWeeksAgo.toISOString().split("T")[0];
+  // KST 기준 최근 14일
+  const startDate = kstShiftDate(-14).dateStr;
 
   const { data, error } = await supabase
     .from("transactions")
@@ -207,17 +246,18 @@ async function fetchActionData(): Promise<ActionData | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-  const currentDay = today.getDate();
-  const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
-  const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split("T")[0];
-  // 동기간 비교: 지난달 1일 ~ 지난달 오늘 일자까지
-  const lastMonthSameDay = new Date(today.getFullYear(), today.getMonth() - 1, currentDay);
-  // 지난달이 짧은 경우(예: 3월 31일 vs 2월 28일) 말일로 클램프
-  const lastMonthLastDay = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+  // KST 기준 오늘/이번 달/지난 달
+  const { year, month, day } = kstNow();
+  const todayStr = kstDateStr(year, month, day);
+  const currentDay = day;
+  const thisMonthStart = kstDateStr(year, month, 1);
+  const lastMonthYear = month === 1 ? year - 1 : year;
+  const lastMonth = month === 1 ? 12 : month - 1;
+  const lastMonthStart = kstDateStr(lastMonthYear, lastMonth, 1);
+  // 동기간 비교: 지난달 1일 ~ 지난달 오늘 일자(말일 클램프)
+  const lastMonthLastDay = new Date(Date.UTC(lastMonthYear, lastMonth, 0)).getUTCDate();
   const clampedDay = Math.min(currentDay, lastMonthLastDay);
-  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth() - 1, clampedDay).toISOString().split("T")[0];
+  const lastMonthEnd = kstDateStr(lastMonthYear, lastMonth, clampedDay);
 
   const [thisMonthResult, lastMonthResult, unclassifiedResult, profileResult, employeesResult, autoTransfersResult] = await Promise.all([
     supabase
