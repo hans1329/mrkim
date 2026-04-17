@@ -220,10 +220,15 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   // 인증서 비밀번호를 RSA 암호화
   const encryptedPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // CODEF 공식 SDK 표준: loginType "0" = 인증서 (only valid value)
-  // organization은 홈택스 표준: "0001"
-  // 핵심 수정: Body를 encodeURIComponent(JSON.stringify())로 인코딩 (공식 SDK 규격)
+  // 홈택스 공동인증서 특이 규격:
+  // - loginType "2"를 우선 시도
+  // - id/password는 RSA 암호화된 빈 문자열
+  // - 실제 인증서 비밀번호는 certPassword 필드로 전달
+  // - organization은 0001/0002를 모두 시도
+  const encryptedEmpty = encryptRSAPKCS1("", publicKey);
   const attemptPlans = [
+    { loginType: "2", organization: "0001" },
+    { loginType: "2", organization: "0002" },
     { loginType: "0", organization: "0001" },
     { loginType: "0", organization: "0002" },
   ];
@@ -238,9 +243,16 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       clientType,
       organization,
       loginType,
-      password: encryptedPassword,
       identity: cleanedNumber,
     };
+
+    if (loginType === "2") {
+      entry.id = encryptedEmpty;
+      entry.password = encryptedEmpty;
+      entry.certPassword = encryptedPassword;
+    } else {
+      entry.password = encryptedPassword;
+    }
 
     if (keyFileBase64) {
       entry.derFile = certFileBase64;
@@ -278,7 +290,11 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       countryCode: accountEntry.countryCode,
       identity: accountEntry.identity,
       identityLen: String(accountEntry.identity || "").length,
+      hasId: Object.prototype.hasOwnProperty.call(accountEntry, "id"),
+      idLen: String(accountEntry.id || "").length,
       passwordLen: String(accountEntry.password || "").length,
+      hasCertPassword: Object.prototype.hasOwnProperty.call(accountEntry, "certPassword"),
+      certPasswordLen: String(accountEntry.certPassword || "").length,
       hasDerFile: !!accountEntry.derFile,
       derFileLen: String(accountEntry.derFile || "").length,
       hasKeyFile: !!accountEntry.keyFile,
