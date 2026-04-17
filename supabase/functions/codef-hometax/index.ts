@@ -31,6 +31,35 @@ function encryptRSAPKCS1(plainText: string, rawPublicKey: string): string {
   return forge.util.encode64(encrypted);
 }
 
+/**
+ * signCert.der + signPri.key(암호화된 PKCS#8) → PKCS#12(PFX) base64
+ * - 동일한 인증서 비밀번호로 개인키를 풀고 PFX로 다시 묶음
+ */
+function buildPfxFromDerKey(certBase64: string, keyBase64: string, password: string): string {
+  // 1) DER 인증서 파싱
+  const certDer = forge.util.decode64(certBase64);
+  const certAsn1 = forge.asn1.fromDer(certDer);
+  const cert = forge.pki.certificateFromAsn1(certAsn1);
+
+  // 2) 암호화된 PKCS#8 개인키 복호화
+  const keyDer = forge.util.decode64(keyBase64);
+  const keyAsn1 = forge.asn1.fromDer(keyDer);
+  const privateKey = forge.pki.decryptPrivateKeyInfo(keyAsn1, password)
+    ? forge.pki.privateKeyFromAsn1(forge.pki.decryptPrivateKeyInfo(keyAsn1, password))
+    : null;
+  if (!privateKey) {
+    throw new Error("개인키 복호화 실패 — 비밀번호가 일치하지 않을 수 있어요.");
+  }
+
+  // 3) PKCS#12 생성 (3DES, 동일 비밀번호로 보호)
+  const p12Asn1 = forge.pkcs12.toPkcs12Asn1(privateKey, [cert], password, {
+    algorithm: "3des",
+    friendlyName: "hometax-cert",
+  });
+  const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
+  return forge.util.encode64(p12Der);
+}
+
 function parseCodefResponse(text: string): any {
   try {
     return JSON.parse(text);
@@ -220,19 +249,26 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   // 인증서 비밀번호를 RSA 암호화
   const encryptedPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // 홈택스(NT) 전용 규격 — CODEF 홈택스 데모 페이지 기준:
-  //   * DER+KEY: certFile(DER) + keyFile(.key) + certType "1"
-  //   * PFX/P12: certFile + certType "pfx" (keyFile 없음)
-  //   * 비밀번호 필드명은 기관별 편차가 있어 password → certPassword 순으로 시도
-  //   * organization: 0001(국세청 일반) → 0002(전자세금계산서)
-  //   * loginType: "0" (공동인증서). NT는 "2"를 거부하므로 더 이상 사용하지 않음.
-  //   * identity: 개인 공동인증서의 경우 주민번호(또는 법인번호)가 필요할 수 있음
-  const isDerMode = !!keyFileBase64;
-  // CODEF 규격(메모리 tech/codef/cert-type-pfx-standard):
-  //   * DER+KEY: certType 필드 자체를 보내지 않음 (명시 시 CF-00007)
-  //   * PFX/P12: certType:"pfx" 명시
-  //   * organization: 홈택스(NT)는 "0001"만 사용
-  //   * 비밀번호 키는 password로 통일
+  // 홈택스(NT)는 PFX(.pfx/.p12) 통합 파일만 안정적으로 받음.
+  // DER+KEY가 들어왔다면 서버에서 PFX로 합성해 단일 certFile로 전송한다.
+  let unifiedCertFile = certFileBase64;
+  if (keyFileBase64) {
+    try {
+      unifiedCertFile = buildPfxFromDerKey(certFileBase64, keyFileBase64, certPassword);
+      console.log("Composed PFX from DER+KEY, len:", unifiedCertFile.length);
+    } catch (err) {
+      console.error("PFX 합성 실패:", err);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "인증서 파일을 PFX로 변환하지 못했어요. 비밀번호와 signCert.der/signPri.key 파일을 다시 확인해주세요.",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
+
+  // PFX/P12 단일 파일 전송 — certType:"pfx", organization:"0001", loginType:"0"
   const attemptPlans: Array<{ organization: string; passwordKey: "password" | "certPassword" }> = [
     { organization: "0001", passwordKey: "password" },
     { organization: "0001", passwordKey: "certPassword" },
@@ -248,17 +284,10 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       clientType,
       organization,
       loginType: "0",
+      certType: "pfx",
+      certFile: unifiedCertFile,
     };
     entry[passwordKey] = encryptedPassword;
-    if (isDerMode) {
-      // DER + KEY 분리 방식 — certType 생략 필수
-      entry.certFile = certFileBase64;
-      entry.keyFile = keyFileBase64;
-    } else {
-      // PFX/P12 통합 파일
-      entry.certFile = certFileBase64;
-      entry.certType = "pfx";
-    }
     return entry;
   };
 
