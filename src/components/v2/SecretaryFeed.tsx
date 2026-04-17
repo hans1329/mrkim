@@ -8,6 +8,7 @@ import { useCountUp } from "@/hooks/useCountUp";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useV2PC } from "./V2PCContext";
 import { SettlementDetailSheet } from "./SettlementDetailSheet";
+import { SalesPatternCard } from "./SalesPatternCard";
 
 
 const cardVariants = {
