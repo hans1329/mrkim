@@ -27,18 +27,23 @@ const weatherConfig = {
 
 export const WeatherAnchor = () => {
   const [expanded, setExpanded] = useState(false);
-  const [tipIndex, setTipIndex] = useState(0);
+  // slot: 0 = 날씨 표시, 1..N = 팁 표시
+  const [slot, setSlot] = useState(0);
   const weather = "sunny";
   const config = weatherConfig[weather];
   const gaugePercent = 78;
 
-  // 4초마다 다음 팁으로 순환
+  // 4초마다 다음 슬롯으로 (날씨 ↔ 팁 순환)
   useEffect(() => {
+    if (expanded) return; // 펼친 상태에서는 순환 정지
     const interval = setInterval(() => {
-      setTipIndex((prev) => (prev + 1) % COMMAND_TIPS.length);
+      setSlot((prev) => (prev + 1) % (COMMAND_TIPS.length + 1));
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [expanded]);
+
+  const showingTip = slot > 0 && !expanded;
+  const tipIndex = slot - 1;
 
   return (
     <motion.div
@@ -51,84 +56,105 @@ export const WeatherAnchor = () => {
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.3)",
       }}
     >
-      <div className="px-4 py-3.5">
-        {/* 날씨 + 절세 게이지 */}
-        <div className="flex items-center gap-2.5">
-          <span className="text-xl">{config.icon}</span>
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
-                오늘 매장 날씨 · {config.label}
-              </p>
-              <span className="text-[11px] font-bold" style={{ color: "rgba(255,255,255,0.8)" }}>
-                절세 {gaugePercent}%
-              </span>
-            </div>
-            <div
-              className="h-1.5 rounded-full overflow-hidden mt-1.5"
-              style={{ background: "rgba(255,255,255,0.06)" }}
+      <div className="px-4 py-3.5 min-h-[64px] flex items-center">
+        <AnimatePresence mode="wait">
+          {showingTip ? (
+            // 팁 슬롯 — 박스 전체 사용
+            <motion.div
+              key={`tip-${tipIndex}`}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.5 }}
+              className="w-full flex items-center gap-3"
             >
-              <motion.div
-                className="h-full rounded-full"
-                style={{
-                  background: "linear-gradient(90deg, #007AFF, #5856D6, #AF52DE)",
-                }}
-                initial={{ width: 0 }}
-                animate={{ width: `${gaugePercent}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-              />
-            </div>
-            {/* 음성 명령어 사용팁 — 페이드 인/아웃 순환 */}
-            <div className="mt-2 h-3.5 overflow-hidden relative">
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={tipIndex}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.5 }}
-                  className="text-[10.5px] font-medium absolute inset-0"
+              <span className="text-xl">💡</span>
+              <div className="flex-1 min-w-0">
+                <p
+                  className="text-[10.5px] font-medium"
                   style={{ color: "rgba(255,255,255,0.45)" }}
                 >
-                  💡 이렇게 말해보세요 — {COMMAND_TIPS[tipIndex]}
-                </motion.p>
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-
-        {/* 확장 시 3축 요약 */}
-        {expanded && (
-          <motion.div
-            className="grid grid-cols-3 gap-2 mt-3"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            {[
-              { label: "매출 추이", value: "↑ 12%" },
-              { label: "세무 리스크", value: "낮음" },
-              { label: "증빙률", value: "92%" },
-            ].map((axis) => (
-              <div
-                key={axis.label}
-                className="rounded-xl px-2.5 py-2 text-center"
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                }}
-              >
-                <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.35)" }}>
-                  {axis.label}
+                  이렇게 말해보세요
                 </p>
-                <p className="text-xs font-bold mt-0.5" style={{ color: "rgba(255,255,255,0.9)" }}>
-                  {axis.value}
+                <p
+                  className="text-[14px] font-semibold mt-0.5 truncate"
+                  style={{ color: "rgba(255,255,255,0.92)" }}
+                >
+                  {COMMAND_TIPS[tipIndex]}
                 </p>
               </div>
-            ))}
-          </motion.div>
-        )}
+            </motion.div>
+          ) : (
+            // 날씨 + 절세 게이지 슬롯
+            <motion.div
+              key="weather"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.5 }}
+              className="w-full flex items-center gap-2.5"
+            >
+              <span className="text-xl">{config.icon}</span>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+                    오늘 매장 날씨 · {config.label}
+                  </p>
+                  <span className="text-[11px] font-bold" style={{ color: "rgba(255,255,255,0.8)" }}>
+                    절세 {gaugePercent}%
+                  </span>
+                </div>
+                <div
+                  className="h-1.5 rounded-full overflow-hidden mt-1.5"
+                  style={{ background: "rgba(255,255,255,0.06)" }}
+                >
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{
+                      background: "linear-gradient(90deg, #007AFF, #5856D6, #AF52DE)",
+                    }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${gaugePercent}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* 확장 시 3축 요약 */}
+      {expanded && (
+        <motion.div
+          className="grid grid-cols-3 gap-2 mt-3 px-4 pb-3.5"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+        >
+          {[
+            { label: "매출 추이", value: "↑ 12%" },
+            { label: "세무 리스크", value: "낮음" },
+            { label: "증빙률", value: "92%" },
+          ].map((axis) => (
+            <div
+              key={axis.label}
+              className="rounded-xl px-2.5 py-2 text-center"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+                {axis.label}
+              </p>
+              <p className="text-xs font-bold mt-0.5" style={{ color: "rgba(255,255,255,0.9)" }}>
+                {axis.value}
+              </p>
+            </div>
+          ))}
+        </motion.div>
+      )}
     </motion.div>
   );
 };
