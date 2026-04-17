@@ -246,17 +246,18 @@ async function fetchActionData(): Promise<ActionData | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-  const currentDay = today.getDate();
-  const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
-  const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split("T")[0];
-  // 동기간 비교: 지난달 1일 ~ 지난달 오늘 일자까지
-  const lastMonthSameDay = new Date(today.getFullYear(), today.getMonth() - 1, currentDay);
-  // 지난달이 짧은 경우(예: 3월 31일 vs 2월 28일) 말일로 클램프
-  const lastMonthLastDay = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+  // KST 기준 오늘/이번 달/지난 달
+  const { year, month, day } = kstNow();
+  const todayStr = kstDateStr(year, month, day);
+  const currentDay = day;
+  const thisMonthStart = kstDateStr(year, month, 1);
+  const lastMonthYear = month === 1 ? year - 1 : year;
+  const lastMonth = month === 1 ? 12 : month - 1;
+  const lastMonthStart = kstDateStr(lastMonthYear, lastMonth, 1);
+  // 동기간 비교: 지난달 1일 ~ 지난달 오늘 일자(말일 클램프)
+  const lastMonthLastDay = new Date(Date.UTC(lastMonthYear, lastMonth, 0)).getUTCDate();
   const clampedDay = Math.min(currentDay, lastMonthLastDay);
-  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth() - 1, clampedDay).toISOString().split("T")[0];
+  const lastMonthEnd = kstDateStr(lastMonthYear, lastMonth, clampedDay);
 
   const [thisMonthResult, lastMonthResult, unclassifiedResult, profileResult, employeesResult, autoTransfersResult] = await Promise.all([
     supabase
