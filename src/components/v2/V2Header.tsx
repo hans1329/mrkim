@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { Mic, Search } from "lucide-react";
+import { Mic, MicOff, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useV2Voice } from "./V2VoiceContext";
 import { BentoMenuButton } from "./BentoMenuButton";
