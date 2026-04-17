@@ -220,14 +220,6 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
         onClose={() => setDrawerOpen(false)}
       />
 
-      <AnimatePresence>
-        {showEmployeeReg && (
-          <VoiceEmployeeRegistration
-            onClose={() => setShowEmployeeReg(false)}
-            onComplete={handleEmployeeRegComplete}
-          />
-        )}
-      </AnimatePresence>
     </>
   );
 };
