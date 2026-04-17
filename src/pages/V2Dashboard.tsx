@@ -100,6 +100,7 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
 };
 
 const V2Dashboard = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [stage, setStage] = useState<"intro" | "onboarding" | "dashboard" | "loading">("loading");
   const [existingData, setExistingData] = useState<Record<string, string>>({});
@@ -119,8 +120,13 @@ const V2Dashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
+        // 비로그인 상태에서는 온보딩(이름 묻기) 진입을 막고 로그인으로 이동
+        if (shouldStartConnectionOnboarding) {
+          navigate("/login", { replace: true });
+          return;
+        }
         setExistingData({});
-        setStage(shouldStartConnectionOnboarding ? "onboarding" : locallyOnboarded ? "dashboard" : "intro");
+        setStage(locallyOnboarded ? "dashboard" : "intro");
         return;
       }
 
@@ -141,12 +147,12 @@ const V2Dashboard = () => {
       if (isOnboarded(profile) || locallyOnboarded) {
         setStage("dashboard");
       } else {
-        setStage("intro");
+        setStage("onboarding");
       }
     };
 
     load();
-  }, [shouldStartConnectionOnboarding]);
+  }, [shouldStartConnectionOnboarding, navigate]);
 
   const handleIntroComplete = useCallback(() => {
     setStage("onboarding");
