@@ -57,9 +57,9 @@ async function fetchSummaryStats(): Promise<SummaryStats | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-  const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
+  const { year, month, day } = kstNow();
+  const todayStr = kstDateStr(year, month, day);
+  const monthStart = kstDateStr(year, month, 1);
 
   const [todayResult, monthlyResult] = await Promise.all([
     supabase
