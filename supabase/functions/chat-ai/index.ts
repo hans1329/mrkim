@@ -1452,6 +1452,20 @@ serve(async (req) => {
     const { messages, secretaryName = "김비서", secretaryTone = "polite", secretaryGender = "female", userId, voiceMode = false } = await req.json();
     if (!messages || messages.length === 0) throw new Error("Messages array is required");
 
+    // ━━━ 사용자 호칭 조회 (이름/닉네임 → "OOO 대표님") ━━━
+    let userTitle = "대표님";
+    if (userId) {
+      try {
+        const sbT = createSupabaseClient(req.headers.get("Authorization") || "");
+        if (sbT) {
+          const { data: prof } = await sbT.from("profiles").select("name, nickname").eq("user_id", userId).maybeSingle();
+          const display = (prof as any)?.nickname || (prof as any)?.name;
+          if (display) userTitle = `${display} 대표님`;
+        }
+      } catch (e) { console.warn("user title lookup failed:", e); }
+    }
+    const titleRule = `\n\n## 호칭 규칙 (절대 위반 금지)\n- 상대방을 부를 때는 반드시 "${userTitle}"이라고 부르세요.\n- "고객님", "사장님", "이용자님", "회원님" 같은 호칭은 절대 사용하지 마세요.`;
+
     // ━━━ 일일 할당량 확인 ━━━
     const authHeader = req.headers.get("Authorization") || "";
     const quota = await checkDailyQuota(userId, authHeader);
