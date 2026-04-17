@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useV2Voice } from "./V2VoiceContext";
+import { detectVoiceIntent } from "@/lib/voiceIntent";
 
 interface ChatTurn {
   id: string;
   role: "user" | "assistant";
   content: string;
+  card?: {
+    title: string;
+    value?: string;
+    hint?: string;
+  };
 }
 
 interface VoiceChatOverlayProps {
