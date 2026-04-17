@@ -76,20 +76,77 @@ const STATIC_TIPS: CarouselCard[] = [
   },
 ];
 
+function useSettlementCard(): CarouselCard | null {
+  const { data } = useQuery({
+    queryKey: ["tax-carousel-settlement"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0].replace(/-/g, "");
+      const futureStr = new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0].replace(/-/g, "");
+      const { data: orders } = await supabase
+        .from("delivery_orders")
+        .select("settle_dt, settle_amt")
+        .eq("user_id", user.id)
+        .gte("settle_dt", todayStr)
+        .lte("settle_dt", futureStr)
+        .not("settle_amt", "is", null);
+      if (!orders || orders.length === 0) return null;
+      const byDate = new Map<string, number>();
+      for (const o of orders) {
+        if (!o.settle_dt) continue;
+        byDate.set(o.settle_dt, (byDate.get(o.settle_dt) || 0) + (Number(o.settle_amt) || 0));
+      }
+      const sorted = Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+      if (sorted.length === 0) return null;
+      const [nextDate, nextAmount] = sorted[0];
+      const m = Number(nextDate.slice(4, 6));
+      const d = Number(nextDate.slice(6, 8));
+      const settleDate = new Date(`${nextDate.slice(0, 4)}-${nextDate.slice(4, 6)}-${nextDate.slice(6, 8)}`);
+      const daysLeft = Math.ceil((settleDate.getTime() - today.getTime()) / 86400000);
+      return { nextDate: `${m}/${d}`, nextAmount, daysLeft };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (!data) return null;
+  const isToday = data.daysLeft <= 0;
+  const fmt = data.nextAmount >= 10000
+    ? `${Math.round(data.nextAmount / 10000).toLocaleString()}만원`
+    : `${data.nextAmount.toLocaleString()}원`;
+  return {
+    id: "settlement-forecast",
+    icon: <Wallet className="w-5 h-5" />,
+    title: isToday ? "배민 정산 오늘 입금" : `배민 정산 D-${data.daysLeft}`,
+    subtitle: isToday ? "오늘 정산 예정" : `${data.nextDate} 입금 예정`,
+    badge: fmt,
+    badgeColor: "#FFFFFF",
+    badgeBg: "rgba(255,255,255,0.18)",
+    description: isToday
+      ? "오늘 배민 정산금이 입금될 예정이에요. 현금흐름을 확인해보세요."
+      : `${data.daysLeft}일 뒤 배민 정산금이 입금돼요. 현금흐름 계획에 참고하세요.`,
+    gradient: "linear-gradient(135deg, #2AC1BC 0%, #007AFF 100%)",
+    glowColor: "rgba(42,193,188,0.4)",
+    action: "정산 상세 보기",
+  };
+}
+
 export const TaxSavingCarousel = () => {
   const [current, setCurrent] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const settlementCard = useSettlementCard();
 
   const cards: CarouselCard[] = useMemo(() => {
-    // For infinite loop, we duplicate the cards array
-    const allCards = [...STATIC_TIPS];
+    // Settlement card goes first when available
+    const allCards = settlementCard ? [settlementCard, ...STATIC_TIPS] : [...STATIC_TIPS];
     // Return with clones: [last item, ...all, first item]
     return [
       allCards[allCards.length - 1],
       ...allCards,
       allCards[0],
     ];
-  }, []);
+  }, [settlementCard]);
 
   // Track current slide via scroll position with infinite loop detection
   const handleScroll = useCallback(() => {
