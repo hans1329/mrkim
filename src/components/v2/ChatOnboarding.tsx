@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Send, Loader2, Check } from "lucide-react";
+import { Send, Loader2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useV2Voice } from "./V2VoiceContext";
 import { useConnection } from "@/contexts/ConnectionContext";
@@ -96,6 +96,7 @@ interface ChatOnboardingProps {
   onComplete: (data: Record<string, string>) => void;
   onProgress?: (partialData: Record<string, string>) => void | Promise<void>;
   existingData?: Record<string, string>;
+  onClose?: () => void;
 }
 
 // ─── Avatar ────────────────────────────────────────────────────
@@ -116,7 +117,7 @@ const YarnBallAvatar = () => (
 
 // ─── Main Component ───────────────────────────────────────────
 
-export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: ChatOnboardingProps) => {
+export const ChatOnboarding = ({ onComplete, onProgress, existingData = {}, onClose }: ChatOnboardingProps) => {
   const {
     isConnected: voiceConnected,
     partialTranscript,
