@@ -8,7 +8,9 @@ import { IntroSequence } from "@/components/v2/IntroSequence";
 import { ChatOnboarding } from "@/components/v2/ChatOnboarding";
 import { VoiceEmployeeRegistration } from "@/components/v2/VoiceEmployeeRegistration";
 import { UrgentEventSplash } from "@/components/v2/UrgentEventSplash";
-import { VoiceChatOverlay } from "@/components/v2/VoiceChatOverlay";
+import { VoiceListeningHint } from "@/components/v2/VoiceListeningHint";
+import { VoiceCardToast, type VoiceCard } from "@/components/v2/VoiceCardToast";
+import { VoiceChatDrawer, type ChatTurn } from "@/components/v2/VoiceChatDrawer";
 import { useV2Voice } from "@/components/v2/V2VoiceContext";
 import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +18,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFeedCards } from "@/hooks/useFeedCards";
 import { detectVoiceIntent } from "@/lib/voiceIntent";
+
+// 응답이 카드 토스트로 적합한지 판별: 짧고, 숫자/단위 포함, 시각화 없음
+function shouldShowAsCard(response: string, hasVisualization: boolean): boolean {
+  if (hasVisualization) return false;
+  const text = response.trim();
+  if (text.length > 70) return false;
+  // 줄바꿈/리스트가 있으면 드로어
+  if (/\n|[-*]\s/.test(text)) return false;
+  return /(\d|만원|원|건|%|점|위|개|명)/.test(text);
+}
 
 const V2_ONBOARDED_KEY = "v2_onboarded";
 
