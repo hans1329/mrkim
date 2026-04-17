@@ -240,9 +240,12 @@ export function V2VoiceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return () => {
-      safeDisconnect();
+      try {
+        disconnectRequestedRef.current = true;
+        scribeRef.current?.disconnect();
+      } catch {}
     };
-  }, [safeDisconnect]);
+  }, []);
 
   const onCommit = useCallback((callback: (text: string) => void) => {
     commitCallbackRef.current = callback;
