@@ -83,38 +83,48 @@ const glass = {
 
 export default function V2SalesPattern() {
   const navigate = useNavigate();
-  const { data: transactions, isLoading: loading } = useTransactions();
+  const { data: transactions, isLoading: txLoading } = useTransactions();
+  const { data: deliveryOrders, isLoading: dLoading } = useDeliveryOrdersForPattern();
+  const loading = txLoading || dLoading;
 
   const { daily, hourly, heatmap, hasData, insights } = useMemo(() => {
-    const incomes = (transactions || []).filter((t) => t.type === "income");
-
     const dailyMap = new Map<number, DailyStat>();
     const hourlyMap = new Map<number, HourlyStat>();
     const heat: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
 
-    for (const t of incomes) {
-      const d = new Date(t.transaction_date);
-      if (isNaN(d.getTime())) continue;
-      const dow = d.getDay();
-      const amt = Number(t.amount) || 0;
-
+    const addPoint = (dow: number, hr: number, amt: number) => {
       const ds = dailyMap.get(dow) || { day: dow, total: 0, count: 0, avg: 0 };
       ds.total += amt;
       ds.count += 1;
       dailyMap.set(dow, ds);
-
-      let hr = -1;
-      if (t.transaction_time) {
-        const m = String(t.transaction_time).match(/^(\d{1,2})/);
-        if (m) hr = Number(m[1]);
-      }
-      if (hr >= 0 && hr < 24) {
+      if (hr >= 0) {
         const hs = hourlyMap.get(hr) || { hour: hr, total: 0, count: 0 };
         hs.total += amt;
         hs.count += 1;
         hourlyMap.set(hr, hs);
         heat[dow][hr] += amt;
       }
+    };
+
+    // 1) 일반 매출 (배달 정산 source 제외 - delivery_orders로 대체)
+    const incomes = (transactions || []).filter(
+      (t) => (t.type === "income" || t.type === "transfer_in") && t.source_type !== "delivery"
+    );
+    for (const t of incomes) {
+      const dow = getDowFromIsoDate(t.transaction_date);
+      if (dow === null) continue;
+      const amt = Number(t.amount) || 0;
+      if (amt <= 0) continue;
+      addPoint(dow, getHourFromTime(t.transaction_time), amt);
+    }
+
+    // 2) 배민/쿠팡이츠 주문 매출 (매출 발생 일시 기준)
+    for (const o of deliveryOrders || []) {
+      const dow = getDowFromOrderDt(o.order_dt);
+      if (dow === null) continue;
+      const amt = Number(o.total_amt) || 0;
+      if (amt <= 0) continue;
+      addPoint(dow, getHourFromOrderTm(o.order_tm), amt);
     }
 
     const daily: DailyStat[] = Array.from({ length: 7 }, (_, i) => {
