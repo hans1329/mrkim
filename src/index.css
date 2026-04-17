@@ -162,3 +162,79 @@
     animation: bounce-gentle 11.5s cubic-bezier(0.22, 0.68, 0.36, 1) infinite;
   }
 }
+
+/* ============================================ */
+/* V2 다크 테마 스코프 오버라이드                  */
+/* ============================================ */
+[data-theme="v2"] .bg-card,
+[data-theme="v2"] [class*="bg-card"] {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.92) !important;
+}
+
+[data-theme="v2"] .text-muted-foreground {
+  color: rgba(255,255,255,0.55) !important;
+}
+
+[data-theme="v2"] .text-foreground {
+  color: rgba(255,255,255,0.92) !important;
+}
+
+[data-theme="v2"] .border,
+[data-theme="v2"] .border-border,
+[data-theme="v2"] .border-input {
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+[data-theme="v2"] .border-dashed {
+  border-color: rgba(255,255,255,0.15) !important;
+}
+
+[data-theme="v2"] .bg-background {
+  background: rgba(255,255,255,0.04) !important;
+}
+
+[data-theme="v2"] .bg-muted {
+  background: rgba(255,255,255,0.06) !important;
+}
+
+[data-theme="v2"] .bg-secondary {
+  background: rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
+[data-theme="v2"] .bg-accent,
+[data-theme="v2"] .hover\:bg-accent:hover {
+  background: rgba(255,255,255,0.08) !important;
+}
+
+[data-theme="v2"] [class*="bg-primary/5"] {
+  background: rgba(0,122,255,0.1) !important;
+}
+[data-theme="v2"] [class*="bg-primary/10"] {
+  background: rgba(0,122,255,0.18) !important;
+}
+[data-theme="v2"] [class*="bg-primary/\\[0\\.02\\]"] {
+  background: rgba(0,122,255,0.06) !important;
+}
+[data-theme="v2"] [class*="border-primary/20"],
+[data-theme="v2"] [class*="border-primary/30"] {
+  border-color: rgba(0,122,255,0.4) !important;
+}
+[data-theme="v2"] .text-primary {
+  color: #5AA9FF !important;
+}
+
+[data-theme="v2"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="v2"] textarea,
+[data-theme="v2"] select {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: rgba(255,255,255,0.95) !important;
+}
+[data-theme="v2"] input::placeholder,
+[data-theme="v2"] textarea::placeholder {
+  color: rgba(255,255,255,0.35) !important;
+}
+
