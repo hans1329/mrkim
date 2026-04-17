@@ -117,6 +117,7 @@ const V2Dashboard = () => {
   useEffect(() => {
     const load = async () => {
       const locallyOnboarded = localStorage.getItem(V2_ONBOARDED_KEY) === "true";
+      const showIntroAfterLogin = sessionStorage.getItem("v2_show_intro") === "1";
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
@@ -141,6 +142,13 @@ const V2Dashboard = () => {
 
       if (shouldStartConnectionOnboarding) {
         setStage("onboarding");
+        return;
+      }
+
+      // 로그인 직후에는 인사말(인트로) 화면을 우선 보여줌
+      if (showIntroAfterLogin) {
+        sessionStorage.removeItem("v2_show_intro");
+        setStage("intro");
         return;
       }
 
