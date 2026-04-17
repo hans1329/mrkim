@@ -220,51 +220,73 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   // 인증서 비밀번호를 RSA 암호화
   const encryptedPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // CODEF 공식 규격에 맞춘 계정 엔트리
-  // - loginType: "0" (인증서) — 은행/카드/홈택스 공통
-  // - id 필드 불필요 (인증서 로그인 시)
-  const accountEntry: Record<string, unknown> = {
-    countryCode: "KR",
-    businessType: "NT",
-    clientType,
-    organization: "0002",
-    loginType: "0",           // 인증서 로그인 = "0" (공식 규격)
-    password: encryptedPassword,
-    identity: cleanedNumber,
+  // CODEF 홈택스 organization 코드:
+  // - "0001": 국세청 일반 (법인사업자 권장)
+  // - "0002": 전자세금계산서 (개인사업자/특정 권한 필요)
+  // 법인은 0001 우선, 실패 시 0002 폴백
+  const orgCandidates = clientType === "B" ? ["0001", "0002"] : ["0002", "0001"];
+
+  const buildEntry = (organization: string): Record<string, unknown> => {
+    const entry: Record<string, unknown> = {
+      countryCode: "KR",
+      businessType: "NT",
+      clientType,
+      organization,
+      loginType: "0",
+      password: encryptedPassword,
+      identity: cleanedNumber,
+    };
+    if (keyFileBase64) {
+      entry.derFile = certFileBase64;
+      entry.keyFile = keyFileBase64;
+    } else {
+      entry.certFile = certFileBase64;
+      entry.certType = "pfx";
+    }
+    return entry;
   };
 
-  // DER+KEY 분리 방식 vs PFX 통합 방식 — 은행(codef-bank)과 동일한 필드명 사용
-  if (keyFileBase64) {
-    accountEntry.derFile = certFileBase64;
-    accountEntry.keyFile = keyFileBase64;
-    // DER+KEY 분리 방식: certType 생략 (CODEF 공식 규격)
-    console.log(`Using DER+KEY separate cert files (no certType, clientType: ${clientType})`);
-  } else {
-    accountEntry.certFile = certFileBase64;
-    accountEntry.certType = "pfx";
-    console.log(`Using PFX/P12 combined cert file (clientType: ${clientType})`);
+  console.log(
+    `Registering hometax account with certificate, identity=${cleanedNumber}, ` +
+    `loginType=0, clientType=${clientType}, certMode=${keyFileBase64 ? "DER+KEY" : "PFX"}, ` +
+    `orgCandidates=${orgCandidates.join(",")}`
+  );
+
+  let responseText = "";
+  let data: any = {};
+  let result: any = {};
+  let lastErrorList: any[] = [];
+
+  for (const organization of orgCandidates) {
+    const accountEntry = buildEntry(organization);
+    const requestBody = { accountList: [accountEntry] };
+
+    console.log(`→ Trying organization=${organization}`);
+    const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    responseText = await response.text();
+    console.log(`Account create response (org=${organization}):`, responseText.substring(0, 500));
+
+    data = parseCodefResponse(responseText);
+    result = data.result || {};
+    lastErrorList = data.data?.errorList || [];
+
+    // 성공 시 즉시 break
+    if (result.code === "CF-00000" && data.data?.connectedId) break;
+    if ((data.data?.successList?.length || 0) > 0 && data.data?.connectedId) break;
+
+    // CF-00007(파라미터 에러)일 때만 다음 organization 시도
+    const hasParamError = lastErrorList.some((e: any) => e.code === "CF-00007");
+    if (!hasParamError) break;
+    console.log(`CF-00007 with org=${organization}, trying next…`);
   }
-
-  const requestBody = {
-    accountList: [accountEntry],
-  };
-
-  console.log(`Registering hometax account with certificate, identity=${cleanedNumber}, loginType=0, clientType=${clientType}`);
-
-  const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  const responseText = await response.text();
-  console.log("Account create response:", responseText.substring(0, 1000));
-
-  const data = parseCodefResponse(responseText);
-  const result = data.result || {};
 
   // 즉시 성공 (connectedId 발급)
   if (result.code === "CF-00000" && data.data?.connectedId) {
