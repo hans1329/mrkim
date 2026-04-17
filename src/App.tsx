@@ -40,6 +40,7 @@ import TermsOfService from "./pages/TermsOfService";
 import ResetPassword from "./pages/ResetPassword";
 import V2Dashboard from "./pages/V2Dashboard";
 import V2Transactions from "./pages/V2Transactions";
+import V2SalesPattern from "./pages/V2SalesPattern";
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -99,6 +100,7 @@ const App = () => (
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/v2" element={<V2Dashboard />} />
                       <Route path="/v2/transactions" element={<V2Transactions />} />
+                      <Route path="/v2/sales-pattern" element={<V2SalesPattern />} />
                       {/* Admin Routes */}
                       <Route path="/admin/login" element={<AdminLogin />} />
                       <Route path="/admin" element={<AdminDashboard />} />
