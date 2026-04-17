@@ -265,6 +265,8 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
         onClose={() => setDrawerOpen(false)}
       />
 
+      {/* 시스템 설정 토글 결과 큰 토스트 */}
+      <SystemToggleSplash result={systemResult} onDismiss={() => setSystemResult(null)} />
     </>
   );
 };
