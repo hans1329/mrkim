@@ -1,6 +1,51 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+// === KST(Asia/Seoul) 유틸리티 ===
+// 모든 날짜 계산은 KST 기준으로 수행 (toISOString의 UTC 변환 버그 방지)
+const KST_TZ = "Asia/Seoul";
+
+/** KST 기준 현재 시각의 Date 객체 (연/월/일/시 추출용) */
+function kstNow(): { year: number; month: number; day: number; hours: number } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: KST_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  return { year: get("year"), month: get("month"), day: get("day"), hours: get("hour") };
+}
+
+/** YYYY-MM-DD 포맷 (KST 기준) */
+function kstDateStr(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/** KST 오늘 기준 N일 전/후 날짜 문자열 반환 */
+function kstShiftDate(daysOffset: number): { dateStr: string; dayOfWeek: number } {
+  const { year, month, day } = kstNow();
+  // KST 자정을 UTC로 표현(00:00 KST = 전날 15:00 UTC)
+  const baseUtc = Date.UTC(year, month - 1, day) + daysOffset * 86400000;
+  const d = new Date(baseUtc);
+  // 다시 KST 기준 연/월/일 추출
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: KST_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  }).formatToParts(d);
+  const y = Number(parts.find((p) => p.type === "year")?.value);
+  const m = Number(parts.find((p) => p.type === "month")?.value);
+  const dd = Number(parts.find((p) => p.type === "day")?.value);
+  // getUTCDay는 baseUtc가 KST 자정을 가리키므로 KST 요일과 일치
+  const dow = new Date(Date.UTC(y, m - 1, dd)).getUTCDay();
+  return { dateStr: kstDateStr(y, m, dd), dayOfWeek: dow };
+}
+
 interface SummaryStats {
   todayIncome: number;
   todayExpense: number;
