@@ -105,6 +105,11 @@ function LoginContent() {
     }
     
     toast.success("로그인 성공!");
+    // V2 인트로(인사말) 화면부터 다시 보여주기 위해 신호 설정
+    try {
+      localStorage.removeItem("v2_onboarded");
+      sessionStorage.setItem("v2_show_intro", "1");
+    } catch {}
     navigate("/");
   };
 
