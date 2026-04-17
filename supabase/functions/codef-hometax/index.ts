@@ -198,7 +198,7 @@ async function handleBusinessVerify(body: any): Promise<Response> {
  * - 은행(codef-bank)과 동일한 파라미터 구조 사용
  */
 async function handleRegister(_req: Request, body: any, clientType: string = "P"): Promise<Response> {
-  const { businessNumber, certFileBase64, certPassword, keyFileBase64, identity } = body;
+  const { businessNumber, certFileBase64, certPassword, keyFileBase64 } = body;
 
   if (!businessNumber || !certFileBase64 || !certPassword) {
     return new Response(
@@ -211,7 +211,6 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   }
 
   const cleanedNumber = businessNumber.replace(/\D/g, "");
-  const cleanedIdentity = identity ? String(identity).replace(/\D/g, "") : "";
   const accessToken = await getAccessToken();
 
   // 동적 공개키 조회 (은행과 동일)
@@ -258,15 +257,12 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       entry.certFile = certFileBase64;
       entry.certType = "pfx";
     }
-    if (cleanedIdentity) {
-      entry.identity = cleanedIdentity;
-    }
     return entry;
   };
 
   console.log(
-    `Registering hometax account with certificate, identity=${cleanedNumber}, ` +
-    `clientType=${clientType}, certMode=${isDerMode ? "DER+KEY" : "PFX"}, hasUserIdentity=${!!cleanedIdentity}, ` +
+    `Registering hometax account with certificate, businessNumber=${cleanedNumber}, ` +
+    `clientType=${clientType}, certMode=${isDerMode ? "DER+KEY" : "PFX"}, ` +
     `attempts=${attemptPlans.map((p) => `${p.organization}:${p.passwordKey}`).join(",")}`
   );
 
@@ -292,7 +288,6 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       hasKeyFile: !!accountEntry.keyFile,
       keyFileLen: String(accountEntry.keyFile || "").length,
       certType: accountEntry.certType ?? null,
-      hasIdentity: !!accountEntry.identity,
       keys: Object.keys(accountEntry),
     };
     console.log(`→ Payload meta:`, JSON.stringify(debugMeta));
