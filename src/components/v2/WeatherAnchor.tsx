@@ -27,7 +27,18 @@ const weatherConfig = {
 
 export const WeatherAnchor = () => {
   const [expanded, setExpanded] = useState(false);
+  const [tipIndex, setTipIndex] = useState(0);
   const weather = "sunny";
+  const config = weatherConfig[weather];
+  const gaugePercent = 78;
+
+  // 4초마다 다음 팁으로 순환
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTipIndex((prev) => (prev + 1) % COMMAND_TIPS.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
   const config = weatherConfig[weather];
   const gaugePercent = 78;
 
