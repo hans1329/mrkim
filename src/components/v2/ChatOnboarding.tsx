@@ -639,6 +639,7 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {}, onCl
               login_id: payload.login_id,
               has_password: !!payload.password,
               has_cert: !!payload.cert_file,
+              has_key: !!payload.key_file,
             });
 
             // 진행 중 안내
@@ -655,10 +656,13 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {}, onCl
                 if (!cardId) throw new Error("카드사를 인식하지 못했어요. 다시 말씀해주세요.");
                 let certOptions: Parameters<typeof registerCardAccount>[3] | undefined;
                 if (payload.auth_type === "cert" && payload.cert_file && payload.cert_password) {
+                  const certFileBase64 = await fileToBase64(payload.cert_file);
+                  const keyFileBase64 = payload.key_file ? await fileToBase64(payload.key_file) : undefined;
                   certOptions = {
                     loginType: "0",
-                    certFile: await fileToBase64(payload.cert_file),
+                    certFile: certFileBase64,
                     certPassword: payload.cert_password,
+                    keyFile: keyFileBase64,
                     clientType,
                   };
                 }
@@ -675,10 +679,13 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {}, onCl
                 if (!bankId) throw new Error("은행을 인식하지 못했어요. 다시 말씀해주세요.");
                 let certOptions: Parameters<typeof registerBankAccount>[3] | undefined;
                 if (payload.auth_type === "cert" && payload.cert_file && payload.cert_password) {
+                  const certFileBase64 = await fileToBase64(payload.cert_file);
+                  const keyFileBase64 = payload.key_file ? await fileToBase64(payload.key_file) : undefined;
                   certOptions = {
                     loginType: "0",
-                    certFile: await fileToBase64(payload.cert_file),
+                    certFile: certFileBase64,
                     certPassword: payload.cert_password,
+                    keyFile: keyFileBase64,
                     clientType,
                   };
                 }
@@ -697,12 +704,14 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {}, onCl
                 const brn = stateRef.current.business_number || profile?.business_registration_number;
                 if (!brn) throw new Error("사업자등록번호가 먼저 필요해요.");
                 const certFileBase64 = await fileToBase64(payload.cert_file);
+                const keyFileBase64 = payload.key_file ? await fileToBase64(payload.key_file) : undefined;
                 const { data, error } = await supabase.functions.invoke("codef-hometax", {
                   body: {
                     action: "register",
                     businessNumber: String(brn).replace(/\D/g, ""),
                     certFileBase64,
                     certPassword: payload.cert_password,
+                    keyFileBase64,
                     clientType,
                   },
                 });
