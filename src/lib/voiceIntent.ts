@@ -40,11 +40,26 @@ export function detectVoiceIntent(text: string): VoiceIntent {
     return { kind: "onboarding_connect" };
   }
 
-  // 3) 시스템 설정
+  // 3) 시스템 토글 (전화알림 / 브리핑) — 라우팅 전에 ON/OFF 의도 우선 매칭
+  const wantsOff = has(n, ["꺼", "끄", "off", "오프", "중지", "중단", "그만받", "안받", "해제", "비활성"]);
+  const wantsOn = has(n, ["켜", "on", "온", "활성", "받을게", "받자", "시작", "받게"]);
+  if (has(n, ["전화알림", "전화 알림", "콜알림", "보이스알림", "음성알림"])) {
+    if (wantsOff) return { kind: "system_toggle", feature: "phone_alert", enable: false };
+    if (wantsOn) return { kind: "system_toggle", feature: "phone_alert", enable: true };
+  }
+  if (has(n, ["브리핑", "일일브리핑", "데일리브리핑", "아침브리핑", "오늘의브리핑"])) {
+    if (wantsOff) return { kind: "system_toggle", feature: "briefing", enable: false };
+    if (wantsOn) return { kind: "system_toggle", feature: "briefing", enable: true };
+  }
+  // 단순 "알림 켜줘 / 꺼줘"는 전화 알림으로 매핑 (사용자 합의)
+  if (has(n, ["알림"]) && (wantsOn || wantsOff)) {
+    return { kind: "system_toggle", feature: "phone_alert", enable: wantsOn && !wantsOff };
+  }
+
   if (has(n, ["비서 이름", "비서 목소리", "비서 설정", "보이스 변경"])) {
     return { kind: "settings", target: "secretary" };
   }
-  if (has(n, ["알림 설정", "푸시 설정", "전화 알림"])) {
+  if (has(n, ["알림 설정", "푸시 설정"])) {
     return { kind: "settings", target: "alert" };
   }
   if (has(n, ["프로필 변경", "내 정보", "비밀번호 변경"])) {
