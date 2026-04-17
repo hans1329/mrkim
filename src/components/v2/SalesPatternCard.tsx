@@ -1,5 +1,5 @@
-import { useMemo, useState, useRef } from "react";
-import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import { useMemo, useState, useRef, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useTransactions } from "@/hooks/useTransactions";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,8 +11,7 @@ const fmtMan = (won: number) => `₩${(won / 10000).toFixed(1)}만`;
 
 /**
  * 매출 패턴 분석 - 대시보드 요약 카드
- * - 4가지 핵심 인사이트를 큰 카드 캐러셀로 표시
- * - "상세보기" 버튼으로 /v2/sales-pattern 페이지 이동
+ * 4가지 핵심 인사이트를 큰 카드 캐러셀로 표시 (네이티브 scroll-snap)
  */
 export const SalesPatternCard = () => {
   const navigate = useNavigate();
@@ -101,7 +100,7 @@ export const SalesPatternCard = () => {
 };
 
 /* ============================================================
- * 4개의 큰 인사이트 카드 캐러셀
+ * 4개의 큰 인사이트 카드 캐러셀 (native scroll-snap, 무한 루프)
  * ============================================================ */
 type Insights = {
   topDay?: { day: number; total: number; avg: number };
@@ -111,6 +110,15 @@ type Insights = {
   weekendShare: number;
 };
 
+type Card = {
+  id: string;
+  label: string;
+  title: string;
+  sub: string;
+  gradient: string;
+  accent: string;
+};
+
 const InsightHeroCarousel = ({
   insights,
   onMore,
@@ -118,17 +126,11 @@ const InsightHeroCarousel = ({
   insights: Insights;
   onMore: () => void;
 }) => {
-  const [idx, setIdx] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [current, setCurrent] = useState(0);
 
-  const cards = useMemo(() => {
-    const arr: Array<{
-      id: string;
-      label: string;
-      title: string;
-      sub: string;
-      gradient: string;
-      accent: string;
-    }> = [];
+  const baseCards = useMemo<Card[]>(() => {
+    const arr: Card[] = [];
     if (insights.topDay && insights.topDay.total > 0) {
       arr.push({
         id: "top",
@@ -172,14 +174,44 @@ const InsightHeroCarousel = ({
     return arr;
   }, [insights]);
 
-  const handleDragEnd = (_: unknown, info: PanInfo) => {
-    const t = 60;
-    if (info.offset.x < -t && idx < cards.length - 1) setIdx(idx + 1);
-    else if (info.offset.x > t && idx > 0) setIdx(idx - 1);
-  };
+  // 무한 루프를 위해 [last, ...all, first]로 클론
+  const cards = useMemo<Card[]>(() => {
+    if (baseCards.length === 0) return [];
+    return [baseCards[baseCards.length - 1], ...baseCards, baseCards[0]];
+  }, [baseCards]);
 
-  if (cards.length === 0) return null;
-  const cur = cards[idx];
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    if (idx >= cards.length - 1) {
+      el.scrollTo({ left: el.clientWidth, behavior: "auto" });
+      setCurrent(0);
+    } else if (idx <= 0) {
+      el.scrollTo({ left: (cards.length - 2) * el.clientWidth, behavior: "auto" });
+      setCurrent(baseCards.length - 1);
+    } else {
+      setCurrent(idx - 1);
+    }
+  }, [cards.length, baseCards.length]);
+
+  const scrollTo = useCallback((idx: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ left: (idx + 1) * el.clientWidth, behavior: "smooth" });
+  }, []);
+
+  // 초기 위치 (클론 다음)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el && cards.length > 0) {
+      requestAnimationFrame(() => {
+        el.scrollTo({ left: el.clientWidth, behavior: "auto" });
+      });
+    }
+  }, [cards.length]);
+
+  if (baseCards.length === 0) return null;
 
   return (
     <div className="rounded-2xl p-4" style={glass}>
@@ -206,56 +238,71 @@ const InsightHeroCarousel = ({
         </button>
       </div>
 
-      <div className="overflow-hidden">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={cur.id}
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -24 }}
-            transition={{ duration: 0.28 }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.3}
-            onDragEnd={handleDragEnd}
-            className="rounded-2xl p-5 relative overflow-hidden"
-            style={{
-              background: cur.gradient,
-              minHeight: 168,
-              boxShadow: `0 12px 32px -10px ${cur.accent}`,
-            }}
+      {/* Native scroll-snap carousel */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex overflow-x-auto no-scrollbar -mx-1"
+        style={{
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+          scrollbarWidth: "none",
+        }}
+      >
+        {cards.map((card, idx) => (
+          <div
+            key={`${card.id}-${idx}`}
+            className="w-full shrink-0 px-1"
+            style={{ scrollSnapAlign: "start" }}
           >
-            <div
-              className="absolute inset-0 opacity-30"
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              className="rounded-2xl p-5 relative overflow-hidden"
               style={{
-                background:
-                  "radial-gradient(circle at 80% 0%, rgba(255,255,255,0.4), transparent 60%)",
+                background: card.gradient,
+                minHeight: 168,
+                boxShadow: `0 12px 32px -10px ${card.accent}`,
               }}
-            />
-            <div className="relative">
-              <p className="text-[11px] font-semibold tracking-wide" style={{ color: "rgba(255,255,255,0.85)" }}>
-                {cur.label}
-              </p>
-              <p className="text-[44px] font-bold leading-tight mt-2 text-white">
-                {cur.title}
-              </p>
-              <p className="text-[13px] font-medium mt-1" style={{ color: "rgba(255,255,255,0.9)" }}>
-                {cur.sub}
-              </p>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+            >
+              <div
+                className="absolute inset-0 opacity-30 pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(circle at 80% 0%, rgba(255,255,255,0.4), transparent 60%)",
+                }}
+              />
+              <div className="relative">
+                <p
+                  className="text-[11px] font-semibold tracking-wide"
+                  style={{ color: "rgba(255,255,255,0.85)" }}
+                >
+                  {card.label}
+                </p>
+                <p className="text-[44px] font-bold leading-tight mt-2 text-white">
+                  {card.title}
+                </p>
+                <p
+                  className="text-[13px] font-medium mt-1"
+                  style={{ color: "rgba(255,255,255,0.9)" }}
+                >
+                  {card.sub}
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        ))}
       </div>
 
+      {/* Dot indicators */}
       <div className="flex items-center justify-center gap-1.5 mt-3">
-        {cards.map((c, i) => (
+        {baseCards.map((c, i) => (
           <button
             key={c.id}
-            onClick={() => setIdx(i)}
+            onClick={() => scrollTo(i)}
             className="h-1.5 rounded-full transition-all"
             style={{
-              width: i === idx ? 18 : 6,
-              background: i === idx ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.2)",
+              width: i === current ? 18 : 6,
+              background: i === current ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.2)",
             }}
           />
         ))}
