@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Send, Loader2, Check } from "lucide-react";
+import { Send, Loader2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useV2Voice } from "./V2VoiceContext";
 import { useConnection } from "@/contexts/ConnectionContext";
@@ -96,6 +96,7 @@ interface ChatOnboardingProps {
   onComplete: (data: Record<string, string>) => void;
   onProgress?: (partialData: Record<string, string>) => void | Promise<void>;
   existingData?: Record<string, string>;
+  onClose?: () => void;
 }
 
 // ─── Avatar ────────────────────────────────────────────────────
@@ -116,7 +117,7 @@ const YarnBallAvatar = () => (
 
 // ─── Main Component ───────────────────────────────────────────
 
-export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: ChatOnboardingProps) => {
+export const ChatOnboarding = ({ onComplete, onProgress, existingData = {}, onClose }: ChatOnboardingProps) => {
   const {
     isConnected: voiceConnected,
     partialTranscript,
@@ -455,6 +456,26 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
 
   return (
     <div className="relative z-10 flex flex-1 flex-col min-h-0">
+      {/* Top bar with close (직원등록 채팅창과 동일 위치/스타일) */}
+      <div className="relative z-10 flex items-center justify-between px-5 pt-3 pb-1 flex-shrink-0">
+        <span className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+          연동하기
+        </span>
+        {onClose && (
+          <button
+            onClick={() => {
+              if (voiceConnected) toggleVoice();
+              onClose();
+            }}
+            className="w-8 h-8 flex items-center justify-center rounded-full"
+            style={{ background: "rgba(255,255,255,0.06)" }}
+            aria-label="닫기"
+          >
+            <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} />
+          </button>
+        )}
+      </div>
+
       {/* 저장 완료 배지 바 */}
       {savedBadges.length > 0 && (
         <div className="relative z-10 px-4 pt-3 pb-1 flex-shrink-0">
