@@ -237,8 +237,8 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   if (keyFileBase64) {
     accountEntry.derFile = certFileBase64;
     accountEntry.keyFile = keyFileBase64;
-    accountEntry.certType = "1";
-    console.log(`Using DER+KEY separate cert files (certType: 1, clientType: ${clientType})`);
+    // DER+KEY 분리 방식: certType 생략 (CODEF 공식 규격)
+    console.log(`Using DER+KEY separate cert files (no certType, clientType: ${clientType})`);
   } else {
     accountEntry.certFile = certFileBase64;
     accountEntry.certType = "pfx";
