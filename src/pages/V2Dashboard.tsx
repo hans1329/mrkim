@@ -15,8 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFeedCards } from "@/hooks/useFeedCards";
+import { detectVoiceIntent } from "@/lib/voiceIntent";
 
-const EMPLOYEE_INTENTS = ["직원 등록", "직원 추가", "사람 등록", "알바 등록", "알바 추가", "직원등록", "직원추가"];
 const V2_ONBOARDED_KEY = "v2_onboarded";
 
 const ONBOARDING_TO_PROFILE: Record<string, string> = {
