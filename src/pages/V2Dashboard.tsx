@@ -11,6 +11,7 @@ import { UrgentEventSplash } from "@/components/v2/UrgentEventSplash";
 import { VoiceListeningHint } from "@/components/v2/VoiceListeningHint";
 import { VoiceCardToast, type VoiceCard } from "@/components/v2/VoiceCardToast";
 import { VoiceChatDrawer, type ChatTurn } from "@/components/v2/VoiceChatDrawer";
+import { SystemToggleSplash, type SystemToggleResult } from "@/components/v2/SystemToggleSplash";
 import { useV2Voice } from "@/components/v2/V2VoiceContext";
 
 import { useToast } from "@/hooks/use-toast";
