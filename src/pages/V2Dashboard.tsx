@@ -12,7 +12,7 @@ import { VoiceListeningHint } from "@/components/v2/VoiceListeningHint";
 import { VoiceCardToast, type VoiceCard } from "@/components/v2/VoiceCardToast";
 import { VoiceChatDrawer, type ChatTurn } from "@/components/v2/VoiceChatDrawer";
 import { useV2Voice } from "@/components/v2/V2VoiceContext";
-import { AnimatePresence } from "framer-motion";
+
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
