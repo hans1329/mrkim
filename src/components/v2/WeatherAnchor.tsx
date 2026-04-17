@@ -78,6 +78,22 @@ export const WeatherAnchor = () => {
                 transition={{ duration: 0.8, ease: "easeOut" }}
               />
             </div>
+            {/* 음성 명령어 사용팁 — 페이드 인/아웃 순환 */}
+            <div className="mt-2 h-3.5 overflow-hidden relative">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={tipIndex}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-[10.5px] font-medium absolute inset-0"
+                  style={{ color: "rgba(255,255,255,0.45)" }}
+                >
+                  💡 이렇게 말해보세요 — {COMMAND_TIPS[tipIndex]}
+                </motion.p>
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
