@@ -36,7 +36,10 @@ function concatBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
 }
 
 async function sha1(bytes: Uint8Array): Promise<Uint8Array> {
-  const buf = await crypto.subtle.digest("SHA-1", bytes);
+  // Copy into a fresh ArrayBuffer to satisfy SubtleCrypto's strict BufferSource typing.
+  const ab = new ArrayBuffer(bytes.length);
+  new Uint8Array(ab).set(bytes);
+  const buf = await crypto.subtle.digest("SHA-1", ab);
   return new Uint8Array(buf);
 }
 
