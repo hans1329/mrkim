@@ -177,10 +177,8 @@ async function fetchRecentTransactions(): Promise<{ data: Transaction[]; hasReal
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  // Fetch last 14 days of transactions for richer history cards
-  const twoWeeksAgo = new Date();
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-  const startDate = twoWeeksAgo.toISOString().split("T")[0];
+  // KST 기준 최근 14일
+  const startDate = kstShiftDate(-14).dateStr;
 
   const { data, error } = await supabase
     .from("transactions")
