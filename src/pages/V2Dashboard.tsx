@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { WeatherAnchor } from "@/components/v2/WeatherAnchor";
 import { SecretaryFeed } from "@/components/v2/SecretaryFeed";
 import { TaxSavingCarousel } from "@/components/v2/TaxSavingCarousel";
