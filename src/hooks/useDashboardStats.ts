@@ -114,12 +114,11 @@ async function fetchWeeklyData(): Promise<{ data: WeeklyDataItem[]; hasRealData:
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const today = new Date();
-  const weekAgo = new Date(today);
-  weekAgo.setDate(today.getDate() - 6);
-
-  const startDateStr = weekAgo.toISOString().split("T")[0];
-  const endDateStr = today.toISOString().split("T")[0];
+  // KST 기준 최근 7일 (오늘 포함)
+  const start = kstShiftDate(-6);
+  const end = kstShiftDate(0);
+  const startDateStr = start.dateStr;
+  const endDateStr = end.dateStr;
 
   const { data: transactions } = await supabase
     .from("transactions")
@@ -134,13 +133,10 @@ async function fetchWeeklyData(): Promise<{ data: WeeklyDataItem[]; hasRealData:
 
   const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
 
-  // 날짜 순서대로 7일 생성 (오래된 날 → 오늘)
   const chartData: WeeklyDataItem[] = [];
   for (let i = 6; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    const dateStr = date.toISOString().split("T")[0];
-    const dayName = dayNames[date.getDay()];
+    const { dateStr, dayOfWeek } = kstShiftDate(-i);
+    const dayName = dayNames[dayOfWeek];
 
     let 매출 = 0, 지출 = 0;
     transactions.forEach((tx) => {
