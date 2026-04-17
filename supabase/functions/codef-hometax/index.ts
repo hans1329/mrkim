@@ -228,11 +228,14 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   //   * loginType: "0" (공동인증서). NT는 "2"를 거부하므로 더 이상 사용하지 않음.
   //   * identity: 개인 공동인증서의 경우 주민번호(또는 법인번호)가 필요할 수 있음
   const isDerMode = !!keyFileBase64;
+  // CODEF 규격(메모리 tech/codef/cert-type-pfx-standard):
+  //   * DER+KEY: certType 필드 자체를 보내지 않음 (명시 시 CF-00007)
+  //   * PFX/P12: certType:"pfx" 명시
+  //   * organization: 홈택스(NT)는 "0001"만 사용
+  //   * 비밀번호 키는 password로 통일
   const attemptPlans: Array<{ organization: string; passwordKey: "password" | "certPassword" }> = [
     { organization: "0001", passwordKey: "password" },
-    { organization: "0002", passwordKey: "password" },
     { organization: "0001", passwordKey: "certPassword" },
-    { organization: "0002", passwordKey: "certPassword" },
   ];
 
   const buildEntry = (
@@ -248,10 +251,9 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
     };
     entry[passwordKey] = encryptedPassword;
     if (isDerMode) {
-      // DER + KEY 분리 방식 (홈택스 NT 규격): certFile(=DER) + keyFile + certType "1"
+      // DER + KEY 분리 방식 — certType 생략 필수
       entry.certFile = certFileBase64;
       entry.keyFile = keyFileBase64;
-      entry.certType = "1";
     } else {
       // PFX/P12 통합 파일
       entry.certFile = certFileBase64;
