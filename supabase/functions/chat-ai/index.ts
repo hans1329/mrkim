@@ -1585,7 +1585,7 @@ serve(async (req) => {
         // 음성 모드에서는 "잠시만요" 안내를 응답에 포함하지 않음 (프론트에서 TTS 선행 재생)
         const complexResult = await handleComplexQuery(
           GEMINI_API_KEY, geminiMessages, lastMsg, userId, authHeader,
-          secretaryName, genderDesc, toneInst, voiceMode, voiceDataInst,
+          secretaryName, genderDesc, toneInst, voiceMode, voiceDataInst, userTitle,
         );
         // 세무 상담이 생성되었고 담당 세무사가 있으면 자료 전달 액션 제안
         const suggestedActions: any[] = [];
