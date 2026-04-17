@@ -78,8 +78,10 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
     toggleVoice,
     onCommit,
   } = useV2Voice();
-  const { openDrawer } = useConnectionDrawer();
   const { hometaxConnected, cardConnected, accountConnected, deliveryConnected, refetch: refetchConnection } = useConnection();
+
+  // 보안 입력 시트 상태
+  const [secureSheet, setSecureSheet] = useState<{ open: boolean; service: SecureService; pending: PendingConnection } | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
