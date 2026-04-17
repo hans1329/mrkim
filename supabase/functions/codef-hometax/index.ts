@@ -220,22 +220,38 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   // 인증서 비밀번호를 RSA 암호화
   const encryptedPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // CODEF 홈택스 organization 코드:
-  // - "0001": 국세청 일반 (법인사업자 권장)
-  // - "0002": 전자세금계산서 (개인사업자/특정 권한 필요)
-  // 법인은 0001 우선, 실패 시 0002 폴백
-  const orgCandidates = clientType === "B" ? ["0001", "0002"] : ["0002", "0001"];
+  // 홈택스 공동인증서 계정 등록은 은행/카드와 스펙이 다르게 동작할 수 있어
+  // 홈택스 전용 조합을 우선 시도한다.
+  // - 우선: loginType "2" + organization "0002"
+  // - 폴백: organization/loginType 조합 변경
+  const attemptPlans = clientType === "B"
+    ? [
+        { loginType: "2", organization: "0002" },
+        { loginType: "2", organization: "0001" },
+        { loginType: "0", organization: "0002" },
+        { loginType: "0", organization: "0001" },
+      ]
+    : [
+        { loginType: "2", organization: "0002" },
+        { loginType: "0", organization: "0002" },
+        { loginType: "2", organization: "0001" },
+        { loginType: "0", organization: "0001" },
+      ];
 
-  const buildEntry = (organization: string): Record<string, unknown> => {
+  const buildEntry = (
+    organization: string,
+    loginType: string,
+  ): Record<string, unknown> => {
     const entry: Record<string, unknown> = {
       countryCode: "KR",
       businessType: "NT",
       clientType,
       organization,
-      loginType: "0",
+      loginType,
       password: encryptedPassword,
       identity: cleanedNumber,
     };
+
     if (keyFileBase64) {
       entry.derFile = certFileBase64;
       entry.keyFile = keyFileBase64;
@@ -243,13 +259,14 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       entry.certFile = certFileBase64;
       entry.certType = "pfx";
     }
+
     return entry;
   };
 
   console.log(
     `Registering hometax account with certificate, identity=${cleanedNumber}, ` +
-    `loginType=0, clientType=${clientType}, certMode=${keyFileBase64 ? "DER+KEY" : "PFX"}, ` +
-    `orgCandidates=${orgCandidates.join(",")}`
+    `clientType=${clientType}, certMode=${keyFileBase64 ? "DER+KEY" : "PFX"}, ` +
+    `attempts=${attemptPlans.map((p) => `${p.loginType}:${p.organization}`).join(",")}`
   );
 
   let responseText = "";
@@ -257,11 +274,11 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   let result: any = {};
   let lastErrorList: any[] = [];
 
-  for (const organization of orgCandidates) {
-    const accountEntry = buildEntry(organization);
+  for (const plan of attemptPlans) {
+    const accountEntry = buildEntry(plan.organization, plan.loginType);
     const requestBody = { accountList: [accountEntry] };
 
-    console.log(`→ Trying organization=${organization}`);
+    console.log(`→ Trying loginType=${plan.loginType}, organization=${plan.organization}`);
     const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
       method: "POST",
       headers: {
@@ -272,20 +289,20 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
     });
 
     responseText = await response.text();
-    console.log(`Account create response (org=${organization}):`, responseText.substring(0, 500));
+    console.log(
+      `Account create response (loginType=${plan.loginType}, org=${plan.organization}):`,
+      responseText.substring(0, 500),
+    );
 
     data = parseCodefResponse(responseText);
     result = data.result || {};
     lastErrorList = data.data?.errorList || [];
 
-    // 성공 시 즉시 break
     if (result.code === "CF-00000" && data.data?.connectedId) break;
     if ((data.data?.successList?.length || 0) > 0 && data.data?.connectedId) break;
 
-    // CF-00007(파라미터 에러)일 때만 다음 organization 시도
     const hasParamError = lastErrorList.some((e: any) => e.code === "CF-00007");
     if (!hasParamError) break;
-    console.log(`CF-00007 with org=${organization}, trying next…`);
   }
 
   // 즉시 성공 (connectedId 발급)
