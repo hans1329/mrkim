@@ -122,12 +122,41 @@ export const V2Header = ({ isDrawerOpen, onToggleDrawer }: V2HeaderProps) => {
 
 
 
-      {/* Mic toggle */}
+      {/* Mic toggle — ON/OFF 상태가 명확히 구분되도록 강화 */}
       <button
         onClick={toggleVoice}
-        className="flex-shrink-0 w-9 h-9 flex items-center justify-center transition-colors duration-200"
+        aria-pressed={isConnected}
+        aria-label={isConnected ? "마이크 끄기 (듣는 중)" : "마이크 켜기"}
+        className="relative flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200"
+        style={
+          isConnected
+            ? {
+                background: "linear-gradient(135deg, #007AFF, #5856D6)",
+                boxShadow: "0 0 0 3px rgba(0,122,255,0.18), 0 6px 18px rgba(0,122,255,0.45)",
+              }
+            : {
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.1)",
+              }
+        }
       >
-        <Mic className="w-4.5 h-4.5" style={{ color: isConnected ? "#007AFF" : "rgba(255,255,255,0.35)" }} />
+        {isConnected ? (
+          <>
+            <Mic className="w-4 h-4" style={{ color: "white" }} strokeWidth={2.4} />
+            <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+              <span
+                className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-80"
+                style={{ background: "#34C759" }}
+              />
+              <span
+                className="relative inline-flex h-2.5 w-2.5 rounded-full"
+                style={{ background: "#34C759", border: "1.5px solid #0A0A0F" }}
+              />
+            </span>
+          </>
+        ) : (
+          <MicOff className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} strokeWidth={2} />
+        )}
       </button>
     </div>
   );
