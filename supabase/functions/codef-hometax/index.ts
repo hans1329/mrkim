@@ -31,6 +31,35 @@ function encryptRSAPKCS1(plainText: string, rawPublicKey: string): string {
   return forge.util.encode64(encrypted);
 }
 
+/**
+ * signCert.der + signPri.key(암호화된 PKCS#8) → PKCS#12(PFX) base64
+ * - 동일한 인증서 비밀번호로 개인키를 풀고 PFX로 다시 묶음
+ */
+function buildPfxFromDerKey(certBase64: string, keyBase64: string, password: string): string {
+  // 1) DER 인증서 파싱
+  const certDer = forge.util.decode64(certBase64);
+  const certAsn1 = forge.asn1.fromDer(certDer);
+  const cert = forge.pki.certificateFromAsn1(certAsn1);
+
+  // 2) 암호화된 PKCS#8 개인키 복호화
+  const keyDer = forge.util.decode64(keyBase64);
+  const keyAsn1 = forge.asn1.fromDer(keyDer);
+  const privateKey = forge.pki.decryptPrivateKeyInfo(keyAsn1, password)
+    ? forge.pki.privateKeyFromAsn1(forge.pki.decryptPrivateKeyInfo(keyAsn1, password))
+    : null;
+  if (!privateKey) {
+    throw new Error("개인키 복호화 실패 — 비밀번호가 일치하지 않을 수 있어요.");
+  }
+
+  // 3) PKCS#12 생성 (3DES, 동일 비밀번호로 보호)
+  const p12Asn1 = forge.pkcs12.toPkcs12Asn1(privateKey, [cert], password, {
+    algorithm: "3des",
+    friendlyName: "hometax-cert",
+  });
+  const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
+  return forge.util.encode64(p12Der);
+}
+
 function parseCodefResponse(text: string): any {
   try {
     return JSON.parse(text);
