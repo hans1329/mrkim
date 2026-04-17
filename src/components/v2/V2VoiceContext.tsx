@@ -29,9 +29,13 @@ export function V2VoiceProvider({ children }: { children: ReactNode }) {
     commitStrategy: CommitStrategy.VAD,
     languageCode: "kor",
     onCommittedTranscript: (data) => {
+      console.log("[V2Voice] committed transcript:", data.text, "callback?", !!commitCallbackRef.current);
       if (data.text?.trim() && commitCallbackRef.current) {
         commitCallbackRef.current(data.text.trim());
       }
+    },
+    onPartialTranscript: (data) => {
+      if (data.text) console.log("[V2Voice] partial:", data.text);
     },
   });
 
