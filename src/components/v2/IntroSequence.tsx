@@ -192,7 +192,7 @@ export const IntroSequence = ({
                 exit={{ opacity: 0 }}
                 className="relative z-10 w-full max-w-[300px]"
               >
-                <p className="text-[13px] text-center mb-4 text-primary-foreground" style={{ color: "rgba(255,255,255,0.4)" }}>
+                <p className="text-[13px] text-center mb-4" style={{ color: "rgba(255,255,255,0.85)" }}>
                   오늘의 브리핑
                 </p>
                 <div className="flex flex-col gap-2.5">
@@ -215,7 +215,7 @@ export const IntroSequence = ({
                           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.2)",
                         }}
                       >
-                      <span className="text-[13px]" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      <span className="text-[13px]" style={{ color: "rgba(255,255,255,0.85)" }}>
                         {item.label}
                       </span>
                       <div className="flex items-center gap-2">
