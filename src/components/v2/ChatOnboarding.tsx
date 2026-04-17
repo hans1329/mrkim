@@ -123,7 +123,19 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
     toggleVoice,
     onCommit,
   } = useV2Voice();
-  const { hometaxConnected, cardConnected, accountConnected, deliveryConnected, refetch: refetchConnection } = useConnection();
+  const { hometaxConnected, cardConnected, accountConnected, deliveryConnected, refetch: refetchConnection, connectService, profile } = useConnection();
+  const { registerCardAccount } = useCardConnection();
+  const { registerBankAccount } = useAccountConnection();
+
+  // 사업자번호 → clientType ('B' 법인 / 'P' 개인) 자동 판별
+  const getClientType = useCallback((): "P" | "B" => {
+    const brn = (stateRef.current.business_number || profile?.business_registration_number || "").replace(/\D/g, "");
+    if (brn.length === 10) {
+      const middle = parseInt(brn.slice(3, 5), 10);
+      if (middle >= 81 && middle <= 99) return "B";
+    }
+    return "P";
+  }, [profile?.business_registration_number]);
 
   // 보안 입력 시트 상태
   const [secureSheet, setSecureSheet] = useState<{ open: boolean; service: SecureService; pending: PendingConnection } | null>(null);
