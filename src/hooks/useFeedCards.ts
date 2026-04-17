@@ -179,24 +179,46 @@ export function useFeedCards() {
     // 2. 배민 정산 입금
     if (settlement) {
       const fmt = formatMoney(settlement.nextAmount);
-      const isToday = settlement.daysLeft <= 0;
+      const isToday = settlement.daysLeft === 0;
+      const isPast = settlement.daysLeft < 0;
+      const pastDays = Math.abs(settlement.daysLeft);
+      let title: string;
+      let body: string;
+      let detail: string;
+      let time: string;
+      if (isToday) {
+        title = "배민 정산 오늘 입금";
+        body = `오늘 입금 예정 · ${settlement.nextCount}건`;
+        detail = settlement.totalDates > 1
+          ? `총 ${settlement.totalDates}회, ${formatMoney(settlement.totalPending).number}${formatMoney(settlement.totalPending).unit} 정산 대기 중이에요. 현금흐름 계획에 참고하세요.`
+          : `정산금이 곧 입금돼요. 현금흐름 계획에 참고하세요.`;
+        time = "오늘";
+      } else if (isPast) {
+        title = `배민 정산 ${pastDays}일 전 입금`;
+        body = `${settlement.nextDate} 입금 완료 · ${settlement.nextCount}건`;
+        detail = `${pastDays}일 전 배민 정산금이 입금되었어요. 다음 정산까지 현금흐름을 관리해보세요.`;
+        time = "최근";
+      } else {
+        title = `배민 정산 D-${settlement.daysLeft}`;
+        body = `${settlement.nextDate} 입금 예정 · ${settlement.nextCount}건`;
+        detail = settlement.totalDates > 1
+          ? `총 ${settlement.totalDates}회, ${formatMoney(settlement.totalPending).number}${formatMoney(settlement.totalPending).unit} 정산 대기 중이에요. 현금흐름 계획에 참고하세요.`
+          : `정산금이 곧 입금돼요. 현금흐름 계획에 참고하세요.`;
+        time = "알림";
+      }
       today.push({
         id: "settlement-forecast",
         type: "hero",
-        title: isToday ? "배민 정산 오늘 입금" : `배민 정산 D-${settlement.daysLeft}`,
+        title,
         bigNumber: fmt.number,
         unit: fmt.unit,
-        body: isToday
-          ? `오늘 입금 예정 · ${settlement.nextCount}건`
-          : `${settlement.nextDate} 입금 예정 · ${settlement.nextCount}건`,
-        detail: settlement.totalDates > 1
-          ? `총 ${settlement.totalDates}회, ${formatMoney(settlement.totalPending).number}${formatMoney(settlement.totalPending).unit} 정산 대기 중이에요. 현금흐름 계획에 참고하세요.`
-          : `정산금이 곧 입금돼요. 현금흐름 계획에 참고하세요.`,
-        time: isToday ? "오늘" : "알림",
+        body,
+        detail,
+        time,
         date: td,
         gradient: "linear-gradient(135deg, #2AC1BC 0%, #007AFF 100%)",
         iconUrl: baeminLogo,
-        priority: isToday ? 2 : 3,
+        priority: isToday ? 2 : isPast ? 4 : 3,
       });
     }
 
