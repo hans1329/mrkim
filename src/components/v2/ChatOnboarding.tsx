@@ -540,5 +540,4 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {} }: Ch
       )}
     </div>
   );
-}
 };
