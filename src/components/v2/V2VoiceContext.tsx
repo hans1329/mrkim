@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from "react";
 import { useScribe, CommitStrategy } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface V2VoiceContextType {
   isConnected: boolean;
