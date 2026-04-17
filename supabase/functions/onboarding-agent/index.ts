@@ -232,6 +232,74 @@ function toGeminiContents(messages: ClientMessage[]) {
   return out;
 }
 
+function mergePendingConnection(
+  state: OnboardingState,
+  service: string,
+  args: Record<string, unknown>,
+): PendingConnection {
+  const base = (state.pending?.[service as keyof NonNullable<OnboardingState["pending"]>] || {}) as PendingConnection;
+  const merged: PendingConnection = { ...base };
+
+  if (typeof args.institution === "string" && args.institution.trim()) {
+    merged.institution = args.institution.trim();
+  }
+  if (typeof args.auth_type === "string" && ["cert", "id_pw", "simple"].includes(args.auth_type)) {
+    merged.auth_type = args.auth_type as PendingConnection["auth_type"];
+  }
+  if (typeof args.login_id === "string" && args.login_id.trim()) {
+    merged.login_id = args.login_id.trim();
+  }
+
+  return merged;
+}
+
+function finalizeAgentOutput(
+  state: OnboardingState,
+  replyText: string,
+  toolCalls: { name: string; args: Record<string, unknown> }[],
+) {
+  const nextToolCalls = [...toolCalls];
+  let nextReply = replyText.trim();
+
+  const hasOpenCall = (service: string) =>
+    nextToolCalls.some(
+      (call) => call.name === "open_secure_input" && String(call.args.service || "").toLowerCase() === service,
+    );
+
+  const getSecureInputReply = (authType?: PendingConnection["auth_type"]) =>
+    authType === "cert"
+      ? "공동인증서 파일과 비밀번호 입력 화면을 열어드릴게요."
+      : "비밀번호 입력 화면을 열어드릴게요.";
+
+  for (const call of toolCalls) {
+    if (call.name !== "prepare_connection") continue;
+
+    const service = String(call.args.service || "").toLowerCase();
+    const merged = mergePendingConnection(state, service, call.args);
+
+    const readyForSecureInput =
+      service === "hometax"
+        ? merged.auth_type === "cert"
+        : service === "card" || service === "account"
+          ? !!merged.institution && (merged.auth_type === "cert" || (merged.auth_type === "id_pw" && !!merged.login_id))
+          : service === "baemin" || service === "coupangeats"
+            ? merged.auth_type === "id_pw" && !!merged.login_id
+            : false;
+
+    if (!readyForSecureInput) continue;
+
+    if (!hasOpenCall(service)) {
+      nextToolCalls.push({ name: "open_secure_input", args: { service } });
+    }
+
+    if (!nextReply) {
+      nextReply = getSecureInputReply(merged.auth_type);
+    }
+  }
+
+  return { replyText: nextReply, toolCalls: nextToolCalls };
+}
+
 function acceptsGzip(req: Request): boolean {
   const ae = req.headers.get("accept-encoding") || "";
   return ae.toLowerCase().includes("gzip");
@@ -264,7 +332,6 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
 
-    // 워밍업 핑: 비싼 작업 없이 바로 OK
     if (body?.warmup === true) {
       return await jsonResponse(req, { ok: true, warmed: true });
     }
@@ -274,7 +341,6 @@ serve(async (req) => {
 
     const systemPrompt = buildSystemPrompt(state);
 
-    // 단일 패스: 텍스트 + functionCall을 한 번에 받기 (mode AUTO)
     const payload = {
       systemInstruction: { role: "system", parts: [{ text: systemPrompt }] },
       contents: toGeminiContents(messages),
@@ -323,8 +389,9 @@ serve(async (req) => {
       }
     }
 
-    const done = toolCalls.some((c) => c.name === "finish_onboarding");
-    return await jsonResponse(req, { reply: replyText || "", toolCalls, done });
+    const finalized = finalizeAgentOutput(state, replyText, toolCalls);
+    const done = finalized.toolCalls.some((c) => c.name === "finish_onboarding");
+    return await jsonResponse(req, { reply: finalized.replyText, toolCalls: finalized.toolCalls, done });
   } catch (e) {
     console.error("onboarding-agent error:", e);
     return await jsonResponse(req, {
