@@ -703,15 +703,19 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {}, onCl
                 }
                 const brn = stateRef.current.business_number || profile?.business_registration_number;
                 if (!brn) throw new Error("사업자등록번호가 먼저 필요해요.");
-                const certFileBase64 = await fileToBase64(payload.cert_file);
-                const keyFileBase64 = payload.key_file ? await fileToBase64(payload.key_file) : undefined;
+                let certFileBase64 = await fileToBase64(payload.cert_file);
+                if (payload.key_file) {
+                  // 한국 공동인증서(DER+KEY, SEED-CBC)는 CODEF NT가 거부 → 브라우저에서 PFX로 합성
+                  const { buildPfxFromKoreanDerKey } = await import("@/lib/koreanCertToPfx");
+                  const keyB64 = await fileToBase64(payload.key_file);
+                  certFileBase64 = await buildPfxFromKoreanDerKey(certFileBase64, keyB64, payload.cert_password);
+                }
                 const { data, error } = await supabase.functions.invoke("codef-hometax", {
                   body: {
                     action: "register",
                     businessNumber: String(brn).replace(/\D/g, ""),
                     certFileBase64,
                     certPassword: payload.cert_password,
-                    keyFileBase64,
                     clientType,
                   },
                 });
