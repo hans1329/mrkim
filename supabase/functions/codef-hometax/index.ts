@@ -198,7 +198,7 @@ async function handleBusinessVerify(body: any): Promise<Response> {
  * - 은행(codef-bank)과 동일한 파라미터 구조 사용
  */
 async function handleRegister(_req: Request, body: any, clientType: string = "P"): Promise<Response> {
-  const { businessNumber, certFileBase64, certPassword } = body;
+  const { businessNumber, certFileBase64, certPassword, keyFileBase64 } = body;
 
   if (!businessNumber || !certFileBase64 || !certPassword) {
     return new Response(
@@ -230,6 +230,8 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
     { loginType: "0", organization: "0002" },
   ];
 
+  const isDerMode = !!keyFileBase64;
+
   const buildEntry = (
     organization: string,
     loginType: string,
@@ -241,15 +243,22 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       organization,
       loginType,
       password: encryptedPassword,
-      certType: "pfx",
-      certFile: certFileBase64,
     };
+    if (isDerMode) {
+      // DER + KEY 분리 방식 (은행/카드와 동일): certType 생략
+      entry.derFile = certFileBase64;
+      entry.keyFile = keyFileBase64;
+    } else {
+      // PFX/P12 통합 파일
+      entry.certFile = certFileBase64;
+      entry.certType = "pfx";
+    }
     return entry;
   };
 
   console.log(
     `Registering hometax account with certificate, identity=${cleanedNumber}, ` +
-    `clientType=${clientType}, certMode=PFX, ` +
+    `clientType=${clientType}, certMode=${isDerMode ? "DER+KEY" : "PFX"}, ` +
     `attempts=${attemptPlans.map((p) => `${p.loginType}:${p.organization}`).join(",")}`
   );
 
@@ -272,6 +281,10 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       passwordLen: String(accountEntry.password || "").length,
       hasCertFile: !!accountEntry.certFile,
       certFileLen: String(accountEntry.certFile || "").length,
+      hasDerFile: !!accountEntry.derFile,
+      derFileLen: String(accountEntry.derFile || "").length,
+      hasKeyFile: !!accountEntry.keyFile,
+      keyFileLen: String(accountEntry.keyFile || "").length,
       certType: accountEntry.certType ?? null,
       keys: Object.keys(accountEntry),
     };
