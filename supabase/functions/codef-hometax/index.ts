@@ -245,6 +245,7 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
     if (keyFileBase64) {
       entry.derFile = certFileBase64;
       entry.keyFile = keyFileBase64;
+      entry.certType = "1";
     } else {
       entry.certFile = certFileBase64;
       entry.certType = "pfx";
