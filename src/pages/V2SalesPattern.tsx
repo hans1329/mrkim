@@ -2,11 +2,73 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useTransactions } from "@/hooks/useTransactions";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 const HOUR_BUCKETS = Array.from({ length: 24 }, (_, h) => h);
+
+// === KST 유틸 (UTC 변환 없이 순수 산술로 요일 계산) ===
+function kstDayOfWeek(year: number, month: number, day: number): number {
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+function getDowFromIsoDate(s: string): number | null {
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  return kstDayOfWeek(Number(m[1]), Number(m[2]), Number(m[3]));
+}
+function getHourFromTime(s: string | null): number {
+  if (!s) return -1;
+  const m = String(s).match(/^(\d{1,2})/);
+  if (!m) return -1;
+  const h = Number(m[1]);
+  return h >= 0 && h < 24 ? h : -1;
+}
+function getDowFromOrderDt(s: string | null): number | null {
+  if (!s) return null;
+  const m = s.match(/^(\d{4})(\d{2})(\d{2})/);
+  if (!m) return null;
+  return kstDayOfWeek(Number(m[1]), Number(m[2]), Number(m[3]));
+}
+function getHourFromOrderTm(s: string | null): number {
+  if (!s) return -1;
+  const m = String(s).padStart(6, "0").match(/^(\d{2})/);
+  if (!m) return -1;
+  const h = Number(m[1]);
+  return h >= 0 && h < 24 ? h : -1;
+}
+
+function useDeliveryOrdersForPattern() {
+  return useQuery({
+    queryKey: ["sales-pattern-delivery-orders"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const PAGE_SIZE = 1000;
+      let all: { order_dt: string | null; order_tm: string | null; total_amt: number | null; platform: string }[] = [];
+      let from = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("delivery_orders")
+          .select("order_dt, order_tm, total_amt, platform")
+          .eq("user_id", user.id)
+          .in("platform", ["baemin", "coupangeats"])
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        all = all.concat(data || []);
+        hasMore = (data?.length || 0) === PAGE_SIZE;
+        from += PAGE_SIZE;
+      }
+      return all;
+    },
+    staleTime: 1000 * 60 * 3,
+    gcTime: 1000 * 60 * 15,
+    refetchOnWindowFocus: false,
+  });
+}
 
 type DailyStat = { day: number; total: number; count: number; avg: number };
 type HourlyStat = { hour: number; total: number; count: number };
