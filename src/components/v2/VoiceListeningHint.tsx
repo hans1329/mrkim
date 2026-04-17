@@ -15,12 +15,15 @@ export const VoiceListeningHint = ({ isConnected, partialTranscript }: VoiceList
     <AnimatePresence>
       {isConnected && (
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 12, x: "-50%" }}
+          animate={{ opacity: 1, y: 0, x: "-50%" }}
+          exit={{ opacity: 0, y: 12, x: "-50%" }}
           transition={{ duration: 0.2 }}
-          className="pointer-events-none fixed left-1/2 -translate-x-1/2 z-30"
-          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}
+          className="pointer-events-none fixed z-30"
+          style={{
+            left: "50%",
+            bottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)",
+          }}
         >
           <div
             className="flex items-center gap-2 rounded-full px-4 py-2"
