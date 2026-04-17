@@ -12,7 +12,7 @@ import { VoiceListeningHint } from "@/components/v2/VoiceListeningHint";
 import { VoiceCardToast, type VoiceCard } from "@/components/v2/VoiceCardToast";
 import { VoiceChatDrawer, type ChatTurn } from "@/components/v2/VoiceChatDrawer";
 import { useV2Voice } from "@/components/v2/V2VoiceContext";
-import { AnimatePresence } from "framer-motion";
+
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -169,6 +169,16 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
 
   if (stage !== "dashboard") return null;
 
+  // 직원 등록은 ChatOnboarding과 동일하게 V2Layout children 자리에 풀스크린으로 렌더
+  if (showEmployeeReg) {
+    return (
+      <VoiceEmployeeRegistration
+        onClose={() => setShowEmployeeReg(false)}
+        onComplete={handleEmployeeRegComplete}
+      />
+    );
+  }
+
   if (!splashDone && !feedLoading && todayCards.length > 0) {
     return (
       <UrgentEventSplash
@@ -210,14 +220,6 @@ const DashboardContent = ({ stage, onStartOnboarding }: { stage: "intro" | "onbo
         onClose={() => setDrawerOpen(false)}
       />
 
-      <AnimatePresence>
-        {showEmployeeReg && (
-          <VoiceEmployeeRegistration
-            onClose={() => setShowEmployeeReg(false)}
-            onComplete={handleEmployeeRegComplete}
-          />
-        )}
-      </AnimatePresence>
     </>
   );
 };
