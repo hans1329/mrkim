@@ -227,7 +227,7 @@ async function handleBusinessVerify(body: any): Promise<Response> {
  * - 은행(codef-bank)과 동일한 파라미터 구조 사용
  */
 async function handleRegister(_req: Request, body: any, clientType: string = "P"): Promise<Response> {
-  const { businessNumber, certFileBase64, certPassword, keyFileBase64 } = body;
+  const { businessNumber, certFileBase64, certPassword } = body;
 
   if (!businessNumber || !certFileBase64 || !certPassword) {
     return new Response(
@@ -250,23 +250,19 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   const encryptedPassword = encryptRSAPKCS1(certPassword, publicKey);
 
   // 홈택스(NT)는 PFX(.pfx/.p12) 통합 파일만 안정적으로 받음.
-  // DER+KEY가 들어왔다면 서버에서 PFX로 합성해 단일 certFile로 전송한다.
-  let unifiedCertFile = certFileBase64;
-  if (keyFileBase64) {
-    try {
-      unifiedCertFile = buildPfxFromDerKey(certFileBase64, keyFileBase64, certPassword);
-      console.log("Composed PFX from DER+KEY, len:", unifiedCertFile.length);
-    } catch (err) {
-      console.error("PFX 합성 실패:", err);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "인증서 파일을 PFX로 변환하지 못했어요. 비밀번호와 signCert.der/signPri.key 파일을 다시 확인해주세요.",
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+  // 한국 공동인증서(SEED-CBC)는 Deno node-forge로 복호화가 안 되므로,
+  // 클라이언트(브라우저)에서 SEED 복호화 후 PFX로 합성하여 단일 certFileBase64만 전송한다.
+  // (DER+KEY 분리 모드는 더 이상 지원하지 않음)
+  if (body.keyFileBase64) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "DER+KEY 분리 인증서는 클라이언트에서 PFX로 합성하여 보내주세요. 잠시 후 다시 시도해주세요.",
+      }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
+  const unifiedCertFile = certFileBase64;
 
   // PFX/P12 단일 파일 전송 — certType:"pfx", organization:"0001", loginType:"0"
   const attemptPlans: Array<{ organization: string; passwordKey: "password" | "certPassword" }> = [
@@ -292,8 +288,8 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   };
 
   console.log(
-    `Registering hometax account with certificate, businessNumber=${cleanedNumber}, ` +
-    `clientType=${clientType}, certMode=${isDerMode ? "DER+KEY" : "PFX"}, ` +
+    `Registering hometax account with PFX, businessNumber=${cleanedNumber}, ` +
+    `clientType=${clientType}, ` +
     `attempts=${attemptPlans.map((p) => `${p.organization}:${p.passwordKey}`).join(",")}`
   );
 
