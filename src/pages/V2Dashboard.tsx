@@ -154,9 +154,14 @@ const V2Dashboard = () => {
     load();
   }, [shouldStartConnectionOnboarding, navigate]);
 
-  const handleIntroComplete = useCallback(() => {
+  const handleIntroComplete = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate("/login");
+      return;
+    }
     setStage("onboarding");
-  }, []);
+  }, [navigate]);
 
   const persistOnboardingProgress = useCallback(async (partialData: Record<string, string>) => {
     setExistingData((prev) => {
