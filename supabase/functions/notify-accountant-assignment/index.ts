@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
       <p style="font-size:14px;color:#374151;line-height:1.6;">
         김비서 파트너 포털에서 고객 상세 정보를 확인하고 관리할 수 있습니다.
       </p>
-      <a href="https://mrkim.lovable.app/accountant/clients" 
+      <a href="https://mrkim.today/accountant/clients" 
          style="display:inline-block;margin-top:16px;padding:12px 24px;background:#3b82f6;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:500;">
         파트너 포털 바로가기
       </a>
