@@ -14,6 +14,9 @@ import { KISA_SEED_CBC } from "@kr-yeon/kisa-seed";
 
 const OID_SEED_CBC = "1.2.410.200004.1.4";
 const OID_SEED_CBC_WITH_SHA1 = "1.2.410.200004.1.15";
+const OID_PBES2 = "1.2.840.113549.1.5.13";
+const OID_PBE_SHA1_3DES = "1.2.840.113549.1.12.1.3";
+const OID_PBE_SHA1_3DES_40 = "1.2.840.113549.1.12.1.6";
 
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64.replace(/[\r\n\s]/g, ""));
@@ -109,9 +112,33 @@ async function decryptKoreanPkcs8(
   const oidBytes = algId[0].value as string;
   const oid = forge.asn1.derToOid(oidBytes);
 
+  // ── 분기 1: PBES2 / PKCS#5 v2 / PKCS#12 PBE — node-forge가 직접 지원
+  if (
+    oid === OID_PBES2 ||
+    oid === OID_PBE_SHA1_3DES ||
+    oid === OID_PBE_SHA1_3DES_40 ||
+    oid.startsWith("1.2.840.113549.1.5.") ||
+    oid.startsWith("1.2.840.113549.1.12.1.")
+  ) {
+    try {
+      const decryptedInfo = forge.pki.decryptPrivateKeyInfo(asn1, password);
+      if (!decryptedInfo) {
+        throw new Error("비밀번호가 일치하지 않아요.");
+      }
+      const der = forge.asn1.toDer(decryptedInfo).getBytes();
+      const out = new Uint8Array(der.length);
+      for (let i = 0; i < der.length; i++) out[i] = der.charCodeAt(i);
+      return out;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new Error(`표준(PBES2) 인증서 복호화 실패: ${msg}. 비밀번호를 확인해주세요.`);
+    }
+  }
+
+  // ── 분기 2: KISA SEED-CBC (한국 공동인증서 전용)
   if (oid !== OID_SEED_CBC && oid !== OID_SEED_CBC_WITH_SHA1) {
     throw new Error(
-      `지원하지 않는 인증서 암호화 OID: ${oid}. 한국 공동인증서(SEED-CBC)만 지원해요.`,
+      `지원하지 않는 인증서 암호화 OID: ${oid}. 한국 공동인증서(SEED-CBC) 또는 PBES2만 지원해요.`,
     );
   }
 
@@ -122,7 +149,6 @@ async function decryptKoreanPkcs8(
   for (let i = 0; i < saltStr.length; i++) salt[i] = saltStr.charCodeAt(i);
 
   const iterStr = params[1].value as string;
-  // forge: INTEGER → bytes(big-endian, signed)
   let iter = 0;
   for (let i = 0; i < iterStr.length; i++) {
     iter = (iter << 8) | (iterStr.charCodeAt(i) & 0xff);
@@ -139,7 +165,6 @@ async function decryptKoreanPkcs8(
 
   const { key, iv } = await deriveSeedKeyIv(password, salt, iter);
 
-  // SEED-CBC 복호화
   const plain = KISA_SEED_CBC.SEED_CBC_Decrypt(
     key,
     iv,
