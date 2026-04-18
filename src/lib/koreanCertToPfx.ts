@@ -93,6 +93,12 @@ async function sha1(bytes: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(buf);
 }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const ab = new ArrayBuffer(bytes.length);
+  new Uint8Array(ab).set(bytes);
+  return ab;
+}
+
 async function pbkdf2(
   password: string,
   salt: Uint8Array,
@@ -100,9 +106,10 @@ async function pbkdf2(
   dkLen: number,
   hash: WebCryptoHash,
 ): Promise<Uint8Array> {
+  const passwordBytes = new TextEncoder().encode(password);
   const baseKey = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(password),
+    toArrayBuffer(passwordBytes),
     "PBKDF2",
     false,
     ["deriveBits"],
@@ -110,7 +117,7 @@ async function pbkdf2(
   const derivedBits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
-      salt,
+      salt: toArrayBuffer(salt),
       iterations,
       hash,
     },
