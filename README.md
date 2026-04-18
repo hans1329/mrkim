@@ -1,73 +1,46 @@
-# Welcome to your Lovable project
+# 김비서 (Mr. Kim) — AI 경영 비서
 
-## Project info
+소상공인을 위한 AI 기반 백오피스 자동화 앱.
+"사장님은 말로 명령만 하세요!" — 매출/지출, 세무, 직원, 자금 관리를 음성·채팅 한 번으로 처리합니다.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Tech Stack
 
-## How can I edit this code?
+- **Frontend**: React 18 + Vite 5 + TypeScript + Tailwind CSS + shadcn/ui + framer-motion + recharts
+- **Mobile**: Capacitor 8 (iOS/Android) + PWA
+- **Backend**: Supabase (Postgres + Auth + Storage + Edge Functions on Deno)
+- **AI**: Google Gemini 2.5-flash (chat, classification, drafting, insights)
+- **Voice**: ElevenLabs Conversational AI + Scribe(STT) + TTS (Korean native)
+- **Integrations**: CODEF (bank/card/Hometax) · Hyphen (Baemin/Coupang Eats) · Twilio (Verify + outbound calls) · Resend (email) · Firebase Cloud Messaging (push)
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Local Development
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1) Install
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2) Configure env
+cp .env.example .env   # then fill in Supabase keys etc.
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 3) Run
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Node.js 18+ recommended. Supabase project URL and anon key are required for auth and data.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Scripts
 
-**Use GitHub Codespaces**
+- `npm run dev` — Vite dev server (port 8080)
+- `npm run build` — Production build
+- `npm run lint` — ESLint
+- `npm run test` — Vitest
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Project Structure
 
-## What technologies are used for this project?
+- `src/` — React app (pages, components, hooks, contexts, lib)
+- `supabase/functions/` — Deno edge functions (chat-ai, sync-orchestrator, codef-*, hyphen-*, elevenlabs-*, twilio-*, ...)
+- `supabase/migrations/` — Postgres schema migrations (RLS enforced via `user_roles` + `has_role()`)
+- `public/` — Static assets, PWA manifest, icons
 
-This project is built with:
+## License
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Proprietary. All rights reserved.
