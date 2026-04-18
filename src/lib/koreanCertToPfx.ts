@@ -1,9 +1,12 @@
 /**
  * 한국 공동인증서(NPKI) signCert.der + signPri.key → PFX(.p12) base64 변환
  *
- * - signPri.key는 KISA SEED-CBC(OID 1.2.410.200004.1.4 또는 .1.15)로 암호화된 PKCS#8.
- * - node-forge는 SEED를 모르므로, 브라우저에서 직접 PBKDF1(SHA1)로 키/IV 유도 후
- *   `@kr-yeon/kisa-seed`의 SEED_CBC_Decrypt로 평문 PKCS#1 RSA 키를 복원한다.
+ * - signPri.key는 KISA SEED-CBC(OID 1.2.410.200004.1.4 또는 .1.15) 또는
+ *   PBES2(OID 1.2.840.113549.1.5.13)로 암호화된 PKCS#8일 수 있다.
+ * - node-forge는 표준 PBES2(AES/3DES)는 처리하지만, 한국 인증서의
+ *   PBES2 + SEED-CBC 조합은 내부 encryptionScheme OID를 몰라 복호화에 실패한다.
+ * - 따라서 브라우저에서 직접 PBKDF1/PBKDF2로 키를 유도하고
+ *   `@kr-yeon/kisa-seed`의 SEED_CBC_Decrypt로 평문 개인키를 복원한다.
  * - 복원된 RSA 키 + DER 인증서를 forge로 PKCS#12에 묶어 base64로 반환.
  *
  * 참고 알고리즘: PyPinkSign (bandoche/PyPinkSign) — KISA K-PKI 표준.
@@ -15,11 +18,25 @@ import { KISA_SEED_CBC } from "@kr-yeon/kisa-seed";
 const OID_SEED_CBC = "1.2.410.200004.1.4";
 const OID_SEED_CBC_WITH_SHA1 = "1.2.410.200004.1.15";
 const OID_PBES2 = "1.2.840.113549.1.5.13";
+const OID_PKCS5_PBKDF2 = "1.2.840.113549.1.5.12";
 const OID_PBE_SHA1_3DES = "1.2.840.113549.1.12.1.3";
 const OID_PBE_SHA1_3DES_40 = "1.2.840.113549.1.12.1.6";
+const OID_HMAC_SHA1 = "1.2.840.113549.2.7";
+const OID_HMAC_SHA224 = "1.2.840.113549.2.8";
+const OID_HMAC_SHA256 = "1.2.840.113549.2.9";
+const OID_HMAC_SHA384 = "1.2.840.113549.2.10";
+const OID_HMAC_SHA512 = "1.2.840.113549.2.11";
+
+type WebCryptoHash = "SHA-1" | "SHA-256" | "SHA-384" | "SHA-512";
 
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64.replace(/[\r\n\s]/g, ""));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function binaryStringToBytes(bin: string): Uint8Array {
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
@@ -38,12 +55,69 @@ function concatBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
   return out;
 }
 
+function readAsn1Integer(node: forge.asn1.Asn1): number {
+  const value = node.value as string;
+  let out = 0;
+  for (let i = 0; i < value.length; i++) {
+    out = (out << 8) | (value.charCodeAt(i) & 0xff);
+  }
+  return out;
+}
+
+function readAsn1Oid(node: forge.asn1.Asn1): string {
+  return forge.asn1.derToOid(node.value as string);
+}
+
+function getWebCryptoHashFromPrfOid(oid?: string): WebCryptoHash {
+  switch (oid || OID_HMAC_SHA1) {
+    case OID_HMAC_SHA1:
+      return "SHA-1";
+    case OID_HMAC_SHA256:
+      return "SHA-256";
+    case OID_HMAC_SHA384:
+      return "SHA-384";
+    case OID_HMAC_SHA512:
+      return "SHA-512";
+    case OID_HMAC_SHA224:
+      throw new Error("PBES2 PRF SHA-224는 브라우저 WebCrypto에서 지원하지 않아요.");
+    default:
+      throw new Error(`지원하지 않는 PBES2 PRF OID: ${oid}`);
+  }
+}
+
 async function sha1(bytes: Uint8Array): Promise<Uint8Array> {
   // Copy into a fresh ArrayBuffer to satisfy SubtleCrypto's strict BufferSource typing.
   const ab = new ArrayBuffer(bytes.length);
   new Uint8Array(ab).set(bytes);
   const buf = await crypto.subtle.digest("SHA-1", ab);
   return new Uint8Array(buf);
+}
+
+async function pbkdf2(
+  password: string,
+  salt: Uint8Array,
+  iterations: number,
+  dkLen: number,
+  hash: WebCryptoHash,
+): Promise<Uint8Array> {
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"],
+  );
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations,
+      hash,
+    },
+    baseKey,
+    dkLen * 8,
+  );
+  return new Uint8Array(derivedBits);
 }
 
 /**
@@ -85,8 +159,43 @@ async function deriveSeedKeyIv(
   return { key, iv };
 }
 
+function decryptSeedCipher(
+  key: Uint8Array,
+  iv: Uint8Array,
+  cipherBytes: Uint8Array,
+): Uint8Array {
+  const plain = KISA_SEED_CBC.SEED_CBC_Decrypt(
+    key,
+    iv,
+    cipherBytes,
+    0,
+    cipherBytes.length,
+  );
+
+  if (!plain || plain.length === 0) {
+    throw new Error("SEED-CBC 복호화 결과가 비어있어요. 비밀번호를 확인해주세요.");
+  }
+
+  return plain instanceof Uint8Array ? plain : new Uint8Array(plain);
+}
+
+function decryptWithForgePrivateKeyInfo(
+  asn1: forge.asn1.Asn1,
+  password: string,
+): Uint8Array {
+  const decryptedInfo = forge.pki.decryptPrivateKeyInfo(asn1, password);
+  if (!decryptedInfo) {
+    throw new Error("비밀번호가 일치하지 않아요.");
+  }
+
+  const der = forge.asn1.toDer(decryptedInfo).getBytes();
+  const out = new Uint8Array(der.length);
+  for (let i = 0; i < der.length; i++) out[i] = der.charCodeAt(i);
+  return out;
+}
+
 /**
- * 한국 공동인증서(NPKI) signPri.key의 PKCS#8 EncryptedPrivateKeyInfo를 SEED-CBC로 복호화.
+ * 한국 공동인증서(NPKI) signPri.key의 PKCS#8 EncryptedPrivateKeyInfo를 복호화.
  * 반환: 평문 PKCS#1 RSAPrivateKey DER bytes 또는 PKCS#8 PrivateKeyInfo DER bytes (forge에서 모두 인식 가능).
  */
 async function decryptKoreanPkcs8(
@@ -107,35 +216,73 @@ async function decryptKoreanPkcs8(
   }
   const algId = top[0].value as forge.asn1.Asn1[];
   const encOctet = top[1];
+  const cipherBytes = binaryStringToBytes(encOctet.value as string);
 
   // algorithm OID
-  const oidBytes = algId[0].value as string;
-  const oid = forge.asn1.derToOid(oidBytes);
+  const oid = readAsn1Oid(algId[0]);
 
-  // ── 분기 1: PBES2 / PKCS#5 v2 / PKCS#12 PBE — node-forge가 직접 지원
-  if (
-    oid === OID_PBES2 ||
-    oid === OID_PBE_SHA1_3DES ||
-    oid === OID_PBE_SHA1_3DES_40 ||
-    oid.startsWith("1.2.840.113549.1.5.") ||
-    oid.startsWith("1.2.840.113549.1.12.1.")
-  ) {
+  // ── 분기 1: PBES2. 표준 AES/3DES는 forge, 한국형 PBES2+SEED-CBC는 수동 복호화.
+  if (oid === OID_PBES2) {
     try {
-      const decryptedInfo = forge.pki.decryptPrivateKeyInfo(asn1, password);
-      if (!decryptedInfo) {
-        throw new Error("비밀번호가 일치하지 않아요.");
+      const params = algId[1].value as forge.asn1.Asn1[];
+      const kdfSeq = params[0].value as forge.asn1.Asn1[];
+      const encSchemeSeq = params[1].value as forge.asn1.Asn1[];
+      const kdfOid = readAsn1Oid(kdfSeq[0]);
+      const encSchemeOid = readAsn1Oid(encSchemeSeq[0]);
+
+      const isKoreanSeedScheme =
+        encSchemeOid === OID_SEED_CBC || encSchemeOid === OID_SEED_CBC_WITH_SHA1;
+
+      if (kdfOid === OID_PKCS5_PBKDF2 && isKoreanSeedScheme) {
+        const kdfParams = kdfSeq[1].value as forge.asn1.Asn1[];
+        const salt = binaryStringToBytes(kdfParams[0].value as string);
+        const iterations = readAsn1Integer(kdfParams[1]);
+
+        let keyLength = 16;
+        let prfOid = OID_HMAC_SHA1;
+
+        if (kdfParams[2]) {
+          const third = kdfParams[2];
+          if (Array.isArray(third.value)) {
+            prfOid = readAsn1Oid((third.value as forge.asn1.Asn1[])[0]);
+          } else {
+            keyLength = readAsn1Integer(third);
+          }
+        }
+
+        if (kdfParams[3]) {
+          prfOid = readAsn1Oid((kdfParams[3].value as forge.asn1.Asn1[])[0]);
+        }
+
+        const iv = binaryStringToBytes(encSchemeSeq[1].value as string);
+        const hash = getWebCryptoHashFromPrfOid(prfOid);
+        const key = await pbkdf2(password, salt, iterations, keyLength, hash);
+        return decryptSeedCipher(key, iv, cipherBytes);
       }
-      const der = forge.asn1.toDer(decryptedInfo).getBytes();
-      const out = new Uint8Array(der.length);
-      for (let i = 0; i < der.length; i++) out[i] = der.charCodeAt(i);
-      return out;
+
+      return decryptWithForgePrivateKeyInfo(asn1, password);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       throw new Error(`표준(PBES2) 인증서 복호화 실패: ${msg}. 비밀번호를 확인해주세요.`);
     }
   }
 
-  // ── 분기 2: KISA SEED-CBC (한국 공동인증서 전용)
+  // ── 분기 2: PKCS#12 PBE / 표준 PBES1 — node-forge가 직접 지원
+  if (
+    oid === OID_PBE_SHA1_3DES ||
+    oid === OID_PBE_SHA1_3DES_40 ||
+    oid.startsWith("1.2.840.113549.1.5.") ||
+    oid.startsWith("1.2.840.113549.1.12.1.")
+  ) {
+    try {
+      return decryptWithForgePrivateKeyInfo(asn1, password);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new Error(`표준 인증서 복호화 실패: ${msg}. 비밀번호를 확인해주세요.`);
+    }
+  }
+
+  // ── 분기 3: KISA SEED-CBC (한국 공동인증서 전용 PBES1)
   if (oid !== OID_SEED_CBC && oid !== OID_SEED_CBC_WITH_SHA1) {
     throw new Error(
       `지원하지 않는 인증서 암호화 OID: ${oid}. 한국 공동인증서(SEED-CBC) 또는 PBES2만 지원해요.`,
@@ -144,39 +291,14 @@ async function decryptKoreanPkcs8(
 
   // parameters SEQUENCE { salt OCTET STRING, iterationCount INTEGER }
   const params = algId[1].value as forge.asn1.Asn1[];
-  const saltStr = params[0].value as string;
-  const salt = new Uint8Array(saltStr.length);
-  for (let i = 0; i < saltStr.length; i++) salt[i] = saltStr.charCodeAt(i);
-
-  const iterStr = params[1].value as string;
-  let iter = 0;
-  for (let i = 0; i < iterStr.length; i++) {
-    iter = (iter << 8) | (iterStr.charCodeAt(i) & 0xff);
-  }
+  const salt = binaryStringToBytes(params[0].value as string);
+  const iter = readAsn1Integer(params[1]);
   if (!iter || iter < 1) {
     throw new Error("인증서 반복 횟수(iteration count)를 읽지 못했습니다.");
   }
 
-  const cipherStr = encOctet.value as string;
-  const cipherBytes = new Uint8Array(cipherStr.length);
-  for (let i = 0; i < cipherStr.length; i++) {
-    cipherBytes[i] = cipherStr.charCodeAt(i);
-  }
-
   const { key, iv } = await deriveSeedKeyIv(password, salt, iter);
-
-  const plain = KISA_SEED_CBC.SEED_CBC_Decrypt(
-    key,
-    iv,
-    cipherBytes,
-    0,
-    cipherBytes.length,
-  );
-
-  if (!plain || plain.length === 0) {
-    throw new Error("SEED-CBC 복호화 결과가 비어있어요. 비밀번호를 확인해주세요.");
-  }
-  return plain instanceof Uint8Array ? plain : new Uint8Array(plain);
+  return decryptSeedCipher(key, iv, cipherBytes);
 }
 
 /**
@@ -201,7 +323,7 @@ export async function buildPfxFromKoreanDerKey(
     forge.asn1.fromDer(bytesToBinaryString(certBytes), false),
   );
 
-  // 2) 개인키 복호화 (SEED-CBC → 평문 RSA key DER)
+  // 2) 개인키 복호화 (SEED-CBC / PBES2 → 평문 RSA key DER)
   const encryptedKeyBytes = base64ToBytes(keyDerBase64);
   const plainKeyDer = await decryptKoreanPkcs8(encryptedKeyBytes, password);
 
