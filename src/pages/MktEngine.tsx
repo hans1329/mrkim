@@ -845,7 +845,7 @@ export default function MktEngine() {
               <ul className="text-sm text-muted-foreground space-y-2">
                 <li className="flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
-                  <span><strong>Lovable AI Gateway 사용 금지</strong> — 모든 AI는 GEMINI_API_KEY 직접 호출</span>
+                  <span><strong>외부 AI 게이트웨이 사용 금지</strong> — 모든 AI는 GEMINI_API_KEY 직접 호출</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
