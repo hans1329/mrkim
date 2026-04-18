@@ -234,8 +234,8 @@ async function handleBusinessVerify(body: any): Promise<Response> {
 
 /**
  * 공동인증서 방식 계정 등록
- * - CODEF 공식 규격: loginType "0" (인증서), derFile/keyFile 또는 certFile+certType
- * - 은행(codef-bank)과 동일한 파라미터 구조 사용
+ * - 홈택스(NT) 공동인증서는 loginType "2" 사용
+ * - id/password는 RSA 암호화된 빈 문자열을 포함하고, 인증서 비밀번호는 certPassword에 매핑
  */
 async function handleRegister(_req: Request, body: any, clientType: string = "P"): Promise<Response> {
   const { businessNumber, certFileBase64, certPassword } = body;
@@ -257,8 +257,9 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   const publicKey = await getPublicKey(accessToken);
   console.log("Using public key, length:", publicKey.length);
 
-  // 인증서 비밀번호를 RSA 암호화
-  const encryptedPassword = encryptRSAPKCS1(certPassword, publicKey);
+  // 홈택스 공동인증서 규격: id/password 빈값도 RSA 암호화해 포함하고, 인증서 비밀번호는 certPassword로 전송
+  const encryptedEmpty = encryptRSAPKCS1("", publicKey);
+  const encryptedCertPassword = encryptRSAPKCS1(certPassword, publicKey);
 
   // 홈택스(NT)는 PFX(.pfx/.p12) 통합 파일만 안정적으로 받음.
   // 한국 공동인증서(SEED-CBC)는 Deno node-forge로 복호화가 안 되므로,
@@ -275,33 +276,31 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   }
   const unifiedCertFile = certFileBase64;
 
-  // PFX/P12 단일 파일 전송 — certType:"pfx", organization:"0001", loginType:"0"
-  const attemptPlans: Array<{ organization: string; passwordKey: "password" | "certPassword" }> = [
-    { organization: "0001", passwordKey: "password" },
-    { organization: "0001", passwordKey: "certPassword" },
+  // PFX/P12 단일 파일 전송 — 홈택스는 loginType:"2", organization:"0001"
+  const attemptPlans: Array<{ organization: string }> = [
+    { organization: "0001" },
   ];
 
-  const buildEntry = (
-    organization: string,
-    passwordKey: "password" | "certPassword",
-  ): Record<string, unknown> => {
+  const buildEntry = (organization: string): Record<string, unknown> => {
     const entry: Record<string, unknown> = {
       countryCode: "KR",
       businessType: "NT",
       clientType,
       organization,
-      loginType: "0",
+      loginType: "2",
+      id: encryptedEmpty,
+      password: encryptedEmpty,
+      certPassword: encryptedCertPassword,
       certType: "pfx",
       certFile: unifiedCertFile,
     };
-    entry[passwordKey] = encryptedPassword;
     return entry;
   };
 
   console.log(
     `Registering hometax account with PFX, businessNumber=${cleanedNumber}, ` +
     `clientType=${clientType}, ` +
-    `attempts=${attemptPlans.map((p) => `${p.organization}:${p.passwordKey}`).join(",")}`
+      `attempts=${attemptPlans.map((p) => p.organization).join(",")}`
   );
 
   let responseText = "";
@@ -310,7 +309,7 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   let lastErrorList: any[] = [];
 
   for (const plan of attemptPlans) {
-    const accountEntry = buildEntry(plan.organization, plan.passwordKey);
+    const accountEntry = buildEntry(plan.organization);
     const requestBody = { accountList: [accountEntry] };
 
     const debugMeta = {
@@ -319,8 +318,9 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       clientType: accountEntry.clientType,
       businessType: accountEntry.businessType,
       countryCode: accountEntry.countryCode,
-      passwordKey: plan.passwordKey,
-      passwordLen: String((accountEntry as any)[plan.passwordKey] || "").length,
+      idLen: String(accountEntry.id || "").length,
+      passwordLen: String(accountEntry.password || "").length,
+      certPasswordLen: String(accountEntry.certPassword || "").length,
       hasCertFile: !!accountEntry.certFile,
       certFileLen: String(accountEntry.certFile || "").length,
       hasKeyFile: !!accountEntry.keyFile,
@@ -341,7 +341,7 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
 
     responseText = await response.text();
     console.log(
-      `Account create response (org=${plan.organization}, pwKey=${plan.passwordKey}):`,
+      `Account create response (org=${plan.organization}):`,
       responseText.substring(0, 1500),
     );
 
