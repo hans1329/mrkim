@@ -14,12 +14,20 @@ const CODEF_TOKEN_URL = "https://oauth.codef.io/oauth/token";
 const BUSINESS_STATUS_PATH = "/v1/kr/public/nt/business/status";
 const ACCOUNT_CREATE_PATH = "/v1/account/create";
 
-// RSA PKCS1 v1.5 암호화 — 은행(codef-bank)과 동일한 UTF-8 바이트 기준 구현
+// RSA PKCS1 v1.5 암호화 — SPKI 또는 PKCS#1 RSAPublicKey 모두 지원
 function encryptRSAPKCS1(plainText: string, rawPublicKey: string): string {
-  const cleanKey = rawPublicKey.replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|[\r\n\s]/g, "");
+  const cleanKey = rawPublicKey
+    .replace(/-----BEGIN [^-]+-----|-----END [^-]+-----|[\r\n\s]/g, "");
   const derBytes = forge.util.decode64(cleanKey);
   const asn1 = forge.asn1.fromDer(derBytes);
-  const publicKey = forge.pki.publicKeyFromAsn1(asn1);
+
+  // SPKI(SubjectPublicKeyInfo) 우선 시도, 실패 시 PKCS#1 RSAPublicKey 직접 파싱
+  let publicKey: forge.pki.rsa.PublicKey;
+  try {
+    publicKey = forge.pki.publicKeyFromAsn1(asn1) as forge.pki.rsa.PublicKey;
+  } catch (_e) {
+    publicKey = forge.pki.rsa.publicKeyFromAsn1(asn1);
+  }
 
   const utf8Bytes = new TextEncoder().encode(plainText);
   let binaryStr = "";
@@ -28,6 +36,9 @@ function encryptRSAPKCS1(plainText: string, rawPublicKey: string): string {
   }
 
   const encrypted = publicKey.encrypt(binaryStr, "RSAES-PKCS1-V1_5");
+  console.log(
+    `RSA encrypt: keyLen=${cleanKey.length}, plainBytes=${utf8Bytes.length}, cipherLen=${encrypted.length}`,
+  );
   return forge.util.encode64(encrypted);
 }
 
