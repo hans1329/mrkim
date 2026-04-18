@@ -69,7 +69,7 @@ function buildAuthEmailHtml(design: EmailDesign, content: { heading: string; bod
   <div style="max-width:560px;margin:0 auto;border-radius:16px;overflow:hidden;">
     <div style="background:${design.headerBg};padding:32px 24px;text-align:center;">
       <div style="display:inline-flex;align-items:center;gap:8px;">
-        <img src="https://mrkim.lovable.app/images/icc-5.webp" alt="김비서" style="height:40px;width:auto;" />
+        <img src="https://mrkim.today/images/icc-5.webp" alt="김비서" style="height:40px;width:auto;" />
         <h1 style="margin:0;font-size:22px;color:${design.headerTextColor};font-weight:700;">${design.headerTitle}</h1>
       </div>
       <p style="margin:8px 0 0;font-size:14px;color:${design.headerTextColor};opacity:0.85;">${content.heading}</p>
