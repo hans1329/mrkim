@@ -348,13 +348,31 @@ export async function buildPfxFromKoreanDerKey(
     throw new Error("복호화된 개인키를 해석하지 못했어요. 비밀번호가 다를 수 있어요.");
   }
 
-  // 4) PFX(PKCS#12)로 묶기. CODEF가 인식할 수 있도록 동일 비밀번호로 보호.
+  // 4) PFX(PKCS#12)로 묶기.
+  // CODEF 호환성을 위해 bag attribute(friendlyName/localKeyId)를 최소화한
+  // legacy 3DES PKCS#12로 내보내고, 같은 비밀번호로 즉시 재파싱 검증까지 수행한다.
   const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
     privateKey as forge.pki.rsa.PrivateKey,
-    [cert],
+    cert,
     password,
-    { algorithm: "3des", friendlyName: "hometax-cert" },
+    {
+      algorithm: "3des",
+      useMac: true,
+      generateLocalKeyId: false,
+    },
   );
   const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
+
+  try {
+    forge.pkcs12.pkcs12FromAsn1(
+      forge.asn1.fromDer(p12Der, false),
+      false,
+      password,
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`생성된 PFX 검증에 실패했어요: ${message}`);
+  }
+
   return forge.util.encode64(p12Der);
 }
