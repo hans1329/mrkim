@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useConnection } from "@/contexts/ConnectionContext";
+import { buildPfxFromKoreanDerKey } from "@/lib/koreanCertToPfx";
 
 // 사업자등록번호 포맷팅
 const formatBusinessNumber = (value: string) => {
