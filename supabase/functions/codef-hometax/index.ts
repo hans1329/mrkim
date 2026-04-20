@@ -238,7 +238,7 @@ async function handleBusinessVerify(body: any): Promise<Response> {
  * - id/password는 RSA 암호화된 빈 문자열을 포함하고, 인증서 비밀번호는 certPassword에 매핑
  */
 async function handleRegister(_req: Request, body: any, clientType: string = "P"): Promise<Response> {
-  const { businessNumber, certFileBase64, certPassword } = body;
+  const { businessNumber, certFileBase64, keyFileBase64, certPassword } = body;
 
   if (!businessNumber || !certFileBase64 || !certPassword) {
     return new Response(
@@ -261,22 +261,12 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   const encryptedEmpty = encryptRSAPKCS1("", publicKey);
   const encryptedCertPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // 홈택스(NT)는 PFX(.pfx/.p12) 통합 파일만 안정적으로 받음.
-  // 한국 공동인증서(SEED-CBC)는 Deno node-forge로 복호화가 안 되므로,
-  // 클라이언트(브라우저)에서 SEED 복호화 후 PFX로 합성하여 단일 certFileBase64만 전송한다.
-  // (DER+KEY 분리 모드는 더 이상 지원하지 않음)
-  if (body.keyFileBase64) {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: "DER+KEY 분리 인증서는 클라이언트에서 PFX로 합성하여 보내주세요. 잠시 후 다시 시도해주세요.",
-      }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-  const unifiedCertFile = certFileBase64;
+  // 홈택스(NT) 공동인증서: 은행/카드와 동일하게 DER+KEY 분리 전송을 우선.
+  // - keyFileBase64가 있으면 derFile + keyFile 분리 전송 (certType 생략)
+  // - 없으면 PFX/P12 통합 파일 전송 (certType: "pfx")
+  // CODEF가 PFX를 다시 분해할 필요가 없어 CF-04025를 회피할 수 있다.
+  const useSplitMode = Boolean(keyFileBase64);
 
-  // PFX/P12 단일 파일 전송 — 홈택스는 loginType:"2", organization:"0001"
   const attemptPlans: Array<{ organization: string }> = [
     { organization: "0001" },
   ];
@@ -291,15 +281,22 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       id: encryptedEmpty,
       password: encryptedEmpty,
       certPassword: encryptedCertPassword,
-      certType: "pfx",
-      certFile: unifiedCertFile,
     };
+    if (useSplitMode) {
+      // DER+KEY 분리: certType 생략 (CODEF 공식 규격)
+      entry.derFile = certFileBase64;
+      entry.keyFile = keyFileBase64;
+    } else {
+      // PFX/P12 통합 파일
+      entry.certFile = certFileBase64;
+      entry.certType = "pfx";
+    }
     return entry;
   };
 
   console.log(
-    `Registering hometax account with PFX, businessNumber=${cleanedNumber}, ` +
-    `clientType=${clientType}, ` +
+    `Registering hometax account with ${useSplitMode ? "DER+KEY" : "PFX"}, ` +
+    `businessNumber=${cleanedNumber}, clientType=${clientType}, ` +
       `attempts=${attemptPlans.map((p) => p.organization).join(",")}`
   );
 

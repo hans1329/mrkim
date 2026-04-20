@@ -242,13 +242,9 @@ export function HometaxConnectionFlow({
     setError(null);
 
     try {
-      let certFileBase64 = await fileToBase64(certFile);
-      if (keyFile) {
-        // 한국 공동인증서(DER+KEY, SEED-CBC)는 CODEF NT가 거부하므로 브라우저에서 PFX로 합성
-        const { buildPfxFromKoreanDerKey } = await import("@/lib/koreanCertToPfx");
-        const keyB64 = await fileToBase64(keyFile);
-        certFileBase64 = await buildPfxFromKoreanDerKey(certFileBase64, keyB64, certPassword);
-      }
+      const certFileBase64 = await fileToBase64(certFile);
+      // 은행/카드와 동일하게 DER+KEY를 그대로 분리 전송 (PFX 합성 제거)
+      const keyFileBase64 = keyFile ? await fileToBase64(keyFile) : undefined;
 
       const { data, error: funcError } = await supabase.functions.invoke(
         "codef-hometax",
@@ -257,6 +253,7 @@ export function HometaxConnectionFlow({
             action: "register",
             businessNumber: businessInfo.businessNumber,
             certFileBase64,
+            keyFileBase64,
             certPassword,
             clientType,
           },
