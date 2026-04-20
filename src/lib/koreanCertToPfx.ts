@@ -349,26 +349,43 @@ export async function buildPfxFromKoreanDerKey(
   }
 
   // 4) PFX(PKCS#12)로 묶기.
-  // CODEF 호환성을 위해 bag attribute(friendlyName/localKeyId)를 최소화한
-  // legacy 3DES PKCS#12로 내보내고, 같은 비밀번호로 즉시 재파싱 검증까지 수행한다.
+  // CODEF/Java(BouncyCastle) 호환성을 위해:
+  // - algorithm: "3des" (PBE-SHA1-3DES; AES는 일부 Java 환경에서 거부)
+  // - useMac: true + SHA1 MAC (RFC7292 기본)
+  // - generateLocalKeyId: true (Java KeyStore가 키-인증서 매칭에 필수로 사용)
+  // - friendlyName: 명시 (일부 파서가 alias로 요구)
+  // - count/saltSize: OpenSSL 기본값과 동일하게 2048/8
   const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
     privateKey as forge.pki.rsa.PrivateKey,
-    cert,
+    [cert],
     password,
     {
       algorithm: "3des",
       useMac: true,
-      generateLocalKeyId: false,
+      generateLocalKeyId: true,
+      friendlyName: "hometax",
+      count: 2048,
+      saltSize: 8,
     },
   );
   const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
 
+  // 합성 직후 자체 재파싱 검증 + 키/인증서 페어 매칭 확인
   try {
-    forge.pkcs12.pkcs12FromAsn1(
+    const verifyP12 = forge.pkcs12.pkcs12FromAsn1(
       forge.asn1.fromDer(p12Der, false),
       false,
       password,
     );
+    const keyBags = verifyP12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+    const certBags = verifyP12.getBags({ bagType: forge.pki.oids.certBag });
+    const hasKey = (keyBags[forge.pki.oids.pkcs8ShroudedKeyBag] || []).length > 0;
+    const hasCert = (certBags[forge.pki.oids.certBag] || []).length > 0;
+    if (!hasKey || !hasCert) {
+      throw new Error(
+        `PFX 내부 구조가 불완전해요 (key=${hasKey}, cert=${hasCert}).`,
+      );
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`생성된 PFX 검증에 실패했어요: ${message}`);
