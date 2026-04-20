@@ -238,7 +238,7 @@ async function handleBusinessVerify(body: any): Promise<Response> {
  * - id/password는 RSA 암호화된 빈 문자열을 포함하고, 인증서 비밀번호는 certPassword에 매핑
  */
 async function handleRegister(_req: Request, body: any, clientType: string = "P"): Promise<Response> {
-  const { businessNumber, certFileBase64, keyFileBase64, certPassword } = body;
+  const { businessNumber, certFileBase64, certPassword } = body;
 
   if (!businessNumber || !certFileBase64 || !certPassword) {
     return new Response(
@@ -261,41 +261,28 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   const encryptedEmpty = encryptRSAPKCS1("", publicKey);
   const encryptedCertPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // 홈택스(NT) 공동인증서: 은행/카드와 동일하게 DER+KEY 분리 전송을 우선.
-  // - keyFileBase64가 있으면 derFile + keyFile 분리 전송 (certType 생략)
-  // - 없으면 PFX/P12 통합 파일 전송 (certType: "pfx")
-  // CODEF가 PFX를 다시 분해할 필요가 없어 CF-04025를 회피할 수 있다.
-  const useSplitMode = Boolean(keyFileBase64);
-
+  // 홈택스(NT) 공동인증서: CODEF 공식 규격은 certFile(PFX/P12) + certType: "pfx"만 허용.
+  // DER+KEY 분리 전송(derFile/keyFile)은 은행(BK) 전용이며 NT에서는 CF-00007(요청 파라미터 오류) 발생.
+  // → 클라이언트에서 한국 공동인증서를 PFX로 합성한 뒤 certFileBase64로 전달받음.
   const attemptPlans: Array<{ organization: string }> = [
     { organization: "0001" },
   ];
 
-  const buildEntry = (organization: string): Record<string, unknown> => {
-    const entry: Record<string, unknown> = {
-      countryCode: "KR",
-      businessType: "NT",
-      clientType,
-      organization,
-      loginType: "2",
-      id: encryptedEmpty,
-      password: encryptedEmpty,
-      certPassword: encryptedCertPassword,
-    };
-    if (useSplitMode) {
-      // DER+KEY 분리: certType 생략 (CODEF 공식 규격)
-      entry.derFile = certFileBase64;
-      entry.keyFile = keyFileBase64;
-    } else {
-      // PFX/P12 통합 파일
-      entry.certFile = certFileBase64;
-      entry.certType = "pfx";
-    }
-    return entry;
-  };
+  const buildEntry = (organization: string): Record<string, unknown> => ({
+    countryCode: "KR",
+    businessType: "NT",
+    clientType,
+    organization,
+    loginType: "2",
+    id: encryptedEmpty,
+    password: encryptedEmpty,
+    certPassword: encryptedCertPassword,
+    certFile: certFileBase64,
+    certType: "pfx",
+  });
 
   console.log(
-    `Registering hometax account with ${useSplitMode ? "DER+KEY" : "PFX"}, ` +
+    `Registering hometax account with PFX, ` +
     `businessNumber=${cleanedNumber}, clientType=${clientType}, ` +
       `attempts=${attemptPlans.map((p) => p.organization).join(",")}`
   );
@@ -318,11 +305,8 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       idLen: String(accountEntry.id || "").length,
       passwordLen: String(accountEntry.password || "").length,
       certPasswordLen: String(accountEntry.certPassword || "").length,
-      hasCertFile: !!accountEntry.certFile,
       certFileLen: String(accountEntry.certFile || "").length,
-      hasKeyFile: !!accountEntry.keyFile,
-      keyFileLen: String(accountEntry.keyFile || "").length,
-      certType: accountEntry.certType ?? null,
+      certType: accountEntry.certType,
       keys: Object.keys(accountEntry),
     };
     console.log(`→ Payload meta:`, JSON.stringify(debugMeta));
