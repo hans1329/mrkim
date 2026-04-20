@@ -705,14 +705,18 @@ export const ChatOnboarding = ({ onComplete, onProgress, existingData = {}, onCl
                 const brn = stateRef.current.business_number || profile?.business_registration_number;
                 if (!brn) throw new Error("사업자등록번호가 먼저 필요해요.");
                 const certFileBase64 = await fileToBase64(payload.cert_file);
-                // 은행/카드와 동일하게 DER+KEY를 그대로 분리 전송 (PFX 합성 제거)
-                const keyFileBase64 = payload.key_file ? await fileToBase64(payload.key_file) : undefined;
+                // 홈택스(NT)는 CODEF 규격상 PFX/P12만 허용 (DER+KEY 분리 전송은 은행 전용 → CF-00007).
+                // DER+KEY가 들어오면 클라이언트에서 한국 공동인증서(SEED-CBC) 복호화 후 PFX로 합성.
+                let pfxBase64 = certFileBase64;
+                if (payload.key_file) {
+                  const keyFileBase64 = await fileToBase64(payload.key_file);
+                  pfxBase64 = await buildPfxFromKoreanDerKey(certFileBase64, keyFileBase64, payload.cert_password);
+                }
                 const { data, error } = await supabase.functions.invoke("codef-hometax", {
                   body: {
                     action: "register",
                     businessNumber: String(brn).replace(/\D/g, ""),
-                    certFileBase64,
-                    keyFileBase64,
+                    certFileBase64: pfxBase64,
                     certPassword: payload.cert_password,
                     clientType,
                   },
