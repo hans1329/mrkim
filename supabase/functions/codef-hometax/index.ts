@@ -238,9 +238,11 @@ async function handleBusinessVerify(body: any): Promise<Response> {
  * - id/password는 RSA 암호화된 빈 문자열을 포함하고, 인증서 비밀번호는 certPassword에 매핑
  */
 async function handleRegister(_req: Request, body: any, clientType: string = "P"): Promise<Response> {
-  const { businessNumber, certFileBase64, certPassword } = body;
+  const { businessNumber, certFileBase64, derFileBase64, keyFileBase64, certPassword } = body;
+  const hasDerKey = Boolean(derFileBase64 && keyFileBase64);
+  const hasPfx = Boolean(certFileBase64);
 
-  if (!businessNumber || !certFileBase64 || !certPassword) {
+  if (!businessNumber || !certPassword || (!hasDerKey && !hasPfx)) {
     return new Response(
       JSON.stringify({
         success: false,
@@ -261,28 +263,35 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   const encryptedEmpty = encryptRSAPKCS1("", publicKey);
   const encryptedCertPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // 홈택스(NT) 공동인증서: CODEF 공식 규격은 certFile(PFX/P12) + certType: "pfx"만 허용.
-  // DER+KEY 분리 전송(derFile/keyFile)은 은행(BK) 전용이며 NT에서는 CF-00007(요청 파라미터 오류) 발생.
-  // → 클라이언트에서 한국 공동인증서를 PFX로 합성한 뒤 certFileBase64로 전달받음.
+  // v3: 은행/카드와 동일하게 DER+KEY를 원본 그대로 전송 (PFX 합성 우회 → CF-04025 회피).
+  // PFX 단일 파일이 들어오면 종전대로 certFile + certType:"pfx"로 전송.
   const attemptPlans: Array<{ organization: string }> = [
     { organization: "0001" },
   ];
 
-  const buildEntry = (organization: string): Record<string, unknown> => ({
-    countryCode: "KR",
-    businessType: "NT",
-    clientType,
-    organization,
-    loginType: "2",
-    id: encryptedEmpty,
-    password: encryptedEmpty,
-    certPassword: encryptedCertPassword,
-    certFile: certFileBase64,
-    certType: "pfx",
-  });
+  const buildEntry = (organization: string): Record<string, unknown> => {
+    const base: Record<string, unknown> = {
+      countryCode: "KR",
+      businessType: "NT",
+      clientType,
+      organization,
+      loginType: "2",
+      id: encryptedEmpty,
+      password: encryptedEmpty,
+      certPassword: encryptedCertPassword,
+    };
+    if (hasDerKey) {
+      base.derFile = derFileBase64;
+      base.keyFile = keyFileBase64;
+    } else {
+      base.certFile = certFileBase64;
+      base.certType = "pfx";
+    }
+    return base;
+  };
 
   console.log(
-    `Registering hometax account with PFX, ` +
+    `Registering hometax account (mode=${hasDerKey ? "DER+KEY" : "PFX"}), ` +
     `businessNumber=${cleanedNumber}, clientType=${clientType}, ` +
       `attempts=${attemptPlans.map((p) => p.organization).join(",")}`
   );
