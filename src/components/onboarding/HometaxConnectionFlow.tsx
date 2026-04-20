@@ -19,7 +19,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useConnection } from "@/contexts/ConnectionContext";
-import { buildPfxFromKoreanDerKey } from "@/lib/koreanCertToPfx";
 
 // 사업자등록번호 포맷팅
 const formatBusinessNumber = (value: string) => {
@@ -244,25 +243,24 @@ export function HometaxConnectionFlow({
 
     try {
       const certFileBase64 = await fileToBase64(certFile);
-      // 홈택스(NT)는 CODEF 규격상 PFX/P12만 허용 (derFile/keyFile 분리 전송은 은행 전용 → CF-00007).
-      // DER+KEY가 들어오면 클라이언트에서 한국 공동인증서(SEED-CBC) 복호화 후 PFX로 합성.
-      let pfxBase64 = certFileBase64;
-      if (keyFile) {
-        const keyFileBase64 = await fileToBase64(keyFile);
-        pfxBase64 = await buildPfxFromKoreanDerKey(certFileBase64, keyFileBase64, certPassword);
+      // v3: 은행/카드와 동일하게 DER+KEY 원본을 그대로 전송 (PFX 합성 제거 → CF-04025 회피)
+      const keyFileBase64 = keyFile ? await fileToBase64(keyFile) : null;
+      const payload: Record<string, unknown> = {
+        action: "register",
+        businessNumber: businessInfo.businessNumber,
+        certPassword,
+        clientType,
+      };
+      if (keyFileBase64) {
+        payload.derFileBase64 = certFileBase64;
+        payload.keyFileBase64 = keyFileBase64;
+      } else {
+        payload.certFileBase64 = certFileBase64;
       }
 
       const { data, error: funcError } = await supabase.functions.invoke(
         "codef-hometax",
-        {
-          body: {
-            action: "register",
-            businessNumber: businessInfo.businessNumber,
-            certFileBase64: pfxBase64,
-            certPassword,
-            clientType,
-          },
-        }
+        { body: payload }
       );
 
       if (funcError) throw funcError;
