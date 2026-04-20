@@ -263,7 +263,7 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
   const encryptedEmpty = encryptRSAPKCS1("", publicKey);
   const encryptedCertPassword = encryptRSAPKCS1(certPassword, publicKey);
 
-  // v3: 은행/카드와 동일하게 DER+KEY를 원본 그대로 전송 (PFX 합성 우회 → CF-04025 회피).
+  // v3: DER+KEY 원본 전송을 유지하되, CODEF 계정등록 샘플에 맞춰 certType:"1"을 함께 보낸다.
   // PFX 단일 파일이 들어오면 종전대로 certFile + certType:"pfx"로 전송.
   const attemptPlans: Array<{ organization: string }> = [
     { organization: "0001" },
@@ -281,6 +281,7 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       certPassword: encryptedCertPassword,
     };
     if (hasDerKey) {
+      base.certType = "1";
       base.derFile = derFileBase64;
       base.keyFile = keyFileBase64;
     } else {
