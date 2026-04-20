@@ -8,6 +8,7 @@ import { useCardConnection } from "@/hooks/useCardConnection";
 import { useAccountConnection } from "@/hooks/useAccountConnection";
 import { toast } from "sonner";
 import { SecureCredentialSheet, type SecureService, type SecureCredentialPayload } from "./SecureCredentialSheet";
+import { buildPfxFromKoreanDerKey } from "@/lib/koreanCertToPfx";
 
 // ─── 기관 라벨 → ID 매핑 (음성/채팅 입력의 한글명을 codef/hyphen ID로 변환) ───
 const BANK_LABEL_TO_ID: Record<string, string> = {
