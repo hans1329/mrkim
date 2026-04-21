@@ -38,6 +38,7 @@ import TaxAccountant from "./pages/TaxAccountant";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import ResetPassword from "./pages/ResetPassword";
+import TestCodefHometax from "./pages/TestCodefHometax";
 import V2Dashboard from "./pages/V2Dashboard";
 import V2Transactions from "./pages/V2Transactions";
 import V2SalesPattern from "./pages/V2SalesPattern";
@@ -98,6 +99,7 @@ const App = () => (
                       <Route path="/privacy" element={<PrivacyPolicy />} />
                       <Route path="/terms" element={<TermsOfService />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/test/codef" element={<TestCodefHometax />} />
                       <Route path="/v2" element={<V2Dashboard />} />
                       <Route path="/v2/transactions" element={<V2Transactions />} />
                       <Route path="/v2/sales-pattern" element={<V2SalesPattern />} />

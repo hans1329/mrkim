@@ -14,6 +14,7 @@
 
 import forge from "node-forge";
 import { KISA_SEED_CBC } from "@kr-yeon/kisa-seed";
+import { buildSeedCbcPkcs12, verifySeedCbcPkcs12Structure } from "./pkcs12SeedCbc";
 
 const OID_SEED_CBC = "1.2.410.200004.1.4";
 const OID_SEED_CBC_WITH_SHA1 = "1.2.410.200004.1.15";
@@ -308,21 +309,53 @@ async function decryptKoreanPkcs8(
   return decryptSeedCipher(key, iv, cipherBytes);
 }
 
+export interface PfxBuildOptions {
+  algorithm?: "3des" | "aes128" | "aes192" | "aes256" | "seed-cbc";
+  useMac?: boolean;
+  count?: number;
+  saltSize?: number;
+  includeFriendlyName?: boolean;
+  includeLocalKeyId?: boolean;
+  friendlyName?: string;
+}
+
+export interface PfxBuildResult {
+  pfxBase64: string;
+  diagnostics: {
+    optionsApplied: Required<Omit<PfxBuildOptions, "friendlyName">> & { friendlyName: string };
+    pfxByteLength: number;
+    keyCertPaired: boolean;
+    certSubject: string;
+    certIssuer: string;
+    certSerialNumber: string;
+    certNotBefore: string;
+    certNotAfter: string;
+    rsaModulusBitLength: number;
+  };
+}
+
 /**
  * DER 인증서 + 한국 공동인증서 KEY 파일을 받아 PFX(.p12) base64를 반환한다.
- *
- * @param certDerBase64  signCert.der base64
- * @param keyDerBase64   signPri.key base64 (SEED-CBC encrypted PKCS#8)
- * @param password       인증서 비밀번호
  */
 export async function buildPfxFromKoreanDerKey(
   certDerBase64: string,
   keyDerBase64: string,
   password: string,
-): Promise<string> {
+  options: PfxBuildOptions = {},
+): Promise<PfxBuildResult> {
   if (!certDerBase64 || !keyDerBase64 || !password) {
     throw new Error("인증서/키/비밀번호가 모두 필요합니다.");
   }
+
+  const opts = {
+    algorithm: options.algorithm ?? "3des",
+    useMac: options.useMac ?? true,
+    count: options.count ?? 2048,
+    saltSize: options.saltSize ?? 8,
+    includeFriendlyName: options.includeFriendlyName ?? true,
+    includeLocalKeyId: options.includeLocalKeyId ?? true,
+    friendlyName: options.friendlyName ?? "hometax",
+  };
 
   // 1) 인증서 파싱
   const certBytes = base64ToBytes(certDerBase64);
@@ -334,13 +367,11 @@ export async function buildPfxFromKoreanDerKey(
   const encryptedKeyBytes = base64ToBytes(keyDerBase64);
   const plainKeyDer = await decryptKoreanPkcs8(encryptedKeyBytes, password);
 
-  // 3) 평문 키 → forge privateKey 객체
-  // 한국 공동인증서 복호화 결과는 보통 PKCS#1 RSAPrivateKey 또는 PKCS#8 PrivateKeyInfo.
-  let privateKey: forge.pki.PrivateKey | null = null;
+  // 3) 평문 키 → forge privateKey 객체. forge.pki.privateKeyFromAsn1 은 PKCS#1/PKCS#8 모두 처리.
   const keyAsn1 = forge.asn1.fromDer(bytesToBinaryString(plainKeyDer), false);
+  let privateKey: forge.pki.rsa.PrivateKey | null = null;
   try {
-    // PKCS#8 PrivateKeyInfo 시도
-    privateKey = forge.pki.privateKeyFromAsn1(keyAsn1);
+    privateKey = forge.pki.privateKeyFromAsn1(keyAsn1) as forge.pki.rsa.PrivateKey;
   } catch (_e) {
     privateKey = null;
   }
@@ -348,48 +379,95 @@ export async function buildPfxFromKoreanDerKey(
     throw new Error("복호화된 개인키를 해석하지 못했어요. 비밀번호가 다를 수 있어요.");
   }
 
-  // 4) PFX(PKCS#12)로 묶기.
-  // CODEF/Java(BouncyCastle) 호환성을 위해:
-  // - algorithm: "3des" (PBE-SHA1-3DES; AES는 일부 Java 환경에서 거부)
-  // - useMac: true + SHA1 MAC (RFC7292 기본)
-  // - generateLocalKeyId: true (Java KeyStore가 키-인증서 매칭에 필수로 사용)
-  // - friendlyName: 명시 (일부 파서가 alias로 요구)
-  // - count/saltSize: OpenSSL 기본값과 동일하게 2048/8
-  const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
-    privateKey as forge.pki.rsa.PrivateKey,
-    [cert],
-    password,
-    {
-      algorithm: "3des",
-      useMac: true,
-      generateLocalKeyId: true,
-      friendlyName: "hometax",
-      count: 2048,
-      saltSize: 8,
-    },
-  );
-  const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
+  // 3-1) 키-인증서 매칭 검증 (RSA modulus n 일치 여부)
+  const certPub = cert.publicKey as forge.pki.rsa.PublicKey;
+  const keyCertPaired =
+    (privateKey as any).n && (certPub as any).n
+      ? (privateKey as any).n.toString(16) === (certPub as any).n.toString(16)
+      : false;
 
-  // 합성 직후 자체 재파싱 검증 + 키/인증서 페어 매칭 확인
-  try {
-    const verifyP12 = forge.pkcs12.pkcs12FromAsn1(
-      forge.asn1.fromDer(p12Der, false),
-      false,
-      password,
+  if (!keyCertPaired) {
+    throw new Error(
+      "키-인증서 매칭 실패: 복호화된 개인키와 인증서의 공개키 모듈러스가 다릅니다. " +
+      "SEED-CBC 복호화 결과가 잘못됐거나, 서로 다른 쌍의 파일을 업로드했을 가능성이 있어요.",
     );
-    const keyBags = verifyP12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
-    const certBags = verifyP12.getBags({ bagType: forge.pki.oids.certBag });
-    const hasKey = (keyBags[forge.pki.oids.pkcs8ShroudedKeyBag] || []).length > 0;
-    const hasCert = (certBags[forge.pki.oids.certBag] || []).length > 0;
-    if (!hasKey || !hasCert) {
-      throw new Error(
-        `PFX 내부 구조가 불완전해요 (key=${hasKey}, cert=${hasCert}).`,
-      );
-    }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`생성된 PFX 검증에 실패했어요: ${message}`);
   }
 
-  return forge.util.encode64(p12Der);
+  // 4) PFX(PKCS#12)로 묶기.
+  let p12Der: string;
+  if (opts.algorithm === "seed-cbc") {
+    // Korean KISA SEED-CBC 경로 — 수동 조립
+    const pfxBytes = await buildSeedCbcPkcs12({
+      cert,
+      privateKey,
+      password,
+      options: {
+        iterations: opts.count,
+        saltSize: opts.saltSize,
+        includeFriendlyName: opts.includeFriendlyName,
+        includeLocalKeyId: opts.includeLocalKeyId,
+        friendlyName: opts.friendlyName,
+        useMac: opts.useMac,
+        kdfMode: "openssl-default",
+      },
+    });
+    p12Der = bytesToBinaryString(pfxBytes);
+
+    // Structure-only sanity check (forge cannot fully parse SEED-CBC bags)
+    const check = verifySeedCbcPkcs12Structure(pfxBytes);
+    if (!check.ok) {
+      throw new Error(`SEED-CBC PFX 구조 검증 실패: ${check.note ?? "unknown"}`);
+    }
+  } else {
+    // 표준 forge 경로 (3des/aes) — CODEF 서버는 거부하지만 비교용으로 유지
+    const pkcsOptions: any = {
+      algorithm: opts.algorithm,
+      useMac: opts.useMac,
+      count: opts.count,
+      saltSize: opts.saltSize,
+      generateLocalKeyId: opts.includeLocalKeyId,
+    };
+    if (opts.includeFriendlyName) {
+      pkcsOptions.friendlyName = opts.friendlyName;
+    }
+    const p12Asn1 = forge.pkcs12.toPkcs12Asn1(privateKey, [cert], password, pkcsOptions);
+    p12Der = forge.asn1.toDer(p12Asn1).getBytes();
+
+    try {
+      const verifyP12 = forge.pkcs12.pkcs12FromAsn1(
+        forge.asn1.fromDer(p12Der, false),
+        false,
+        password,
+      );
+      const keyBags = verifyP12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+      const certBags = verifyP12.getBags({ bagType: forge.pki.oids.certBag });
+      const hasKey = (keyBags[forge.pki.oids.pkcs8ShroudedKeyBag] || []).length > 0;
+      const hasCert = (certBags[forge.pki.oids.certBag] || []).length > 0;
+      if (!hasKey || !hasCert) {
+        throw new Error(`PFX 내부 구조가 불완전해요 (key=${hasKey}, cert=${hasCert}).`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`생성된 PFX 재파싱에 실패했어요: ${message}`);
+    }
+  }
+
+  const pfxBase64 = forge.util.encode64(p12Der);
+  const getAttr = (attrs: any[], name: string): string =>
+    attrs.find((a) => a.name === name)?.value ?? "";
+
+  return {
+    pfxBase64,
+    diagnostics: {
+      optionsApplied: opts,
+      pfxByteLength: p12Der.length,
+      keyCertPaired,
+      certSubject: `CN=${getAttr(cert.subject.attributes, "commonName")}, O=${getAttr(cert.subject.attributes, "organizationName")}`,
+      certIssuer: `CN=${getAttr(cert.issuer.attributes, "commonName")}, O=${getAttr(cert.issuer.attributes, "organizationName")}`,
+      certSerialNumber: cert.serialNumber,
+      certNotBefore: cert.validity.notBefore.toISOString(),
+      certNotAfter: cert.validity.notAfter.toISOString(),
+      rsaModulusBitLength: (certPub as any).n?.bitLength?.() ?? 0,
+    },
+  };
 }
