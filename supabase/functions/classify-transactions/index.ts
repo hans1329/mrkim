@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 interface TransactionInput {
   id: string;
@@ -24,8 +24,8 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -121,19 +121,16 @@ JSON 배열로 응답 (각 항목):
   "reason": "분류 사유 한줄"
 }]`;
 
-    const aiResponse = await fetch(AI_GATEWAY_URL, {
+    const aiResponse = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.1,
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        generationConfig: {
+          temperature: 0.1,
+          responseMimeType: "application/json",
+        },
       }),
     });
 
@@ -144,16 +141,12 @@ JSON 배열로 응답 (각 항목):
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (status === 402) {
-        return new Response(JSON.stringify({ error: "AI 크레딧이 부족합니다." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error(`AI gateway error: ${status}`);
+      const errText = await aiResponse.text();
+      throw new Error(`Gemini API error ${status}: ${errText.slice(0, 200)}`);
     }
 
     const aiData = await aiResponse.json();
-    const content = aiData.choices?.[0]?.message?.content || "";
+    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     // JSON 파싱 (마크다운 코드블록 제거)
     const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
@@ -211,8 +204,8 @@ JSON 배열로 응답 (각 항목):
       user_id: user.id,
       service: "gemini",
       endpoint: "classify-transactions",
-      tokens_input: aiData.usage?.prompt_tokens || 0,
-      tokens_output: aiData.usage?.completion_tokens || 0,
+      tokens_input: aiData.usageMetadata?.promptTokenCount || 0,
+      tokens_output: aiData.usageMetadata?.candidatesTokenCount || 0,
       metadata: { transaction_count: transactions.length, classified },
     });
 
