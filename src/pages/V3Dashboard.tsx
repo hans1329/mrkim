@@ -6,7 +6,6 @@ import {
   ChevronRight,
   Menu,
   Mic,
-  Plus,
   TrendingUp,
 } from "lucide-react";
 import { V3MenuDrawer } from "@/components/v3/V3MenuDrawer";
@@ -125,29 +124,50 @@ function ConnectionStatusButton({
   status: "healthy" | "syncing" | "error";
   onClick: () => void;
 }) {
-  const dotColor =
-    status === "healthy"
-      ? "bg-emerald-400"
-      : status === "syncing"
-      ? "bg-amber-400"
-      : "bg-rose-400";
+  const errorCount = Math.max(0, total - active);
+  const isError = status === "error" || errorCount > 0;
+  const isSyncing = status === "syncing";
+
+  const dotColor = isError
+    ? "bg-rose-400"
+    : isSyncing
+    ? "bg-amber-400"
+    : "bg-emerald-400";
+
+  const label = isError
+    ? `${errorCount}건 조치 필요`
+    : isSyncing
+    ? "동기화 중"
+    : "연동 정상";
+
+  const textColor = isError
+    ? "text-rose-200"
+    : isSyncing
+    ? "text-amber-100"
+    : "text-white/90";
 
   return (
     <button
       onClick={onClick}
-      aria-label={`연동 상태: ${active}/${total} 활성`}
+      aria-label={`연동 관리 · ${label}`}
       className="
-        relative flex items-center gap-2 h-11 px-3 rounded-full
+        relative flex items-center gap-2 h-11 px-3.5 rounded-full
         bg-white/[0.06] border border-white/[0.08]
         hover:bg-white/[0.1] active:scale-95
         transition
       "
     >
-      <span className={`inline-block h-2 w-2 rounded-full ${dotColor}`} />
-      <span className="text-xs font-medium text-white/90 tabular-nums">
-        {active}/{total}
+      <span className="relative flex h-2 w-2">
+        {isSyncing && (
+          <span
+            className={`absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping ${dotColor}`}
+          />
+        )}
+        <span
+          className={`relative inline-flex h-2 w-2 rounded-full ${dotColor}`}
+        />
       </span>
-      <Plus className="h-4 w-4 text-white/60" strokeWidth={1.5} />
+      <span className={`text-xs font-medium ${textColor}`}>{label}</span>
     </button>
   );
 }

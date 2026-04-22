@@ -139,9 +139,10 @@ export function V3ChatSheet({ open, onClose, initialUserText }: V3ChatSheetProps
             transition={{ type: "spring", damping: 32, stiffness: 320 }}
             className="
               fixed bottom-0 left-0 right-0 z-50
+              mx-auto w-full max-w-md
               h-[85vh] max-h-[720px]
               rounded-t-3xl
-              border-t border-white/[0.08]
+              border-t border-l border-r border-white/[0.08]
               text-white
               flex flex-col
               overflow-hidden

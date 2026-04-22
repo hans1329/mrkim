@@ -143,9 +143,10 @@ export function V3ConnectionsSheet({ open, onClose }: V3ConnectionsSheetProps) {
             }}
             className="
               fixed bottom-0 left-0 right-0 z-50
+              mx-auto w-full max-w-md
               max-h-[85vh] overflow-hidden
               rounded-t-3xl
-              border-t border-white/[0.08]
+              border-t border-l border-r border-white/[0.08]
               text-white
               flex flex-col
             "

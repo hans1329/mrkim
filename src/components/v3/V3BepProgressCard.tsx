@@ -114,13 +114,18 @@ export function V3BepProgressCard({ onTap, data = mockBep }: V3BepProgressCardPr
           )}
         </div>
 
-        {/* Progress bar */}
-        <div className="mt-5 h-2.5 rounded-full bg-white/25 overflow-hidden">
+        {/* Progress bar — 컬러 그라디언트 포인트 */}
+        <div className="mt-5 h-2.5 rounded-full bg-black/15 overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${percent}%` }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="h-full bg-white rounded-full"
+            className="h-full rounded-full"
+            style={{
+              background:
+                "linear-gradient(90deg, #FFFFFF 0%, #FEF3C7 35%, #FCD34D 70%, #F59E0B 100%)",
+              boxShadow: "0 0 14px rgba(253, 224, 71, 0.65)",
+            }}
           />
         </div>
 
