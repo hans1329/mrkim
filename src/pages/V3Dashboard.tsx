@@ -349,15 +349,79 @@ export default function V3Dashboard() {
           "linear-gradient(180deg, #0A0A0F 0%, #12121A 50%, #0E0E16 100%)",
       }}
     >
-      {/* Ambient glow */}
-      <div
-        className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px]"
-        style={{
-          background:
-            "radial-gradient(ellipse at center, rgba(88,86,214,0.14) 0%, rgba(0,122,255,0.06) 40%, transparent 70%)",
-          filter: "blur(60px)",
-        }}
-      />
+      {/* Ambient gradient orbs — 글래스 카드 뒤로 색감을 채워 반투명 효과가 살도록 */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        {/* Top-left: indigo */}
+        <div
+          className="absolute"
+          style={{
+            top: "-8%",
+            left: "-15%",
+            width: 480,
+            height: 480,
+            background:
+              "radial-gradient(circle, rgba(88,86,214,0.35) 0%, transparent 65%)",
+            filter: "blur(80px)",
+            willChange: "transform",
+          }}
+        />
+        {/* Top-right: blue */}
+        <div
+          className="absolute"
+          style={{
+            top: "5%",
+            right: "-18%",
+            width: 440,
+            height: 440,
+            background:
+              "radial-gradient(circle, rgba(10,132,255,0.28) 0%, transparent 65%)",
+            filter: "blur(90px)",
+            willChange: "transform",
+          }}
+        />
+        {/* Middle-left: violet */}
+        <div
+          className="absolute"
+          style={{
+            top: "45%",
+            left: "-20%",
+            width: 560,
+            height: 560,
+            background:
+              "radial-gradient(circle, rgba(175,82,222,0.22) 0%, transparent 65%)",
+            filter: "blur(100px)",
+            willChange: "transform",
+          }}
+        />
+        {/* Middle-right: cyan */}
+        <div
+          className="absolute"
+          style={{
+            top: "55%",
+            right: "-15%",
+            width: 420,
+            height: 420,
+            background:
+              "radial-gradient(circle, rgba(90,200,250,0.22) 0%, transparent 65%)",
+            filter: "blur(90px)",
+            willChange: "transform",
+          }}
+        />
+        {/* Bottom: pink (warm accent) */}
+        <div
+          className="absolute"
+          style={{
+            bottom: "-12%",
+            left: "25%",
+            width: 440,
+            height: 440,
+            background:
+              "radial-gradient(circle, rgba(255,45,85,0.15) 0%, transparent 65%)",
+            filter: "blur(100px)",
+            willChange: "transform",
+          }}
+        />
+      </div>
 
       <HeaderBar
         onOpenMenu={() => setMenuOpen(true)}
