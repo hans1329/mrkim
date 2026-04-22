@@ -55,6 +55,16 @@ export default function TestCodefHometax() {
   const [pfxLocalKeyId, setPfxLocalKeyId] = useState(true);
   const [buildDiagnostics, setBuildDiagnostics] = useState<PfxBuildResult["diagnostics"] | null>(null);
 
+  // 간편인증 테스트 state
+  const [simpleUserName, setSimpleUserName] = useState("");
+  const [simpleBirthDate, setSimpleBirthDate] = useState("");
+  const [simplePhoneNo, setSimplePhoneNo] = useState("");
+  const [simpleProvider, setSimpleProvider] = useState<"1" | "5" | "6" | "8">("1");
+  const [simpleStep1Result, setSimpleStep1Result] = useState<RegisterResult | null>(null);
+  const [simpleStep2Result, setSimpleStep2Result] = useState<RegisterResult | null>(null);
+  const [simpleTwoWayInfo, setSimpleTwoWayInfo] = useState<any>(null);
+  const [simpleKeyword, setSimpleKeyword] = useState<string | null>(null);
+
   const effectiveClientType =
     clientTypeOverride === "auto" ? autoDetectClientType(businessNumber) : clientTypeOverride;
 
@@ -97,6 +107,67 @@ export default function TestCodefHometax() {
     const res = await callFunction("codef-hometax", { businessNumber });
     setVerifyResult(res);
     setLoading(false);
+  };
+
+  // ────────── 간편인증 1차 호출 ──────────
+  const handleSimpleStep1 = async () => {
+    if (!businessNumber || !simpleUserName || !simpleBirthDate || !simplePhoneNo) return;
+    setLoading(true);
+    setSimpleStep1Result(null);
+    setSimpleStep2Result(null);
+    setSimpleTwoWayInfo(null);
+    setSimpleKeyword(null);
+
+    const res = await callFunction("codef-hometax", {
+      action: "register_simple",
+      businessNumber,
+      userName: simpleUserName,
+      birthDate: simpleBirthDate.replace(/\D/g, ""),
+      phoneNo: simplePhoneNo.replace(/\D/g, ""),
+      loginTypeLevel: simpleProvider,
+      clientType: effectiveClientType,
+    });
+    setSimpleStep1Result(res);
+
+    if (res.ok && res.body?.status === "pending" && res.body?.twoWayInfo) {
+      setSimpleTwoWayInfo(res.body.twoWayInfo);
+      setSimpleKeyword(res.body.simpleKeyword || null);
+    } else if (res.ok && res.body?.status === "completed") {
+      // 드물지만 1차만에 성공하는 경우
+      setConnectedId(res.body.connectedId || "");
+    }
+    setLoading(false);
+  };
+
+  // ────────── 간편인증 2차 호출 (확인 완료 후) ──────────
+  const handleSimpleStep2 = async () => {
+    if (!simpleTwoWayInfo) return;
+    setLoading(true);
+    setSimpleStep2Result(null);
+
+    const res = await callFunction("codef-hometax", {
+      action: "register_simple",
+      businessNumber,
+      userName: simpleUserName,
+      birthDate: simpleBirthDate.replace(/\D/g, ""),
+      phoneNo: simplePhoneNo.replace(/\D/g, ""),
+      loginTypeLevel: simpleProvider,
+      clientType: effectiveClientType,
+      twoWayInfo: simpleTwoWayInfo,
+    });
+    setSimpleStep2Result(res);
+
+    if (res.ok && res.body?.status === "completed" && res.body?.connectedId) {
+      setConnectedId(res.body.connectedId);
+    }
+    setLoading(false);
+  };
+
+  const PROVIDER_LABELS: Record<string, string> = {
+    "1": "카카오톡",
+    "5": "통신사 PASS",
+    "6": "네이버",
+    "8": "토스",
   };
 
   const handleRegister = async () => {
@@ -251,6 +322,117 @@ export default function TestCodefHometax() {
             </button>
           </div>
           {renderResult(verifyResult, "businessVerify")}
+        </section>
+
+        {/* 간편인증 (권장) */}
+        <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="text-lg font-semibold">★ 간편인증 등록 (권장)</h2>
+            <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+              loginType 5
+            </span>
+          </div>
+          <p className="mb-4 text-xs text-neutral-400">
+            공인인증서 없이 카카오/PASS/네이버/토스 중 하나로 대표자 본인 인증.
+            법인(1인 대표) 지원. CF-04025 우회 가능성.
+          </p>
+
+          <div className="space-y-3">
+            {/* 대표자 정보 입력 */}
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block text-xs">
+                <span className="mb-1 block text-neutral-400">대표자명</span>
+                <input
+                  value={simpleUserName}
+                  onChange={(e) => setSimpleUserName(e.target.value)}
+                  className="block w-full rounded bg-neutral-800 px-3 py-2 font-mono text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                  placeholder="홍길동"
+                />
+              </label>
+              <label className="block text-xs">
+                <span className="mb-1 block text-neutral-400">생년월일 (YYYYMMDD)</span>
+                <input
+                  value={simpleBirthDate}
+                  onChange={(e) => setSimpleBirthDate(e.target.value)}
+                  className="block w-full rounded bg-neutral-800 px-3 py-2 font-mono text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                  placeholder="19800101"
+                  maxLength={8}
+                />
+              </label>
+            </div>
+            <label className="block text-xs">
+              <span className="mb-1 block text-neutral-400">대표자 휴대폰 (- 없이)</span>
+              <input
+                value={simplePhoneNo}
+                onChange={(e) => setSimplePhoneNo(e.target.value)}
+                className="block w-full rounded bg-neutral-800 px-3 py-2 font-mono text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                placeholder="01012345678"
+              />
+            </label>
+
+            {/* 간편인증 공급자 선택 */}
+            <div>
+              <div className="mb-1.5 text-xs text-neutral-400">간편인증 공급자</div>
+              <div className="grid grid-cols-4 gap-2">
+                {(["1", "5", "6", "8"] as const).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setSimpleProvider(p)}
+                    className={`rounded py-2 text-xs ${
+                      simpleProvider === p
+                        ? "bg-emerald-600 text-white"
+                        : "bg-neutral-800 text-neutral-400"
+                    }`}
+                  >
+                    {PROVIDER_LABELS[p]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Step 1 버튼 */}
+            <button
+              onClick={handleSimpleStep1}
+              disabled={
+                loading ||
+                !businessNumber ||
+                !simpleUserName ||
+                !simpleBirthDate ||
+                !simplePhoneNo
+              }
+              className="w-full rounded bg-emerald-600 px-4 py-2 text-sm font-medium hover:bg-emerald-500 disabled:opacity-40"
+            >
+              {loading ? "요청 중..." : `1차 호출 (${PROVIDER_LABELS[simpleProvider]} 인증 요청)`}
+            </button>
+
+            {/* 1차 응답 */}
+            {renderResult(simpleStep1Result, "1차 호출")}
+
+            {/* 2차 대기·실행 */}
+            {simpleTwoWayInfo && (
+              <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-400" />
+                  <span className="text-xs font-semibold text-amber-300">
+                    {PROVIDER_LABELS[simpleProvider]} 앱에서 확인을 눌러주세요
+                  </span>
+                </div>
+                {simpleKeyword && (
+                  <p className="mb-2 text-[11px] text-neutral-400">
+                    앱에 표시되는 키워드: <span className="font-mono text-amber-200">{simpleKeyword}</span>
+                  </p>
+                )}
+                <button
+                  onClick={handleSimpleStep2}
+                  disabled={loading}
+                  className="w-full rounded bg-amber-600 px-4 py-2 text-sm font-medium hover:bg-amber-500 disabled:opacity-40"
+                >
+                  {loading ? "확인 중..." : "확인 완료 → 2차 호출"}
+                </button>
+                {renderResult(simpleStep2Result, "2차 호출")}
+              </div>
+            )}
+          </div>
         </section>
 
         {/* Step 1: Register */}

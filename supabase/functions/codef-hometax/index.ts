@@ -139,6 +139,8 @@ serve(async (req) => {
 
     if (action === "register") {
       return await handleRegister(req, body, clientType);
+    } else if (action === "register_simple") {
+      return await handleRegisterSimple(body, clientType);
     } else {
       return await handleBusinessVerify(body);
     }
@@ -393,6 +395,185 @@ async function handleRegister(_req: Request, body: any, clientType: string = "P"
       error: errorMessage,
       code: result.code,
       details: errorList,
+    }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+/**
+ * 간편인증(loginType 5) 기반 계정 등록.
+ *
+ * Two-step two-way 플로우:
+ *  - 1차 호출: twoWayInfo 없이 호출 → CODEF 가 CF-03002 반환 + extraInfo 에 twoWayInfo
+ *             동시에 대표자 휴대폰(카카오톡/PASS/네이버/토스)으로 인증 요청 푸시
+ *  - 사용자가 앱에서 [확인] 탭
+ *  - 2차 호출: 1차 응답의 twoWayInfo 를 그대로 포함해서 재호출 → connectedId 발급
+ *
+ * loginTypeLevel:
+ *   1 = 카카오톡, 2 = 페이코, 3 = 삼성패스, 4 = KB모바일,
+ *   5 = 통신사 PASS, 6 = 네이버, 7 = 신한, 8 = 토스
+ */
+async function handleRegisterSimple(body: any, clientType: string = "P"): Promise<Response> {
+  const {
+    businessNumber,
+    userName,
+    birthDate,
+    phoneNo,
+    loginTypeLevel,
+    twoWayInfo, // 2차 호출 시만 존재
+  } = body;
+
+  // 1차 호출 필수 필드 검증
+  if (!businessNumber || !userName || !birthDate || !phoneNo || !loginTypeLevel) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error:
+          "사업자등록번호, 대표자명, 생년월일(YYYYMMDD), 휴대폰, 간편인증 공급자는 필수입니다.",
+      }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const cleanedNumber = String(businessNumber).replace(/\D/g, "");
+  const cleanedPhone = String(phoneNo).replace(/\D/g, "");
+  const cleanedBirth = String(birthDate).replace(/\D/g, "");
+
+  if (cleanedNumber.length !== 10) {
+    return new Response(
+      JSON.stringify({ success: false, error: "사업자등록번호는 10자리여야 합니다." }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const accessToken = await getAccessToken();
+
+  // 계정 엔트리 (1차·2차 공통)
+  const accountEntry: Record<string, unknown> = {
+    countryCode: "KR",
+    businessType: "NT",
+    clientType,
+    organization: "0001",
+    loginType: "5",
+    loginTypeLevel: String(loginTypeLevel),
+    identity: cleanedNumber,
+    userName: String(userName),
+    birthDate: cleanedBirth,
+    phoneNo: cleanedPhone,
+    // 간편인증은 인증서·비밀번호 필드 없음
+  };
+
+  const requestBody: Record<string, unknown> = {
+    accountList: [accountEntry],
+  };
+
+  // 2차 호출: twoWayInfo 및 is2Way 포함
+  const is2Way = !!twoWayInfo && typeof twoWayInfo === "object";
+  if (is2Way) {
+    requestBody.twoWayInfo = twoWayInfo;
+    accountEntry.is2Way = true;
+    accountEntry.simpleAuth = "1";
+  }
+
+  const phase = is2Way ? "2nd" : "1st";
+  console.log(
+    `[simple-auth ${phase}] loginTypeLevel=${loginTypeLevel} clientType=${clientType} identity=${cleanedNumber}`
+  );
+
+  const response = await fetch(`${CODEF_API_URL}${ACCOUNT_CREATE_PATH}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  const responseText = await response.text();
+  console.log(
+    `[simple-auth ${phase}] response:`,
+    responseText.substring(0, 1500)
+  );
+
+  const data = parseCodefResponse(responseText);
+  const result = data.result || {};
+  const resultData = data.data || {};
+  const errorList = resultData.errorList || [];
+  const successList = resultData.successList || [];
+
+  // ── 2차 성공: connectedId 발급
+  if (result.code === "CF-00000" && resultData.connectedId) {
+    return new Response(
+      JSON.stringify({
+        success: true,
+        status: "completed",
+        connectedId: resultData.connectedId,
+        message: "홈택스 간편인증 등록이 완료되었습니다.",
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  if (successList.length > 0 && resultData.connectedId) {
+    return new Response(
+      JSON.stringify({
+        success: true,
+        status: "completed",
+        connectedId: resultData.connectedId,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // ── 1차 응답: 추가 인증 대기 (CF-03002)
+  if (result.code === "CF-03002" && data.data?.continue2Way) {
+    return new Response(
+      JSON.stringify({
+        success: true,
+        status: "pending",
+        message:
+          "휴대폰으로 인증 요청을 보냈어요. 간편인증 앱에서 확인을 눌러주세요.",
+        twoWayInfo: data.data.continue2Way,
+        simpleKeyword: data.data.simpleKeyword ?? null,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  // 다른 포맷으로 twoWayInfo 가 올 수도 있음 (extraInfo 경로)
+  if (result.extraInfo?.isTwoWay || data.data?.twoWayInfo) {
+    const info = result.extraInfo?.twoWayInfo || data.data?.twoWayInfo || data.extraInfo;
+    return new Response(
+      JSON.stringify({
+        success: true,
+        status: "pending",
+        message: "간편인증 앱에서 확인을 눌러주세요.",
+        twoWayInfo: info,
+        simpleKeyword: data.data?.simpleKeyword ?? null,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // ── 실패
+  const detailMessage =
+    errorList.length > 0
+      ? errorList.map((e: any) => `[${e.code}] ${e.message}`).join(", ")
+      : null;
+  const errorMessage =
+    detailMessage || getHometaxErrorMessage(result.code) || "간편인증 등록에 실패했어요.";
+  console.error(
+    "[simple-auth] failed:",
+    result.code,
+    result.message,
+    JSON.stringify(errorList)
+  );
+
+  return new Response(
+    JSON.stringify({
+      success: false,
+      error: errorMessage,
+      code: result.code,
+      details: errorList,
+      rawData: resultData,
     }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
