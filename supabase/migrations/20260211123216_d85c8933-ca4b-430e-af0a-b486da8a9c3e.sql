@@ -1,0 +1,1 @@
+DELETE FROM notifications WHERE id = 'b0fb93b3-bd0d-41e4-bfc9-4cb9bbbbe695';

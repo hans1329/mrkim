@@ -1,0 +1,354 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+// === KST(Asia/Seoul) 유틸리티 ===
+// 모든 날짜 계산은 KST 기준으로 수행 (toISOString의 UTC 변환 버그 방지)
+const KST_TZ = "Asia/Seoul";
+
+/** KST 기준 현재 시각의 Date 객체 (연/월/일/시 추출용) */
+function kstNow(): { year: number; month: number; day: number; hours: number } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: KST_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  return { year: get("year"), month: get("month"), day: get("day"), hours: get("hour") };
+}
+
+/** YYYY-MM-DD 포맷 (KST 기준) */
+function kstDateStr(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/** KST 오늘 기준 N일 전/후 날짜 문자열 반환 */
+function kstShiftDate(daysOffset: number): { dateStr: string; dayOfWeek: number } {
+  const { year, month, day } = kstNow();
+  // KST 자정을 UTC로 표현(00:00 KST = 전날 15:00 UTC)
+  const baseUtc = Date.UTC(year, month - 1, day) + daysOffset * 86400000;
+  const d = new Date(baseUtc);
+  // 다시 KST 기준 연/월/일 추출
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: KST_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  }).formatToParts(d);
+  const y = Number(parts.find((p) => p.type === "year")?.value);
+  const m = Number(parts.find((p) => p.type === "month")?.value);
+  const dd = Number(parts.find((p) => p.type === "day")?.value);
+  // getUTCDay는 baseUtc가 KST 자정을 가리키므로 KST 요일과 일치
+  const dow = new Date(Date.UTC(y, m - 1, dd)).getUTCDay();
+  return { dateStr: kstDateStr(y, m, dd), dayOfWeek: dow };
+}
+
+interface SummaryStats {
+  todayIncome: number;
+  todayExpense: number;
+  monthlyIncome: number;
+  monthlyExpense: number;
+}
+
+async function fetchSummaryStats(): Promise<SummaryStats | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { year, month, day } = kstNow();
+  const todayStr = kstDateStr(year, month, day);
+  const monthStart = kstDateStr(year, month, 1);
+
+  const [todayResult, monthlyResult] = await Promise.all([
+    supabase
+      .from("transactions")
+      .select("amount, type")
+      .eq("user_id", user.id)
+      .eq("transaction_date", todayStr),
+    supabase
+      .from("transactions")
+      .select("amount, type")
+      .eq("user_id", user.id)
+      .gte("transaction_date", monthStart)
+      .lte("transaction_date", todayStr),
+  ]);
+
+  let todayIncome = 0, todayExpense = 0;
+  if (todayResult.data) {
+    todayResult.data.forEach((tx) => {
+      if (tx.type === "income" || tx.type === "transfer_in") todayIncome += Number(tx.amount);
+      else if (tx.type === "expense") todayExpense += Number(tx.amount);
+    });
+  }
+
+  let monthlyIncome = 0, monthlyExpense = 0;
+  if (monthlyResult.data) {
+    monthlyResult.data.forEach((tx) => {
+      if (tx.type === "income" || tx.type === "transfer_in") monthlyIncome += Number(tx.amount);
+      else if (tx.type === "expense") monthlyExpense += Number(tx.amount);
+    });
+  }
+
+  return { todayIncome, todayExpense, monthlyIncome, monthlyExpense };
+}
+
+export function useDashboardStats(enabled = true) {
+  return useQuery({
+    queryKey: ["dashboard-summary-stats"],
+    queryFn: fetchSummaryStats,
+    enabled,
+    // 기본 캐싱 설정 사용 (5분 stale, 30분 gc)
+  });
+}
+
+// 주간 차트 데이터
+interface WeeklyDataItem {
+  name: string;
+  매출: number;
+  지출: number;
+}
+
+async function fetchWeeklyData(): Promise<{ data: WeeklyDataItem[]; hasRealData: boolean; startDate: string; endDate: string } | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // KST 기준 최근 7일 (오늘 포함)
+  const start = kstShiftDate(-6);
+  const end = kstShiftDate(0);
+  const startDateStr = start.dateStr;
+  const endDateStr = end.dateStr;
+
+  const { data: transactions } = await supabase
+    .from("transactions")
+    .select("transaction_date, type, amount")
+    .eq("user_id", user.id)
+    .gte("transaction_date", startDateStr)
+    .lte("transaction_date", endDateStr);
+
+  if (!transactions || transactions.length === 0) {
+    return { data: [], hasRealData: false, startDate: startDateStr, endDate: endDateStr };
+  }
+
+  const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
+
+  const chartData: WeeklyDataItem[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const { dateStr, dayOfWeek } = kstShiftDate(-i);
+    const dayName = dayNames[dayOfWeek];
+
+    let 매출 = 0, 지출 = 0;
+    transactions.forEach((tx) => {
+      if (tx.transaction_date === dateStr) {
+        if (tx.type === "income" || tx.type === "transfer_in") 매출 += Number(tx.amount);
+        else if (tx.type === "expense") 지출 += Number(tx.amount);
+        else 지출 += tx.amount;
+      }
+    });
+
+    chartData.push({ name: dayName, 매출, 지출 });
+  }
+
+  return { data: chartData, hasRealData: true, startDate: startDateStr, endDate: endDateStr };
+}
+
+export function useWeeklyChartData(enabled = true) {
+  return useQuery({
+    queryKey: ["dashboard-weekly-chart"],
+    queryFn: fetchWeeklyData,
+    enabled,
+    // 기본 캐싱 설정 사용
+  });
+}
+
+// 최근 거래 내역
+interface Transaction {
+  id: string;
+  description: string;
+  amount: number;
+  type: "income" | "expense" | "transfer_in";
+  category: string | null;
+  source_type: string;
+  transaction_date: string;
+}
+
+async function fetchRecentTransactions(): Promise<{ data: Transaction[]; hasRealData: boolean } | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // KST 기준 최근 14일
+  const startDate = kstShiftDate(-14).dateStr;
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("id, description, amount, type, category, source_type, transaction_date, currency")
+    .eq("user_id", user.id)
+    .gte("transaction_date", startDate)
+    .order("transaction_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error) throw error;
+
+  if (!data || data.length === 0) {
+    return { data: [], hasRealData: false };
+  }
+
+  return { data: data as Transaction[], hasRealData: true };
+}
+
+export function useRecentTransactions(enabled = true) {
+  return useQuery({
+    queryKey: ["dashboard-recent-transactions"],
+    queryFn: fetchRecentTransactions,
+    enabled,
+  });
+}
+
+// 미분류 거래 건수
+async function fetchUnclassifiedCount(): Promise<number> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;
+
+  const { count } = await supabase
+    .from("transactions")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .is("category", null);
+
+  return count || 0;
+}
+
+export function useUnclassifiedCount(enabled = true) {
+  return useQuery({
+    queryKey: ["dashboard-unclassified-count"],
+    queryFn: fetchUnclassifiedCount,
+    enabled,
+    // 기본 캐싱 설정 사용
+  });
+}
+
+// TodayActionsCard용 - 이번 달 vs 지난 달 매출 비교 + 날짜 기반 할 일
+interface ActionData {
+  thisMonthIncome: number;
+  lastMonthIncome: number;
+  unclassifiedCount: number;
+  // 급여 관련
+  salaryDay: number | null;
+  salaryReminderDays: number;
+  employeesForSalary: { count: number; totalAmount: number; individualDays: { day: number; count: number; total: number }[] };
+  // 자동이체 관련
+  todayAutoTransfers: { count: number; totalAmount: number; names: string[] };
+}
+
+async function fetchActionData(): Promise<ActionData | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // KST 기준 오늘/이번 달/지난 달
+  const { year, month, day } = kstNow();
+  const todayStr = kstDateStr(year, month, day);
+  const currentDay = day;
+  const thisMonthStart = kstDateStr(year, month, 1);
+  const lastMonthYear = month === 1 ? year - 1 : year;
+  const lastMonth = month === 1 ? 12 : month - 1;
+  const lastMonthStart = kstDateStr(lastMonthYear, lastMonth, 1);
+  // 동기간 비교: 지난달 1일 ~ 지난달 오늘 일자(말일 클램프)
+  const lastMonthLastDay = new Date(Date.UTC(lastMonthYear, lastMonth, 0)).getUTCDate();
+  const clampedDay = Math.min(currentDay, lastMonthLastDay);
+  const lastMonthEnd = kstDateStr(lastMonthYear, lastMonth, clampedDay);
+
+  const [thisMonthResult, lastMonthResult, unclassifiedResult, profileResult, employeesResult, autoTransfersResult] = await Promise.all([
+    supabase
+      .from("transactions")
+      .select("amount, type")
+      .eq("user_id", user.id)
+      .gte("transaction_date", thisMonthStart)
+      .lte("transaction_date", todayStr),
+    supabase
+      .from("transactions")
+      .select("amount, type")
+      .eq("user_id", user.id)
+      .gte("transaction_date", lastMonthStart)
+      .lte("transaction_date", lastMonthEnd),
+    supabase
+      .from("transactions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .is("category", null),
+    supabase
+      .from("profiles")
+      .select("salary_day, salary_reminder_days")
+      .eq("user_id", user.id)
+      .single(),
+    supabase
+      .from("employees")
+      .select("id, name, monthly_salary, hourly_rate, weekly_hours, employee_type, salary_day")
+      .eq("user_id", user.id)
+      .eq("status", "재직"),
+    supabase
+      .from("auto_transfers")
+      .select("id, name, amount, schedule_type, schedule_day")
+      .eq("user_id", user.id)
+      .eq("is_active", true),
+  ]);
+
+  const thisMonthIncome = (thisMonthResult.data || [])
+    .filter((t) => t.type === "income" || t.type === "transfer_in")
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+  const lastMonthIncome = (lastMonthResult.data || [])
+    .filter((t) => t.type === "income" || t.type === "transfer_in")
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  // 급여 계산
+  const globalSalaryDay = profileResult.data?.salary_day ?? 10;
+  const salaryReminderDays = profileResult.data?.salary_reminder_days ?? 1;
+  const employees = employeesResult.data || [];
+
+  // 직원별 급여일 그룹핑
+  const salaryDayMap = new Map<number, { count: number; total: number }>();
+  for (const emp of employees) {
+    const empSalaryDay = emp.salary_day ?? globalSalaryDay;
+    let salary = Number(emp.monthly_salary || 0);
+    if (!salary && emp.hourly_rate && emp.weekly_hours) {
+      salary = Math.round(Number(emp.hourly_rate) * Number(emp.weekly_hours) * 4.345);
+    }
+    const existing = salaryDayMap.get(empSalaryDay) || { count: 0, total: 0 };
+    salaryDayMap.set(empSalaryDay, { count: existing.count + 1, total: existing.total + salary });
+  }
+
+  const individualDays = Array.from(salaryDayMap.entries()).map(([day, v]) => ({ day, ...v }));
+  const totalSalaryAmount = individualDays.reduce((s, d) => s + d.total, 0);
+  const totalSalaryCount = individualDays.reduce((s, d) => s + d.count, 0);
+
+  // 오늘 실행 예정 자동이체
+  const autoTransfers = autoTransfersResult.data || [];
+  const todayTransfers = autoTransfers.filter((at) => {
+    if (at.schedule_type === "monthly" && at.schedule_day === currentDay) return true;
+    return false;
+  });
+
+  return {
+    thisMonthIncome,
+    lastMonthIncome,
+    unclassifiedCount: unclassifiedResult.count || 0,
+    salaryDay: globalSalaryDay,
+    salaryReminderDays,
+    employeesForSalary: { count: totalSalaryCount, totalAmount: totalSalaryAmount, individualDays },
+    todayAutoTransfers: {
+      count: todayTransfers.length,
+      totalAmount: todayTransfers.reduce((s, t) => s + Number(t.amount), 0),
+      names: todayTransfers.map((t) => t.name),
+    },
+  };
+}
+
+export function useActionData(enabled = true) {
+  return useQuery({
+    queryKey: ["dashboard-action-data"],
+    queryFn: fetchActionData,
+    enabled,
+    // 기본 캐싱 설정 사용
+  });
+}

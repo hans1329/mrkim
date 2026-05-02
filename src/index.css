@@ -1,0 +1,240 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 김비서 Design System - Professional Korean Secretary Theme */
+
+@layer base {
+  :root {
+    --background: 220 25% 97%;
+    --foreground: 222 20% 25%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 20% 25%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 20% 25%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 20% 25%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 220 14% 93%;
+    --accent-foreground: 222 20% 25%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 220 14% 96%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 30% 18%;
+    --sidebar-accent-foreground: 220 14% 96%;
+    --sidebar-border: 222 30% 18%;
+    --sidebar-ring: 217 91% 60%;
+
+    /* Chat */
+    --chat-user: 217 91% 60%;
+    --chat-assistant: 220 14% 96%;
+
+    /* Charts */
+    --chart-1: 217 91% 60%;
+    --chart-2: 142 76% 36%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 0 84% 60%;
+  }
+
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    font-size: 18px;
+    background: hsl(var(--card));
+  }
+
+  @media (min-width: 768px) {
+    html {
+      font-size: 17px;
+    }
+  }
+
+  body {
+    @apply text-foreground;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background: hsl(var(--card));
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* 페이지 스크롤바 숨김 */
+  *::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* PWA standalone: body padding 없이, 레이아웃 내부에서 safe area 처리 */
+}
+
+@layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  @keyframes bounce-gentle {
+    0%, 87%, 100% { transform: translateY(0); }
+    89.4% { transform: translateY(-8px); }
+    91.4% { transform: translateY(0); }
+    93% { transform: translateY(-5px); }
+    94.6% { transform: translateY(0); }
+    95.8% { transform: translateY(-3px); }
+    97% { transform: translateY(0); }
+    97.9% { transform: translateY(-1.5px); }
+    98.8% { transform: translateY(0); }
+    99.4% { transform: translateY(-0.5px); }
+    99.8% { transform: translateY(0); }
+  }
+
+  .animate-bounce-gentle {
+    animation: bounce-gentle 11.5s cubic-bezier(0.22, 0.68, 0.36, 1) infinite;
+  }
+}
+
+/* ============================================ */
+/* V2 다크 테마 스코프 오버라이드                  */
+/* ============================================ */
+[data-theme="v2"] .bg-card,
+[data-theme="v2"] [class*="bg-card"] {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.92) !important;
+}
+
+[data-theme="v2"] .text-muted-foreground {
+  color: rgba(255,255,255,0.55) !important;
+}
+
+[data-theme="v2"] .text-foreground {
+  color: rgba(255,255,255,0.92) !important;
+}
+
+[data-theme="v2"] .border,
+[data-theme="v2"] .border-border,
+[data-theme="v2"] .border-input {
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+[data-theme="v2"] .border-dashed {
+  border-color: rgba(255,255,255,0.15) !important;
+}
+
+[data-theme="v2"] .bg-background {
+  background: rgba(255,255,255,0.04) !important;
+}
+
+[data-theme="v2"] .bg-muted {
+  background: rgba(255,255,255,0.06) !important;
+}
+
+[data-theme="v2"] .bg-secondary {
+  background: rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
+[data-theme="v2"] .bg-accent,
+[data-theme="v2"] .hover\:bg-accent:hover {
+  background: rgba(255,255,255,0.08) !important;
+}
+
+[data-theme="v2"] [class*="bg-primary/5"] {
+  background: rgba(0,122,255,0.1) !important;
+}
+[data-theme="v2"] [class*="bg-primary/10"] {
+  background: rgba(0,122,255,0.18) !important;
+}
+[data-theme="v2"] [class*="bg-primary/\\[0\\.02\\]"] {
+  background: rgba(0,122,255,0.06) !important;
+}
+[data-theme="v2"] [class*="border-primary/20"],
+[data-theme="v2"] [class*="border-primary/30"] {
+  border-color: rgba(0,122,255,0.4) !important;
+}
+[data-theme="v2"] .text-primary {
+  color: #5AA9FF !important;
+}
+
+[data-theme="v2"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="v2"] textarea,
+[data-theme="v2"] select {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: rgba(255,255,255,0.95) !important;
+}
+[data-theme="v2"] input::placeholder,
+[data-theme="v2"] textarea::placeholder {
+  color: rgba(255,255,255,0.35) !important;
+}
+

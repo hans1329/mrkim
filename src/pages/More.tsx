@@ -1,0 +1,93 @@
+import { MainLayout } from "@/components/layout/MainLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { NavLink } from "@/components/NavLink";
+import { Button } from "@/components/ui/button";
+import {
+  TrendingUp,
+  FileText,
+  Bell,
+  Settings,
+  HelpCircle,
+  ChevronRight,
+  UserCheck,
+  LinkIcon,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
+import { VersionBadge } from "@/components/version/VersionBadge";
+
+const menuItems = [
+  { title: "데이터 연동", description: "홈택스·카드·계좌·배달앱", url: "#connection-hub", icon: LinkIcon },
+  { title: "리포트", description: "경영 현황 분석", url: "/reports", icon: TrendingUp },
+  { title: "세무사", description: "세무사 매칭·상담·신고", url: "/tax-accountant", icon: UserCheck },
+  { title: "알림", description: "알림 관리", url: "/notifications", icon: Bell },
+  { title: "설정", description: "앱 설정", url: "/settings", icon: Settings },
+  { title: "도움말", description: "사용 가이드", url: "/help", icon: HelpCircle },
+];
+
+export default function More() {
+  const { openDrawer } = useConnectionDrawer();
+
+  return (
+    <MainLayout title="더보기" showBackButton>
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="divide-y p-0">
+            {menuItems.map((item) => {
+              if (item.url === "#connection-hub") {
+                return (
+                  <button
+                    key={item.title}
+                    onClick={() => openDrawer()}
+                    className="flex w-full items-center justify-between p-4 transition-colors hover:bg-muted/50 text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                        <item.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{item.title}</p>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                );
+              }
+              return (
+                <NavLink
+                  key={item.title}
+                  to={item.url}
+                  className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+                      <item.icon className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{item.title}</p>
+                      <p className="text-sm text-muted-foreground">{item.description}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </NavLink>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center space-y-1">
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="text-sm text-muted-foreground">김비서</span>
+                <VersionBadge />
+              </div>
+              <p className="text-xs text-muted-foreground">© 2026 김비서. All rights reserved.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
+  );
+}

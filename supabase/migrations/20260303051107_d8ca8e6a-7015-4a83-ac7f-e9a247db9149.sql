@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN phone_alert_custom_repeat boolean DEFAULT true;

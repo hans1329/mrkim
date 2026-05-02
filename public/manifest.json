@@ -1,0 +1,23 @@
+{
+  "name": "김비서 - AI 경영 비서",
+  "short_name": "김비서",
+  "description": "소상공인을 위한 AI 기반 백오피스 자동화 앱",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#3B82F6",
+  "theme_color": "#3B82F6",
+  "icons": [
+    {
+      "src": "/images/pwa-icon-512.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

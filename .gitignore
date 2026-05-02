@@ -1,0 +1,45 @@
+# ─── Dependencies & build ───
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# ─── Logs ───
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─── Editor / IDE ───
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+
+# ─── Env files (never commit secrets) ───
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ─── Supabase CLI local state ───
+supabase/.temp/
+supabase/.branches/
+
+# ─── Mobile (Capacitor) build artifacts ───
+ios/App/build/
+ios/App/Pods/
+android/.gradle/
+android/build/
+android/app/build/

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <title>김비서 - AI 경영 비서</title>
+    <meta name="description" content="소상공인을 위한 AI 기반 백오피스 자동화 앱">
+    <meta name="author" content="김비서" />
+
+    <!-- Mobile App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="김비서" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#3B82F6" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <!-- PWA Icons -->
+    <link rel="apple-touch-icon" href="/images/pwa-icon-512.png" />
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Preload critical images -->
+    <link rel="preload" as="image" href="/images/icc-5.webp" type="image/webp" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/images/pwa-icon-512.png">
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="/images/pwa-icon-512.png">
+
+    <!-- Safe Area CSS Variables -->
+    <style>
+      :root {
+        --sat: env(safe-area-inset-top);
+        --sar: env(safe-area-inset-right);
+        --sab: env(safe-area-inset-bottom);
+        --sal: env(safe-area-inset-left);
+      }
+    </style>
+    
+  
+  
+  
+  
+  
+  
+  
+  <meta property="og:title" content="김비서 - AI 경영 비서">
+  <meta name="twitter:title" content="김비서 - AI 경영 비서">
+  <meta property="og:description" content="소상공인을 위한 AI 기반 백오피스 자동화 앱">
+  <meta name="twitter:description" content="소상공인을 위한 AI 기반 백오피스 자동화 앱">
+  <link rel="icon" type="image/png" href="/images/pwa-icon-512.png">
+</head>
+
+  <body>
+    <!-- PWA Splash Screen -->
+    <div id="splash-screen" style="
+      position: fixed; inset: 0; z-index: 99999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #3B82F6 0%, #2563EB 50%, #1D4ED8 100%);
+      transition: opacity 0.4s ease-out;
+    ">
+      <img src="/images/icc-5.webp" alt="김비서" style="width: 80px; height: auto; margin-bottom: 16px; animation: splash-bounce 1.2s ease-in-out infinite;" />
+      <h1 style="color: white; font-size: 28px; font-weight: 800; letter-spacing: 6px; margin: 0;">김 · 비 · 서</h1>
+      <p style="color: rgba(255,255,255,0.75); font-size: 13px; margin-top: 8px; font-weight: 600;">Mr. Kim</p>
+      <p style="color: rgba(255,255,255,0.55); font-size: 11px; margin-top: 20px;">명령만 하면 관리되는 사업장</p>
+      <div style="margin-top: 32px; width: 40px; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.3); overflow: hidden;">
+        <div style="width: 100%; height: 100%; background: white; border-radius: 2px; animation: splash-loading 1s ease-in-out infinite;"></div>
+      </div>
+    </div>
+    <style>
+      @keyframes splash-bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+      }
+      @keyframes splash-loading {
+        0% { transform: translateX(-100%); }
+        50% { transform: translateX(0); }
+        100% { transform: translateX(100%); }
+      }
+    </style>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

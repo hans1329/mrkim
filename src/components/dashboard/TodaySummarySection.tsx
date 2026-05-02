@@ -1,0 +1,294 @@
+import { useNavigate } from "react-router-dom";
+import { useConnectionDrawer } from "@/contexts/ConnectionDrawerContext";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TrendingUp, TrendingDown, PiggyBank, Link2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useConnection } from "@/contexts/ConnectionContext";
+import { formatCurrency } from "@/data/mockData";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+
+// 연동되지 않은 상태의 플레이스홀더 카드
+function EmptyStatCard({
+  title,
+  icon: Icon,
+  variant = "default",
+  isHero = false,
+}: {
+  title: string;
+  icon: React.ElementType;
+  variant?: "default" | "primary" | "success";
+  isHero?: boolean;
+}) {
+  const variantStyles = {
+    default: isHero
+      ? "bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.08)]"
+      : "bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.06)]",
+    primary: isHero
+      ? "bg-white/15 backdrop-blur-xl border border-white/25 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_16px_rgba(0,0,0,0.08)]"
+      : "bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.06)]",
+    success: isHero
+      ? "bg-white/15 backdrop-blur-xl border border-white/25 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_16px_rgba(0,0,0,0.08)]"
+      : "bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.06)]",
+  };
+
+  const iconStyles = {
+    default: isHero ? "bg-white/20 text-white/60" : "bg-muted/60 text-muted-foreground/60",
+    primary: isHero ? "bg-white/25 text-white/70" : "bg-primary/20 text-primary/60",
+    success: isHero ? "bg-white/25 text-white/70" : "bg-success/20 text-success/60",
+  };
+
+  return (
+    <Card className={cn("overflow-hidden transition-all duration-300 rounded-2xl hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_8px_24px_rgba(0,0,0,0.1)]", variantStyles[variant])}>
+      <CardContent className="p-3">
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className={cn(
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
+            iconStyles[variant]
+          )}>
+            <Icon className="h-3.5 w-3.5" />
+          </div>
+          <p className={cn(
+            "text-xs font-medium truncate",
+            isHero ? "text-white/70" : "text-muted-foreground"
+          )}>
+            {title}
+          </p>
+        </div>
+        <p className={cn("text-sm font-bold text-right", isHero ? "text-white/40" : "text-muted-foreground/40")}>₩0</p>
+        <p className={cn("text-[10px] mt-0.5", isHero ? "text-white/40" : "text-muted-foreground/40")}>거래 없음</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// 실제 데이터가 있는 카드
+function RealStatCard({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  trend,
+  variant = "default",
+  isHero = false,
+}: {
+  title: string;
+  value: string;
+  subtitle?: string;
+  icon: React.ElementType;
+  trend?: { value: number; isPositive: boolean };
+  variant?: "default" | "primary" | "success";
+  isHero?: boolean;
+}) {
+  const variantStyles = {
+    default: isHero
+      ? "bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.08)]"
+      : "bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.06)]",
+    primary: isHero
+      ? "bg-white/15 backdrop-blur-xl border border-white/25 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_16px_rgba(0,0,0,0.08)]"
+      : "bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.06)]",
+    success: isHero
+      ? "bg-white/15 backdrop-blur-xl border border-white/25 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_4px_16px_rgba(0,0,0,0.08)]"
+      : "bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.06)]",
+  };
+
+  const iconVariantStyles = {
+    default: isHero ? "bg-white/20 text-white" : "bg-muted text-muted-foreground",
+    primary: isHero ? "bg-white/30 text-white" : "bg-primary/20 text-primary",
+    success: isHero ? "bg-white/30 text-white" : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  };
+
+  return (
+    <Card className={cn("overflow-hidden transition-all duration-300 rounded-2xl hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_8px_24px_rgba(0,0,0,0.1)]", variantStyles[variant])}>
+      <CardContent className="p-3">
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className={cn(
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
+            iconVariantStyles[variant]
+          )}>
+            <Icon className="h-3.5 w-3.5" />
+          </div>
+          <p className={cn(
+            "text-xs font-medium truncate",
+            isHero ? "text-white/80" : "text-muted-foreground"
+          )}>
+            {title}
+          </p>
+        </div>
+        <p className={cn("text-sm md:text-lg font-bold leading-tight text-right", isHero ? "" : "text-foreground")}>{value}</p>
+        {(subtitle || trend) && (
+          <div className="flex items-center gap-1 mt-0.5 pl-0.5">
+            {trend && (
+              <span className={cn(
+                "text-[10px] font-semibold",
+                variant === "default" 
+                  ? (trend.isPositive ? "text-success" : "text-destructive")
+                  : "text-current opacity-90"
+              )}>
+                {trend.isPositive ? "↑" : "↓"}{trend.value}%
+              </span>
+            )}
+            {subtitle && (
+              <span className={cn(
+                "text-[10px] truncate",
+                isHero ? "opacity-70" : "text-foreground/60"
+              )}>
+                {subtitle}
+              </span>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// 로딩 스켈레톤 카드
+function SkeletonStatCard() {
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-3">
+        <div className="flex items-start gap-2.5">
+          <Skeleton className="h-9 w-9 rounded-lg" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface TodaySummarySectionProps {
+  isLoggedOut?: boolean;
+  isHero?: boolean;
+}
+
+export function TodaySummarySection({ isLoggedOut = false, isHero = false }: TodaySummarySectionProps) {
+  const { openDrawer } = useConnectionDrawer();
+  const isMobile = useIsMobile();
+  const { profileLoading, isAnyConnected } = useConnection();
+  
+  // React Query 캐싱 적용
+  const { data: stats, isLoading: statsLoading } = useDashboardStats(!isLoggedOut);
+  const isAllLoading = profileLoading || statsLoading;
+
+  const monthlyProfit = (stats?.monthlyIncome ?? 0) - (stats?.monthlyExpense ?? 0);
+  const hasAnyData = (stats?.todayIncome ?? 0) > 0 || (stats?.todayExpense ?? 0) > 0 || (stats?.monthlyIncome ?? 0) > 0 || (stats?.monthlyExpense ?? 0) > 0;
+
+  // 로그아웃 상태: 목업 데이터 표시
+  if (isLoggedOut) {
+    return (
+      <section>
+        <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <RealStatCard title="이번 달 매출" value={formatCurrency(12500000)} subtitle="오늘 ₩1,250,000" icon={TrendingUp} variant="primary" isHero={isHero} />
+          <RealStatCard title="이번 달 지출" value={formatCurrency(4850000)} subtitle="오늘 ₩320,000" icon={TrendingDown} isHero={isHero} />
+        </div>
+        <div className="mt-3">
+          <RealStatCard title="이번 달 순이익" value={formatCurrency(8750000)} icon={PiggyBank} variant="success" isHero={isHero} />
+        </div>
+      </section>
+    );
+  }
+
+  // 로딩 중
+  if (isAllLoading) {
+    return (
+      <section>
+        <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+        </div>
+        <div className="mt-3">
+          <SkeletonStatCard />
+        </div>
+      </section>
+    );
+  }
+
+  // 로그인 + 미연동
+  if (!isAnyConnected) {
+    return (
+      <section>
+        <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
+        <Card className={cn(
+          "relative overflow-hidden rounded-2xl border animate-fade-in",
+          "backdrop-blur-xl",
+          "shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_8px_32px_rgba(0,0,0,0.06)]",
+          "transition-all duration-500 hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),0_12px_40px_rgba(0,0,0,0.1)]",
+          "hover:scale-[1.01]",
+          isHero
+            ? "border-white/20 bg-white/10"
+            : "border-primary/20 bg-card/50"
+        )}>
+          {/* Animated gradient overlay */}
+          <div className={cn(
+            "absolute inset-0 opacity-30 pointer-events-none",
+            "bg-[radial-gradient(ellipse_at_top_left,hsl(var(--primary)/0.15),transparent_50%),radial-gradient(ellipse_at_bottom_right,hsl(var(--primary)/0.1),transparent_50%)]"
+          )} />
+          <CardContent className="relative p-6">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className={cn(
+                "h-14 w-14 rounded-full flex items-center justify-center",
+                "backdrop-blur-md transition-transform duration-300 hover:scale-110",
+                "shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.08)]",
+                isHero ? "bg-white/20" : "bg-primary/10 border border-primary/20"
+              )}>
+                <Link2 className={cn("h-7 w-7", isHero ? "text-white" : "text-primary")} />
+              </div>
+              <div className="space-y-2">
+                <h3 className={cn("font-semibold", isHero ? "text-white" : "text-foreground")}>데이터를 연동해보세요</h3>
+                <p className={cn("text-sm max-w-sm", isHero ? "text-white/70" : "text-muted-foreground")}>
+                  카드, 계좌, 국세청을 연동하면 실시간 매출/지출 현황을<br className="hidden sm:block" />
+                  한눈에 확인할 수 있어요
+                </p>
+              </div>
+              <Button onClick={() => openDrawer()} className="gap-2 rounded-full shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <Sparkles className="h-4 w-4" />
+                연동 시작하기
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
+
+  // 연동 + 데이터 없음
+  if (!hasAnyData) {
+    return (
+      <section>
+        <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <EmptyStatCard title="이번 달 매출" icon={TrendingUp} variant="primary" isHero={isHero} />
+          <EmptyStatCard title="이번 달 지출" icon={TrendingDown} isHero={isHero} />
+        </div>
+        <div className="mt-3">
+          <EmptyStatCard title="이번 달 순이익" icon={PiggyBank} variant="success" isHero={isHero} />
+        </div>
+        <p className={cn("text-xs text-center mt-3", isHero ? "text-white/70" : "text-muted-foreground")}>
+          아직 이번 달 거래 내역이 없어요.<br />거래가 발생하면 자동으로 업데이트돼요!
+        </p>
+      </section>
+    );
+  }
+
+  // 실제 데이터 표시
+  return (
+    <section>
+      <h2 className={cn("mb-3 text-base font-semibold", isHero ? "text-white" : "text-foreground")}>오늘의 요약</h2>
+      <div className="grid grid-cols-2 gap-3">
+        <RealStatCard title="이번 달 매출" value={stats!.monthlyIncome > 0 ? formatCurrency(stats!.monthlyIncome) : "₩0"} subtitle={stats!.todayIncome > 0 ? `오늘 ${formatCurrency(stats!.todayIncome)}` : "오늘 ₩0"} icon={TrendingUp} variant="primary" isHero={isHero} />
+        <RealStatCard title="이번 달 지출" value={stats!.monthlyExpense > 0 ? formatCurrency(stats!.monthlyExpense) : "₩0"} subtitle={stats!.todayExpense > 0 ? `오늘 ${formatCurrency(stats!.todayExpense)}` : "오늘 ₩0"} icon={TrendingDown} isHero={isHero} />
+      </div>
+      <div className="mt-3">
+        <RealStatCard title="이번 달 순이익" value={formatCurrency(monthlyProfit)} icon={PiggyBank} variant="success" isHero={isHero} />
+      </div>
+    </section>
+  );
+}

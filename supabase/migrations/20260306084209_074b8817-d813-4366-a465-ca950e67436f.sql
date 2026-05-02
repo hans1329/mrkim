@@ -1,0 +1,1 @@
+ALTER TABLE public.employees ADD COLUMN salary_day integer DEFAULT NULL;
